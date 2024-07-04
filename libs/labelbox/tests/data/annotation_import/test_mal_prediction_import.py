@@ -9,7 +9,7 @@ from labelbox.schema.annotation_import import MALPredictionImport
 
 """
 
-
+@pytest.mark.order(1)
 def test_create_with_url_arg(client, configured_project_with_one_data_row,
                              annotation_import_test_helpers):
     name = str(uuid.uuid4())

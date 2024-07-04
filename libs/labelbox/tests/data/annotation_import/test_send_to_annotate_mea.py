@@ -56,9 +56,14 @@ def test_send_to_annotate_from_model(client, configured_project,
     destination_batches = list(destination_project.batches())
     assert len(destination_batches) == 1
     
-    destination_data_rows = list(destination_batches[0].export_data_rows())
+    export_task = destination_project.export()
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    
+    destination_data_rows = [dr.json["data_row"]["id"] for dr in stream]
+    
     assert len(destination_data_rows) == len(data_row_ids)
-    assert all([dr.uid in data_row_ids for dr in destination_data_rows])
+    assert all([dr in data_row_ids for dr in destination_data_rows])
 
     # Since data rows were added to a review queue, predictions should be imported into the project as labels
     destination_project_labels = (list(destination_project.labels()))

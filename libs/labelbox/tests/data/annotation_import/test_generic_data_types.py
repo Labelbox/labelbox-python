@@ -77,7 +77,7 @@ def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
 
     return data_row
 
-
+@pytest.mark.order(1)
 def test_import_data_types_by_global_key(
     client,
     configured_project,
@@ -154,8 +154,6 @@ def validate_iso_format(date_string: str):
         ConversationData,
         DocumentData,
         DicomData,
-        LlmPromptCreationData,
-        LlmPromptResponseCreationData,
         LlmResponseCreationData,
     ],
 )

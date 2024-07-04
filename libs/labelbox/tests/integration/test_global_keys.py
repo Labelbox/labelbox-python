@@ -108,22 +108,30 @@ def test_long_global_key_validation(client, dataset, image_url):
 
 
 def test_global_key_with_whitespaces_validation(client, dataset, image_url):
-    dr_1 = dataset.create_data_row(row_data=image_url)
-    dr_2 = dataset.create_data_row(row_data=image_url)
-    dr_3 = dataset.create_data_row(row_data=image_url)
+    data_row_items = [{
+        "row_data": image_url,
+    }, {
+        "row_data": image_url,
+    }, {
+        "row_data": image_url,
+    }]
+    task = dataset.create_data_rows(data_row_items)
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    dr_1_uid, dr_2_uid, dr_3_uid = [t['id'] for t in task.result]
 
     gk_1 = ' global key'
     gk_2 = 'global  key'
     gk_3 = 'global key '
 
     assignment_inputs = [{
-        "data_row_id": dr_1.uid,
+        "data_row_id": dr_1_uid,
         "global_key": gk_1
     }, {
-        "data_row_id": dr_2.uid,
+        "data_row_id": dr_2_uid,
         "global_key": gk_2
     }, {
-        "data_row_id": dr_3.uid,
+        "data_row_id": dr_3_uid,
         "global_key": gk_3
     }]
     res = client.assign_global_keys_to_data_rows(assignment_inputs)
@@ -134,7 +142,7 @@ def test_global_key_with_whitespaces_validation(client, dataset, image_url):
     assign_errors_ids = set([e['data_row_id'] for e in res['errors']])
     assign_errors_gks = set([e['global_key'] for e in res['errors']])
     assign_errors_msgs = set([e['error'] for e in res['errors']])
-    assert assign_errors_ids == set([dr_1.uid, dr_2.uid, dr_3.uid])
+    assert assign_errors_ids == set([dr_1_uid, dr_2_uid, dr_3_uid])
     assert assign_errors_gks == set([gk_1, gk_2, gk_3])
     assert assign_errors_msgs == set([
         'Invalid assignment. Either DataRow does not exist, or globalKey is invalid',

@@ -25,6 +25,7 @@ Labelbox Python SDK Documentation
     identifiable
     identifiables
     label
+    label-score
     labeling-frontend
     labeling-frontend-options
     labeling-parameter-override

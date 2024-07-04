@@ -6,7 +6,7 @@ from collections import Counter
 
 from labelbox import DataSplit, ModelRun
 
-
+@pytest.mark.order(1)
 def test_model_run(client, configured_project_with_label, data_row, rand_gen):
     project, _, _, label = configured_project_with_label
     label_id = label.uid
@@ -119,7 +119,7 @@ def test_model_run_upsert_data_rows_with_existing_labels(
     assert n_data_rows == len(
         list(model_run_with_data_rows.model_run_data_rows()))
 
-
+@pytest.mark.export_v1("tests used export v1 method, v2 test -> test_import_data_types_v2 below")
 def test_model_run_export_labels(model_run_with_data_rows):
     labels = model_run_with_data_rows.export_labels(download=True)
     assert len(labels) == 3

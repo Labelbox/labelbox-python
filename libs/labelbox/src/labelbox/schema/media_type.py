@@ -20,6 +20,8 @@ class MediaType(Enum):
     Unknown = "UNKNOWN"
     Unsupported = "UNSUPPORTED"
     Video = "VIDEO"
+    Point_Cloud = "POINT_CLOUD"
+    LLM = "LLM"
 
     @classmethod
     def _missing_(cls, name):

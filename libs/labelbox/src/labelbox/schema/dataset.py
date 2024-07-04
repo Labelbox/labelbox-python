@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
 import requests
 
-from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, InvalidAttributeError
+from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, ResourceCreationError
 from labelbox.orm.comparison import Comparison
 from labelbox.orm.db_object import DbObject, Updateable, Deletable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -124,7 +124,6 @@ class Dataset(DbObject, Updateable, Deletable):
 
     def create_data_row(self, items=None, **kwargs) -> "DataRow":
         """ Creates a single DataRow belonging to this dataset.
-
         >>> dataset.create_data_row(row_data="http://my_site.com/photos/img_01.jpg")
 
         Args:
@@ -139,82 +138,31 @@ class Dataset(DbObject, Updateable, Deletable):
                 in `kwargs`.
             InvalidAttributeError: in case the DB object type does not contain
                 any of the field names given in `kwargs`.
-
+            ResourceCreationError: If data row creation failed on the server side.
         """
         invalid_argument_error = "Argument to create_data_row() must be either a dictionary, or kwargs containing `row_data` at minimum"
-
-        def convert_field_keys(items):
-            if not isinstance(items, dict):
-                raise InvalidQueryError(invalid_argument_error)
-            return {
-                key.name if isinstance(key, Field) else key: value
-                for key, value in items.items()
-            }
 
         if items is not None and len(kwargs) > 0:
             raise InvalidQueryError(invalid_argument_error)
 
-        DataRow = Entity.DataRow
-        args = convert_field_keys(items) if items is not None else kwargs
+        args = items if items is not None else kwargs
 
-        if DataRow.row_data.name not in args:
-            raise InvalidQueryError(
-                "DataRow.row_data missing when creating DataRow.")
+        file_upload_thread_count = 1
+        completed_task = self._create_data_rows_sync(
+            [args], file_upload_thread_count=file_upload_thread_count)
 
-        row_data = args[DataRow.row_data.name]
+        res = completed_task.result
+        if res is None or len(res) == 0:
+            raise ResourceCreationError(
+                f"Data row upload did not complete, task status {completed_task.status} task id {completed_task.uid}"
+            )
 
-        if isinstance(row_data, str) and row_data.startswith("s3:/"):
-            raise InvalidQueryError(
-                "row_data: s3 assets must start with 'https'.")
+        return self.client.get_data_row(res[0]['id'])
 
-        if not isinstance(row_data, str):
-            # If the row data is an object, upload as a string
-            args[DataRow.row_data.name] = json.dumps(row_data)
-        elif os.path.exists(row_data):
-            # If row data is a local file path, upload it to server.
-            args[DataRow.row_data.name] = self.client.upload_file(row_data)
-
-        # Parse metadata fields, if they are provided
-        if DataRow.metadata_fields.name in args:
-            mdo = self.client.get_data_row_metadata_ontology()
-            args[DataRow.metadata_fields.name] = mdo.parse_upsert_metadata(
-                args[DataRow.metadata_fields.name])
-
-        if "embeddings" in args:
-            args["embeddings"] = [
-                EmbeddingVector(**e).to_gql() for e in args["embeddings"]
-            ]
-
-        query_str = """mutation CreateDataRowPyApi(
-            $row_data: String!,
-            $metadata_fields: [DataRowCustomMetadataUpsertInput!],
-            $attachments: [DataRowAttachmentInput!],
-            $media_type : MediaType,
-            $external_id : String,
-            $global_key : String,
-            $dataset: ID!,
-            $embeddings: [DataRowEmbeddingVectorInput!]
-            ){
-                createDataRow(
-                    data:
-                      {
-                        rowData: $row_data
-                        mediaType: $media_type
-                        metadataFields: $metadata_fields
-                        externalId: $external_id
-                        globalKey: $global_key
-                        attachments: $attachments
-                        dataset: {connect: {id: $dataset}}
-                        embeddings: $embeddings
-                    }
-                   )
-                {%s}
-            }
-        """ % query.results_query_part(Entity.DataRow)
-        res = self.client.execute(query_str, {**args, 'dataset': self.uid})
-        return DataRow(self.client, res['createDataRow'])
-
-    def create_data_rows_sync(self, items) -> None:
+    def create_data_rows_sync(
+            self,
+            items,
+            file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT) -> None:
         """ Synchronously bulk upload data rows.
 
         Use this instead of `Dataset.create_data_rows` for smaller batches of data rows that need to be uploaded quickly.
@@ -228,32 +176,49 @@ class Dataset(DbObject, Updateable, Deletable):
             None. If the function doesn't raise an exception then the import was successful.
 
         Raises:
-            InvalidQueryError: If the `items` parameter does not conform to
+            ResourceCreationError: If the `items` parameter does not conform to
                 the specification in Dataset._create_descriptor_file or if the server did not accept the
                 DataRow creation request (unknown reason).
             InvalidAttributeError: If there are fields in `items` not valid for
                 a DataRow.
             ValueError: When the upload parameters are invalid
         """
+        warnings.warn(
+            "This method is deprecated and will be "
+            "removed in a future release. Please use create_data_rows instead.")
+
+        self._create_data_rows_sync(
+            items, file_upload_thread_count=file_upload_thread_count)
+
+        return None  # Return None if no exception is raised
+
+    def _create_data_rows_sync(self,
+                               items,
+                               file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
+                              ) -> "DataUpsertTask":
         max_data_rows_supported = 1000
-        max_attachments_per_data_row = 5
         if len(items) > max_data_rows_supported:
             raise ValueError(
                 f"Dataset.create_data_rows_sync() supports a max of {max_data_rows_supported} data rows."
                 " For larger imports use the async function Dataset.create_data_rows()"
             )
-        descriptor_url = DescriptorFileCreator(self.client).create_one(
-            items, max_attachments_per_data_row=max_attachments_per_data_row)
-        dataset_param = "datasetId"
-        url_param = "jsonUrl"
-        query_str = """mutation AppendRowsToDatasetSyncPyApi($%s: ID!, $%s: String!){
-            appendRowsToDatasetSync(data:{datasetId: $%s, jsonFileUrl: $%s}
-            ){dataset{id}}} """ % (dataset_param, url_param, dataset_param,
-                                   url_param)
-        self.client.execute(query_str, {
-            dataset_param: self.uid,
-            url_param: descriptor_url
-        })
+        if file_upload_thread_count < 1:
+            raise ValueError(
+                "file_upload_thread_count must be a positive integer")
+
+        task: DataUpsertTask = self.create_data_rows(items,
+                                                     file_upload_thread_count)
+        task.wait_till_done()
+
+        if task.has_errors():
+            raise ResourceCreationError(
+                f"Data row upload errors: {task.errors}", cause=task.uid)
+        if task.status != "COMPLETE":
+            raise ResourceCreationError(
+                f"Data row upload did not complete, task status {task.status} task id {task.uid}"
+            )
+
+        return task
 
     def create_data_rows(self,
                          items,
@@ -287,14 +252,18 @@ class Dataset(DbObject, Updateable, Deletable):
             raise ValueError(
                 "file_upload_thread_count must be a positive integer")
 
+        # Usage example
+        upload_items = self._separate_and_process_items(items)
+        specs = DataRowCreateItem.build(self.uid, upload_items)
+        return self._exec_upsert_data_rows(specs, file_upload_thread_count)
+
+    def _separate_and_process_items(self, items):
         string_items = [item for item in items if isinstance(item, str)]
         dict_items = [item for item in items if isinstance(item, dict)]
         dict_string_items = []
         if len(string_items) > 0:
             dict_string_items = self._build_from_local_paths(string_items)
-        specs = DataRowCreateItem.build(self.uid,
-                                        dict_items + dict_string_items)
-        return self._exec_upsert_data_rows(specs, file_upload_thread_count)
+        return dict_items + dict_string_items
 
     def _build_from_local_paths(
             self,
@@ -545,6 +514,8 @@ class Dataset(DbObject, Updateable, Deletable):
                         _params.get('label_details', False),
                     "includeInterpolatedFrames":
                         _params.get('interpolated_frames', False),
+                    "includePredictions":
+                        _params.get('predictions', False),
                     "projectIds":
                         _params.get('project_ids', None),
                     "modelRunIds":

@@ -4,7 +4,7 @@
 # last locked with the following flags:
 #   pre: false
 #   features: []
-#   all-features: false
+#   all-features: true
 #   with-sources: false
 #   generate-hashes: false
 
@@ -31,7 +31,8 @@ bleach==6.1.0
     # via nbconvert
 cachetools==5.3.3
     # via google-auth
-certifi==2024.2.2
+certifi==2024.6.2
+    # via pyproj
     # via requests
 charset-normalizer==3.3.2
     # via requests
@@ -40,7 +41,7 @@ click==8.1.7
     # via typer
 commonmark==0.9.1
     # via rich
-coverage==7.5.3
+coverage==7.5.4
     # via pytest-cov
 databooks==1.3.10
 decopatch==1.4.10
@@ -58,7 +59,8 @@ execnet==2.1.1
     # via pytest-xdist
 executing==2.0.1
     # via stack-data
-fastjsonschema==2.19.1
+faker==25.9.1
+fastjsonschema==2.20.0
     # via nbformat
 geojson==3.1.0
     # via labelbox
@@ -66,20 +68,22 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via databooks
-google-api-core==2.19.0
+google-api-core==2.19.1
     # via labelbox
-google-auth==2.29.0
+google-auth==2.30.0
     # via google-api-core
-googleapis-common-protos==1.63.0
+googleapis-common-protos==1.63.2
     # via google-api-core
 idna==3.7
     # via requests
 imagesize==1.4.1
+    # via labelbox
     # via sphinx
-importlib-metadata==7.1.0
+importlib-metadata==7.2.1
     # via jupyter-client
     # via nbconvert
     # via sphinx
+    # via typeguard
     # via yapf
 importlib-resources==6.4.0
     # via jsonschema
@@ -127,8 +131,13 @@ nbformat==5.10.4
     # via nbclient
     # via nbconvert
 numpy==1.24.4
+    # via labelbox
+    # via opencv-python-headless
     # via pandas
-packaging==24.0
+    # via shapely
+opencv-python-headless==4.10.0.84
+    # via labelbox
+packaging==24.1
     # via black
     # via nbconvert
     # via pytest
@@ -146,6 +155,8 @@ pexpect==4.9.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
+pillow==10.3.0
+    # via labelbox
 pkgutil-resolve-name==1.3.10
     # via jsonschema
 platformdirs==4.2.2
@@ -154,11 +165,11 @@ platformdirs==4.2.2
     # via yapf
 pluggy==1.5.0
     # via pytest
-prompt-toolkit==3.0.45
+prompt-toolkit==3.0.47
     # via ipython
-proto-plus==1.23.0
+proto-plus==1.24.0
     # via google-api-core
-protobuf==4.25.3
+protobuf==5.27.1
     # via google-api-core
     # via googleapis-common-protos
     # via proto-plus
@@ -171,27 +182,37 @@ pyasn1==0.6.0
     # via rsa
 pyasn1-modules==0.4.0
     # via google-auth
-pydantic==2.7.2
+pydantic==2.7.4
     # via databooks
     # via labelbox
-pydantic-core==2.18.3
+pydantic-core==2.18.4
     # via pydantic
+pygeotile==1.0.6
+    # via labelbox
 pygments==2.18.0
     # via ipython
     # via nbconvert
     # via rich
     # via sphinx
-pytest==8.2.1
+pyproj==3.5.0
+    # via labelbox
+pytest==8.2.2
     # via pytest-cov
+    # via pytest-order
     # via pytest-rerunfailures
     # via pytest-snapshot
+    # via pytest-timeout
     # via pytest-xdist
 pytest-cases==3.8.5
 pytest-cov==5.0.0
+pytest-order==1.2.1
 pytest-rerunfailures==14.0
 pytest-snapshot==0.9.0
+pytest-timeout==2.3.1
+pytest-timestamper==0.0.10
 pytest-xdist==3.6.1
 python-dateutil==2.8.2
+    # via faker
     # via jupyter-client
     # via labelbox
     # via pandas
@@ -205,7 +226,7 @@ referencing==0.35.1
     # via jsonschema-specifications
 regex==2024.5.15
     # via toml-cli
-requests==2.32.2
+requests==2.32.3
     # via google-api-core
     # via labelbox
     # via sphinx
@@ -217,6 +238,8 @@ rpds-py==0.18.1
     # via referencing
 rsa==4.9
     # via google-auth
+shapely==2.0.4
+    # via labelbox
 shellingham==1.5.4
     # via typer
 six==1.16.0
@@ -266,7 +289,7 @@ tomli==2.0.1
     # via yapf
 tomlkit==0.12.5
     # via toml-cli
-tornado==6.4
+tornado==6.4.1
     # via jupyter-client
 tqdm==4.66.4
     # via labelbox
@@ -278,26 +301,30 @@ traitlets==5.14.3
     # via nbclient
     # via nbconvert
     # via nbformat
+typeguard==4.3.0
+    # via labelbox
 typer==0.12.3
     # via databooks
     # via toml-cli
 types-pillow==10.2.0.20240520
 types-python-dateutil==2.9.0.20240316
-types-requests==2.32.0.20240523
+types-requests==2.32.0.20240622
 types-tqdm==4.66.0.20240417
-typing-extensions==4.12.0
+typing-extensions==4.12.2
     # via annotated-types
     # via black
     # via databooks
     # via ipython
+    # via labelbox
     # via mypy
     # via pydantic
     # via pydantic-core
     # via rich
+    # via typeguard
     # via typer
 tzdata==2024.1
     # via pandas
-urllib3==2.2.1
+urllib3==2.2.2
     # via requests
     # via types-requests
 wcwidth==0.2.13
@@ -306,6 +333,6 @@ webencodings==0.5.1
     # via bleach
     # via tinycss2
 yapf==0.40.2
-zipp==3.19.0
+zipp==3.19.2
     # via importlib-metadata
     # via importlib-resources

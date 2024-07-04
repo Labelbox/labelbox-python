@@ -1,3 +1,6 @@
+import re
+
+
 class LabelboxError(Exception):
     """Base class for exceptions."""
 
@@ -147,3 +150,21 @@ class CustomMetricsNotSupportedException(Exception):
 
 class ProcessingWaitTimeout(Exception):
     """Raised when waiting for the data rows to be processed takes longer than allowed"""
+
+
+def error_message_for_unparsed_graphql_error(error_string: str) -> str:
+    """
+    Since our client only parses certain graphql errors, this function is used to
+    extract the error message from the error string when the error is not
+    parsed by the client.
+    """
+    # Regex to find the message content
+    pattern = r"'message': '([^']+)'"
+    # Search for the pattern in the error string
+    match = re.search(pattern, error_string)
+    if match:
+        error_content = match.group(1)
+    else:
+        error_content = "Unknown error"
+
+    return error_content

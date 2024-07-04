@@ -48,6 +48,7 @@ class TestDataRowUpsert:
             ])
         return dr
 
+    @pytest.mark.order(1)
     def test_create_data_row_with_auto_key(self, dataset, image_url):
         task = dataset.upsert_data_rows([{'row_data': image_url}])
         task.wait_till_done()
