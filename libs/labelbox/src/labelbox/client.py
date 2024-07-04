@@ -893,15 +893,6 @@ class Client:
                 " through this method will soon no longer be supported.")
             media_type_value = None
 
-        ontology_kind = kwargs.pop("ontology_kind", None)
-        if ontology_kind and OntologyKind.is_supported(ontology_kind):
-            editor_task_type_value = EditorTaskTypeMapper.to_editor_task_type(
-                ontology_kind, media_type).value
-        elif ontology_kind:
-            raise OntologyKind.get_ontology_kind_validation_error(ontology_kind)
-        else:
-            editor_task_type_value = None
-
         quality_modes = kwargs.get("quality_modes")
         quality_mode = kwargs.get("quality_mode")
         if quality_modes and quality_mode:
@@ -930,16 +921,12 @@ class Client:
         params = {**data}
         if media_type_value:
             params["media_type"] = media_type_value
-        if editor_task_type_value:
-            params["editor_task_type"] = editor_task_type_value
 
         extra_params = {
             Field.String("dataset_name_or_id"):
                 params.pop("dataset_name_or_id", None),
             Field.Boolean("append_to_existing_dataset"):
                 params.pop("append_to_existing_dataset", None),
-            Field.Int("data_row_count"):
-                params.pop("data_row_count", None),
         }
         extra_params = {k: v for k, v in extra_params.items() if v is not None}
 
