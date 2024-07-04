@@ -162,70 +162,52 @@ def validate_iso_format(date_string: str):
 def test_import_data_types_v2(
     client: Client,
     configured_project: Project,
-    initial_dataset,
-    data_row_json_by_data_type,
-    annotations_by_data_type_v2,
-    exports_v2_by_data_type,
+    annotations_by_media_type,
     export_v2_test_helpers,
-    rand_gen,
     helpers,
 ):
     project = configured_project
-    dataset = initial_dataset
     project_id = project.uid
-    print(project.media_type)
-    helpers.set_project_media_type_from_data_type(project, data_type_class)
 
-    data_type_string = data_type_class.__name__[:-4].lower()
-    data_row_ndjson = data_row_json_by_data_type[data_type_string]
-    data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
-                                           rand_gen(str))
-    annotations_ndjson = annotations_by_data_type_v2[data_type_string]
+    annotations_ndjson = annotations_by_media_type[project.media_type]
     annotations_list = [
         label.annotations
         for label in NDJsonConverter.deserialize(annotations_ndjson)
     ]
     labels = [
-        lb_types.Label(data={'uid': data_row.uid}, annotations=annotations)
-        for annotations in annotations_list
+        lb_types.Label(data={'uid': project.data_row_ids[i]}, annotations=annotations)
+        for i, annotations in enumerate(annotations_list)
     ]
 
     label_import = lb.LabelImport.create_from_objects(
-        client, project_id, f"test-import-{data_type_string}", labels)
+        client, project_id, f"test-import-{project.media_type}", labels)
     label_import.wait_until_done()
 
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
-    # TODO need to migrate project to the new BATCH mode and change this code
-    # to be similar to tests/integration/test_task_queue.py
-
     result = export_v2_test_helpers.run_project_export_v2_task(project)
 
-    exported_data = next(
-        dr for dr in result if dr['data_row']['id'] == data_row.uid)
-    assert exported_data
+    assert result
 
-    # timestamp fields are in iso format
-    validate_iso_format(exported_data["data_row"]["details"]["created_at"])
-    validate_iso_format(exported_data["data_row"]["details"]["updated_at"])
-    validate_iso_format(exported_data["projects"][project_id]["labels"][0]
-                        ["label_details"]["created_at"])
-    validate_iso_format(exported_data["projects"][project_id]["labels"][0]
-                        ["label_details"]["updated_at"])
+    for exported_data in result:
+        # timestamp fields are in iso format
+        validate_iso_format(exported_data["data_row"]["details"]["created_at"])
+        validate_iso_format(exported_data["data_row"]["details"]["updated_at"])
+        validate_iso_format(exported_data["projects"][project_id]["labels"][0]
+                            ["label_details"]["created_at"])
+        validate_iso_format(exported_data["projects"][project_id]["labels"][0]
+                            ["label_details"]["updated_at"])
 
-    assert exported_data["data_row"]["id"] == data_row.uid
-    exported_project = exported_data["projects"][project_id]
-    exported_project_labels = exported_project["labels"][0]
-    exported_annotations = exported_project_labels["annotations"]
+        assert exported_data["data_row"]["id"] in project.data_row_ids
+        exported_project = exported_data["projects"][project_id]
+        exported_project_labels = exported_project["labels"][0]
+        exported_annotations = exported_project_labels["annotations"]
 
-    helpers.remove_keys_recursive(exported_annotations,
-                                  ["feature_id", "feature_schema_id"])
-    helpers.rename_cuid_key_recursive(exported_annotations)
-    assert exported_annotations == exports_v2_by_data_type[data_type_string]
-
-    data_row = client.get_data_row(data_row.uid)
-    data_row.delete()
+        helpers.remove_keys_recursive(exported_annotations,
+                                    ["feature_id", "feature_schema_id"])
+        helpers.rename_cuid_key_recursive(exported_annotations)
+        assert exported_annotations == exports_v2_by_media_type[project.media_type]
 
 
 @pytest.mark.parametrize("data_type, data_class, annotations", test_params)

@@ -52,6 +52,8 @@ GEOSPATIAL_URL = {"tileLayerUrl":"https://storage.googleapis.com/labelbox-datase
 DOCUMENT_URL = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
 HTML_URL = "https://storage.googleapis.com/labelbox-datasets/html_sample_data/sample_html_1.html"
 DICOM_URL = "https://storage.googleapis.com/labelbox-datasets/dicom-sample-data/sample-dicom-1.dcm"
+CONVERSATIONAL_URL = "https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json"
+LLM_PROMPT_RESPONSE_URL = "https://storage.googleapis.com/labelbox-datasets/conversational-sample-data/pairwise_shopping_1.json"
 
 
 
@@ -100,7 +102,15 @@ def get_asset_url_factory():
         elif media_type == MediaType.Audio:
             return AUDIO_URL
         elif media_type == MediaType.Html:
-            
+            return HTML_URL
+        elif media_type == MediaType.Dicom:
+            return DICOM_URL
+        elif media_type == MediaType.Conversational:
+            return CONVERSATIONAL_URL
+        elif media_type == MediaType.LLMPromptResponseCreation:
+            return LLM_PROMPT_RESPONSE_URL
+        else:
+            raise Exception(f"Can't return a asset url for {media_type}")
     return get_asset_url
 
 @pytest.fixture

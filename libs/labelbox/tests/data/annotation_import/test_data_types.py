@@ -216,26 +216,16 @@ def validate_iso_format(date_string: str):
 def test_import_data_types_v2(
     client,
     configured_project,
-    initial_dataset,
-    data_row_json_by_data_type,
     annotations_by_data_type_v2,
     data_type_class,
     exports_v2_by_data_type,
     export_v2_test_helpers,
-    rand_gen,
     helpers,
 ):
     project = configured_project
-    dataset = initial_dataset
     project_id = project.uid
-
-    helpers.set_project_media_type_from_data_type(project, data_type_class)
-
-    data_type_string = data_type_class.__name__[:-4].lower()
-    data_row_ndjson = data_row_json_by_data_type[data_type_string]
-    data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
-                                           rand_gen(str))
-    annotations_ndjson = annotations_by_data_type_v2[data_type_string]
+    
+    annotations_ndjson = annotations_by_data_type_v2[project.media_type]
     annotations_list = [
         label.annotations
         for label in NDJsonConverter.deserialize(annotations_ndjson)
@@ -247,14 +237,11 @@ def test_import_data_types_v2(
     ]
 
     label_import = lb.LabelImport.create_from_objects(
-        client, project_id, f"test-import-{data_type_string}", labels)
+        client, project_id, f"test-import-{project.media_type}", labels)
     label_import.wait_until_done()
 
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
-
-    # TODO need to migrate project to the new BATCH mode and change this code
-    # to be similar to tests/integration/test_task_queue.py
 
     result = export_v2_test_helpers.run_project_export_v2_task(project)
     find_data_row = lambda dr: dr['data_row']['id'] == data_row.uid
