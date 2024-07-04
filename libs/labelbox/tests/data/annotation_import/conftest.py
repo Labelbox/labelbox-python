@@ -5,12 +5,14 @@ import time
 import requests
 
 from labelbox import parser, MediaType
+from labelbox import Client, Project, Dataset, Ontology
 
 from typing import Type
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from labelbox.schema.project import Project
 from labelbox.schema.queue_mode import QueueMode
+from pytest import FixtureRequest
 
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 40
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 7
@@ -299,9 +301,9 @@ def annotations_by_data_type_v2(
         "llmresponsecreation": [checklist_inference, text_inference],
     }
 
-
-@pytest.fixture(scope="session")
-def ontology():
+def _create_normalized_ontology_with_media_type(media_type:MediaType):
+    """Returns NDJSON of ontology based on media type"""
+    
     bbox_tool_with_nested_text = {
         "required":
             False,
@@ -435,13 +437,6 @@ def ontology():
         "color": "#006FA6",
         "classifications": [],
     }
-    segmentation_tool = {
-        "required": False,
-        "name": "segmentation--",
-        "tool": "superpixel",
-        "color": "#A30059",
-        "classifications": [],
-    }
     raster_segmentation_tool = {
         "required": False,
         "name": "segmentation_mask",
@@ -544,26 +539,110 @@ def ontology():
         "classifications": [],
     }
 
-    tools = [
-        bbox_tool,
-        bbox_tool_with_nested_text,
-        polygon_tool,
-        polyline_tool,
-        point_tool,
-        entity_tool,
-        segmentation_tool,
-        raster_segmentation_tool,
-        named_entity,
-    ]
-    classifications = [
-        checklist,
-        checklist_index,
-        free_form_text,
-        free_form_text_index,
-        radio,
-    ]
+    if media_type == MediaType.Image:
+        tools = [
+            bbox_tool,
+            bbox_tool_with_nested_text,
+            polygon_tool,
+            polyline_tool,
+            point_tool,
+            raster_segmentation_tool,
+            ]
+        classifications = [
+            checklist,
+            free_form_text,
+            radio,
+            ]
+    elif media_type == MediaType.Text:
+        tools = [
+            named_entity,
+            entity_tool
+            ]
+        classifications = [
+            checklist,
+            free_form_text,
+            radio,
+            ]
+    elif media_type == MediaType.Video:
+        tools = [
+            bbox_tool,
+            bbox_tool_with_nested_text,
+            polyline_tool,
+            point_tool,
+            raster_segmentation_tool,
+            ]
+        classifications = [
+            checklist,
+            free_form_text,
+            radio,
+            checklist_index,
+            free_form_text_index
+            ]
+    elif media_type == MediaType.Geospatial_Tile:
+        tools = [
+            bbox_tool,
+            bbox_tool_with_nested_text,
+            polygon_tool,
+            polyline_tool,
+            point_tool,
+            ]
+        classifications = [
+            checklist,
+            free_form_text,
+            radio,
+            ]
+    elif media_type == MediaType.Document:
+        tools = [
+            named_entity,
+            entity_tool,
+            bbox_tool,
+            bbox_tool_with_nested_text
+            ]
+        classifications = [
+            checklist,
+            free_form_text,
+            radio,
+            ]
+    elif media_type == MediaType.Audio:
+        tools = []
+        classifications = [
+            checklist,
+            free_form_text,
+            radio,
+            ]
+    elif media_type == MediaType.Html:
+        tools = []
+        classifications = [
+            checklist,
+            free_form_text,
+            radio,
+            ]
+    elif media_type == MediaType.Dicom:
+        tools = [
+            raster_segmentation_tool,
+            polyline_tool
+            ]
+        classifications = []
+    elif media_type == MediaType.Conversational or MediaType.LLMPromptResponseCreation:
+        tools = [
+            named_entity,
+            entity_tool,
+            ]
+        classifications = [
+            checklist,
+            free_form_text,
+            radio,
+            checklist_index,
+            free_form_text_index
+            ]
+    else:
+        raise Exception(f"No conditional for {media_type}")
     return {"tools": tools, "classifications": classifications}
 
+
+def _get_asset_url(media_type:MediaType):
+    if media_type == MediaType.Image:
+        asset_url = ""
 
 @pytest.fixture
 def wait_for_label_processing():
@@ -610,22 +689,31 @@ def configured_project_one_datarow_id(configured_project_with_one_data_row):
 
 #TODO: Switch to setup_editor, setup might get removed in later releases
 @pytest.fixture
-def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
+def configured_project(client: Client, initial_dataset: Dataset, rand_gen, request: FixtureRequest):
+    """Configure project for test. Request.param will contain the media type"""
+    
     dataset = initial_dataset
-    project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch)
-    editor = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    project.setup(editor, ontology)
+    media_type = request.param
+    
+    # LLMPromptResponseCreation is not support for project or ontology creation needs to be conversational
+    if media_type == MediaType.LLMPromptResponseCreation:
+        media_type == MediaType.Conversational
+    
+    project = client.create_project(name=f"{request.param}-{rand_gen(str)}",
+                                    media_type=media_type)
+    
+    ontology = client.create_ontology(name=f"{request.param}-{rand_gen(str)}", normalized=_create_normalized_ontology_with_media_type(media_type), media_type=media_type)
+
+    project.setup_editor(ontology)
 
     data_row_ids = []
 
-    ontologies = ontology["tools"] + ontology["classifications"]
+    ontologies = ontology.normalized["tools"] + ontology.normalized["classifications"]
     data_row_data = []
+    asset_url = _get_asset_url(request.param)
     for ind in range(len(ontologies)):
         data_row_data.append({
-            "row_data": image_url,
+            "row_data": asset_url,
             "global_key": f"gk_{ontologies[ind]['name']}_{rand_gen(str)}"
         })
     task = dataset.create_data_rows(data_row_data)

@@ -20,6 +20,7 @@ from labelbox.data.annotation_types.data import (
 )
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.schema.annotation_import import AnnotationImportState
+from labelbox import Project, Dataset, Client
 
 radio_annotation = lb_types.ClassificationAnnotation(
     name="radio",
@@ -142,28 +143,28 @@ def validate_iso_format(date_string: str):
     assert parsed_t.minute is not None
     assert parsed_t.second is not None
 
-
+# TODO: add MediaType.LLMPromptResponseCreation once supported
 @pytest.mark.parametrize(
-    "data_type_class",
+    "configured_project",
     [
-        AudioData,
-        HTMLData,
-        ImageData,
-        TextData,
-        VideoData,
-        ConversationData,
-        DocumentData,
-        DicomData,
-        LlmResponseCreationData,
+        MediaType.Audio,
+        MediaType.Html,
+        MediaType.Image,
+        MediaType.Text,
+        MediaType.Video,
+        MediaType.Conversational,
+        MediaType.Document,
+        MediaType.Dicom,
+        MediaType.LLMPromptResponseCreation,
     ],
+    indirect=True
 )
 def test_import_data_types_v2(
-    client,
-    configured_project,
+    client: Client,
+    configured_project: Project,
     initial_dataset,
     data_row_json_by_data_type,
     annotations_by_data_type_v2,
-    data_type_class,
     exports_v2_by_data_type,
     export_v2_test_helpers,
     rand_gen,
@@ -172,7 +173,7 @@ def test_import_data_types_v2(
     project = configured_project
     dataset = initial_dataset
     project_id = project.uid
-
+    print(project.media_type)
     helpers.set_project_media_type_from_data_type(project, data_type_class)
 
     data_type_string = data_type_class.__name__[:-4].lower()

@@ -45,6 +45,15 @@ DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 3
 EPHEMERAL_BASE_URL = "http://lb-api-public"
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
 EXTERNAL_ID = "my-image"
+VIDEO_URL = "https://storage.googleapis.com/labelbox-sample-datasets/Docs/drone_video.mp4"
+TEXT_URL = "https://storage.googleapis.com/labelbox-sample-datasets/Docs/text_attachment.txt"
+AUDIO_URL = "https://storage.googleapis.com/labelbox-datasets/audio-sample-data/sample-audio-1.mp3"
+GEOSPATIAL_URL = {"tileLayerUrl":"https://storage.googleapis.com/labelbox-datasets/rare-planes/train/PS-RGB_cog/100_1040010029990A00.tif"}
+DOCUMENT_URL = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
+HTML_URL = "https://storage.googleapis.com/labelbox-datasets/html_sample_data/sample_html_1.html"
+DICOM_URL = "https://storage.googleapis.com/labelbox-datasets/dicom-sample-data/sample-dicom-1.dcm"
+
+
 
 pytest_plugins = []
 
@@ -75,6 +84,24 @@ class Environ(Enum):
     STAGING_EU = 'staging-eu'
     EPHEMERAL = 'ephemeral'  # Used for testing PRs with ephemeral environments
 
+@pytest.fixture
+def get_asset_url_factory():
+    def get_asset_url(media_type: MediaType):
+        if media_type == MediaType.Image:
+            return MASKABLE_IMG_URL
+        elif media_type == MediaType.Video:
+            return VIDEO_URL
+        elif media_type == MediaType.Text:
+            return TEXT_URL
+        elif media_type == MediaType.Geospatial_Tile:
+            return GEOSPATIAL_URL
+        elif media_type == MediaType.Document:
+            return DOCUMENT_URL
+        elif media_type == MediaType.Audio:
+            return AUDIO_URL
+        elif media_type == MediaType.Html:
+            
+    return get_asset_url
 
 @pytest.fixture
 def image_url() -> str:
