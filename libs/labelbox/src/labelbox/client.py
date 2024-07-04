@@ -799,12 +799,12 @@ class Client:
         data = kwargs
         data.pop("quality_modes", None)
         data.pop("quality_mode", None)
-        if quality_modes is None or quality_modes == [QualityMode.Benchmark] or quality_mode == QualityMode.Benchmark:
+        if quality_modes is None or quality_modes == [QualityMode.Benchmark] or quality_mode is QualityMode.Benchmark:
             data[
                 "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
-        elif QualityMode.Consensus in (quality_modes if quality_modes else []) or quality_mode == QualityMode.Consensus:
+        elif QualityMode.Consensus in (quality_modes if quality_modes else []) or quality_mode is QualityMode.Consensus:
             data[
                 "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
