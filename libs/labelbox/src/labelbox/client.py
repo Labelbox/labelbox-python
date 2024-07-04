@@ -733,6 +733,8 @@ class Client:
             description (str): A short summary for the project
             media_type (MediaType): The type of assets that this project will accept
             queue_mode (Optional[QueueMode]): The queue mode to use
+            quality_mode (Optional[QualityMode]): The quality mode to use (e.g. Benchmark, Consensus). Defaults to
+                Benchmark
             quality_modes (Optional[List[QualityMode]]): The quality modes to use (e.g. Benchmark, Consensus). Defaults to
                 Benchmark.
         Returns:
@@ -786,17 +788,23 @@ class Client:
             editor_task_type_value = None
 
         quality_modes = kwargs.get("quality_modes")
-        if not quality_modes:
+        quality_mode = kwargs.get("quality_mode")
+        if quality_modes and quality_mode:
+            raise ValueError(
+                "Cannot use both quality_modes and quality_mode at the same time. Use one or the other.")
+
+        if not quality_modes and not quality_mode:
             logger.info("Defaulting quality modes to Benchmark.")
 
         data = kwargs
         data.pop("quality_modes", None)
-        if quality_modes is None or quality_modes == [QualityMode.Benchmark]:
+        data.pop("quality_mode", None)
+        if quality_modes is None or quality_modes == [QualityMode.Benchmark] or quality_mode == QualityMode.Benchmark:
             data[
                 "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
-        elif QualityMode.Consensus in quality_modes:
+        elif QualityMode.Consensus in (quality_modes if quality_modes else []) or quality_mode == QualityMode.Consensus:
             data[
                 "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
