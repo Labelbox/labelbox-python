@@ -8,6 +8,10 @@ from labelbox.schema.annotation_import import AnnotationImportState
 from labelbox import Project, Client
 import itertools
 
+"""
+ - integration test for importing mal labels and ground truths with each supported MediaType. 
+ - NDJSON is used to generate annotations easier. unit tests available for serializing annotations to NDJSON format.
+"""
 
 def validate_iso_format(date_string: str):
     parsed_t = datetime.datetime.fromisoformat(
@@ -66,12 +70,9 @@ def test_import_media_types(
         exported_project_labels = exported_project["labels"][0]
         exported_annotations = exported_project_labels["annotations"]
 
-        #TODO Occasional dicom data cuts out the key_frame_feature_map with export. This might be a bug but does not happen every time. Need to look into this issue but removing key_frame_feature_map to stabilize test.
         expected_data = exports_v2_by_media_type[configured_project.media_type]
         helpers.remove_keys_recursive(exported_annotations,
-                                    ["feature_id", "feature_schema_id", "key_frame_feature_map"])
-        helpers.remove_keys_recursive(expected_data,
-                                    ["key_frame_feature_map"])        
+                                    ["feature_id", "feature_schema_id"])     
         helpers.rename_cuid_key_recursive(exported_annotations)
 
         assert exported_annotations == expected_data 
@@ -127,12 +128,9 @@ def test_import_media_types_by_global_key(
         exported_project_labels = exported_project["labels"][0]
         exported_annotations = exported_project_labels["annotations"]
 
-        #TODO Occasional dicom data cuts out the key_frame_feature_map with export. This might be a bug but does not happen every time. Need to look into this issue but removing key_frame_feature_map to stabilize test.
         expected_data = exports_v2_by_media_type[configured_project_by_global_key.media_type]
         helpers.remove_keys_recursive(exported_annotations,
-                                    ["feature_id", "feature_schema_id", "key_frame_feature_map"])
-        helpers.remove_keys_recursive(expected_data,
-                                    ["key_frame_feature_map"])        
+                                    ["feature_id", "feature_schema_id"])     
         helpers.rename_cuid_key_recursive(exported_annotations)
 
         assert exported_annotations == expected_data 

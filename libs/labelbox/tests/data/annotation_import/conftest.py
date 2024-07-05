@@ -5,15 +5,15 @@ import time
 import requests
 
 from labelbox import parser, MediaType
-from labelbox import Client, Project, Dataset, Ontology
+from labelbox import Client, Dataset
 
 from typing import Type
-from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
-from labelbox.schema.project import Project
-from labelbox.schema.queue_mode import QueueMode
 from pytest import FixtureRequest
-import itertools
+
+"""
+The main fixtures of this library are configured_project and configured_project_by_global_key. Both fixtures generate data rows with a parametrize media type. They create the amount of data rows equal to the DATA_ROW_COUNT variable below. Inside those fixtures they generate ontologies with supported tools for project. This ontology is later used to obtain the correct annotations with the prediction_id_mapping and corresponding inferences. 
+"""
 
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 40
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 7
@@ -160,7 +160,7 @@ def llm_human_preference_data_row_factory():
         }
     return llm_human_preference_data_row
 
-#TODO: add in human preference data row factory once media type is added
+
 @pytest.fixture
 def data_row_json_by_media_type(
     audio_data_row_factory,
@@ -581,22 +581,6 @@ def wait_for_label_processing():
 
 
 @pytest.fixture
-def configured_project_datarow_id(configured_project):
-    def get_data_row_id(indx=0):
-        return configured_project.data_row_ids[indx]
-
-    yield get_data_row_id
-
-
-@pytest.fixture
-def configured_project_one_datarow_id(configured_project_with_one_data_row):
-    def get_data_row_id(indx=0):
-        return configured_project_with_one_data_row.data_row_ids[0]
-
-    yield get_data_row_id
-
-
-@pytest.fixture
 def configured_project(client: Client, initial_dataset: Dataset, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
     """Configure project for test. Request.param will contain the media type. The project will have 10 data rows."""
     
@@ -679,6 +663,22 @@ def configured_project_by_global_key(client: Client, initial_dataset: Dataset, r
 
 
 @pytest.fixture
+def configured_project_datarow_id(configured_project):
+    def get_data_row_id(indx=0):
+        return configured_project.data_row_ids[indx]
+
+    yield get_data_row_id
+
+
+@pytest.fixture
+def configured_project_one_datarow_id(configured_project_with_one_data_row):
+    def get_data_row_id(indx=0):
+        return configured_project_with_one_data_row.data_row_ids[0]
+
+    yield get_data_row_id
+
+
+@pytest.fixture
 @pytest.mark.parametrize(
     "configured_project",
     [
@@ -713,13 +713,6 @@ def dataset_pdf_entity(client, rand_gen, document_data_row):
 
 
 @pytest.fixture
-@pytest.mark.parametrize(
-    "configured_project",
-    [
-        MediaType.Image,
-    ],
-    indirect=True
-)
 def configured_project_with_one_data_row(client: Client, initial_dataset: Dataset, rand_gen, data_row_json_by_media_type, normalized_ontology_by_media_type):
     """Creates an image project with one data row"""
     dataset = initial_dataset
@@ -752,23 +745,15 @@ def configured_project_with_one_data_row(client: Client, initial_dataset: Datase
     client.delete_unused_ontology(ontology.uid)
 
 
-# This function allows to convert an ontology feature to actual annotation
-# At the moment it expects only one feature per tool type and this creates unnecessary coupling between different tests
-# In an example of a 'rectangle' we have extended to support multiple instances of the same tool type
 """
 Please note that this fixture now offers the flexibility to configure three different strategies for generating data row ids for predictions:
 Default(configured_project fixture):
     configured_project that generates a data row for each member of ontology.
-    This makes sure each prediction has its own data row id. This is applicable to prediction upload cases when last label overwrites existing ones
-
-Optimized Strategy (configured_project_with_one_data_row fixture):
-    This fixture has only one data row and all predictions will be mapped to it
+    This makes sure each prediction has its own data row id.
 
 Custom Data Row IDs Strategy:
     Individuals can supply hard-coded data row ids when a creation of data row is not required. 
     This particular fixture, termed "hardcoded_datarow_id," should be defined locally within a test file.
-    In the future, we can use this approach to inject correct number of rows instead of using configured_project fixture 
-        that creates a data row for each member of ontology (14 in total) for each run.
 """
 
 
