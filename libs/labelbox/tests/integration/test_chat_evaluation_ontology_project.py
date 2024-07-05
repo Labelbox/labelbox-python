@@ -28,7 +28,7 @@ def test_create_chat_evaluation_ontology_project(
     project = live_chat_evaluation_project_with_new_dataset
     assert project.model_setup_complete is None
 
-    project.setup_editor(ontology)
+    project.connect_ontology(ontology)
 
     assert project.labeling_frontend().name == "Editor"
     assert project.ontology().name == ontology.name
@@ -61,7 +61,7 @@ def test_create_chat_evaluation_ontology_project_existing_dataset(
 
     project = chat_evaluation_project_append_to_dataset
     assert project
-    project.setup_editor(ontology)
+    project.connect_ontology(ontology)
 
     assert project.labeling_frontend().name == "Editor"
     assert project.ontology().name == ontology.name

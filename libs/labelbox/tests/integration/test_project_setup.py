@@ -55,7 +55,7 @@ def test_project_editor_setup(client, project, rand_gen):
     ontology_name = f"test_project_editor_setup_ontology_name-{rand_gen(str)}"
     ontology = client.create_ontology(ontology_name, simple_ontology())
     now = datetime.now().astimezone(timezone.utc)
-    project.setup_editor(ontology)
+    project.connect_ontology(ontology)
     assert now - project.setup_complete <= timedelta(seconds=3)
     assert now - project.last_activity_time <= timedelta(seconds=3)
     assert project.labeling_frontend().name == "Editor"
@@ -72,6 +72,6 @@ def test_project_editor_setup_cant_call_multiple_times(client, project,
                                                        rand_gen):
     ontology_name = f"test_project_editor_setup_ontology_name-{rand_gen(str)}"
     ontology = client.create_ontology(ontology_name, simple_ontology())
-    project.setup_editor(ontology)
+    project.connect_ontology(ontology)
     with pytest.raises(ResourceConflict):
-        project.setup_editor(ontology)
+        project.connect_ontology(ontology)
