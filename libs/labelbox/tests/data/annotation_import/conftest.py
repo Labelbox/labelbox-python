@@ -760,7 +760,7 @@ Custom Data Row IDs Strategy:
 
 @pytest.fixture
 def prediction_id_mapping(request):
-    """Creates the base of annotation based on tools inside project ontology. We would want only annotations supported for the MediaType of the ontology and project."""
+    """Creates the base of annotation based on tools inside project ontology. We would want only annotations supported for the MediaType of the ontology and project. Annotations are generated for each data row in to later be combined inside the test file."""
     if "configured_project" in request.fixturenames:
         project = request.getfixturevalue("configured_project")
         data_row_ids = True
