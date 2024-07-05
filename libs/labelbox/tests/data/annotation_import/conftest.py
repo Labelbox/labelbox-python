@@ -15,6 +15,7 @@ from pytest import FixtureRequest
 The main fixtures of this library are configured_project and configured_project_by_global_key. Both fixtures generate data rows with a parametrize media type. They create the amount of data rows equal to the DATA_ROW_COUNT variable below. Inside those fixtures they generate ontologies with supported tools for project. This ontology is later used to obtain the correct annotations with the prediction_id_mapping and corresponding inferences. 
 """
 
+DATA_ROW_COUNT = 3
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 40
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 7
 
@@ -599,7 +600,7 @@ def configured_project(client: Client, initial_dataset: Dataset, rand_gen, data_
 
     data_row_data = []
 
-    for _ in range(3):
+    for _ in range(DATA_ROW_COUNT):
         data_row_data.append(data_row_json_by_media_type[request.param](rand_gen(str)))
         
     task = dataset.create_data_rows(data_row_data)
@@ -638,7 +639,7 @@ def configured_project_by_global_key(client: Client, initial_dataset: Dataset, r
 
     data_row_data = []
 
-    for _ in range(3):
+    for _ in range(DATA_ROW_COUNT):
         data_row_data.append(data_row_json_by_media_type[request.param](rand_gen(str)))
         
     task = dataset.create_data_rows(data_row_data)
