@@ -46,7 +46,6 @@ EPHEMERAL_BASE_URL = "http://lb-api-public"
 IMAGE_URL = "https://storage.googleapis.com/diagnostics-demo-data/coco/COCO_train2014_000000000034.jpg"
 EXTERNAL_ID = "my-image"
 
-
 pytest_plugins = []
 
 
