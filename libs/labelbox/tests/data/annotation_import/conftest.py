@@ -13,6 +13,7 @@ from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from labelbox.schema.project import Project
 from labelbox.schema.queue_mode import QueueMode
 from pytest import FixtureRequest
+import itertools
 
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 40
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 7
@@ -151,58 +152,15 @@ def text_data_row_factory():
     return text_data_row
 
 @pytest.fixture()
-def llm_prompt_creation_data_row_factory():
-    def llm_prompt_response_data_rows(global_key):
+def llm_human_preference_data_row_factory():
+    def llm_human_preference_data_row(global_key): 
         return {
-            "row_data": {
-                "type": "application/llm.prompt-creation",
-                "version": 1
-            },
+            "row_data": "https://storage.googleapis.com/labelbox-datasets/sdk_test/llm_prompt_response_conv.json",
             "global_key": global_key,
         }
-    return llm_prompt_response_data_rows
+    return llm_human_preference_data_row
 
-@pytest.fixture()
-def llm_prompt_response_data_row_factory():
-    def llm_prompt_response_data_row(global_key): 
-        return {
-            "row_data": {
-                "type": "application/llm.prompt-response-creation",
-                "version": 1
-            },
-            "global_key": global_key,
-        }
-    return llm_prompt_response_data_row
-
-@pytest.fixture
-def data_row_json_by_data_type(
-    audio_data_row,
-    conversation_data_row,
-    dicom_data_row,
-    geospatial_data_row,
-    html_data_row,
-    image_data_row,
-    document_data_row,
-    text_data_row,
-    video_data_row,
-    llm_prompt_creation_data_row,
-    llm_prompt_response_data_row,
-):
-    return {
-        "audio": audio_data_row,
-        "conversation": conversation_data_row,
-        "dicom": dicom_data_row,
-        "geospatial": geospatial_data_row,
-        "html": html_data_row,
-        "image": image_data_row,
-        "document": document_data_row,
-        "text": text_data_row,
-        "video": video_data_row,
-        "llmpromptcreation": llm_prompt_creation_data_row,
-        "llmpromptresponsecreation": llm_prompt_response_data_row,
-        "llmresponsecreation": text_data_row,
-    }
-
+#TODO: add in human preference data row factory once media type is added
 @pytest.fixture
 def data_row_json_by_media_type(
     audio_data_row_factory,
@@ -214,8 +172,6 @@ def data_row_json_by_media_type(
     document_data_row_factory,
     text_data_row_factory,
     video_data_row_factory,
-    llm_prompt_creation_data_row_factory,
-    llm_prompt_response_data_row_factory,
 ):
     return {
         MediaType.Audio: audio_data_row_factory,
@@ -227,13 +183,11 @@ def data_row_json_by_media_type(
         MediaType.Document: document_data_row_factory,
         MediaType.Text: text_data_row_factory,
         MediaType.Video: video_data_row_factory,
-        MediaType.LLMPromptCreation: llm_prompt_creation_data_row_factory,
-        MediaType.LLMPromptResponseCreation: llm_prompt_response_data_row_factory,
     }
 
 
 @pytest.fixture
-def exports_v2_by_data_type(
+def exports_v2_by_media_type(
     expected_export_v2_image,
     expected_export_v2_audio,
     expected_export_v2_html,
@@ -242,48 +196,6 @@ def exports_v2_by_data_type(
     expected_export_v2_conversation,
     expected_export_v2_dicom,
     expected_export_v2_document,
-    expected_export_v2_llm_prompt_creation,
-    expected_export_v2_llm_prompt_response_creation,
-    expected_export_v2_llm_response_creation,
-):
-    return {
-        "image":
-            expected_export_v2_image,
-        "audio":
-            expected_export_v2_audio,
-        "html":
-            expected_export_v2_html,
-        "text":
-            expected_export_v2_text,
-        "video":
-            expected_export_v2_video,
-        "conversation":
-            expected_export_v2_conversation,
-        "dicom":
-            expected_export_v2_dicom,
-        "document":
-            expected_export_v2_document,
-        "llmpromptcreation":
-            expected_export_v2_llm_prompt_creation,
-        "llmpromptresponsecreation":
-            expected_export_v2_llm_prompt_response_creation,
-        "llmresponsecreation":
-            expected_export_v2_llm_response_creation,
-    }
-
-@pytest.fixture
-def exports_by_media_type(
-    expected_export_v2_image,
-    expected_export_v2_audio,
-    expected_export_v2_html,
-    expected_export_v2_text,
-    expected_export_v2_video,
-    expected_export_v2_conversation,
-    expected_export_v2_dicom,
-    expected_export_v2_document,
-    expected_export_v2_llm_prompt_creation,
-    expected_export_v2_llm_prompt_response_creation,
-    expected_export_v2_llm_response_creation,
 ):
     return {
         MediaType.Image:
@@ -294,104 +206,14 @@ def exports_by_media_type(
             expected_export_v2_html,
         MediaType.Text:
             expected_export_v2_text,
-        "video":
+        MediaType.Video:
             expected_export_v2_video,
-        "conversation":
+        MediaType.Conversational:
             expected_export_v2_conversation,
-        "dicom":
+        MediaType.Dicom:
             expected_export_v2_dicom,
-        "document":
+        MediaType.Document:
             expected_export_v2_document,
-        "llmpromptcreation":
-            expected_export_v2_llm_prompt_creation,
-        "llmpromptresponsecreation":
-            expected_export_v2_llm_prompt_response_creation,
-        "llmresponsecreation":
-            expected_export_v2_llm_response_creation,
-    }
-    
-
-@pytest.fixture
-def annotations_by_data_type(
-    polygon_inference,
-    rectangle_inference,
-    rectangle_inference_document,
-    line_inference,
-    entity_inference,
-    entity_inference_document,
-    checklist_inference,
-    text_inference,
-    video_checklist_inference,
-):
-    return {
-        "audio": [checklist_inference, text_inference],
-        "conversation": [checklist_inference, text_inference, entity_inference],
-        "dicom": [line_inference],
-        "document": [
-            entity_inference_document,
-            checklist_inference,
-            text_inference,
-            rectangle_inference_document,
-        ],
-        "html": [text_inference, checklist_inference],
-        "image": [
-            polygon_inference,
-            rectangle_inference,
-            line_inference,
-            checklist_inference,
-            text_inference,
-        ],
-        "text": [entity_inference, checklist_inference, text_inference],
-        "video": [video_checklist_inference],
-        "llmpromptcreation": [checklist_inference, text_inference],
-        "llmpromptresponsecreation": [checklist_inference, text_inference],
-        "llmresponsecreation": [checklist_inference, text_inference],
-    }
-
-
-@pytest.fixture
-def annotations_by_data_type_v2(
-    polygon_inference,
-    rectangle_inference,
-    rectangle_inference_document,
-    line_inference_v2,
-    line_inference,
-    entity_inference,
-    entity_inference_index,
-    entity_inference_document,
-    checklist_inference_index,
-    text_inference_index,
-    checklist_inference,
-    text_inference,
-    video_checklist_inference,
-):
-    return {
-        "audio": [checklist_inference, text_inference],
-        "conversation": [
-            checklist_inference_index,
-            text_inference_index,
-            entity_inference_index,
-        ],
-        "dicom": [line_inference_v2],
-        "document": [
-            entity_inference_document,
-            checklist_inference,
-            text_inference,
-            rectangle_inference_document,
-        ],
-        "html": [text_inference, checklist_inference],
-        "image": [
-            polygon_inference,
-            rectangle_inference,
-            line_inference,
-            checklist_inference,
-            text_inference,
-        ],
-        "text": [entity_inference, checklist_inference, text_inference],
-        "video": [video_checklist_inference],
-        "llmpromptcreation": [checklist_inference, text_inference],
-        "llmpromptresponsecreation": [checklist_inference, text_inference],
-        "llmresponsecreation": [checklist_inference, text_inference],
     }
 
 
@@ -433,14 +255,13 @@ def annotations_by_media_type(
             checklist_inference,
             text_inference,
         ],
-        MediaType.Text: [entity_inference, checklist_inference, text_inference],
+        MediaType.Text: [checklist_inference, text_inference, entity_inference],
         MediaType.Video: [video_checklist_inference],
-        MediaType.LLMPromptCreation: [checklist_inference, text_inference],
-        MediaType.LLMPromptResponseCreation: [checklist_inference, text_inference],
     }
+    
 
-
-def _create_normalized_ontology_with_media_type(media_type:MediaType):
+@pytest.fixture
+def normalized_ontology_by_media_type():
     """Returns NDJSON of ontology based on media type"""
     
     bbox_tool_with_nested_text = {
@@ -509,43 +330,7 @@ def _create_normalized_ontology_with_media_type(media_type:MediaType):
             "rectangle",
         "color":
             "#a23030",
-        "classifications": [{
-            "required":
-                False,
-            "instructions":
-                "nested",
-            "name":
-                "nested",
-            "type":
-                "radio",
-            "options": [{
-                "label":
-                    "radio_option_1",
-                "value":
-                    "radio_value_1",
-                "options": [{
-                    "required":
-                        False,
-                    "instructions":
-                        "nested_checkbox",
-                    "name":
-                        "nested_checkbox",
-                    "type":
-                        "checklist",
-                    "options": [
-                        {
-                            "label": "nested_checkbox_option_1",
-                            "value": "nested_checkbox_value_1",
-                            "options": [],
-                        },
-                        {
-                            "label": "nested_checkbox_option_2",
-                            "value": "nested_checkbox_value_2",
-                        },
-                    ],
-                }],
-            },],
-        }],
+        "classifications": [],
     }
 
     polygon_tool = {
@@ -571,7 +356,7 @@ def _create_normalized_ontology_with_media_type(media_type:MediaType):
     }
     entity_tool = {
         "required": False,
-        "name": "entity--",
+        "name": "named-entity",
         "tool": "named-entity",
         "color": "#006FA6",
         "classifications": [],
@@ -594,16 +379,12 @@ def _create_normalized_ontology_with_media_type(media_type:MediaType):
             "checklist",
         "options": [
             {
-                "label": "option1",
-                "value": "option1"
+                "label": "first_checklist_answer",
+                "value": "first_checklist_answer"
             },
             {
-                "label": "option2",
-                "value": "option2"
-            },
-            {
-                "label": "optionN",
-                "value": "optionn"
+                "label": "second_checklist_answer",
+                "value": "second_checklist_answer"
             },
         ],
     }
@@ -620,16 +401,12 @@ def _create_normalized_ontology_with_media_type(media_type:MediaType):
             "index",
         "options": [
             {
-                "label": "option1_index",
-                "value": "option1_index"
+                "label": "first_checklist_answer",
+                "value": "first_checklist_answer"
             },
             {
-                "label": "option2_index",
-                "value": "option2_index"
-            },
-            {
-                "label": "optionN_index",
-                "value": "optionn_index"
+                "label": "second_checklist_answer",
+                "value": "second_checklist_answer"
             },
         ],
     }
@@ -670,114 +447,111 @@ def _create_normalized_ontology_with_media_type(media_type:MediaType):
             },
         ],
     }
-    named_entity = {
-        "tool": "named-entity",
-        "name": "named-entity",
-        "required": False,
-        "color": "#A30059",
-        "classifications": [],
-    }
 
-    if media_type == MediaType.Image:
-        tools = [
+    return {
+    MediaType.Image: {
+        "tools": [
             bbox_tool,
             bbox_tool_with_nested_text,
             polygon_tool,
             polyline_tool,
             point_tool,
             raster_segmentation_tool,
-            ]
-        classifications = [
+            ],
+        "classifications": [
             checklist,
             free_form_text,
             radio,
             ]
-    elif media_type == MediaType.Text:
-        tools = [
-            named_entity,
+        },
+    MediaType.Text: {
+        "tools": [
             entity_tool
-            ]
-        classifications = [
+            ],
+        "classifications": [
             checklist,
             free_form_text,
             radio,
             ]
-    elif media_type == MediaType.Video:
-        tools = [
+        },
+    MediaType.Video: {
+        "tools": [
             bbox_tool,
             bbox_tool_with_nested_text,
             polyline_tool,
             point_tool,
             raster_segmentation_tool,
-            ]
-        classifications = [
+            ],
+        "classifications": [
             checklist,
             free_form_text,
             radio,
             checklist_index,
             free_form_text_index
             ]
-    elif media_type == MediaType.Geospatial_Tile:
-        tools = [
+        },
+    MediaType.Geospatial_Tile: {
+        "tools": [
             bbox_tool,
             bbox_tool_with_nested_text,
             polygon_tool,
             polyline_tool,
             point_tool,
-            ]
-        classifications = [
+            ],
+        "classifications": [
             checklist,
             free_form_text,
             radio,
             ]
-    elif media_type == MediaType.Document:
-        tools = [
-            named_entity,
+        },
+    MediaType.Document: {
+        "tools": [
             entity_tool,
             bbox_tool,
             bbox_tool_with_nested_text
-            ]
-        classifications = [
+            ],
+        "classifications": [
             checklist,
             free_form_text,
             radio,
             ]
-    elif media_type == MediaType.Audio:
-        tools = []
-        classifications = [
+        },
+    MediaType.Audio: {
+        "tools":[],
+        "classifications": [
             checklist,
             free_form_text,
             radio,
             ]
-    elif media_type == MediaType.Html:
-        tools = []
-        classifications = [
+        },
+    MediaType.Html: {
+        "tools": [],
+        "classifications": [
             checklist,
             free_form_text,
             radio,
             ]
-    elif media_type == MediaType.Dicom:
-        tools = [
+        },
+    MediaType.Dicom: {
+        "tools": [
             raster_segmentation_tool,
             polyline_tool
-            ]
-        classifications = []
-    elif media_type == MediaType.Conversational or MediaType.LLMPromptResponseCreation:
-        tools = [
-            named_entity,
-            entity_tool,
-            ]
-        classifications = [
+            ],
+        "classifications": []
+        },
+    MediaType.Conversational: {
+        "tools": [
+            entity_tool
+            ],
+        "classifications": [
             checklist,
             free_form_text,
             radio,
             checklist_index,
             free_form_text_index
             ]
-    else:
-        raise Exception(f"No conditional for {media_type}")
-    return {"tools": tools, "classifications": classifications}
-
+        }
+    }
 
 
 @pytest.fixture
@@ -808,7 +582,6 @@ def wait_for_label_processing():
 
 @pytest.fixture
 def configured_project_datarow_id(configured_project):
-
     def get_data_row_id(indx=0):
         return configured_project.data_row_ids[indx]
 
@@ -817,36 +590,34 @@ def configured_project_datarow_id(configured_project):
 
 @pytest.fixture
 def configured_project_one_datarow_id(configured_project_with_one_data_row):
-
     def get_data_row_id(indx=0):
         return configured_project_with_one_data_row.data_row_ids[0]
 
     yield get_data_row_id
 
-#TODO: Switch to setup_editor, setup might get removed in later releases
+
 @pytest.fixture
-def configured_project(client: Client, initial_dataset: Dataset, rand_gen, data_row_json_by_media_type, request: FixtureRequest):
-    """Configure project for test. Request.param will contain the media type"""
+def configured_project(client: Client, initial_dataset: Dataset, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
+    """Configure project for test. Request.param will contain the media type. The project will have 10 data rows."""
     
     dataset = initial_dataset
     media_type = request.param
     # LLMPromptResponseCreation is not support for project or ontology creation needs to be conversational
     if media_type == MediaType.LLMPromptResponseCreation:
-        media_type == MediaType.Conversational
-    
+        media_type = MediaType.Conversational
+        
     project = client.create_project(name=f"{request.param}-{rand_gen(str)}",
                                     media_type=media_type)
     
-    ontology = client.create_ontology(name=f"{request.param}-{rand_gen(str)}", normalized=_create_normalized_ontology_with_media_type(request.param), media_type=media_type)
+    ontology = client.create_ontology(name=f"{request.param}-{rand_gen(str)}", normalized=normalized_ontology_by_media_type[request.param], media_type=media_type)
 
     project.setup_editor(ontology)
 
-    data_row_ids = []
     data_row_data = []
 
-    for _ in range(len(ontology.normalized["tools"]+ontology.normalized["classifications"])):
+    for _ in range(3):
         data_row_data.append(data_row_json_by_media_type[request.param](rand_gen(str)))
-    
+        
     task = dataset.create_data_rows(data_row_data)
     task.wait_till_done()
     data_row_ids = [row['id'] for row in task.result]
@@ -863,43 +634,72 @@ def configured_project(client: Client, initial_dataset: Dataset, rand_gen, data_
     project.delete()
     client.delete_unused_ontology(ontology.uid)
 
-#TODO: Switch to setup_editor, setup might get removed in later releases
+
 @pytest.fixture
-def project_with_ontology(client, configured_project, ontology, rand_gen):
-    project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch,
-                                    media_type=MediaType.Image)
-    editor = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    project.setup(editor, ontology)
+def configured_project_by_global_key(client: Client, initial_dataset: Dataset, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
+    """Works the same as configured project but with global keys inside project object instead of data rows."""
+    
+    dataset = initial_dataset
+    media_type = request.param
+    # LLMPromptResponseCreation is not support for project or ontology creation needs to be conversational
+    if media_type == MediaType.LLMPromptResponseCreation:
+        media_type = MediaType.Conversational
+        
+    project = client.create_project(name=f"{request.param}-{rand_gen(str)}",
+                                    media_type=media_type)
+    
+    ontology = client.create_ontology(name=f"{request.param}-{rand_gen(str)}", normalized=normalized_ontology_by_media_type[request.param], media_type=media_type)
 
-    yield project, ontology
+    project.setup_editor(ontology)
 
-    project.delete()
+    data_row_data = []
 
-#TODO: Switch to setup_editor, setup might get removed in later releases
-@pytest.fixture
-def configured_project_pdf(client, ontology, rand_gen, pdf_url):
-    project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch,
-                                    media_type=MediaType.Pdf)
-    dataset = client.create_dataset(name=rand_gen(str))
-    editor = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    project.setup(editor, ontology)
-    data_row = dataset.create_data_row(pdf_url)
-    data_row_ids = [data_row.uid]
+    for _ in range(3):
+        data_row_data.append(data_row_json_by_media_type[request.param](rand_gen(str)))
+        
+    task = dataset.create_data_rows(data_row_data)
+    task.wait_till_done()
+    global_keys = [row['global_key'] for row in task.result]
+    data_row_ids = [row['id'] for row in task.result]
+
     project.create_batch(
-        rand_gen(str),
-        data_row_ids,  # sample of data row objects
-        5,  # priority between 1(Highest) - 5(lowest)
+        name=rand_gen(str),
+        global_keys=global_keys,  # sample of data row objects
+        priority=5,  # priority between 1(Highest) - 5(lowest)
     )
+    
+    # add global keys and data row ids
+    project.global_keys = global_keys
     project.data_row_ids = data_row_ids
+
     yield project
+
     project.delete()
-    dataset.delete()
+    client.delete_unused_ontology(ontology.uid)
+
+
+@pytest.fixture
+@pytest.mark.parametrize(
+    "configured_project",
+    [
+        MediaType.Image,
+    ],
+    indirect=True
+)
+def project_with_ontology(configured_project):
+    yield configured_project
+
+
+@pytest.fixture
+@pytest.mark.parametrize(
+    "configured_project",
+    [
+        MediaType.Document,
+    ],
+    indirect=True
+)
+def configured_project_pdf(configured_project):
+    yield configured_project
 
 
 @pytest.fixture
@@ -913,35 +713,33 @@ def dataset_pdf_entity(client, rand_gen, document_data_row):
 
 
 @pytest.fixture
-def dataset_conversation_entity(client, rand_gen, conversation_entity_data_row,
-                                wait_for_data_row_processing):
-    dataset = client.create_dataset(name=rand_gen(str))
-    data_row_ids = []
-    data_row = dataset.create_data_row(conversation_entity_data_row)
-    data_row = wait_for_data_row_processing(client, data_row)
-
-    data_row_ids.append(data_row.uid)
-    yield dataset, data_row_ids
-    dataset.delete()
-
-
-@pytest.fixture
-def configured_project_with_one_data_row(client, ontology, rand_gen,
-                                         initial_dataset, image_url):
+@pytest.mark.parametrize(
+    "configured_project",
+    [
+        MediaType.Image,
+    ],
+    indirect=True
+)
+def configured_project_with_one_data_row(client: Client, initial_dataset: Dataset, rand_gen, data_row_json_by_media_type, normalized_ontology_by_media_type):
+    """Creates an image project with one data row"""
+    dataset = initial_dataset
+        
     project = client.create_project(name=rand_gen(str),
-                                    description=rand_gen(str),
-                                    queue_mode=QueueMode.Batch)
-    editor = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    project.setup(editor, ontology)
+                                    media_type=MediaType.Image)
+    
+    ontology = client.create_ontology(name=rand_gen(str), normalized=normalized_ontology_by_media_type[MediaType.Image], media_type=MediaType.Image)
 
-    data_row = initial_dataset.create_data_row(row_data=image_url)
-    data_row_ids = [data_row.uid]
-    project._wait_until_data_rows_are_processed(data_row_ids=data_row_ids,
-                                                sleep_interval=3)
+    project.setup_editor(ontology)
 
-    batch = project.create_batch(
+    data_row_data = []
+
+    data_row_data.append(data_row_json_by_media_type[MediaType.Image](rand_gen(str)))
+        
+    task = dataset.create_data_rows(data_row_data)
+    task.wait_till_done()
+    data_row_ids = [row['id'] for row in task.result]
+
+    project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects
         5,  # priority between 1(Highest) - 5(lowest)
@@ -950,8 +748,8 @@ def configured_project_with_one_data_row(client, ontology, rand_gen,
 
     yield project
 
-    batch.delete()
     project.delete()
+    client.delete_unused_ontology(ontology.uid)
 
 
 # This function allows to convert an ontology feature to actual annotation
@@ -976,411 +774,446 @@ Custom Data Row IDs Strategy:
 
 @pytest.fixture
 def prediction_id_mapping(request):
-    # Maps tool types to feature schema ids
+    """Creates the base of annotation based on tools inside project ontology. We would want only annotations supported for the MediaType of the ontology and project."""
     if "configured_project" in request.fixturenames:
-        data_row_id_factory = request.getfixturevalue(
-            "configured_project_datarow_id")
         project = request.getfixturevalue("configured_project")
+        data_row_ids = True
+    elif "configured_project_by_global_key" in request.fixturenames:
+        project = request.getfixturevalue("configured_project_by_global_key")
+        data_row_ids = False
     elif "hardcoded_datarow_id" in request.fixturenames:
-        data_row_id_factory = request.getfixturevalue("hardcoded_datarow_id")
         project = request.getfixturevalue("configured_project_with_ontology")
     else:
-        data_row_id_factory = request.getfixturevalue(
-            "configured_project_one_datarow_id")
         project = request.getfixturevalue(
             "configured_project_with_one_data_row")
 
     ontology = project.ontology().normalized
-    result = {}
+  
+    base_annotations = []
+    for i, data_row_id in enumerate(project.data_row_ids):
+        base_annotation = {}
+        for feature in (ontology["tools"] + ontology["classifications"]):
+            if "tool" in feature:
+                feature_type = (feature["tool"] if feature["classifications"] == [] else
+                                f"{feature['tool']}_nested"
+                                ) # tool vs nested classification tool
+            else:
+                feature_type = (feature["type"] if "scope" not in feature else
+                            f"{feature['type']}_{feature['scope']}"
+                            )  # checklist vs indexed checklist 
+            if data_row_ids: 
+                base_annotation[feature_type] = {
+                    "name": feature["name"],
+                    "tool": feature,
+                    "dataRow": {"id": data_row_id}
+                    }
+            else:
+                base_annotation[feature_type] = {
+                    "name": feature["name"],
+                    "tool": feature,
+                    "dataRow": {"globalKey": project.global_keys[i]}
+                    } 
+        base_annotations.append(base_annotation)
+    return base_annotations
 
-    for idx, feature in enumerate(ontology["tools"] + ontology["classifications"]):
-        if "tool" in feature:
-            feature_type = feature["tool"]
-        else:
-            feature_type = (feature["type"] if "scope" not in feature else
-                         f"{feature['type']}_{feature['scope']}"
-                        )  # so 'checklist' of 'checklist_index'
 
-        result[feature_type] = {
-            "uuid": str(uuid.uuid4()),
-            "schemaId": feature["featureSchemaId"],
-            "name": feature["name"],
-            "dataRow": {
-                "id": data_row_id_factory(idx),
-            },
-            "tool": feature,
-            }
-    return result
-
-
+# Each inference represents a feature type that adds to the base annotation created with prediction_id_mapping
 @pytest.fixture
 def polygon_inference(prediction_id_mapping):
-    if "polygon" not in prediction_id_mapping:
-        return None
-    polygon = prediction_id_mapping["polygon"].copy()
-    polygon.update({
-        "polygon": [
-            {
-                "x": 147.692,
-                "y": 118.154
-            },
-            {
-                "x": 142.769,
-                "y": 104.923
-            },
-            {
-                "x": 57.846,
-                "y": 118.769
-            },
-            {
-                "x": 28.308,
-                "y": 169.846
-            },
-        ]
-    })
-    del polygon["tool"]
-    return polygon
-
-
-def find_tool_by_name(tool_instances, name):
-    for tool in tool_instances:
-        if tool["name"] == name:
-            return tool
-    return None
+    polygons = []
+    for feature in prediction_id_mapping:
+        if "polygon" not in feature:
+            continue
+        polygon = feature["polygon"].copy()
+        polygon.update({
+            "polygon": [
+                {
+                    "x": 147.692,
+                    "y": 118.154
+                },
+                {
+                    "x": 142.769,
+                    "y": 104.923
+                },
+                {
+                    "x": 57.846,
+                    "y": 118.769
+                },
+                {
+                    "x": 28.308,
+                    "y": 169.846
+                },
+            ]
+        })
+        del polygon["tool"]
+        polygons.append(polygon)
+    return polygons
 
 
 @pytest.fixture
 def rectangle_inference(prediction_id_mapping):
-    if "rectangle" not in prediction_id_mapping:
-        return None
-    tool_instance = find_tool_by_name(prediction_id_mapping["rectangle"],
-                                      "bbox")
-    rectangle = tool_instance.copy()
-    rectangle.update({
-        "bbox": {
-            "top": 48,
-            "left": 58,
-            "height": 65,
-            "width": 12
-        },
-        "classifications": [{
-            "schemaId":
-                rectangle["tool"]["classifications"][0]["featureSchemaId"],
-            "name":
-                rectangle["tool"]["classifications"][0]["name"],
-            "answer": {
-                "schemaId":
-                    rectangle["tool"]["classifications"][0]["options"][0]
-                    ["featureSchemaId"],
-                "name":
-                    rectangle["tool"]["classifications"][0]["options"][0]
-                    ["value"],
-                "customMetrics": [{
-                    "name": "customMetric1",
-                    "value": 0.4
-                }],
+    rectangles = []
+    for feature in prediction_id_mapping:
+        if "rectangle" not in feature:
+            continue
+        rectangle = feature["rectangle"].copy()
+        rectangle.update({
+            "bbox": {
+                "top": 48,
+                "left": 58,
+                "height": 65,
+                "width": 12
             },
-        }],
-    })
-    del rectangle["tool"]
-    return rectangle
+        })
+        del rectangle["tool"]
+        rectangles.append(rectangle)
+    return rectangles
 
 
 @pytest.fixture
 def rectangle_inference_with_confidence(prediction_id_mapping):
-    if "rectangle" not in prediction_id_mapping:
-        return None
-    tool_instance = find_tool_by_name(prediction_id_mapping["rectangle"],
-                                      "bbox_tool_with_nested_text")
-    rectangle = tool_instance.copy()
-    rectangle.update({
-        "bbox": {
-            "top": 48,
-            "left": 58,
-            "height": 65,
-            "width": 12
-        },
-        "classifications": [{
-            "schemaId":
-                rectangle["tool"]["classifications"][0]["featureSchemaId"],
-            "name":
-                rectangle["tool"]["classifications"][0]["name"],
-            "answer": {
+    rectangles = []
+    for feature in prediction_id_mapping:
+        if "rectangle_nested" not in feature:
+            continue
+        rectangle = feature["rectangle_nested"].copy()
+        rectangle.update({
+            "bbox": {
+                "top": 48,
+                "left": 58,
+                "height": 65,
+                "width": 12
+            },
+            "classifications": [{
                 "schemaId":
-                    rectangle["tool"]["classifications"][0]["options"][0]
-                    ["featureSchemaId"],
+                    rectangle["tool"]["classifications"][0]["featureSchemaId"],
                 "name":
-                    rectangle["tool"]["classifications"][0]["options"][0]
-                    ["value"],
-                "classifications": [{
+                    rectangle["tool"]["classifications"][0]["name"],
+                "answer": {
                     "schemaId":
                         rectangle["tool"]["classifications"][0]["options"][0]
-                        ["options"][1]["featureSchemaId"],
+                        ["featureSchemaId"],
                     "name":
                         rectangle["tool"]["classifications"][0]["options"][0]
-                        ["options"][1]["name"],
-                    "answer":
-                        "nested answer",
-                }],
-            },
-        }],
-    })
+                        ["value"],
+                    "classifications": [{
+                        "schemaId":
+                            rectangle["tool"]["classifications"][0]["options"][0]
+                            ["options"][1]["featureSchemaId"],
+                        "name":
+                            rectangle["tool"]["classifications"][0]["options"][0]
+                            ["options"][1]["name"],
+                        "answer":
+                            "nested answer",
+                    }],
+                },
+            }],
+        })
 
-    rectangle.update({"confidence": 0.9})
-    rectangle["classifications"][0]["answer"]["confidence"] = 0.8
-    rectangle["classifications"][0]["answer"]["classifications"][0][
-        "confidence"] = 0.7
+        rectangle.update({"confidence": 0.9})
+        rectangle["classifications"][0]["answer"]["confidence"] = 0.8
+        rectangle["classifications"][0]["answer"]["classifications"][0][
+            "confidence"] = 0.7
 
-    del rectangle["tool"]
-    return rectangle
+        del rectangle["tool"]
+        rectangles.append(rectangle)
+    return rectangles
 
 
 @pytest.fixture
 def rectangle_inference_document(rectangle_inference):
-    if rectangle_inference == None:
-        return
-    rectangle = rectangle_inference.copy()
-    rectangle.update({"page": 1, "unit": "POINTS"})
-    return rectangle
+    rectangles = []
+    for feature in rectangle_inference:
+        rectangle = feature.copy()
+        rectangle.update({"page": 1, "unit": "POINTS"})
+        rectangles.append(rectangle)
+    return rectangles
 
 
 @pytest.fixture
 def line_inference(prediction_id_mapping):
-    if "line" not in prediction_id_mapping:
-        return None
-    line = prediction_id_mapping["line"].copy()
-    line.update(
-        {"line": [{
-            "x": 147.692,
-            "y": 118.154
-        }, {
-            "x": 150.692,
-            "y": 160.154
-        }]})
-    del line["tool"]
-    return line
+    lines = []
+    for feature in prediction_id_mapping:
+        if "line" not in feature:
+            continue
+        line = feature["line"].copy()
+        line.update(
+            {"line": [{
+                "x": 147.692,
+                "y": 118.154
+            }, {
+                "x": 150.692,
+                "y": 160.154
+            }]})
+        del line["tool"]
+        lines.append(line)
+    return lines
 
 
 @pytest.fixture
 def line_inference_v2(prediction_id_mapping):
-    if "line" not in prediction_id_mapping:
-        return None
-    line = prediction_id_mapping["line"].copy()
-    line_data = {
-        "groupKey":
-            "axial",
-        "segments": [{
-            "keyframes": [{
-                "frame":
-                    1,
-                "line": [
-                    {
-                        "x": 147.692,
-                        "y": 118.154
-                    },
-                    {
-                        "x": 150.692,
-                        "y": 160.154
-                    },
-                ],
-            }]
-        },],
-    }
-    line.update(line_data)
-    del line["tool"]
-    return line
+    lines = []
+    for feature in prediction_id_mapping:
+        if "line" not in feature:
+            continue
+        line = feature["line"].copy()
+        line_data = {
+            "groupKey":
+                "axial",
+            "segments": [{
+                "keyframes": [{
+                    "frame":
+                        1,
+                    "line": [
+                        {
+                            "x": 147.692,
+                            "y": 118.154
+                        },
+                        {
+                            "x": 150.692,
+                            "y": 160.154
+                        },
+                    ],
+                }]
+            },],
+        }
+        line.update(line_data)
+        del line["tool"]
+        lines.append(line)
+    return lines
 
 
 @pytest.fixture
 def point_inference(prediction_id_mapping):
-    if "point" not in prediction_id_mapping:
-        return None
-    point = prediction_id_mapping["point"].copy()
-    point.update({"point": {"x": 147.692, "y": 118.154}})
-    del point["tool"]
-    return point
+    points = []
+    for feature in prediction_id_mapping:
+        if "point" not in feature:
+            continue
+        point = feature["point"].copy()
+        point.update({"point": {"x": 147.692, "y": 118.154}})
+        del point["tool"]
+        points.append(point)
+    return points
 
 
 @pytest.fixture
 def entity_inference(prediction_id_mapping):
-    if "named-entity" not in prediction_id_mapping:
-        return None
-    entity = prediction_id_mapping["named-entity"].copy()
-    entity.update({"location": {"start": 112, "end": 128}})
-    del entity["tool"]
-    return entity
+    named_entities = []
+    for feature in prediction_id_mapping:
+        if "named-entity" not in feature:
+            continue
+        entity = feature["named-entity"].copy()
+        entity.update({"location": {"start": 112, "end": 128}})
+        del entity["tool"]
+        named_entities.append(entity)
+    return named_entities
 
 
 @pytest.fixture
 def entity_inference_index(prediction_id_mapping):
-    if "named-entity" not in prediction_id_mapping:
-        return None
-    entity = prediction_id_mapping["named-entity"].copy()
-    entity.update({
-        "location": {
-            "start": 0,
-            "end": 8
-        },
-        "messageId": "0",
-    })
-
-    del entity["tool"]
-    return entity
+    named_entities = []
+    for feature in prediction_id_mapping:
+        if "named-entity" not in feature:
+            continue
+        entity = feature["named-entity"].copy()
+        entity.update({
+            "location": {
+                "start": 0,
+                "end": 8
+            },
+            "messageId": "0",
+        })
+        del entity["tool"]
+        named_entities.append(entity)
+    return named_entities
 
 
 @pytest.fixture
 def entity_inference_document(prediction_id_mapping):
-    if "named-entity" not in prediction_id_mapping:
-        return None
-    entity = prediction_id_mapping["named-entity"].copy()
-    document_selections = {
-        "textSelections": [{
-            "tokenIds": [
-                "3f984bf3-1d61-44f5-b59a-9658a2e3440f",
-                "3bf00b56-ff12-4e52-8cc1-08dbddb3c3b8",
-                "6e1c3420-d4b7-4c5a-8fd6-ead43bf73d80",
-                "87a43d32-af76-4a1d-b262-5c5f4d5ace3a",
-                "e8606e8a-dfd9-4c49-a635-ad5c879c75d0",
-                "67c7c19e-4654-425d-bf17-2adb8cf02c30",
-                "149c5e80-3e07-49a7-ab2d-29ddfe6a38fa",
-                "b0e94071-2187-461e-8e76-96c58738a52c",
-            ],
-            "groupId": "2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
-            "page": 1,
-        }]
-    }
-    entity.update(document_selections)
-    del entity["tool"]
-    return entity
+    named_entities = []
+    for feature in prediction_id_mapping:
+        if "named-entity" not in feature:
+            continue
+        entity = feature["named-entity"].copy()
+        document_selections = {
+            "textSelections": [{
+                "tokenIds": [
+                    "3f984bf3-1d61-44f5-b59a-9658a2e3440f",
+                    "3bf00b56-ff12-4e52-8cc1-08dbddb3c3b8",
+                    "6e1c3420-d4b7-4c5a-8fd6-ead43bf73d80",
+                    "87a43d32-af76-4a1d-b262-5c5f4d5ace3a",
+                    "e8606e8a-dfd9-4c49-a635-ad5c879c75d0",
+                    "67c7c19e-4654-425d-bf17-2adb8cf02c30",
+                    "149c5e80-3e07-49a7-ab2d-29ddfe6a38fa",
+                    "b0e94071-2187-461e-8e76-96c58738a52c",
+                ],
+                "groupId": "2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
+                "page": 1,
+            }]
+        }
+        entity.update(document_selections)
+        del entity["tool"]
+        named_entities.append(entity)
+    return named_entities
 
 
 @pytest.fixture
 def segmentation_inference(prediction_id_mapping):
-    if "superpixel" not in prediction_id_mapping:
-        return None
-    segmentation = prediction_id_mapping["superpixel"].copy()
-    segmentation.update({
-        "mask": {
-            "instanceURI":
-                "https://storage.googleapis.com/labelbox-datasets/image_sample_data/raster_seg.png",
-            "colorRGB": (255, 255, 255),
-        }
-    })
-    del segmentation["tool"]
-    return segmentation
+    superpixel_masks = []
+    for feature in prediction_id_mapping:
+        if "superpixel" not in feature:
+            continue
+        segmentation = feature["superpixel"].copy()
+        segmentation.update({
+            "mask": {
+                "instanceURI":
+                    "https://storage.googleapis.com/labelbox-datasets/image_sample_data/raster_seg.png",
+                "colorRGB": (255, 255, 255),
+            }
+        })
+        del segmentation["tool"]
+        superpixel_masks.append(segmentation)
+    return superpixel_masks
 
 
 @pytest.fixture
 def segmentation_inference_rle(prediction_id_mapping):
-    if "superpixel" not in prediction_id_mapping:
-        return None
-    segmentation = prediction_id_mapping["superpixel"].copy()
-    segmentation.update({
-        "uuid": str(uuid.uuid4()),
-        "mask": {
-            "size": [10, 10],
-            "counts": [1, 0, 10, 100]
-        },
-    })
-    del segmentation["tool"]
-    return segmentation
+    superpixel_masks = []
+    for feature in prediction_id_mapping:
+        if "superpixel" not in feature:
+            continue
+        segmentation = feature["superpixel"].copy()
+        segmentation.update({
+            "uuid": str(uuid.uuid4()),
+            "mask": {
+                "size": [10, 10],
+                "counts": [1, 0, 10, 100]
+            },
+        })
+        del segmentation["tool"]
+        superpixel_masks.append(segmentation)
+    return superpixel_masks
 
 
 @pytest.fixture
 def segmentation_inference_png(prediction_id_mapping):
-    if "superpixel" not in prediction_id_mapping:
-        return None
-    segmentation = prediction_id_mapping["superpixel"].copy()
-    segmentation.update({
-        "uuid": str(uuid.uuid4()),
-        "mask": {
-            "png": "somedata",
-        },
-    })
-    del segmentation["tool"]
-    return segmentation
+    superpixel_masks = []
+    for feature in prediction_id_mapping:
+        if "superpixel" not in feature:
+            continue
+        segmentation = feature["superpixel"].copy()
+        segmentation.update({
+            "uuid": str(uuid.uuid4()),
+            "mask": {
+                "png": "somedata",
+            },
+        })
+        del segmentation["tool"]
+        superpixel_masks.append(segmentation)
+    return superpixel_masks
 
 
 @pytest.fixture
 def checklist_inference(prediction_id_mapping):
-    if "checklist" not in prediction_id_mapping:
-        return None
-    checklist = prediction_id_mapping["checklist"].copy()
-    checklist.update({
-        "answers": [{
-            "schemaId": checklist["tool"]["options"][0]["featureSchemaId"]
-        }]
-    })
-    del checklist["tool"]
-    return checklist
+    checklists = []
+    for feature in prediction_id_mapping:
+        if "checklist" not in feature:
+            continue
+        checklist = feature["checklist"].copy()
+        checklist.update({
+            "answers": [
+                {"name": "first_checklist_answer"},
+                {"name": "second_checklist_answer"}
+            ]
+        })
+        del checklist["tool"]
+        checklists.append(checklist)
+    return checklists
 
 
 @pytest.fixture
 def checklist_inference_index(prediction_id_mapping):
-    if "checklist_index" not in prediction_id_mapping:
-        return None
-    checklist = prediction_id_mapping["checklist_index"].copy()
-    checklist.update({
-        "answers": [{
-            "schemaId": checklist["tool"]["options"][0]["featureSchemaId"]
-        }],
-        "messageId": "0",
-    })
-    del checklist["tool"]
-    return checklist
+    checklists = []
+    for feature in prediction_id_mapping:
+        if "checklist_index" not in feature:
+            return None
+        checklist = feature["checklist_index"].copy()
+        checklist.update({
+            "answers": [
+                {"name": "first_checklist_answer"},
+                {"name": "second_checklist_answer"}
+            ],
+            "messageId": "0",
+        })
+        del checklist["tool"]
+        checklists.append(checklist)
+    return checklists
 
 
 @pytest.fixture
 def text_inference(prediction_id_mapping):
-    if "text" not in prediction_id_mapping:
-        return None
-    text = prediction_id_mapping["text"].copy()
-    text.update({"answer": "free form text..."})
-    del text["tool"]
-    return text
+    texts = []
+    for feature in prediction_id_mapping:
+        if "text" not in feature:
+            continue
+        text = feature["text"].copy()
+        text.update({"answer": "free form text..."})
+        del text["tool"]
+        texts.append(text)
+    return texts
 
 
 @pytest.fixture
 def text_inference_with_confidence(text_inference):
-    text = text_inference.copy()
-    text.update({"confidence": 0.9})
-    return text
+    texts = []
+    for feature in text_inference:
+        text = feature.copy()
+        text.update({"confidence": 0.9})
+        texts.append(text)
+    return texts
 
 
 @pytest.fixture
 def text_inference_index(prediction_id_mapping):
-    if "text_index" not in prediction_id_mapping:
-        return None
-    text = prediction_id_mapping["text_index"].copy()
-    text.update({"answer": "free form text...", "messageId": "0"})
-    del text["tool"]
-    return text
+    texts = []
+    for feature in prediction_id_mapping:
+        if "text_index" not in feature:
+            continue
+        text = feature["text_index"].copy()
+        text.update({"answer": "free form text...", "messageId": "0"})
+        del text["tool"]
+        texts.append(text)
+    return texts
 
 
 @pytest.fixture
 def video_checklist_inference(prediction_id_mapping):
-    if "checklist" not in prediction_id_mapping:
-        return None
-    checklist = prediction_id_mapping["checklist"].copy()
-    checklist.update({
-        "answers": [{
-            "schemaId": checklist["tool"]["options"][0]["featureSchemaId"]
-        }]
-    })
+    checklists = []
+    for feature in prediction_id_mapping:
+        if "checklist" not in feature:
+            continue
+        checklist = feature["checklist"].copy()
+        checklist.update({
+            "answers": [
+                {"name": "first_checklist_answer"},
+                {"name": "second_checklist_answer"}
+            ]
+        })
 
-    checklist.update(
-        {"frames": [
-            {
-                "start": 7,
-                "end": 13,
-            },
-            {
-                "start": 18,
-                "end": 19,
-            },
-        ]})
-    del checklist["tool"]
-    return checklist
+        checklist.update(
+            {"frames": [
+                {
+                    "start": 7,
+                    "end": 13,
+                },
+                {
+                    "start": 18,
+                    "end": 19,
+                },
+            ]})
+        del checklist["tool"]
+        checklists.append(checklist)
+    return checklists
 
 
 @pytest.fixture
@@ -1613,15 +1446,7 @@ def expected_export_v2_image():
                 "name": "bbox",
                 "value": "bbox",
                 "annotation_kind": "ImageBoundingBox",
-                "classifications": [{
-                    "name": "nested",
-                    "value": "nested",
-                    "radio_answer": {
-                        "name": "radio_option_1",
-                        "value": "radio_value_1",
-                        "classifications": [],
-                    },
-                }],
+                "classifications": [],
                 "bounding_box": {
                     "top": 48.0,
                     "left": 58.0,
@@ -1653,9 +1478,14 @@ def expected_export_v2_image():
                 "value":
                     "checklist",
                 "checklist_answers": [{
-                    "name": "option1",
-                    "value": "option1",
+                    "name": "first_checklist_answer",
+                    "value": "first_checklist_answer",
                     "classifications": []
+                },
+                {
+                    "name": "second_checklist_answer",
+                    "value": "second_checklist_answer",
+                    "classifications": []                        
                 }],
             },
             {
@@ -1683,9 +1513,14 @@ def expected_export_v2_audio():
                 "value":
                     "checklist",
                 "checklist_answers": [{
-                    "name": "option1",
-                    "value": "option1",
+                    "name": "first_checklist_answer",
+                    "value": "first_checklist_answer",
                     "classifications": []
+                },
+                {
+                    "name": "second_checklist_answer",
+                    "value": "second_checklist_answer",
+                    "classifications": []                        
                 }],
             },
             {
@@ -1719,9 +1554,14 @@ def expected_export_v2_html():
                 "value":
                     "checklist",
                 "checklist_answers": [{
-                    "name": "option1",
-                    "value": "option1",
+                    "name": "first_checklist_answer",
+                    "value": "first_checklist_answer",
                     "classifications": []
+                },
+                {
+                    "name": "second_checklist_answer",
+                    "value": "second_checklist_answer",
+                    "classifications": []                        
                 }],
             },
         ],
@@ -1751,9 +1591,14 @@ def expected_export_v2_text():
                 "value":
                     "checklist",
                 "checklist_answers": [{
-                    "name": "option1",
-                    "value": "option1",
+                    "name": "first_checklist_answer",
+                    "value": "first_checklist_answer",
                     "classifications": []
+                },
+                {
+                    "name": "second_checklist_answer",
+                    "value": "second_checklist_answer",
+                    "classifications": []                        
                 }],
             },
             {
@@ -1782,11 +1627,16 @@ def expected_export_v2_video():
                 "checklist",
             "value":
                 "checklist",
-            "checklist_answers": [{
-                "name": "option1",
-                "value": "option1",
-                "classifications": []
-            }],
+                "checklist_answers": [{
+                    "name": "first_checklist_answer",
+                    "value": "first_checklist_answer",
+                    "classifications": []
+                },
+                {
+                    "name": "second_checklist_answer",
+                    "value": "second_checklist_answer",
+                    "classifications": []                        
+                }],
         }],
     }
     return expected_annotations
@@ -1817,9 +1667,14 @@ def expected_export_v2_conversation():
                 "message_id":
                     "0",
                 "conversational_checklist_answers": [{
-                    "name": "option1_index",
-                    "value": "option1_index",
-                    "classifications": [],
+                    "name": "first_checklist_answer",
+                    "value": "first_checklist_answer",
+                    "classifications": []
+                },
+                {
+                    "name": "second_checklist_answer",
+                    "value": "second_checklist_answer",
+                    "classifications": []                        
                 }],
             },
             {
@@ -1936,15 +1791,7 @@ def expected_export_v2_document():
                 "name": "bbox",
                 "value": "bbox",
                 "annotation_kind": "DocumentBoundingBox",
-                "classifications": [{
-                    "name": "nested",
-                    "value": "nested",
-                    "radio_answer": {
-                        "name": "radio_option_1",
-                        "value": "radio_value_1",
-                        "classifications": [],
-                    },
-                }],
+                "classifications": [],
                 "page_number": 1,
                 "bounding_box": {
                     "top": 48.0,
@@ -1961,9 +1808,14 @@ def expected_export_v2_document():
                 "value":
                     "checklist",
                 "checklist_answers": [{
-                    "name": "option1",
-                    "value": "option1",
+                    "name": "first_checklist_answer",
+                    "value": "first_checklist_answer",
                     "classifications": []
+                },
+                {
+                    "name": "second_checklist_answer",
+                    "value": "second_checklist_answer",
+                    "classifications": []                        
                 }],
             },
             {
@@ -1990,9 +1842,14 @@ def expected_export_v2_llm_prompt_creation():
                 "value":
                     "checklist",
                 "checklist_answers": [{
-                    "name": "option1",
-                    "value": "option1",
+                    "name": "first_checklist_answer",
+                    "value": "first_checklist_answer",
                     "classifications": []
+                },
+                {
+                    "name": "second_checklist_answer",
+                    "value": "second_checklist_answer",
+                    "classifications": []                        
                 }],
             },
             {
@@ -2019,9 +1876,14 @@ def expected_export_v2_llm_prompt_response_creation():
                 "value":
                     "checklist",
                 "checklist_answers": [{
-                    "name": "option1",
-                    "value": "option1",
+                    "name": "first_checklist_answer",
+                    "value": "first_checklist_answer",
                     "classifications": []
+                },
+                {
+                    "name": "second_checklist_answer",
+                    "value": "second_checklist_answer",
+                    "classifications": []                        
                 }],
             },
             {
@@ -2048,9 +1910,14 @@ def expected_export_v2_llm_response_creation():
                 "value":
                     "checklist",
                 "checklist_answers": [{
-                    "name": "option1",
-                    "value": "option1",
+                    "name": "first_checklist_answer",
+                    "value": "first_checklist_answer",
                     "classifications": []
+                },
+                {
+                    "name": "second_checklist_answer",
+                    "value": "second_checklist_answer",
+                    "classifications": []                        
                 }],
             },
             {

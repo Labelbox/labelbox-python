@@ -52,7 +52,7 @@ def test_validate_file(project_with_empty_ontology):
         #Schema ids shouldn't match
 
 
-def test_create_from_objects(configured_project_with_one_data_row, predictions,
+def test_create_from_objects(configured_project_with_one_data_row: Project, predictions,
                              annotation_import_test_helpers):
     name = str(uuid.uuid4())
 
