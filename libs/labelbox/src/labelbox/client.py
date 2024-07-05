@@ -863,7 +863,7 @@ class Client:
         auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
         if auto_audit_percentage is not None or auto_audit_number_of_labels is not None:
             raise ValueError(
-                "quality_mode must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
+                "quality_modes must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
             )
 
         name = kwargs.get("name")
@@ -895,6 +895,11 @@ class Client:
 
         quality_modes = kwargs.get("quality_modes")
         quality_mode = kwargs.get("quality_mode")
+        if quality_mode:
+            logger.warning(
+                "Passing quality_mode is deprecated and will soon no longer be supported. Use quality_modes instead."
+            )
+
         if quality_modes and quality_mode:
             raise ValueError(
                 "Cannot use both quality_modes and quality_mode at the same time. Use one or the other.")
@@ -905,7 +910,7 @@ class Client:
         data = kwargs
         data.pop("quality_modes", None)
         data.pop("quality_mode", None)
-        if quality_modes is None or quality_modes == [QualityMode.Benchmark] or quality_mode is QualityMode.Benchmark:
+        if quality_modes is None or len(quality_modes) == 0 or quality_modes == [QualityMode.Benchmark] or quality_mode is QualityMode.Benchmark:
             data[
                 "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
