@@ -12,7 +12,7 @@ from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from pytest import FixtureRequest
 
 """
-The main fixtures of this library are configured_project and configured_project_by_global_key. Both fixtures generate data rows with a parametrize media type. They create the amount of data rows equal to the DATA_ROW_COUNT variable below. Inside those fixtures they generate ontologies with supported tools for project. This ontology is later used to obtain the correct annotations with the prediction_id_mapping and corresponding inferences. 
+The main fixtures of this library are configured_project and configured_project_by_global_key. Both fixtures generate data rows with a parametrize media type. They create the amount of data rows equal to the DATA_ROW_COUNT variable below. The data rows are generated with a factory fixture that returns a function that allows you to pass a global key. The generate ontologies are generated normalized and based on the MediaType given (i.e. only features supported by MediaType are created). This ontology is later used to obtain the correct annotations with the prediction_id_mapping and corresponding inferences. Each data row will have all possible annotations attached supported for the MediaType.
 """
 
 DATA_ROW_COUNT = 3
