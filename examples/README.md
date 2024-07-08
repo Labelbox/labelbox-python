@@ -120,11 +120,6 @@
       <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/project_setup.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
     </tr>
     <tr>
-      <td>Live Multimodal Chat Project</td>
-      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/project_configuration/live_multimodal_chat_project.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
-      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/live_multimodal_chat_project.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
-    </tr>
-    <tr>
       <td>Webhooks</td>
       <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/project_configuration/webhooks.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
       <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/project_configuration/webhooks.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
