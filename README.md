@@ -72,10 +72,6 @@ You should be set! Running the snippet above should create a dataset called `Tes
 ## Contribution Guidelines
 We encourage anyone to contribute to this repository to help improve it. Please refer to [Contributing Guide](CONTRIBUTING.md) for detailed information on how to contribute. This guide also includes instructions for how to build and run the SDK locally.
 
-## Develop with AI assistance
-### Use the codebase as context for large language models
-Using the [GPT repository loader](https://github.com/mpoon/gpt-repository-loader), we have created `lbx_prompt.txt` that contains data from all `.py` and `.md` files. The file has about 730k tokens. We recommend using Gemini 1.5 Pro with 1 million context length window.
-
 ## Documentation
 The SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are links to that documentation:
 
