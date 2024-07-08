@@ -91,7 +91,9 @@ def ephemeral_endpoint() -> str:
 
 
 def graphql_url(environ: str) -> str:
-    if environ == Environ.PROD:
+    if environ == Environ.LOCAL:
+        return 'http://localhost:3000/api/graphql'
+    elif environ == Environ.PROD:
         return 'https://api.labelbox.com/graphql'
     elif environ == Environ.STAGING:
         return 'https://api.lb-stage.xyz/graphql'
@@ -107,7 +109,9 @@ def graphql_url(environ: str) -> str:
 
 
 def rest_url(environ: str) -> str:
-    if environ == Environ.PROD:
+    if environ == Environ.LOCAL:
+        return 'http://localhost:3000/api/v1'
+    elif environ == Environ.PROD:
         return 'https://api.labelbox.com/api/v1'
     elif environ == Environ.STAGING:
         return 'https://api.lb-stage.xyz/api/v1'
@@ -124,7 +128,8 @@ def rest_url(environ: str) -> str:
 def testing_api_key(environ: Environ) -> str:
     keys = [
         f"LABELBOX_TEST_API_KEY_{environ.value.upper()}",
-        "LABELBOX_TEST_API_KEY"
+        "LABELBOX_TEST_API_KEY",
+        "LABELBOX_API_KEY"
     ]
     for key in keys:
         value = os.environ.get(key)
@@ -311,10 +316,16 @@ def environ() -> Environ:
     'prod' or 'staging'
     Make sure to set LABELBOX_TEST_ENVIRON in .github/workflows/python-package.yaml
     """
-    try:
-        return Environ(os.environ['LABELBOX_TEST_ENVIRON'])
-    except KeyError:
-        raise Exception(f'Missing LABELBOX_TEST_ENVIRON in: {os.environ}')
+    keys = [
+        "LABELBOX_TEST_ENV",
+        "LABELBOX_TEST_ENVIRON",
+        "LABELBOX_ENV"
+    ]
+    for key in keys:
+        value = os.environ.get(key)
+        if value is not None:
+            return Environ(value)
+    raise Exception(f'Missing env key in: {os.environ}')
 
 
 def cancel_invite(client, invite_id):
