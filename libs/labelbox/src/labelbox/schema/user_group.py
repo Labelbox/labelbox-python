@@ -139,9 +139,7 @@ class UserGroup(BaseModel):
         }
         result = self.client.execute(query, params)
         if not result:
-            error = ResourceNotFoundError.__new__(ResourceNotFoundError)
-            error.message = "Failed to get user group as user group does not exist"
-            raise error
+            raise ResourceNotFoundError(message="Failed to get user group as user group does not exist")
         self.name = result["userGroup"]["name"]
         self.color = UserGroupColor(result["userGroup"]["color"])
         self.projects = self._get_projects_set(result["userGroup"]["projects"]["nodes"])
@@ -202,9 +200,7 @@ class UserGroup(BaseModel):
         try:
             result = self.client.execute(query, params)
             if not result:
-                error = ResourceNotFoundError.__new__(ResourceNotFoundError)
-                error.message = "Failed to update user group as user group does not exist"
-                raise error
+                raise ResourceNotFoundError(message="Failed to update user group as user group does not exist")
         except MalformedQueryException as e:
             raise UnprocessableEntityError("Failed to update user group") from e
         return self
@@ -303,9 +299,7 @@ class UserGroup(BaseModel):
         params = {"id": self.id}
         result = self.client.execute(query, params)
         if not result:
-            error = ResourceNotFoundError.__new__(ResourceNotFoundError)
-            error.message = "Failed to delete user group as user group does not exist"
-            raise error
+            raise ResourceNotFoundError(message="Failed to delete user group as user group does not exist")
         return result["deleteUserGroup"]["success"]
 
     def get_user_groups(self) -> Iterator["UserGroup"]:
