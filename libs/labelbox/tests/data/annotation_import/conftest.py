@@ -1,5 +1,8 @@
+import itertools
 import uuid
 
+from labelbox.schema.ontology import Ontology
+from labelbox.schema.project import Project
 import pytest
 import time
 import requests
@@ -7,7 +10,7 @@ import requests
 from labelbox import parser, MediaType
 from labelbox import Client, Dataset
 
-from typing import Type
+from typing import Tuple, Type
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from pytest import FixtureRequest
 
@@ -19,7 +22,7 @@ DATA_ROW_COUNT = 3
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 40
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 7
 
-@pytest.fixture()
+@pytest.fixture(scope="module", autouse=True)
 def video_data_row_factory():
     def video_data_row(global_key):
         return {
@@ -32,7 +35,7 @@ def video_data_row_factory():
         }
     return video_data_row
 
-@pytest.fixture()
+@pytest.fixture(scope="module", autouse=True)
 def audio_data_row_factory():
     def audio_data_row(global_key):
         return {
@@ -45,7 +48,7 @@ def audio_data_row_factory():
         }
     return audio_data_row
 
-@pytest.fixture()
+@pytest.fixture(scope="module", autouse=True)
 def conversational_data_row_factory():
     def conversational_data_row(global_key):
         return {
@@ -56,7 +59,7 @@ def conversational_data_row_factory():
         }
     return conversational_data_row
 
-@pytest.fixture()
+@pytest.fixture(scope="module", autouse=True)
 def dicom_data_row_factory():
     def dicom_data_row(global_key):
         return {
@@ -69,7 +72,7 @@ def dicom_data_row_factory():
         }
     return dicom_data_row
 
-@pytest.fixture()
+@pytest.fixture(scope="module", autouse=True)
 def geospatial_data_row_factory():
     def geospatial_data_row(global_key):
         return {
@@ -95,7 +98,7 @@ def geospatial_data_row_factory():
     return geospatial_data_row
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module", autouse=True)
 def html_data_row_factory():
     def html_data_row(global_key):
         return {
@@ -107,7 +110,7 @@ def html_data_row_factory():
     return html_data_row
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module", autouse=True)
 def image_data_row_factory():
     def image_data_row(global_key):
         return {
@@ -121,7 +124,7 @@ def image_data_row_factory():
     return image_data_row
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module", autouse=True)
 def document_data_row_factory():
     def document_data_row(global_key):
         return {
@@ -139,7 +142,7 @@ def document_data_row_factory():
     return document_data_row
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module", autouse=True)
 def text_data_row_factory():
     def text_data_row(global_key):
         return {
@@ -152,7 +155,7 @@ def text_data_row_factory():
         }
     return text_data_row
 
-@pytest.fixture()
+@pytest.fixture(scope="module", autouse=True)
 def llm_human_preference_data_row_factory():
     def llm_human_preference_data_row(global_key): 
         return {
@@ -162,7 +165,7 @@ def llm_human_preference_data_row_factory():
     return llm_human_preference_data_row
 
 
-@pytest.fixture
+@pytest.fixture(scope="module", autouse=True)
 def data_row_json_by_media_type(
     audio_data_row_factory,
     conversational_data_row_factory,
@@ -185,83 +188,9 @@ def data_row_json_by_media_type(
         MediaType.Text: text_data_row_factory,
         MediaType.Video: video_data_row_factory,
     }
-
-
-@pytest.fixture
-def exports_v2_by_media_type(
-    expected_export_v2_image,
-    expected_export_v2_audio,
-    expected_export_v2_html,
-    expected_export_v2_text,
-    expected_export_v2_video,
-    expected_export_v2_conversation,
-    expected_export_v2_dicom,
-    expected_export_v2_document,
-):
-    return {
-        MediaType.Image:
-            expected_export_v2_image,
-        MediaType.Audio:
-            expected_export_v2_audio,
-        MediaType.Html:
-            expected_export_v2_html,
-        MediaType.Text:
-            expected_export_v2_text,
-        MediaType.Video:
-            expected_export_v2_video,
-        MediaType.Conversational:
-            expected_export_v2_conversation,
-        MediaType.Dicom:
-            expected_export_v2_dicom,
-        MediaType.Document:
-            expected_export_v2_document,
-    }
-
-
-@pytest.fixture
-def annotations_by_media_type(
-    polygon_inference,
-    rectangle_inference,
-    rectangle_inference_document,
-    line_inference_v2,
-    line_inference,
-    entity_inference,
-    entity_inference_index,
-    entity_inference_document,
-    checklist_inference_index,
-    text_inference_index,
-    checklist_inference,
-    text_inference,
-    video_checklist_inference,
-):
-    return {
-        MediaType.Audio: [checklist_inference, text_inference],
-        MediaType.Conversational: [
-            checklist_inference_index,
-            text_inference_index,
-            entity_inference_index,
-        ],
-        MediaType.Dicom: [line_inference_v2],
-        MediaType.Document: [
-            entity_inference_document,
-            checklist_inference,
-            text_inference,
-            rectangle_inference_document,
-        ],
-        MediaType.Html: [text_inference, checklist_inference],
-        MediaType.Image: [
-            polygon_inference,
-            rectangle_inference,
-            line_inference,
-            checklist_inference,
-            text_inference,
-        ],
-        MediaType.Text: [checklist_inference, text_inference, entity_inference],
-        MediaType.Video: [video_checklist_inference],
-    }
     
 
-@pytest.fixture
+@pytest.fixture(scope="module", autouse=True)
 def normalized_ontology_by_media_type():
     """Returns NDJSON of ontology based on media type"""
     
@@ -581,66 +510,50 @@ def wait_for_label_processing():
     return func
 
 
-@pytest.fixture
-def configured_project(client: Client, initial_dataset: Dataset, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
-    """Configure project for test. Request.param will contain the media type. The project will have 10 data rows."""
+##### Unit test strategies #####
+
+@pytest.fixture(scope="module", autouse=True)
+def hardcoded_datarow_id():
+    data_row_id = 'ck8q9q9qj00003g5z3q1q9q9q'
+
+    def get_data_row_id():
+        return data_row_id
+
+    yield get_data_row_id
+
+
+@pytest.fixture(scope="module", autouse=True)
+def hardcoded_global_key():
+    global_key = str(uuid.uuid4())
+
+    def get_global_key():
+        return global_key
+
+    yield get_global_key
+
+
+##### Integration test strategies #####
+
+def _create_project(client: Client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type) -> Tuple[Project, Ontology, Dataset]:
+    """ Shared function to configure project for integration tests """
     
-    dataset = initial_dataset
-    media_type = request.param
+    dataset = client.create_dataset(name=rand_gen(str))
+
     # LLMPromptResponseCreation is not support for project or ontology creation needs to be conversational
     if media_type == MediaType.LLMPromptResponseCreation:
         media_type = MediaType.Conversational
         
-    project = client.create_project(name=f"{request.param}-{rand_gen(str)}",
+    project = client.create_project(name=f"{media_type}-{rand_gen(str)}",
                                     media_type=media_type)
     
-    ontology = client.create_ontology(name=f"{request.param}-{rand_gen(str)}", normalized=normalized_ontology_by_media_type[request.param], media_type=media_type)
+    ontology = client.create_ontology(name=f"{media_type}-{rand_gen(str)}", normalized=normalized_ontology_by_media_type[media_type], media_type=media_type)
 
     project.setup_editor(ontology)
 
     data_row_data = []
 
     for _ in range(DATA_ROW_COUNT):
-        data_row_data.append(data_row_json_by_media_type[request.param](rand_gen(str)))
-        
-    task = dataset.create_data_rows(data_row_data)
-    task.wait_till_done()
-    data_row_ids = [row['id'] for row in task.result]
-
-    project.create_batch(
-        rand_gen(str),
-        data_row_ids,  # sample of data row objects
-        5,  # priority between 1(Highest) - 5(lowest)
-    )
-    project.data_row_ids = data_row_ids
-
-    yield project
-
-    project.delete()
-    client.delete_unused_ontology(ontology.uid)
-
-
-@pytest.fixture
-def configured_project_by_global_key(client: Client, initial_dataset: Dataset, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
-    """Works the same as configured project but with global keys inside project object instead of data rows."""
-    
-    dataset = initial_dataset
-    media_type = request.param
-    # LLMPromptResponseCreation is not support for project or ontology creation needs to be conversational
-    if media_type == MediaType.LLMPromptResponseCreation:
-        media_type = MediaType.Conversational
-        
-    project = client.create_project(name=f"{request.param}-{rand_gen(str)}",
-                                    media_type=media_type)
-    
-    ontology = client.create_ontology(name=f"{request.param}-{rand_gen(str)}", normalized=normalized_ontology_by_media_type[request.param], media_type=media_type)
-
-    project.setup_editor(ontology)
-
-    data_row_data = []
-
-    for _ in range(DATA_ROW_COUNT):
-        data_row_data.append(data_row_json_by_media_type[request.param](rand_gen(str)))
+        data_row_data.append(data_row_json_by_media_type[media_type](rand_gen(str)))
         
     task = dataset.create_data_rows(data_row_data)
     task.wait_till_done()
@@ -648,135 +561,123 @@ def configured_project_by_global_key(client: Client, initial_dataset: Dataset, r
     data_row_ids = [row['id'] for row in task.result]
 
     project.create_batch(
-        name=rand_gen(str),
-        global_keys=global_keys,  # sample of data row objects
-        priority=5,  # priority between 1(Highest) - 5(lowest)
-    )
-    
-    # add global keys and data row ids
-    project.global_keys = global_keys
-    project.data_row_ids = data_row_ids
-
-    yield project
-
-    project.delete()
-    client.delete_unused_ontology(ontology.uid)
-
-
-@pytest.fixture
-def configured_project_datarow_id(configured_project):
-    def get_data_row_id(indx=0):
-        return configured_project.data_row_ids[indx]
-
-    yield get_data_row_id
-
-
-@pytest.fixture
-def configured_project_one_datarow_id(configured_project_with_one_data_row):
-    def get_data_row_id(indx=0):
-        return configured_project_with_one_data_row.data_row_ids[0]
-
-    yield get_data_row_id
-
-
-@pytest.fixture
-@pytest.mark.parametrize(
-    "configured_project",
-    [
-        MediaType.Image,
-    ],
-    indirect=True
-)
-def project_with_ontology(configured_project):
-    yield configured_project
-
-
-@pytest.fixture
-@pytest.mark.parametrize(
-    "configured_project",
-    [
-        MediaType.Document,
-    ],
-    indirect=True
-)
-def configured_project_pdf(configured_project):
-    yield configured_project
-
-
-@pytest.fixture
-def dataset_pdf_entity(client, rand_gen, document_data_row):
-    dataset = client.create_dataset(name=rand_gen(str))
-    data_row_ids = []
-    data_row = dataset.create_data_row(document_data_row)
-    data_row_ids.append(data_row.uid)
-    yield dataset, data_row_ids
-    dataset.delete()
-
-
-@pytest.fixture
-def configured_project_with_one_data_row(client: Client, initial_dataset: Dataset, rand_gen, data_row_json_by_media_type, normalized_ontology_by_media_type):
-    """Creates an image project with one data row"""
-    dataset = initial_dataset
-        
-    project = client.create_project(name=rand_gen(str),
-                                    media_type=MediaType.Image)
-    
-    ontology = client.create_ontology(name=rand_gen(str), normalized=normalized_ontology_by_media_type[MediaType.Image], media_type=MediaType.Image)
-
-    project.setup_editor(ontology)
-
-    data_row_data = []
-
-    data_row_data.append(data_row_json_by_media_type[MediaType.Image](rand_gen(str)))
-        
-    task = dataset.create_data_rows(data_row_data)
-    task.wait_till_done()
-    data_row_ids = [row['id'] for row in task.result]
-
-    project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects
         5,  # priority between 1(Highest) - 5(lowest)
     )
     project.data_row_ids = data_row_ids
+    project.global_keys = global_keys
+    
+    return project, ontology, dataset
+
+    
+@pytest.fixture
+def configured_project(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
+    """Configure project for test. Request.param will contain the media type if not present will use Image MediaType. The project will have 10 data rows."""
+    
+    if hasattr(request,"param"):
+        media_type = request.param
+    else:
+        media_type = MediaType.Image
+        
+    project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
 
     yield project
-
+    
     project.delete()
+    dataset.delete()
     client.delete_unused_ontology(ontology.uid)
 
 
-"""
-Please note that this fixture now offers the flexibility to configure three different strategies for generating data row ids for predictions:
-Default(configured_project fixture):
-    configured_project that generates a data row for each member of ontology.
-    This makes sure each prediction has its own data row id.
+@pytest.fixture
+def configured_project_by_global_key(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
+    """Does the same thing as configured project but with global keys focus."""
+    
+    if hasattr(request, "param"):
+        media_type = request.param
+    else:
+        media_type = MediaType.Image
+        
+    project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
 
-Custom Data Row IDs Strategy:
-    Individuals can supply hard-coded data row ids when a creation of data row is not required. 
-    This particular fixture, termed "hardcoded_datarow_id," should be defined locally within a test file.
-"""
+    yield project
+    
+    project.delete()
+    dataset.delete()
+    client.delete_unused_ontology(ontology.uid)
+
+
+
+@pytest.fixture(scope="module", autouse=True)
+def module_project(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
+    """Generates a image project that scopes to the test module(file). Used to reduce api calls."""
+    
+    if hasattr(request, "param"):
+        media_type = request.param
+    else:
+        media_type = MediaType.Image
+        
+    project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
+
+    yield project
+    
+    project.delete()
+    dataset.delete()
+    client.delete_unused_ontology(ontology.uid)
 
 
 @pytest.fixture
-def prediction_id_mapping(request):
-    """Creates the base of annotation based on tools inside project ontology. We would want only annotations supported for the MediaType of the ontology and project. Annotations are generated for each data row in to later be combined inside the test file."""
+def prediction_id_mapping(request, normalized_ontology_by_media_type):
+    """Creates the base of annotation based on tools inside project ontology. We would want only annotations supported for the MediaType of the ontology and project. Annotations are generated for each data row created later be combined inside the test file. This serves as the base fixture for all the interference (annotations) fixture. This fixtures supports a few strategies:
+    
+    Integration test:
+        configured_project: generates data rows with data row id focus.
+        configured_project_by_global_key: generates data rows with global key focus.
+        module_configured_project: configured project but scoped to test module.
+
+    Unit tests
+        Individuals can supply hard-coded data row ids or global keys without configured a project must include a media type fixture to get the appropriate annotations. 
+        
+    Each strategy provides a few items. 
+    
+        Labelbox Project (unit testing strategies do not make api calls so will have None for project)
+        Data row identifiers (ids the annotation uses)
+        Ontology: normalized ontology
+    """
+    
     if "configured_project" in request.fixturenames:
         project = request.getfixturevalue("configured_project")
-        data_row_ids = True
+        data_row_identifiers = project.data_row_ids
+        ontology = project.ontology().normalized
+        
     elif "configured_project_by_global_key" in request.fixturenames:
-        project = request.getfixturevalue("configured_project_by_global_key")
-        data_row_ids = False
+        project = request.getfixturevalue("configured_project")
+        data_row_identifiers = project.global_keys
+        ontology = project.ontology().normalized
+        
+    elif "module_project" in request.fixturenames:
+        project = request.getfixturevalue("module_project")
+        data_row_identifiers = project.data_row_ids
+        ontology = project.ontology().normalized
+        
     elif "hardcoded_datarow_id" in request.fixturenames:
-        project = request.getfixturevalue("configured_project_with_ontology")
-    else:
-        project = request.getfixturevalue(
-            "configured_project_with_one_data_row")
-
-    ontology = project.ontology().normalized
+        if "media_type" in request.fixturenames:
+            raise Exception("Please include a 'media_type' fixture")
+        project = None
+        media_type = request.getfixturevalue("media_type")
+        ontology = normalized_ontology_by_media_type[media_type]
+        data_row_identifiers = [request.getfixturevalue("hardcoded_datarow_id")()]
+        
+    elif "hardcoded_global_key" in request.fixturenames:
+        if "media_type" in request.fixturenames:
+            raise Exception("Please include a 'media_type' fixture")
+        project = None
+        media_type = request.getfixturevalue("media_type")
+        ontology = normalized_ontology_by_media_type[media_type]
+        data_row_identifiers = [request.getfixturevalue("hardcoded_global_key")()]
   
     base_annotations = []
-    for i, data_row_id in enumerate(project.data_row_ids):
+    for i, data_row_identifier in enumerate(data_row_identifiers):
         base_annotation = {}
         for feature in (ontology["tools"] + ontology["classifications"]):
             if "tool" in feature:
@@ -787,18 +688,13 @@ def prediction_id_mapping(request):
                 feature_type = (feature["type"] if "scope" not in feature else
                             f"{feature['type']}_{feature['scope']}"
                             )  # checklist vs indexed checklist 
-            if data_row_ids: 
-                base_annotation[feature_type] = {
-                    "name": feature["name"],
-                    "tool": feature,
-                    "dataRow": {"id": data_row_id}
-                    }
-            else:
-                base_annotation[feature_type] = {
-                    "name": feature["name"],
-                    "tool": feature,
-                    "dataRow": {"globalKey": project.global_keys[i]}
-                    } 
+
+            base_annotation[feature_type] = {
+                "name": feature["name"],
+                "tool": feature,
+                "dataRow": {"id": data_row_identifier}
+                }
+
         base_annotations.append(base_annotation)
     return base_annotations
 
@@ -1203,10 +1099,53 @@ def video_checklist_inference(prediction_id_mapping):
 
 
 @pytest.fixture
+def annotations_by_media_type(
+    polygon_inference,
+    rectangle_inference,
+    rectangle_inference_document,
+    line_inference_v2,
+    line_inference,
+    entity_inference,
+    entity_inference_index,
+    entity_inference_document,
+    checklist_inference_index,
+    text_inference_index,
+    checklist_inference,
+    text_inference,
+    video_checklist_inference,
+):
+    return {
+        MediaType.Audio: [checklist_inference, text_inference],
+        MediaType.Conversational: [
+            checklist_inference_index,
+            text_inference_index,
+            entity_inference_index,
+        ],
+        MediaType.Dicom: [line_inference_v2],
+        MediaType.Document: [
+            entity_inference_document,
+            checklist_inference,
+            text_inference,
+            rectangle_inference_document,
+        ],
+        MediaType.Html: [text_inference, checklist_inference],
+        MediaType.Image: [
+            polygon_inference,
+            rectangle_inference,
+            line_inference,
+            checklist_inference,
+            text_inference,
+        ],
+        MediaType.Text: [checklist_inference, text_inference, entity_inference],
+        MediaType.Video: [video_checklist_inference],
+    }
+
+
+@pytest.fixture
 def model_run_predictions(polygon_inference, rectangle_inference,
                           line_inference):
     # Not supporting mask since there isn't a signed url representing a seg mask to upload
-    return [polygon_inference, rectangle_inference, line_inference]
+    return (polygon_inference + rectangle_inference + line_inference)[0]
 
 
 @pytest.fixture
@@ -1217,13 +1156,13 @@ def object_predictions(
     entity_inference,
     segmentation_inference,
 ):
-    return [
-        polygon_inference,
-        rectangle_inference,
-        line_inference,
-        entity_inference,
-        segmentation_inference,
-    ]
+    return (
+        polygon_inference +
+        rectangle_inference +
+        line_inference +
+        entity_inference +
+        segmentation_inference
+    )
 
 
 @pytest.fixture
@@ -1231,28 +1170,27 @@ def object_predictions_for_annotation_import(polygon_inference,
                                              rectangle_inference,
                                              line_inference,
                                              segmentation_inference):
-    return [
-        polygon_inference,
-        rectangle_inference,
-        line_inference,
-        segmentation_inference,
-    ]
+    return (polygon_inference +
+            rectangle_inference +
+            line_inference + 
+            segmentation_inference)
+    
 
 
 @pytest.fixture
 def classification_predictions(checklist_inference, text_inference):
-    return [checklist_inference, text_inference]
+    return checklist_inference + text_inference
 
 
 @pytest.fixture
 def predictions(object_predictions, classification_predictions):
-    return object_predictions + classification_predictions
+    return [object_predictions, classification_predictions]
 
 
 @pytest.fixture
 def predictions_with_confidence(text_inference_with_confidence,
                                 rectangle_inference_with_confidence):
-    return [text_inference_with_confidence, rectangle_inference_with_confidence]
+    return text_inference_with_confidence[0] + rectangle_inference_with_confidence[0]
 
 
 @pytest.fixture
@@ -1301,7 +1239,6 @@ def model_run_with_data_rows(
     model_run,
     wait_for_label_processing,
 ):
-    configured_project.enable_model_assisted_labeling()
     use_data_row_ids = [p["dataRow"]["id"] for p in model_run_predictions]
     model_run.upsert_data_rows(use_data_row_ids)
 
@@ -1885,100 +1822,37 @@ def expected_export_v2_llm_prompt_response_creation():
     return expected_annotations
 
 
-@pytest.fixture()
-def expected_export_v2_llm_response_creation():
-    expected_annotations = {
-        "objects": [],
-        "classifications": [
-            {
-                "name":
-                    "checklist",
-                "value":
-                    "checklist",
-                "checklist_answers": [{
-                    "name": "first_checklist_answer",
-                    "value": "first_checklist_answer",
-                    "classifications": []
-                },
-                {
-                    "name": "second_checklist_answer",
-                    "value": "second_checklist_answer",
-                    "classifications": []                        
-                }],
-            },
-            {
-                "name": "text",
-                "value": "text",
-                "text_answer": {
-                    "content": "free form text..."
-                },
-            },
-        ],
-        "relationships": [],
-    }
-    return expected_annotations
-
-
-import pytest
-from labelbox.data.annotation_types.classification.classification import (
-    Checklist,
-    ClassificationAnnotation,
-    ClassificationAnswer,
-    Radio,
-)
-from labelbox.data.annotation_types.geometry.point import Point
-from labelbox.data.annotation_types.geometry.rectangle import Rectangle
-
-from labelbox.data.annotation_types.video import VideoObjectAnnotation
-
-
 @pytest.fixture
-def bbox_video_annotation_objects():
-    bbox_annotation = [
-        VideoObjectAnnotation(
-            name="bbox",
-            keyframe=True,
-            frame=13,
-            segment_index=0,
-            value=Rectangle(
-                start=Point(x=146.0, y=98.0),  # Top left
-                end=Point(x=382.0, y=341.0),  # Bottom right
-            ),
-            classifications=[
-                ClassificationAnnotation(
-                    name="nested",
-                    value=Radio(answer=ClassificationAnswer(
-                        name="radio_option_1",
-                        classifications=[
-                            ClassificationAnnotation(
-                                name="nested_checkbox",
-                                value=Checklist(answer=[
-                                    ClassificationAnswer(
-                                        name="nested_checkbox_option_1"),
-                                    ClassificationAnswer(
-                                        name="nested_checkbox_option_2"),
-                                ]),
-                            )
-                        ],
-                    )),
-                )
-            ],
-        ),
-        VideoObjectAnnotation(
-            name="bbox",
-            keyframe=True,
-            frame=19,
-            segment_index=0,
-            value=Rectangle(
-                start=Point(x=186.0, y=98.0),  # Top left
-                end=Point(x=490.0, y=341.0),  # Bottom right
-            ),
-        ),
-    ]
-
-    return bbox_annotation
-
-
+def exports_v2_by_media_type(
+    expected_export_v2_image,
+    expected_export_v2_audio,
+    expected_export_v2_html,
+    expected_export_v2_text,
+    expected_export_v2_video,
+    expected_export_v2_conversation,
+    expected_export_v2_dicom,
+    expected_export_v2_document,
+):
+    return {
+        MediaType.Image:
+            expected_export_v2_image,
+        MediaType.Audio:
+            expected_export_v2_audio,
+        MediaType.Html:
+            expected_export_v2_html,
+        MediaType.Text:
+            expected_export_v2_text,
+        MediaType.Video:
+            expected_export_v2_video,
+        MediaType.Conversational:
+            expected_export_v2_conversation,
+        MediaType.Dicom:
+            expected_export_v2_dicom,
+        MediaType.Document:
+            expected_export_v2_document,
+    }
+    
+    
 class Helpers:
 
     @staticmethod

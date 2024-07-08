@@ -1,4 +1,5 @@
 import datetime
+from labelbox.schema.label import Label
 import pytest
 import uuid
 
@@ -20,20 +21,13 @@ from labelbox.schema.media_type import MediaType
 from labelbox.schema.annotation_import import AnnotationImportState
 from labelbox import Project, Client
 
-# TODO: This test file does the exact same thing as generic_data_types.py. We should remove this when data types are removed.
+# Unit test for label based on data type.
 # TODO: Dicom removed it is unstable when you deserialize and serialize on label import. If we intend to keep this library this needs add generic data types tests work with this data type.
 # TODO: add MediaType.LLMPromptResponseCreation(data gen) once supported and llm human preference once media type is added
 
-def validate_iso_format(date_string: str):
-    parsed_t = datetime.datetime.fromisoformat(
-        date_string)  # this will blow up if the string is not in iso format
-    assert parsed_t.hour is not None
-    assert parsed_t.minute is not None
-    assert parsed_t.second is not None
-
 
 @pytest.mark.parametrize(
-    "configured_project, data_type_class",
+    "media_type, data_type_class",
     [
         (MediaType.Audio, AudioData),
         (MediaType.Html, HTMLData),
@@ -43,77 +37,27 @@ def validate_iso_format(date_string: str):
         (MediaType.Conversational, ConversationData),
         (MediaType.Document, DocumentData),
     ],
-    indirect=["configured_project"]
 )
-def test_import_media_types(
-    client: Client,
-    configured_project: Project,
+def test_data_row_type_by_data_row_id(
+    media_type,
     data_type_class,
     annotations_by_media_type,
-    exports_v2_by_media_type,
-    export_v2_test_helpers,
-    helpers,
+    hardcoded_datarow_id,
 ):
-    """Get list of annotations from fixture based on media type of project. annotations_by_media_type returns NDJSON version for each data row must grab first annotation of each feature group to make standard label."""
-    annotations_ndjson =  annotations_by_media_type[configured_project.media_type]
+    annotations_ndjson =  annotations_by_media_type[media_type]
     annotations_ndjson = [annotation[0] for annotation in annotations_ndjson]
     
-    label = list(NDJsonConverter.deserialize(annotations_ndjson))
+    label = list(NDJsonConverter.deserialize(annotations_ndjson))[0]
+   
+    data_label = lb_types.Label(data=data_type_class(uid = hardcoded_datarow_id()),
+                       annotations=label.annotations)
 
-    labels = [
-        lb_types.Label(data=data_type_class(uid=data_row_id),
-                       annotations=label[0].annotations)
-        for data_row_id in configured_project.data_row_ids
-    ]
-
-    if data_type_class == DicomData:
-        print(labels[0])
-        print(lb_types.DICOMObjectAnnotation(
-        name="line_dicom",
-        group_key=lb_types.GroupKey.AXIAL,
-        frame=1,
-        value=lb_types.Line(points=[
-            lb_types.Point(x=10, y=10),
-            lb_types.Point(x=200, y=20),
-            lb_types.Point(x=250, y=250)
-        ]),
-        segment_index=0,
-        keyframe=True,
-    ))
-    label_import = lb.LabelImport.create_from_objects(
-        client, configured_project.uid, f"test-import-{configured_project.media_type}", labels)
-    label_import.wait_until_done()
-
-    assert label_import.state == AnnotationImportState.FINISHED
-    assert len(label_import.errors) == 0
-
-    result = export_v2_test_helpers.run_project_export_v2_task(configured_project)
-
-    assert result
-
-    for exported_data in result:
-        # timestamp fields are in iso format
-        validate_iso_format(exported_data["data_row"]["details"]["created_at"])
-        validate_iso_format(exported_data["data_row"]["details"]["updated_at"])
-        validate_iso_format(exported_data["projects"][configured_project.uid]["labels"][0]
-                            ["label_details"]["created_at"])
-        validate_iso_format(exported_data["projects"][configured_project.uid]["labels"][0]
-                            ["label_details"]["updated_at"])
-
-        assert exported_data["data_row"]["id"] in configured_project.data_row_ids
-        exported_project = exported_data["projects"][configured_project.uid]
-        exported_project_labels = exported_project["labels"][0]
-        exported_annotations = exported_project_labels["annotations"]
-
-        helpers.remove_keys_recursive(exported_annotations,
-                                    ["feature_id", "feature_schema_id"])    
-        helpers.rename_cuid_key_recursive(exported_annotations)
-
-        assert exported_annotations == exports_v2_by_media_type[configured_project.media_type]
+    assert data_label.data.uid == label.data.uid
+    assert label.annotations == data_label.annotations
 
 
 @pytest.mark.parametrize(
-    "configured_project_by_global_key, data_type_class",
+    "media_type, data_type_class",
     [
         (MediaType.Audio, AudioData),
         (MediaType.Html, HTMLData),
@@ -123,142 +67,20 @@ def test_import_media_types(
         (MediaType.Conversational, ConversationData),
         (MediaType.Document, DocumentData),
     ],
-    indirect=["configured_project_by_global_key"]
 )
-def test_import_media_types_by_global_key(
-    client,
-    configured_project_by_global_key: Project,
+def test_data_row_type_by_global_key(
+    media_type,
     data_type_class,
     annotations_by_media_type,
-    exports_v2_by_media_type,
-    export_v2_test_helpers,
-    helpers,
+    hardcoded_global_key,
 ):
-    """Get list of annotations from fixture based on media type of project. annotations_by_media_type returns NDJSON version for each data row must grab first annotation of each feature group"""
-    annotations_ndjson =  annotations_by_media_type[configured_project_by_global_key.media_type]
+    annotations_ndjson =  annotations_by_media_type[media_type]
     annotations_ndjson = [annotation[0] for annotation in annotations_ndjson]
     
-    label = list(NDJsonConverter.deserialize(annotations_ndjson))
+    label = list(NDJsonConverter.deserialize(annotations_ndjson))[0]
+   
+    data_label = lb_types.Label(data=data_type_class(global_key = hardcoded_global_key()),
+                       annotations=label.annotations)
 
-    labels = [
-        lb_types.Label(data=data_type_class(global_key=global_key),
-                       annotations=label[0].annotations)
-        for global_key in configured_project_by_global_key.global_keys
-    ]
-    if data_type_class == DicomData:
-        print(labels[0])
-
-    label_import = lb.LabelImport.create_from_objects(
-        client, configured_project_by_global_key.uid, f"test-import-{configured_project_by_global_key.media_type}", labels)
-    label_import.wait_until_done()
-
-    assert label_import.state == AnnotationImportState.FINISHED
-    assert len(label_import.errors) == 0
-
-    result = export_v2_test_helpers.run_project_export_v2_task(configured_project_by_global_key)
-
-    assert result
-
-    for exported_data in result:
-        # timestamp fields are in iso format
-        validate_iso_format(exported_data["data_row"]["details"]["created_at"])
-        validate_iso_format(exported_data["data_row"]["details"]["updated_at"])
-        validate_iso_format(exported_data["projects"][configured_project_by_global_key.uid]["labels"][0]
-                            ["label_details"]["created_at"])
-        validate_iso_format(exported_data["projects"][configured_project_by_global_key.uid]["labels"][0]
-                            ["label_details"]["updated_at"])
-
-        assert exported_data["data_row"]["id"] in configured_project_by_global_key.data_row_ids
-        exported_project = exported_data["projects"][configured_project_by_global_key.uid]
-        exported_project_labels = exported_project["labels"][0]
-        exported_annotations = exported_project_labels["annotations"]
-        
-        helpers.remove_keys_recursive(exported_annotations,
-                                    ["feature_id", "feature_schema_id"])    
-        helpers.rename_cuid_key_recursive(exported_annotations)
-
-        assert exported_annotations == exports_v2_by_media_type[configured_project_by_global_key.media_type]
-
-
-@pytest.mark.parametrize(
-    "configured_project, data_type_class",
-    [
-        (MediaType.Audio, AudioData),
-        (MediaType.Html, HTMLData),
-        (MediaType.Image, ImageData),
-        (MediaType.Text, TextData),
-        (MediaType.Video, VideoData),
-        (MediaType.Conversational, ConversationData),
-        (MediaType.Document, DocumentData),
-    ],
-    indirect=["configured_project"]
-)
-def test_import_mal_annotations(
-    client,
-    configured_project: Project,
-    data_type_class,
-    annotations_by_media_type,
-):
-    """Get list of annotations from fixture based on media type of project. annotations_by_media_type returns NDJSON version for each data row must grab first annotation of each feature group to make standard label."""
-    annotations_ndjson =  annotations_by_media_type[configured_project.media_type]
-    annotations_ndjson = [annotation[0] for annotation in annotations_ndjson]
-    
-    label = list(NDJsonConverter.deserialize(annotations_ndjson))
-
-    labels = [
-        lb_types.Label(data=data_type_class(uid=data_row_id),
-                       annotations=label[0].annotations)
-        for data_row_id in configured_project.data_row_ids
-    ]
-
-    import_annotations = lb.MALPredictionImport.create_from_objects(
-        client=client,
-        project_id=configured_project.uid,
-        name=f"import {str(uuid.uuid4())}",
-        predictions=labels,
-    )
-    import_annotations.wait_until_done()
-
-    assert import_annotations.errors == []
-    # MAL Labels cannot be exported and compared to input labels
-    
-
-@pytest.mark.parametrize(
-    "configured_project_by_global_key, data_type_class",
-    [
-        (MediaType.Audio, AudioData),
-        (MediaType.Html, HTMLData),
-        (MediaType.Image, ImageData),
-        (MediaType.Text, TextData),
-        (MediaType.Video, VideoData),
-        (MediaType.Conversational, ConversationData),
-        (MediaType.Document, DocumentData),
-    ],
-    indirect=["configured_project_by_global_key"]
-)
-def test_import_mal_annotations_global_key(client,
-                                           configured_project_by_global_key: Project,
-                                           data_type_class,
-                                           annotations_by_media_type):
-    """Get list of annotations from fixture based on media type of project. annotations_by_media_type returns NDJSON version for each data row must grab first annotation of each feature group"""
-    annotations_ndjson =  annotations_by_media_type[configured_project_by_global_key.media_type]
-    annotations_ndjson = [annotation[0] for annotation in annotations_ndjson]
-    
-    label = list(NDJsonConverter.deserialize(annotations_ndjson))
-
-    labels = [
-        lb_types.Label(data=data_type_class(global_key=global_key),
-                       annotations=label[0].annotations)
-        for global_key in configured_project_by_global_key.global_keys
-    ]
-
-    import_annotations = lb.MALPredictionImport.create_from_objects(
-        client=client,
-        project_id=configured_project_by_global_key.uid,
-        name=f"import {str(uuid.uuid4())}",
-        predictions=labels
-    )
-    import_annotations.wait_until_done()
-
-    assert import_annotations.errors == []
-    # MAL Labels cannot be exported and compared to input labels
+    assert data_label.data.uid == label.data.global_key
+    assert label.annotations == data_label.annotations

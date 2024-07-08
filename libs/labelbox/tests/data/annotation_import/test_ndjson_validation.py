@@ -14,33 +14,6 @@ from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.queue_mode import QueueMode
 
 
-@pytest.fixture(scope="module", autouse=True)
-def hardcoded_datarow_id():
-    data_row_id = 'ck8q9q9qj00003g5z3q1q9q9q'
-
-    def get_data_row_id(indx=0):
-        return data_row_id
-
-    yield get_data_row_id
-
-
-@pytest.fixture(scope="module", autouse=True)
-def configured_project_with_ontology(client, ontology, rand_gen):
-    project = client.create_project(
-        name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
-        media_type=MediaType.Image,
-    )
-    editor = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    project.setup(editor, ontology)
-
-    yield project
-
-    project.delete()
-
-
 def test_classification_construction(checklist_inference, text_inference):
     checklist = NDClassification.build(checklist_inference)
     assert isinstance(checklist, NDChecklist)
@@ -67,122 +40,126 @@ def test_tool_construction(inference, expected_type):
 
 
 def test_incorrect_feature_schema(rectangle_inference, polygon_inference,
-                                  configured_project_with_ontology):
+                                  module_project):
     #Valid but incorrect feature schema
     #Prob the error message says something about the config not anything useful. We might want to fix this.
     pred = rectangle_inference.copy()
     pred['schemaId'] = polygon_inference['schemaId']
     with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project_with_ontology)
+        _validate_ndjson([pred], module_project)
 
 
-def no_tool(text_inference, configured_project_with_ontology):
+def no_tool(text_inference, module_project):
     pred = text_inference.copy()
     #Missing key
     del pred['answer']
     with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project_with_ontology)
+        _validate_ndjson([pred], module_project)
 
-
-def test_invalid_text(text_inference, configured_project_with_ontology):
+@pytest.param(
+    "configured_project",
+    [MediaType.Text],
+    indirect=True
+)
+def test_invalid_text(text_inference, configured_project):
     #and if it is not a string
     pred = text_inference.copy()
     #Extra and wrong key
     del pred['answer']
     pred['answers'] = []
     with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project_with_ontology)
+        _validate_ndjson([pred], configured_project)
     del pred['answers']
 
     #Invalid type
     pred['answer'] = []
     with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project_with_ontology)
+        _validate_ndjson([pred], configured_project)
 
     #Invalid type
     pred['answer'] = None
     with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project_with_ontology)
+        _validate_ndjson([pred], configured_project)
 
 
 def test_invalid_checklist_item(checklist_inference,
-                                configured_project_with_ontology):
+                                module_project):
     #Only two points
     pred = checklist_inference.copy()
     pred['answers'] = [pred['answers'][0], pred['answers'][0]]
     #Duplicate schema ids
     with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project_with_ontology)
+        _validate_ndjson([pred], module_project)
 
     pred['answers'] = [{"name": "asdfg"}]
     with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project_with_ontology)
+        _validate_ndjson([pred], module_project)
 
     pred['answers'] = [{"schemaId": "1232132132"}]
     with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project_with_ontology)
+        _validate_ndjson([pred], module_project)
 
     pred['answers'] = [{}]
     with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project_with_ontology)
+        _validate_ndjson([pred], module_project)
 
     pred['answers'] = []
     with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project_with_ontology)
+        _validate_ndjson([pred], module_project)
 
     del pred['answers']
     with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project_with_ontology)
+        _validate_ndjson([pred], module_project)
 
 
-def test_invalid_polygon(polygon_inference, configured_project_with_ontology):
+def test_invalid_polygon(polygon_inference, module_project):
     #Only two points
     pred = polygon_inference.copy()
     pred['polygon'] = [{"x": 100, "y": 100}, {"x": 200, "y": 200}]
     with pytest.raises(MALValidationError):
-        _validate_ndjson([pred], configured_project_with_ontology)
+        _validate_ndjson([pred], module_project)
 
 
-def test_incorrect_entity(entity_inference, configured_project_with_ontology):
+def test_incorrect_entity(entity_inference, module_project):
     entity = entity_inference.copy()
     #Location cannot be a list
     entity["location"] = [0, 10]
     with pytest.raises(MALValidationError):
-        _validate_ndjson([entity], configured_project_with_ontology)
+        _validate_ndjson([entity], module_project)
 
     entity["location"] = {"start": -1, "end": 5}
     with pytest.raises(MALValidationError):
-        _validate_ndjson([entity], configured_project_with_ontology)
+        _validate_ndjson([entity], module_project)
 
     entity["location"] = {"start": 15, "end": 5}
     with pytest.raises(MALValidationError):
-        _validate_ndjson([entity], configured_project_with_ontology)
+        _validate_ndjson([entity], module_project)
 
 
 def test_incorrect_mask(segmentation_inference,
-                        configured_project_with_ontology):
+                        module_project):
     seg = segmentation_inference.copy()
     seg['mask']['colorRGB'] = [-1, 0, 10]
     with pytest.raises(MALValidationError):
-        _validate_ndjson([seg], configured_project_with_ontology)
+        _validate_ndjson([seg], module_project)
 
     seg['mask']['colorRGB'] = [0, 0]
     with pytest.raises(MALValidationError):
-        _validate_ndjson([seg], configured_project_with_ontology)
+        _validate_ndjson([seg], module_project)
 
     seg['mask'] = {'counts': [0], 'size': [0, 1]}
     with pytest.raises(MALValidationError):
-        _validate_ndjson([seg], configured_project_with_ontology)
+        _validate_ndjson([seg], module_project)
 
     seg['mask'] = {'counts': [-1], 'size': [1, 1]}
     with pytest.raises(MALValidationError):
-        _validate_ndjson([seg], configured_project_with_ontology)
+        _validate_ndjson([seg], module_project)
 
 
-def test_all_validate_json(configured_project_with_ontology, predictions):
+def test_all_validate_json(module_project, predictions):
     #Predictions contains one of each type of prediction.
     #These should be properly formatted and pass.
-    _validate_ndjson(predictions, configured_project_with_ontology)
+    _validate_ndjson(predictions, module_project)
 
 
 def test_incorrect_line(line_inference, configured_project_with_ontology):
