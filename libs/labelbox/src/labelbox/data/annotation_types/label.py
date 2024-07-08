@@ -50,10 +50,10 @@ class Label(pydantic_compat.BaseModel):
     data: DataType
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoMaskAnnotation, ScalarMetric,
-                            ConfusionMatrixMetric,
-                            RelationshipAnnotation,
+                            ConfusionMatrixMetric, RelationshipAnnotation,
                             PromptClassificationAnnotation]] = []
     extra: Dict[str, Any] = {}
+    is_benchmark_reference: Optional[bool] = False
 
     @pydantic_compat.root_validator(pre=True)
     def validate_data(cls, label):
@@ -219,9 +219,8 @@ class Label(pydantic_compat.BaseModel):
                 )
             # Validates only one prompt annotation is included
             if isinstance(v, PromptClassificationAnnotation):
-               prompt_count+=1
-               if prompt_count > 1:
-                   raise TypeError(
-                       f"Only one prompt annotation is allowed per label"
-                   )
+                prompt_count += 1
+                if prompt_count > 1:
+                    raise TypeError(
+                        f"Only one prompt annotation is allowed per label")
         return value

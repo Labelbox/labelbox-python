@@ -198,6 +198,7 @@ def validate_iso_format(date_string: str):
     assert parsed_t.minute is not None
     assert parsed_t.second is not None
 
+
 @pytest.mark.order(1)
 @pytest.mark.parametrize(
     "data_type_class",
@@ -333,6 +334,22 @@ def test_import_label_annotations(
     data_row.delete()
 
 
+@pytest.mark.parametrize("_, data_class, annotations", test_params)
+def test_import_label_annotations_with_is_benchmark_reference_flag(
+        data_class, annotations, _):
+    labels = [
+        lb_types.Label(data=data_class(uid=str(uuid.uuid4()),
+                                       url="http://test.com"),
+                       annotations=annotations,
+                       is_benchmark_reference=True)
+    ]
+    serialized_annotations = get_annotation_comparison_dicts_from_labels(labels)
+
+    assert len(serialized_annotations) == len(annotations)
+    for serialized_annotation in serialized_annotations:
+        assert serialized_annotation["isBenchmarkReferenceLabel"]
+
+
 @pytest.mark.parametrize("data_type, data_class, annotations", test_params)
 @pytest.fixture
 def one_datarow(client, rand_gen, data_row_json_by_data_type, data_type):
@@ -423,4 +440,3 @@ def test_import_mal_annotations_global_key(client,
 
     assert import_annotations.errors == []
     # MAL Labels cannot be exported and compared to input labels
-    
