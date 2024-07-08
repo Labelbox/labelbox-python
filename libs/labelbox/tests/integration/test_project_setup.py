@@ -68,10 +68,10 @@ def test_project_editor_setup(client, project, rand_gen):
            ] == [ontology_name]
 
 
-def test_project_editor_setup_cant_call_multiple_times(client, project,
-                                                       rand_gen):
+def test_project_connect_ontology_cant_call_multiple_times(
+        client, project, rand_gen):
     ontology_name = f"test_project_editor_setup_ontology_name-{rand_gen(str)}"
     ontology = client.create_ontology(ontology_name, simple_ontology())
     project.connect_ontology(ontology)
-    with pytest.raises(ResourceConflict):
+    with pytest.raises(ValueError):
         project.connect_ontology(ontology)

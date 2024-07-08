@@ -149,6 +149,12 @@ class Project(DbObject, Updateable, Deletable):
     def is_auto_data_generation(self) -> bool:
         return (self.upload_type == UploadType.Auto)  # type: ignore
 
+    # we test not only the project ontology is None, but also a default empty ontology that we create when we attach a labeling front end in createLabelingFrontendOptions
+    def is_empty_ontology(self) -> bool:
+        ontology = self.ontology()  # type: ignore
+        return ontology is None or (len(ontology.tools()) == 0 and
+                                    len(ontology.classifications()) == 0)
+
     def project_model_configs(self):
         query_str = """query ProjectModelConfigsPyApi($id: ID!) {
             project(where: {id : $id}) {
@@ -790,6 +796,9 @@ class Project(DbObject, Updateable, Deletable):
                 "tools": [],
                 "classifications": []
             })
+
+        if not self.is_empty_ontology():
+            raise ValueError("Ontology already connected to project.")
 
         query_str = """mutation ConnectOntologyPyApi($projectId: ID!, $ontologyId: ID!){
             project(where: {id: $projectId}) {connectOntology(ontologyId: $ontologyId) {id}}}"""
