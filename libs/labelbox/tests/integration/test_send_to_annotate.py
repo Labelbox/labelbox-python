@@ -4,12 +4,13 @@ from typing import List
 
 
 def test_send_to_annotate_include_annotations(
-        client: Client, configured_batch_project_with_label: Project, project_pack: List[Project], ontology: Ontology):
+        client: Client, configured_batch_project_with_label: Project,
+        project_pack: List[Project], ontology: Ontology):
     [source_project, _, data_row, _] = configured_batch_project_with_label
     destination_project: Project = project_pack[0]
 
     src_ontology = source_project.ontology()
-    destination_project.setup_editor(ontology)
+    destination_project.connect_ontology(ontology)
 
     # build an ontology mapping using the top level tools
     src_feature_schema_ids = list(
@@ -46,11 +47,11 @@ def test_send_to_annotate_include_annotations(
         # Check that the data row was sent to the new project
         destination_batches = list(destination_project.batches())
         assert len(destination_batches) == 1
-        
+
         export_task = destination_project.export()
         export_task.wait_till_done()
         stream = export_task.get_buffered_stream()
-        
+
         destination_data_rows = [dr.json["data_row"]["id"] for dr in stream]
         assert len(destination_data_rows) == 1
         assert destination_data_rows[0] == data_row.uid

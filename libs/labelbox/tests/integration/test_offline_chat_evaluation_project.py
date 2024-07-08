@@ -1,5 +1,6 @@
 import pytest
 
+
 def test_create_offline_chat_evaluation_project(client, rand_gen,
                                                 offline_chat_evaluation_project,
                                                 chat_evaluation_ontology,
@@ -9,7 +10,7 @@ def test_create_offline_chat_evaluation_project(client, rand_gen,
     assert project
 
     ontology = chat_evaluation_ontology
-    project.setup_editor(ontology)
+    project.connect_ontology(ontology)
 
     assert project.labeling_frontend().name == "Editor"
     assert project.ontology().name == ontology.name
