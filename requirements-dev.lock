@@ -7,6 +7,7 @@
 #   all-features: true
 #   with-sources: false
 #   generate-hashes: false
+#   universal: false
 
 -e file:libs/labelbox
 alabaster==0.7.13
@@ -31,7 +32,7 @@ bleach==6.1.0
     # via nbconvert
 cachetools==5.3.3
     # via google-auth
-certifi==2024.6.2
+certifi==2024.7.4
     # via pyproj
     # via requests
 charset-normalizer==3.3.2
@@ -59,7 +60,7 @@ execnet==2.1.1
     # via pytest-xdist
 executing==2.0.1
     # via stack-data
-faker==25.9.1
+faker==26.0.0
 fastjsonschema==2.20.0
     # via nbformat
 geojson==3.1.0
@@ -70,7 +71,7 @@ gitpython==3.1.43
     # via databooks
 google-api-core==2.19.1
     # via labelbox
-google-auth==2.30.0
+google-auth==2.31.0
     # via google-api-core
 googleapis-common-protos==1.63.2
     # via google-api-core
@@ -79,7 +80,7 @@ idna==3.7
 imagesize==1.4.1
     # via labelbox
     # via sphinx
-importlib-metadata==7.2.1
+importlib-metadata==8.0.0
     # via jupyter-client
     # via nbconvert
     # via sphinx
@@ -97,7 +98,7 @@ jedi==0.19.1
 jinja2==3.1.4
     # via nbconvert
     # via sphinx
-jsonschema==4.22.0
+jsonschema==4.23.0
     # via nbformat
 jsonschema-specifications==2023.12.1
     # via jsonschema
@@ -110,7 +111,7 @@ jupyter-core==5.7.2
     # via nbformat
 jupyterlab-pygments==0.3.0
     # via nbconvert
-makefun==1.15.2
+makefun==1.15.3
     # via decopatch
     # via pytest-cases
 markupsafe==2.1.5
@@ -120,7 +121,7 @@ matplotlib-inline==0.1.7
     # via ipython
 mistune==3.0.2
     # via nbconvert
-mypy==1.10.0
+mypy==1.10.1
 mypy-extensions==1.0.0
     # via black
     # via mypy
@@ -155,7 +156,7 @@ pexpect==4.9.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==10.3.0
+pillow==10.4.0
     # via labelbox
 pkgutil-resolve-name==1.3.10
     # via jsonschema
@@ -169,7 +170,7 @@ prompt-toolkit==3.0.47
     # via ipython
 proto-plus==1.24.0
     # via google-api-core
-protobuf==5.27.1
+protobuf==5.27.2
     # via google-api-core
     # via googleapis-common-protos
     # via proto-plus
@@ -182,10 +183,10 @@ pyasn1==0.6.0
     # via rsa
 pyasn1-modules==0.4.0
     # via google-auth
-pydantic==2.7.4
+pydantic==2.8.2
     # via databooks
     # via labelbox
-pydantic-core==2.18.4
+pydantic-core==2.20.1
     # via pydantic
 pygeotile==1.0.6
     # via labelbox
@@ -211,7 +212,7 @@ pytest-snapshot==0.9.0
 pytest-timeout==2.3.1
 pytest-timestamper==0.0.10
 pytest-xdist==3.6.1
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via faker
     # via jupyter-client
     # via labelbox
@@ -233,7 +234,7 @@ requests==2.32.3
 rich==12.6.0
     # via databooks
     # via typer
-rpds-py==0.18.1
+rpds-py==0.19.0
     # via jsonschema
     # via referencing
 rsa==4.9
@@ -279,7 +280,7 @@ tinycss2==1.3.0
     # via nbconvert
 tokenize-rt==5.2.0
     # via black
-toml-cli==0.6.1
+toml-cli==0.7.0
 tomli==2.0.1
     # via black
     # via coverage
