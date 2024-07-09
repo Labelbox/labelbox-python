@@ -597,7 +597,7 @@ def _create_project(client: Client, rand_gen, data_row_json_by_media_type, media
     
     return project, ontology, dataset
 
-    
+
 @pytest.fixture
 def configured_project(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
     """Configure project for test. Request.param will contain the media type if not present will use Image MediaType. The project will have 10 data rows."""

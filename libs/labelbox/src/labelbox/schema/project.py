@@ -149,6 +149,12 @@ class Project(DbObject, Updateable, Deletable):
     def is_auto_data_generation(self) -> bool:
         return (self.upload_type == UploadType.Auto)  # type: ignore
 
+    # we test not only the project ontology is None, but also a default empty ontology that we create when we attach a labeling front end in createLabelingFrontendOptions
+    def is_empty_ontology(self) -> bool:
+        ontology = self.ontology()  # type: ignore
+        return ontology is None or (len(ontology.tools()) == 0 and
+                                    len(ontology.classifications()) == 0)
+
     def project_model_configs(self):
         query_str = """query ProjectModelConfigsPyApi($id: ID!) {
             project(where: {id : $id}) {
@@ -772,35 +778,27 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             ontology (Ontology): The ontology to attach to the project
         """
+        warnings.warn("This method is deprecated use connect_ontology instead.")
+        self.connect_ontology(ontology)
 
-        if self.labeling_frontend() is not None and not self.is_chat_evaluation(
-        ):  # Chat evaluation projects are automatically set up via the same api that creates a project
-            raise ResourceConflict("Editor is already set up.")
+    def connect_ontology(self, ontology) -> None:
+        """
+        Connects the ontology to the project. If an editor is not setup, it will be connected as well.
 
-        if not self.is_chat_evaluation():
-            labeling_frontend = next(
-                self.client.get_labeling_frontends(
-                    where=Entity.LabelingFrontend.name == "Editor"))
-            self.labeling_frontend.connect(labeling_frontend)
+        Note: For live chat model evaluation projects, the editor setup is skipped becase it is automatically setup when the project is created.
 
-            LFO = Entity.LabelingFrontendOptions
-            self.client._create(
-                LFO, {
-                    LFO.project:
-                        self,
-                    LFO.labeling_frontend:
-                        labeling_frontend,
-                    LFO.customization_options:
-                        json.dumps({
-                            "tools": [],
-                            "classifications": []
-                        })
-                })
-        else:
-            warnings.warn("""
-            Skipping editor setup for a chat evaluation project.
-            Editor was setup automatically.
-            """)
+        Args:
+            ontology (Ontology): The ontology to attach to the project
+        """
+        if self.labeling_frontend(
+        ) is None:  # Chat evaluation projects are automatically set up via the same api that creates a project
+            self._connect_default_labeling_front_end(ontology_as_dict={
+                "tools": [],
+                "classifications": []
+            })
+
+        if not self.is_empty_ontology():
+            raise ValueError("Ontology already connected to project.")
 
         query_str = """mutation ConnectOntologyPyApi($projectId: ID!, $ontologyId: ID!){
             project(where: {id: $projectId}) {connectOntology(ontologyId: $ontologyId) {id}}}"""
@@ -812,42 +810,54 @@ class Project(DbObject, Updateable, Deletable):
         self.update(setup_complete=timestamp)
 
     def setup(self, labeling_frontend, labeling_frontend_options) -> None:
-        """ Finalizes the Project setup.
+        """ This method will associate default labeling frontend with the project and create an ontology based on labeling_frontend_options.
 
         Args:
-            labeling_frontend (LabelingFrontend): Which UI to use to label the
-                data.
+            labeling_frontend (LabelingFrontend): Do not use, this parameter is deprecated. We now associate the default labeling frontend with the project.
             labeling_frontend_options (dict or str): Labeling frontend options,
                 a.k.a. project ontology. If given a `dict` it will be converted
                 to `str` using `json.dumps`.
         """
 
+        warnings.warn("This method is deprecated use connect_ontology instead.")
+        if labeling_frontend is not None:
+            warnings.warn(
+                "labeling_frontend parameter will not be used to create a new labeling frontend."
+            )
+
         if self.is_chat_evaluation():
             warnings.warn("""
-            This project is a chat evaluation project.
+            This project is a live chat evaluation project.
             Editor was setup automatically.
-            No need to call this method.
             """)
             return
 
-        if self.labeling_frontend() is not None:
-            raise ResourceConflict("Editor is already set up.")
+        if self.labeling_frontend(
+        ) is None:  # Chat evaluation projects are automatically set up via the same api that creates a project
+            self._connect_default_labeling_front_end(labeling_frontend_options)
 
-        if not isinstance(labeling_frontend_options, str):
-            labeling_frontend_options = json.dumps(labeling_frontend_options)
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.update(setup_complete=timestamp)
 
+    def _connect_default_labeling_front_end(self, ontology_as_dict: dict):
+        warnings.warn("Connecting default labeling editor for the project.")
+        labeling_frontend = next(
+            self.client.get_labeling_frontends(
+                where=Entity.LabelingFrontend.name == "Editor"))
         self.labeling_frontend.connect(labeling_frontend)
+
+        if not isinstance(ontology_as_dict, str):
+            labeling_frontend_options_str = json.dumps(ontology_as_dict)
+        else:
+            labeling_frontend_options_str = ontology_as_dict
 
         LFO = Entity.LabelingFrontendOptions
         self.client._create(
             LFO, {
                 LFO.project: self,
                 LFO.labeling_frontend: labeling_frontend,
-                LFO.customization_options: labeling_frontend_options
+                LFO.customization_options: labeling_frontend_options_str
             })
-
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        self.update(setup_complete=timestamp)
 
     def create_batch(
         self,

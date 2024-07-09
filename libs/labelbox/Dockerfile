@@ -5,7 +5,7 @@ ENV LANG="C.UTF-8" \
     LC_ALL="C.UTF-8" \
     PATH="/home/python/.local/bin:/home/python/.rye/shims:$PATH" \
     PIP_NO_CACHE_DIR="false" \
-    RYE_VERSION="0.34.0" \
+    RYE_VERSION="0.36.0" \
     RYE_INSTALL_OPTION="--yes" \
     LABELBOX_TEST_ENVIRON="prod"
 
