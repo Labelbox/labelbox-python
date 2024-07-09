@@ -122,12 +122,12 @@ class TestUserGroup:
         assert len(group.projects) == 2
         assert len(group.users) == 2
 
-    def test_get_resource_not_found_error(self):
+    def test_get_value_error(self):
         self.client.execute.return_value = None
         group = UserGroup(self.client)
         group.name = "Test Group"
 
-        with pytest.raises(ResourceNotFoundError):
+        with pytest.raises(ValueError):
             group.get()
 
     def test_update(self, group_user, group_project):
