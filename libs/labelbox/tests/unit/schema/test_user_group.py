@@ -181,7 +181,7 @@ class TestUserGroup:
         group = self.group
         group.name = ""
 
-        with pytest.raises(ValueError):
+        with pytest.raises(UnprocessableEntityError):
             group.update()
 
     def test_update_with_exception_name(self):
@@ -268,6 +268,13 @@ class TestUserGroup:
         group.id = "group_id"
 
         with pytest.raises(ResourceNotFoundError):
+            group.delete()
+
+    def test_delete_no_id(self):
+        group = UserGroup(self.client)
+        group.id = None
+
+        with pytest.raises(ValueError):
             group.delete()
 
     def test_user_groups_empty(self):

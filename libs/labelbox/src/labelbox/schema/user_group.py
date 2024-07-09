@@ -296,7 +296,10 @@ class UserGroup(BaseModel):
         
         Raises:
             ResourceNotFoundError: If the deletion of the user group fails due to not existing
+            ValueError: If the group ID is not provided.
         """
+        if not self.id:
+            raise ValueError("Group id is required")
         query = """
         mutation DeleteUserGroupPyApi($id: ID!) {
             deleteUserGroup(where: {id: $id}) {

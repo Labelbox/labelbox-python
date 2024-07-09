@@ -21,7 +21,7 @@ def user_group(client):
     user_group.delete()
 
 
-def test_existing_user_groups(user_group, client):
+def test_get_user_group(user_group, client):
     # Verify that the user group was created successfully
     user_group_equal = UserGroup(client)
     user_group_equal.id = user_group.id
@@ -31,7 +31,15 @@ def test_existing_user_groups(user_group, client):
     assert user_group.color == user_group_equal.color
 
 
-def test_cannot_get_user_group_with_invalid_id(client):
+def test_throw_error_get_user_group_no_id(user_group, client):
+    old_id = user_group.id
+    with pytest.raises(ValueError):
+        user_group.id = ""
+        user_group.get()
+    user_group.id = old_id
+
+
+def test_throw_error_cannot_get_user_group_with_invalid_id(client):
     user_group = UserGroup(client=client, id=str(uuid4()))
     with pytest.raises(ResourceNotFoundError):
         user_group.get()
@@ -108,10 +116,18 @@ def test_update_user_group(user_group):
     assert user_group.color == UserGroupColor.PURPLE
 
 
-def test_cannot_update_name_to_empty_string(user_group):
-    with pytest.raises(UnprocessableEntityError):
+def test_throw_error_cannot_update_name_to_empty_string(user_group):
+    with pytest.raises(ValueError):
         user_group.name = ""
         user_group.update()
+
+
+def test_throw_error_cannot_update_id_to_empty_string(user_group):
+    old_id = user_group.id
+    with pytest.raises(ValueError):
+        user_group.id = ""
+        user_group.update()
+    user_group.id = old_id
 
 
 def test_cannot_update_group_id(user_group):
@@ -160,7 +176,7 @@ def test_get_user_groups_with_creation_deletion(client):
 
 
 # project_pack creates two projects
-def test_update_user_group(user_group, client, project_pack):
+def test_update_user_group_users_projects(user_group, client, project_pack):
     users = list(client.get_users())
     projects = project_pack
 
@@ -190,6 +206,14 @@ def test_throw_error_when_deleting_invalid_id_group(client):
     with pytest.raises(ResourceNotFoundError):
         user_group = UserGroup(client=client, id=str(uuid4()))
         user_group.delete()
+
+
+def test_throw_error_delete_user_group_no_id(user_group, client):
+    old_id = user_group.id
+    with pytest.raises(ValueError):
+        user_group.id = ""
+        user_group.delete()
+    user_group.id = old_id
 
 
 if __name__ == "__main__":
