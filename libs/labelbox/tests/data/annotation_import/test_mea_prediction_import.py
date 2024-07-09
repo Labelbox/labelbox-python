@@ -39,10 +39,10 @@ def test_create_from_objects_global_key(client, model_run_with_data_rows,
                                         polygon_inference,
                                         annotation_import_test_helpers):
     name = str(uuid.uuid4())
-    dr = client.get_data_row(polygon_inference['dataRow']['id'])
-    del polygon_inference['dataRow']['id']
-    polygon_inference['dataRow']['globalKey'] = dr.global_key
-    object_predictions = [polygon_inference]
+    dr = client.get_data_row(polygon_inference[0]['dataRow']['id'])
+    polygon_inference[0]['dataRow']['globalKey'] = dr.global_key
+    del polygon_inference[0]['dataRow']['id']
+    object_predictions = [polygon_inference[0]]
 
     annotation_import = model_run_with_data_rows.add_predictions(
         name=name, predictions=object_predictions)
@@ -63,13 +63,13 @@ def test_create_from_objects_with_confidence(predictions_with_confidence,
                                              annotation_import_test_helpers):
     name = str(uuid.uuid4())
 
-    object_prediction_data_rows = [
+    object_prediction_data_rows = set([
         object_prediction["dataRow"]["id"]
         for object_prediction in predictions_with_confidence
-    ]
+    ])
     # MUST have all data rows in the model run
     model_run_with_data_rows.upsert_data_rows(
-        data_row_ids=object_prediction_data_rows)
+        data_row_ids=list(object_prediction_data_rows))
 
     annotation_import = model_run_with_data_rows.add_predictions(
         name=name, predictions=predictions_with_confidence)
@@ -110,8 +110,8 @@ def test_create_from_objects_all_project_labels(
 
 def test_model_run_project_labels(model_run_with_all_project_labels: ModelRun,
                                   model_run_predictions):
+    
     model_run = model_run_with_all_project_labels
-
     export_task = model_run.export()
     export_task.wait_till_done()
     stream = export_task.get_buffered_stream()
@@ -122,24 +122,25 @@ def test_model_run_project_labels(model_run_with_all_project_labels: ModelRun,
         data_row.json["experiments"][model_run.model_id]["runs"][model_run.uid]["labels"][0]) 
         for data_row in stream]
     
-    labels_indexed_by_schema_id = {}
-
-    for data_row_id, label in model_run_exported_labels:
-        # assuming exported array of label 'objects' has only one label per data row... as usually is when there are no label revisions
-        schema_id = label["annotations"]["objects"][0]["feature_schema_id"]
-        labels_indexed_by_schema_id[schema_id] = {"label": label, "data_row_id": data_row_id}
-
-    assert (len(
-        labels_indexed_by_schema_id.keys())) == len(model_run_predictions)
+    labels_indexed_by_name = {}
 
     # making sure the labels are in this model run are all labels uploaded to the project
     # by comparing some 'immutable' attributes
-    for expected_label in model_run_predictions:
-        schema_id = expected_label["schemaId"]
-        actual_label = labels_indexed_by_schema_id[schema_id]
-        assert actual_label["label"]["annotations"]["objects"][0]["name"] == expected_label[
-            'name']
-        assert actual_label["data_row_id"] == expected_label["dataRow"]["id"]
+    # multiple data rows per prediction import
+    for data_row_id, label in model_run_exported_labels:
+        for object in label["annotations"]["objects"]:
+            name = object["name"]
+            labels_indexed_by_name[f"{name}-{data_row_id}"] = {"label": label, "data_row_id": data_row_id}
+    
+    assert (len(
+        labels_indexed_by_name.keys())) == len([prediction["dataRow"]["id"] for prediction in model_run_predictions])
+    
+    expected_data_row_ids = set([prediction["dataRow"]["id"] for prediction in model_run_predictions])
+    expected_objects = set([prediction["name"] for prediction in model_run_predictions])
+    for data_row_id, actual_label in model_run_exported_labels:
+        assert data_row_id in expected_data_row_ids
+        assert len(expected_objects) == len(actual_label["annotations"]["objects"])
+
 
 
 def test_create_from_label_objects(model_run_with_data_rows,

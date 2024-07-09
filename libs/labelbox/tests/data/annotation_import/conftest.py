@@ -1,6 +1,7 @@
 import itertools
 import uuid
 
+from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology
 from labelbox.schema.project import Project
 import pytest
@@ -214,7 +215,7 @@ def normalized_ontology_by_media_type():
                 "radio",
             "options": [{
                 "label":
-                    "radio_option_1",
+                    "radio_value_1",
                 "value":
                     "radio_value_1",
                 "options": [
@@ -230,12 +231,12 @@ def normalized_ontology_by_media_type():
                         "options": [
                             {
                                 "label": "nested_checkbox_option_1",
-                                "value": "nested_checkbox_value_1",
+                                "value": "nested_checkbox_option_1",
                                 "options": [],
                             },
                             {
                                 "label": "nested_checkbox_option_2",
-                                "value": "nested_checkbox_value_2",
+                                "value": "nested_checkbox_option_2",
                             },
                         ],
                     },
@@ -601,10 +602,7 @@ def _create_project(client: Client, rand_gen, data_row_json_by_media_type, media
 def configured_project(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
     """Configure project for test. Request.param will contain the media type if not present will use Image MediaType. The project will have 10 data rows."""
     
-    if hasattr(request,"param"):
-        media_type = request.param
-    else:
-        media_type = MediaType.Image
+    media_type = getattr(request, "param", MediaType.Image)
         
     project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
 
@@ -615,14 +613,13 @@ def configured_project(client: Client, rand_gen, data_row_json_by_media_type, re
     client.delete_unused_ontology(ontology.uid)
 
 
-@pytest.fixture
+@pytest.fixture()
 def configured_project_by_global_key(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
     """Does the same thing as configured project but with global keys focus."""
     
-    if hasattr(request, "param"):
-        media_type = request.param
-    else:
-        media_type = MediaType.Image
+    dataset = client.create_dataset(name=rand_gen(str))
+    
+    media_type = getattr(request, "param", MediaType.Image)
         
     project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
 
@@ -638,11 +635,8 @@ def configured_project_by_global_key(client: Client, rand_gen, data_row_json_by_
 def module_project(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
     """Generates a image project that scopes to the test module(file). Used to reduce api calls."""
     
-    if hasattr(request, "param"):
-        media_type = request.param
-    else:
-        media_type = MediaType.Image
-        
+    media_type = getattr(request, "param", MediaType.Image)
+    
     project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
 
     yield project
@@ -677,7 +671,7 @@ def prediction_id_mapping(request, normalized_ontology_by_media_type):
         ontology = project.ontology().normalized
         
     elif "configured_project_by_global_key" in request.fixturenames:
-        project = request.getfixturevalue("configured_project")
+        project = request.getfixturevalue("configured_project_by_global_key")
         data_row_identifiers = [{"globalKey": global_key} for global_key in project.global_keys]
         ontology = project.ontology().normalized
         
@@ -687,12 +681,12 @@ def prediction_id_mapping(request, normalized_ontology_by_media_type):
         ontology = project.ontology().normalized
         
     elif "hardcoded_datarow_id" in request.fixturenames:
-        if "media_type" in request.fixturenames:
+        if "media_type" not in request.fixturenames:
             raise Exception("Please include a 'media_type' fixture")
         project = None
         media_type = request.getfixturevalue("media_type")
         ontology = normalized_ontology_by_media_type[media_type]
-        data_row_identifiers = [{"id": data_row_id} for data_row_id in request.getfixturevalue("hardcoded_datarow_id")()]
+        data_row_identifiers = [{"id": request.getfixturevalue("hardcoded_datarow_id")()}]
         
     elif "hardcoded_global_key" in request.fixturenames:
         if "media_type" not in request.fixturenames:
@@ -700,8 +694,8 @@ def prediction_id_mapping(request, normalized_ontology_by_media_type):
         project = None
         media_type = request.getfixturevalue("media_type")
         ontology = normalized_ontology_by_media_type[media_type]
-        data_row_identifiers = [{"globalKey": global_key} for global_key in request.getfixturevalue("hardcoded_global_key")()]
-    
+        data_row_identifiers = [{"globalKey": request.getfixturevalue("hardcoded_global_key")()}]
+
     # Used for tests that need access to every ontology
     else:
         project = None
@@ -793,6 +787,7 @@ def rectangle_inference_with_confidence(prediction_id_mapping):
         if "rectangle_nested" not in feature:
             continue
         rectangle = feature["rectangle_nested"].copy()
+        print(rectangle)
         rectangle.update({
             "bbox": {
                 "top": 48,
@@ -1171,7 +1166,7 @@ def annotations_by_media_type(
 def model_run_predictions(polygon_inference, rectangle_inference,
                           line_inference):
     # Not supporting mask since there isn't a signed url representing a seg mask to upload
-    return (polygon_inference + rectangle_inference + line_inference)[0]
+    return (polygon_inference + rectangle_inference + line_inference)
 
 
 @pytest.fixture
@@ -1196,10 +1191,12 @@ def object_predictions_for_annotation_import(polygon_inference,
                                              rectangle_inference,
                                              line_inference,
                                              segmentation_inference):
-    return (polygon_inference +
-            rectangle_inference +
-            line_inference + 
-            segmentation_inference)
+    return (
+          polygon_inference +
+          rectangle_inference +
+          line_inference + 
+          segmentation_inference
+        )
     
 
 
@@ -1208,15 +1205,10 @@ def classification_predictions(checklist_inference, text_inference):
     return checklist_inference + text_inference
 
 
+# Can only have confidence predictions supported by media type of project
 @pytest.fixture
-def predictions(object_predictions, classification_predictions):
-    return [object_predictions, classification_predictions]
-
-
-@pytest.fixture
-def predictions_with_confidence(text_inference_with_confidence,
-                                rectangle_inference_with_confidence):
-    return text_inference_with_confidence[0] + rectangle_inference_with_confidence[0]
+def predictions_with_confidence(rectangle_inference_with_confidence):
+    return rectangle_inference_with_confidence
 
 
 @pytest.fixture
@@ -1292,10 +1284,11 @@ def model_run_with_all_project_labels(
     client,
     configured_project,
     model_run_predictions,
-    model_run,
-    wait_for_label_processing,
+    model_run: ModelRun,
+    wait_for_label_processing
 ):
-    use_data_row_ids = [p["dataRow"]["id"] for p in model_run_predictions]
+    use_data_row_ids = list(set([p["dataRow"]["id"] for p in model_run_predictions]))
+
     model_run.upsert_data_rows(use_data_row_ids)
 
     upload_task = LabelImport.create_from_objects(
@@ -1310,11 +1303,11 @@ def model_run_with_all_project_labels(
     assert (
         len(upload_task.errors) == 0
     ), f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
-    wait_for_label_processing(configured_project)
-    model_run.upsert_labels(project_id=configured_project.uid)
+    labels = wait_for_label_processing(configured_project)
+    label_ids = [label.uid for label in labels]
+    model_run.upsert_labels(label_ids)
     yield model_run
     model_run.delete()
-    # TODO: Delete resources when that is possible ..
 
 
 class AnnotationImportTestHelpers:

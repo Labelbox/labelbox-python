@@ -1,5 +1,4 @@
 import uuid
-import pytest
 
 from labelbox import parser
 from labelbox.schema.annotation_import import MALPredictionImport

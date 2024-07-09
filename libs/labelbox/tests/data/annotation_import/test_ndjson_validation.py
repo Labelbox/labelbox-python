@@ -13,9 +13,7 @@ from labelbox.schema.bulk_import_request import (NDChecklist, NDClassification,
                                                  _validate_ndjson)
 """
 - These NDlabels are apart of bulkImportReqeust and should be removed once bulk import request is removed
-- Test do not follow best practices but had to adapt them to work with annotations from labelimport
 """
-#TODO: Delete tests once bulk import requests are removed
 
 def test_classification_construction(checklist_inference, text_inference):
     checklist = NDClassification.build(checklist_inference[0])
