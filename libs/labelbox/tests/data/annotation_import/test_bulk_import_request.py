@@ -23,8 +23,8 @@ from labelbox.schema.media_type import MediaType
 """
 - Here we only want to check that the uploads are calling the validation
 - Then with unit tests we can check the types of errors raised
-
 """
+#TODO: remove library once bulk import requests are removed
 
 @pytest.mark.order(1)
 def test_create_from_url(module_project):
@@ -58,7 +58,7 @@ def test_create_from_objects(module_project: Project, predictions,
     name = str(uuid.uuid4())
 
     bulk_import_request = module_project.upload_annotations(
-        name=name, annotations=predictions[0])
+        name=name, annotations=predictions)
 
     assert bulk_import_request.project() == module_project
     assert bulk_import_request.name == name
@@ -66,14 +66,14 @@ def test_create_from_objects(module_project: Project, predictions,
     assert bulk_import_request.status_file_url is None
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
     annotation_import_test_helpers.assert_file_content(
-        bulk_import_request.input_file_url, predictions[0])
+        bulk_import_request.input_file_url, predictions)
 
 
 def test_create_from_label_objects(module_project, predictions,
                                    annotation_import_test_helpers):
     name = str(uuid.uuid4())
 
-    labels = list(NDJsonConverter.deserialize(predictions[0]))
+    labels = list(NDJsonConverter.deserialize(predictions))
     bulk_import_request = module_project.upload_annotations(
         name=name, annotations=labels)
 
@@ -93,7 +93,7 @@ def test_create_from_local_file(tmp_path, predictions, module_project,
     file_name = f"{name}.ndjson"
     file_path = tmp_path / file_name
     with file_path.open("w") as f:
-        parser.dump(predictions[0], f)
+        parser.dump(predictions, f)
 
     bulk_import_request = module_project.upload_annotations(
         name=name, annotations=str(file_path), validate=False)
@@ -104,7 +104,7 @@ def test_create_from_local_file(tmp_path, predictions, module_project,
     assert bulk_import_request.status_file_url is None
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
     annotation_import_test_helpers.assert_file_content(
-        bulk_import_request.input_file_url, predictions[0])
+        bulk_import_request.input_file_url, predictions)
 
 
 def test_get(client, module_project):
@@ -139,7 +139,7 @@ def test_validate_ndjson(tmp_path, module_project):
 def test_validate_ndjson_uuid(tmp_path, module_project, predictions):
     file_name = f"repeat_uuid.ndjson"
     file_path = tmp_path / file_name
-    repeat_uuid = predictions[0].copy()
+    repeat_uuid = predictions.copy()
     uid = str(uuid.uuid4())
     repeat_uuid[0]['uuid'] = uid
     repeat_uuid[1]['uuid'] = uid
@@ -187,17 +187,17 @@ def test_project_bulk_import_requests(module_project, predictions):
 
     name = str(uuid.uuid4())
     bulk_import_request = module_project.upload_annotations(
-        name=name, annotations=predictions[0])
+        name=name, annotations=predictions)
     bulk_import_request.wait_until_done()
 
     name = str(uuid.uuid4())
     bulk_import_request = module_project.upload_annotations(
-        name=name, annotations=predictions[0])
+        name=name, annotations=predictions)
     bulk_import_request.wait_until_done()
 
     name = str(uuid.uuid4())
     bulk_import_request = module_project.upload_annotations(
-        name=name, annotations=predictions[0])
+        name=name, annotations=predictions)
     bulk_import_request.wait_until_done()
 
     result = module_project.bulk_import_requests()
@@ -211,7 +211,7 @@ def test_delete(module_project, predictions):
     [bulk_import_request.delete() for bulk_import_request in bulk_import_requests]
     
     bulk_import_request = module_project.upload_annotations(
-        name=name, annotations=predictions[0])
+        name=name, annotations=predictions)
     bulk_import_request.wait_until_done()
     all_import_requests = module_project.bulk_import_requests()
     assert len(list(all_import_requests)) == 1

@@ -1204,6 +1204,10 @@ def object_predictions_for_annotation_import(polygon_inference,
 def classification_predictions(checklist_inference, text_inference):
     return checklist_inference + text_inference
 
+@pytest.fixture
+def predictions(object_predictions, classification_predictions):
+    return object_predictions + classification_predictions
+
 
 # Can only have confidence predictions supported by media type of project
 @pytest.fixture
