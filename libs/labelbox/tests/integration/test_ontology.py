@@ -95,7 +95,7 @@ def test_cant_delete_an_ontology_with_project(client):
         name='ontology name',
         feature_schema_ids=[feature_schema_id],
         media_type=MediaType.Image)
-    project.setup_editor(ontology)
+    project.connect_ontology(ontology)
 
     with pytest.raises(
             Exception,
@@ -160,7 +160,7 @@ def test_does_not_include_used_ontologies(client):
     project = client.create_project(name="test project",
                                     queue_mode=QueueMode.Batch,
                                     media_type=MediaType.Image)
-    project.setup_editor(ontology_with_project)
+    project.connect_ontology(ontology_with_project)
     unused_ontologies = client.get_unused_ontologies()
 
     assert ontology_with_project.uid not in unused_ontologies

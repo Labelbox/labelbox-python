@@ -7,6 +7,7 @@
 #   all-features: true
 #   with-sources: false
 #   generate-hashes: false
+#   universal: false
 
 -e file:libs/labelbox
 alabaster==0.7.13
@@ -17,7 +18,7 @@ babel==2.15.0
     # via sphinx
 cachetools==5.3.3
     # via google-auth
-certifi==2024.6.2
+certifi==2024.7.4
     # via pyproj
     # via requests
 charset-normalizer==3.3.2
@@ -29,7 +30,7 @@ geojson==3.1.0
     # via labelbox
 google-api-core==2.19.1
     # via labelbox
-google-auth==2.30.0
+google-auth==2.31.0
     # via google-api-core
 googleapis-common-protos==1.63.2
     # via google-api-core
@@ -38,7 +39,7 @@ idna==3.7
 imagesize==1.4.1
     # via labelbox
     # via sphinx
-importlib-metadata==7.2.1
+importlib-metadata==8.0.0
     # via sphinx
     # via typeguard
 jinja2==3.1.4
@@ -53,11 +54,11 @@ opencv-python-headless==4.10.0.84
     # via labelbox
 packaging==24.1
     # via sphinx
-pillow==10.3.0
+pillow==10.4.0
     # via labelbox
 proto-plus==1.24.0
     # via google-api-core
-protobuf==5.27.1
+protobuf==5.27.2
     # via google-api-core
     # via googleapis-common-protos
     # via proto-plus
@@ -66,9 +67,9 @@ pyasn1==0.6.0
     # via rsa
 pyasn1-modules==0.4.0
     # via google-auth
-pydantic==2.7.4
+pydantic==2.8.2
     # via labelbox
-pydantic-core==2.18.4
+pydantic-core==2.20.1
     # via pydantic
 pygeotile==1.0.6
     # via labelbox
@@ -76,7 +77,7 @@ pygments==2.18.0
     # via sphinx
 pyproj==3.5.0
     # via labelbox
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via labelbox
 pytz==2024.1
     # via babel

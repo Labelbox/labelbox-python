@@ -14,7 +14,7 @@ def test_send_to_annotate_from_model(client, configured_project,
     destination_project = project
     model = client.get_model(model_run.model_id)
     ontology = client.get_ontology(model.ontology_id)
-    destination_project.setup_editor(ontology)
+    destination_project.connect_ontology(ontology)
 
     queues = destination_project.task_queues()
     initial_review_task = next(
@@ -55,13 +55,13 @@ def test_send_to_annotate_from_model(client, configured_project,
     # Check that the data row was sent to the new project
     destination_batches = list(destination_project.batches())
     assert len(destination_batches) == 1
-    
+
     export_task = destination_project.export()
     export_task.wait_till_done()
     stream = export_task.get_buffered_stream()
-    
+
     destination_data_rows = [dr.json["data_row"]["id"] for dr in stream]
-    
+
     assert len(destination_data_rows) == len(data_row_ids)
     assert all([dr in data_row_ids for dr in destination_data_rows])
 
