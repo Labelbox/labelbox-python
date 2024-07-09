@@ -15,9 +15,6 @@
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
 # Labelbox
-
-Labelbox is a powerful data-centric AI platform that empowers enterprises to develop, optimize, and leverage AI to solve complex problems and drive innovation in their products and services.
-
 With Labelbox, enterprises can easily curate and annotate data, generate high-quality human feedback data for computer vision and language models, evaluate and improve model performance, and automate tasks by seamlessly combining AI and human-centric workflows. The academic and research community also relies on Labelbox for cutting-edge AI research and experimentation.
 
 Visit [Labelbox](http://labelbox.com/) for more information.
