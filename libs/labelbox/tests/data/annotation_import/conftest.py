@@ -298,6 +298,13 @@ def normalized_ontology_by_media_type():
         "color": "#ff0000",
         "classifications": [],
     }
+    segmentation_tool = {
+        "required": False,
+        "name": "segmentation--",
+        "tool": "superpixel",
+        "color": "#A30059",
+        "classifications": [],
+    }
     checklist = {
         "required":
             False,
@@ -393,7 +400,7 @@ def normalized_ontology_by_media_type():
             free_form_text,
             radio,
             ]
-        },
+        }, 
     MediaType.Text: {
         "tools": [
             entity_tool
@@ -480,7 +487,26 @@ def normalized_ontology_by_media_type():
             checklist_index,
             free_form_text_index
             ]
-        }
+        },
+    "all": {
+        "tools":[
+            bbox_tool,
+            bbox_tool_with_nested_text,
+            polygon_tool,
+            polyline_tool,
+            point_tool,
+            entity_tool,
+            segmentation_tool,
+            raster_segmentation_tool,
+        ],
+        "classifications": [
+            checklist,
+            checklist_index,
+            free_form_text,
+            free_form_text_index,
+            radio,
+        ]
+    }
     }
 
 
@@ -512,7 +538,7 @@ def wait_for_label_processing():
 
 ##### Unit test strategies #####
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture
 def hardcoded_datarow_id():
     data_row_id = 'ck8q9q9qj00003g5z3q1q9q9q'
 
@@ -522,7 +548,7 @@ def hardcoded_datarow_id():
     yield get_data_row_id
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture
 def hardcoded_global_key():
     global_key = str(uuid.uuid4())
 
@@ -608,7 +634,7 @@ def configured_project_by_global_key(client: Client, rand_gen, data_row_json_by_
 
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="module")
 def module_project(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
     """Generates a image project that scopes to the test module(file). Used to reduce api calls."""
     
@@ -647,17 +673,17 @@ def prediction_id_mapping(request, normalized_ontology_by_media_type):
     
     if "configured_project" in request.fixturenames:
         project = request.getfixturevalue("configured_project")
-        data_row_identifiers = project.data_row_ids
+        data_row_identifiers = [{"id": data_row_id} for data_row_id in project.data_row_ids]
         ontology = project.ontology().normalized
         
     elif "configured_project_by_global_key" in request.fixturenames:
         project = request.getfixturevalue("configured_project")
-        data_row_identifiers = project.global_keys
+        data_row_identifiers = [{"globalKey": global_key} for global_key in project.global_keys]
         ontology = project.ontology().normalized
         
     elif "module_project" in request.fixturenames:
         project = request.getfixturevalue("module_project")
-        data_row_identifiers = project.data_row_ids
+        data_row_identifiers = [{"id": data_row_id} for data_row_id in project.data_row_ids]
         ontology = project.ontology().normalized
         
     elif "hardcoded_datarow_id" in request.fixturenames:
@@ -666,18 +692,25 @@ def prediction_id_mapping(request, normalized_ontology_by_media_type):
         project = None
         media_type = request.getfixturevalue("media_type")
         ontology = normalized_ontology_by_media_type[media_type]
-        data_row_identifiers = [request.getfixturevalue("hardcoded_datarow_id")()]
+        data_row_identifiers = [{"id": data_row_id} for data_row_id in request.getfixturevalue("hardcoded_datarow_id")()]
         
     elif "hardcoded_global_key" in request.fixturenames:
-        if "media_type" in request.fixturenames:
+        if "media_type" not in request.fixturenames:
             raise Exception("Please include a 'media_type' fixture")
         project = None
         media_type = request.getfixturevalue("media_type")
         ontology = normalized_ontology_by_media_type[media_type]
-        data_row_identifiers = [request.getfixturevalue("hardcoded_global_key")()]
-  
+        data_row_identifiers = [{"globalKey": global_key} for global_key in request.getfixturevalue("hardcoded_global_key")()]
+    
+    # Used for tests that need access to every ontology
+    else:
+        project = None
+        media_type = None
+        ontology = normalized_ontology_by_media_type["all"]
+        data_row_identifiers = [{"id":"ck8q9q9qj00003g5z3q1q9q9q"}]
+    
     base_annotations = []
-    for i, data_row_identifier in enumerate(data_row_identifiers):
+    for data_row_identifier in data_row_identifiers:
         base_annotation = {}
         for feature in (ontology["tools"] + ontology["classifications"]):
             if "tool" in feature:
@@ -690,9 +723,10 @@ def prediction_id_mapping(request, normalized_ontology_by_media_type):
                             )  # checklist vs indexed checklist 
 
             base_annotation[feature_type] = {
+                "uuid": str(uuid.uuid4()),
                 "name": feature["name"],
                 "tool": feature,
-                "dataRow": {"id": data_row_identifier}
+                "dataRow": data_row_identifier
                 }
 
         base_annotations.append(base_annotation)
@@ -767,21 +801,13 @@ def rectangle_inference_with_confidence(prediction_id_mapping):
                 "width": 12
             },
             "classifications": [{
-                "schemaId":
-                    rectangle["tool"]["classifications"][0]["featureSchemaId"],
                 "name":
                     rectangle["tool"]["classifications"][0]["name"],
                 "answer": {
-                    "schemaId":
-                        rectangle["tool"]["classifications"][0]["options"][0]
-                        ["featureSchemaId"],
                     "name":
                         rectangle["tool"]["classifications"][0]["options"][0]
                         ["value"],
                     "classifications": [{
-                        "schemaId":
-                            rectangle["tool"]["classifications"][0]["options"][0]
-                            ["options"][1]["featureSchemaId"],
                         "name":
                             rectangle["tool"]["classifications"][0]["options"][0]
                             ["options"][1]["name"],
@@ -1259,7 +1285,6 @@ def model_run_with_data_rows(
     model_run.upsert_labels(label_ids)
     yield model_run
     model_run.delete()
-    # TODO: Delete resources when that is possible ..
 
 
 @pytest.fixture
@@ -1270,7 +1295,6 @@ def model_run_with_all_project_labels(
     model_run,
     wait_for_label_processing,
 ):
-    configured_project.enable_model_assisted_labeling()
     use_data_row_ids = [p["dataRow"]["id"] for p in model_run_predictions]
     model_run.upsert_data_rows(use_data_row_ids)
 
