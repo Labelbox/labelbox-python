@@ -204,7 +204,7 @@ def test_validate_ndjson_uuid(tmp_path, configured_project,
                               predictions):
     file_name = f"repeat_uuid.ndjson"
     file_path = tmp_path / file_name
-    repeat_uuid = predictions[0].copy()
+    repeat_uuid = predictions.copy()
     repeat_uuid[0]['uuid'] = 'test_uuid'
     repeat_uuid[1]['uuid'] = 'test_uuid'
 
