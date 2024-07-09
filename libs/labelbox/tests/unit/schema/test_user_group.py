@@ -65,6 +65,13 @@ class TestUserGroup:
         assert len(group.projects) == 0
         assert len(group.users) == 0
 
+    def test_update_with_exception_name(self):
+        group = self.group
+        group.id = ""
+
+        with pytest.raises(ValueError):
+            group.get()
+
     def test_get(self):
         projects = [
             {
@@ -168,6 +175,20 @@ class TestUserGroup:
         group.id = "group_id"
 
         with pytest.raises(ResourceNotFoundError) as e:
+            group.update()
+
+    def test_update_with_exception_name(self):
+        group = self.group
+        group.name = ""
+
+        with pytest.raises(ValueError):
+            group.update()
+
+    def test_update_with_exception_name(self):
+        group = self.group
+        group.id = ""
+
+        with pytest.raises(ValueError):
             group.update()
 
     def test_create_with_exception_id(self):

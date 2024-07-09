@@ -110,7 +110,10 @@ class UserGroup(BaseModel):
 
         Raises:
             ResourceNotFoundError: If the query fails to fetch the group information.
+            ValueError: If the group ID is not provided.
         """
+        if not self.id:
+            raise ValueError("Group id is required")
         query = """
             query GetUserGroupPyApi($id: ID!) {
                 userGroup(where: {id: $id}) {
@@ -156,7 +159,12 @@ class UserGroup(BaseModel):
         Raises:
             ResourceNotFoundError: If the update fails due to unknown user group
             UnprocessableEntityError: If the update fails due to a malformed input
+            ValueError: If the group id or name is not provided
         """
+        if not self.id:
+            raise ValueError("Group id is required")
+        if not self.name:
+            raise ValueError("Group name is required")
         query = """
         mutation UpdateUserGroupPyApi($id: ID!, $name: String!, $color: String!, $projectIds: [String!]!, $userIds: [String!]!) {
             updateUserGroup(
