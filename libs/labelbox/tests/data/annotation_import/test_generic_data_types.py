@@ -79,7 +79,7 @@ def test_generic_data_row_type_by_global_key(
     data_label = Label(data=data_type_class(global_key = hardcoded_global_key()),
                        annotations=label.annotations)
 
-    assert data_label.data.uid == label.data.global_key
+    assert data_label.data.global_key == label.data.global_key
     assert label.annotations == data_label.annotations
 
 
