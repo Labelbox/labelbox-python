@@ -575,7 +575,7 @@ def _create_project(client: Client, rand_gen, data_row_json_by_media_type, media
     
     ontology = client.create_ontology(name=f"{media_type}-{rand_gen(str)}", normalized=normalized_ontology_by_media_type[media_type], media_type=media_type)
 
-    project.setup_editor(ontology)
+    project.connect_ontology(ontology)
 
     data_row_data = []
 
