@@ -1,22 +1,21 @@
 # Changelog
 # Version 3.75.0 (2024-07-10)
-
-## What's Changed
-* [PLT-0] Predictions missing by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1695
-* Use correct project type in tests/integration/test_project_model_config.py by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1697
-* [PLT-1151] Vb/model setup complete by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1685
-* [PLT-1205] Add user group management by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1604
-* [PLT-1205] Fix integration tests by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1698
-* [PTDT-2410] Prevent adding batches to live chat evaluation projects by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1703
+## Added
+* Project Model Setup by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1685
+* Add user group management by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1604
 * Refactor Dataset create_data_rows_sync to use upsert by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1694
-* [PLT-1231] Add missing media types by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1705
 * Add upload_type to Project by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1707
-* [PLT-1207] Added prompt classification for python object support by @Gabefire in https://github.com/Labelbox/labelbox-python/pull/1700
-* [PLT-1201] Deprecate Project setup_editor and add Project connect_ontology by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1713
+* Added prompt classification for python object support by @Gabefire in https://github.com/Labelbox/labelbox-python/pull/1700
+* Alias `wait_xxx` functions by @sfendell-labelbox in https://github.com/Labelbox/labelbox-python/pull/1675
+
+## Fixed
+* Predictions missing during Catalog slice Export by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1695
+* Prevent adding batches to live chat evaluation projects by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1703
+* Add missing media types by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1705
+* Deprecate Project setup_editor and add Project connect_ontology by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1713
 * Bump dateutil max version by @colonelpanic8 in https://github.com/Labelbox/labelbox-python/pull/1716
-* [PLT-0] Bump rye by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1719
-* [PLT-1135] Alias these commands to each other so users don't have to remember which one is valid. by @sfendell-labelbox in https://github.com/Labelbox/labelbox-python/pull/1675
-* Vb/fix create ontology for project setup by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1722
+* Bump version rye by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1719
+* Update create ontology for project setup by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1722
 
 ## New Contributors
 * @colonelpanic8 made their first contribution in https://github.com/Labelbox/labelbox-python/pull/1716
