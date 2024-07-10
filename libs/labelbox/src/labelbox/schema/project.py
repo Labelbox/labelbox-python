@@ -790,15 +790,15 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             ontology (Ontology): The ontology to attach to the project
         """
+        if not self.is_empty_ontology():
+            raise ValueError("Ontology already connected to project.")
+
         if self.labeling_frontend(
         ) is None:  # Chat evaluation projects are automatically set up via the same api that creates a project
             self._connect_default_labeling_front_end(ontology_as_dict={
                 "tools": [],
                 "classifications": []
             })
-
-        if not self.is_empty_ontology():
-            raise ValueError("Ontology already connected to project.")
 
         query_str = """mutation ConnectOntologyPyApi($projectId: ID!, $ontologyId: ID!){
             project(where: {id: $projectId}) {connectOntology(ontologyId: $ontologyId) {id}}}"""
