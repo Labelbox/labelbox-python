@@ -832,19 +832,19 @@ class Project(DbObject, Updateable, Deletable):
             """)
             return
 
-        if self.labeling_frontend(
-        ) is None:  # Chat evaluation projects are automatically set up via the same api that creates a project
-            self._connect_default_labeling_front_end(labeling_frontend_options)
+        self._connect_default_labeling_front_end(labeling_frontend_options)
 
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
     def _connect_default_labeling_front_end(self, ontology_as_dict: dict):
-        warnings.warn("Connecting default labeling editor for the project.")
-        labeling_frontend = next(
-            self.client.get_labeling_frontends(
-                where=Entity.LabelingFrontend.name == "Editor"))
-        self.labeling_frontend.connect(labeling_frontend)
+        labeling_frontend = self.labeling_frontend()
+        if labeling_frontend is None:  # Chat evaluation projects are automatically set up via the same api that creates a project
+            warnings.warn("Connecting default labeling editor for the project.")
+            labeling_frontend = next(
+                self.client.get_labeling_frontends(
+                    where=Entity.LabelingFrontend.name == "Editor"))
+            self.labeling_frontend.connect(labeling_frontend)
 
         if not isinstance(ontology_as_dict, str):
             labeling_frontend_options_str = json.dumps(ontology_as_dict)

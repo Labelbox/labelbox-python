@@ -619,7 +619,6 @@ def configured_project(client, initial_dataset, ontology, rand_gen, image_url):
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
     project.setup(editor, ontology)
-
     data_row_ids = []
 
     ontologies = ontology["tools"] + ontology["classifications"]
