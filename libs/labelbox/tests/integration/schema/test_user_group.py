@@ -158,9 +158,9 @@ def test_get_user_groups_with_creation_deletion(client):
         assert len(user_groups_post_creation) == len(user_groups) + 1
 
         # Verify that each user group has a valid ID and name
-        for user_group in user_groups_post_creation:
-            assert user_group.id is not None
-            assert user_group.name is not None
+        for ug in user_groups_post_creation:
+            assert ug.id is not None
+            assert ug.name is not None
 
         user_group.delete()
         user_group = None
