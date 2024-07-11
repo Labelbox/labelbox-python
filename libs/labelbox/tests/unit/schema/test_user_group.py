@@ -65,6 +65,13 @@ class TestUserGroup:
         assert len(group.projects) == 0
         assert len(group.users) == 0
 
+    def test_update_with_exception_name(self):
+        group = self.group
+        group.id = ""
+
+        with pytest.raises(ValueError):
+            group.get()
+
     def test_get(self):
         projects = [
             {
@@ -115,12 +122,12 @@ class TestUserGroup:
         assert len(group.projects) == 2
         assert len(group.users) == 2
 
-    def test_get_resource_not_found_error(self):
+    def test_get_value_error(self):
         self.client.execute.return_value = None
         group = UserGroup(self.client)
         group.name = "Test Group"
 
-        with pytest.raises(ResourceNotFoundError):
+        with pytest.raises(ValueError):
             group.get()
 
     def test_update(self, group_user, group_project):
@@ -168,6 +175,20 @@ class TestUserGroup:
         group.id = "group_id"
 
         with pytest.raises(ResourceNotFoundError) as e:
+            group.update()
+
+    def test_update_with_exception_name(self):
+        group = self.group
+        group.name = ""
+
+        with pytest.raises(UnprocessableEntityError):
+            group.update()
+
+    def test_update_with_exception_name(self):
+        group = self.group
+        group.id = ""
+
+        with pytest.raises(ValueError):
             group.update()
 
     def test_create_with_exception_id(self):
@@ -247,6 +268,13 @@ class TestUserGroup:
         group.id = "group_id"
 
         with pytest.raises(ResourceNotFoundError):
+            group.delete()
+
+    def test_delete_no_id(self):
+        group = UserGroup(self.client)
+        group.id = None
+
+        with pytest.raises(ValueError):
             group.delete()
 
     def test_user_groups_empty(self):

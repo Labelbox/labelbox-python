@@ -92,6 +92,11 @@ class AnnotationImport(DbObject):
         self.wait_until_done()
         return self._fetch_remote_ndjson(self.status_file_url)
 
+    def wait_till_done(self,
+                        sleep_time_seconds: int = 10,
+                        show_progress: bool = False) -> None:
+        self.wait_until_done(sleep_time_seconds, show_progress)
+
     def wait_until_done(self,
                         sleep_time_seconds: int = 10,
                         show_progress: bool = False) -> None:

@@ -84,6 +84,11 @@ class Task(DbObject):
             return bool(self.failed_data_rows)
         return self.status == "FAILED"
 
+    def wait_until_done(self,
+                        timeout_seconds: float = 300.0,
+                        check_frequency: float = 2.0) -> None:
+        self.wait_till_done(timeout_seconds, check_frequency)
+
     def wait_till_done(self,
                        timeout_seconds: float = 300.0,
                        check_frequency: float = 2.0) -> None:

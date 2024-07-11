@@ -1,4 +1,27 @@
 # Changelog
+# Version 3.75.0 (2024-07-10)
+## Added
+* Added Project set_project_model_setup_complete() method by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1685
+* Added user group management by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1604
+* Refactor Dataset create_data_rows_sync to use upsert by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1694
+* Added upload_type to Project by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1707
+* Added prompt classification for python object support by @Gabefire in https://github.com/Labelbox/labelbox-python/pull/1700
+* Alias `wait_xxx` functions by @sfendell-labelbox in https://github.com/Labelbox/labelbox-python/pull/1675
+
+## Fixed
+* Predictions missing during Catalog slice Export by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1695
+* Prevented adding batches to live chat evaluation projects by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1703
+* Added missing media types by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1705
+* Deprecate Project setup_editor and add Project connect_ontology by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1713
+* Bumped dateutil max version by @colonelpanic8 in https://github.com/Labelbox/labelbox-python/pull/1716
+* Bumped version rye by @adrian-chang in https://github.com/Labelbox/labelbox-python/pull/1719
+* Updated create ontology for project setup by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1722
+
+## New Contributors
+* @colonelpanic8 made their first contribution in https://github.com/Labelbox/labelbox-python/pull/1716
+
+**Full Changelog**: https://github.com/Labelbox/labelbox-python/compare/v.3.74.0...v.3.75.0
+
 # Version 3.74.0 (2024-06-24)
 ## Added
 * Include predictions in export (#1689)
