@@ -7,7 +7,7 @@ faker = Faker()
 
 def test_org_invite(client, organization, environ, queries):
     role = client.get_roles()['LABELER']
-    dummy_email = "none+{}@labelbox.com".format(faker.random_letters(26))
+    dummy_email = "none+{}@labelbox.com".format("".join(faker.random_letters(26)))
     invite_limit = organization.invite_limit()
 
     if environ.value == "prod":
@@ -42,7 +42,7 @@ def test_org_invite(client, organization, environ, queries):
 def test_project_invite(client, organization, project_pack, queries):
     project_1, project_2 = project_pack
     roles = client.get_roles()
-    dummy_email = "none+{}@labelbox.com".format(faker.random_letters(26))
+    dummy_email = "none+{}@labelbox.com".format("".join(faker.random_letters(26)))
     project_role_1 = ProjectRole(project=project_1, role=roles['LABELER'])
     project_role_2 = ProjectRole(project=project_2, role=roles['REVIEWER'])
     invite = organization.invite_user(
