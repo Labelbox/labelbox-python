@@ -11,7 +11,7 @@ import pytest
 @pytest.mark.skip()
 def test_create_from_url(client, tmp_path, object_predictions,
                          model_run_with_data_rows,
-                         configured_project_with_one_data_row,
+                         configured_project,
                          annotation_import_test_helpers):
     name = str(uuid.uuid4())
     file_name = f"{name}.json"
@@ -39,7 +39,7 @@ def test_create_from_url(client, tmp_path, object_predictions,
     annotation_import, batch, mal_prediction_import = model_run_with_data_rows.upsert_predictions_and_send_to_project(
         name=name,
         predictions=url,
-        project_id=configured_project_with_one_data_row.uid,
+        project_id=configured_project.uid,
         priority=5)
 
     assert annotation_import.model_run_id == model_run_with_data_rows.uid
@@ -48,7 +48,7 @@ def test_create_from_url(client, tmp_path, object_predictions,
     assert annotation_import.statuses
 
     assert batch
-    assert batch.project().uid == configured_project_with_one_data_row.uid
+    assert batch.project().uid == configured_project.uid
 
     assert mal_prediction_import
     mal_prediction_import.wait_until_done()
@@ -59,7 +59,7 @@ def test_create_from_url(client, tmp_path, object_predictions,
 
 @pytest.mark.skip()
 def test_create_from_objects(model_run_with_data_rows,
-                             configured_project_with_one_data_row,
+                             configured_project,
                              object_predictions,
                              annotation_import_test_helpers):
     name = str(uuid.uuid4())
@@ -74,7 +74,7 @@ def test_create_from_objects(model_run_with_data_rows,
     annotation_import, batch, mal_prediction_import = model_run_with_data_rows.upsert_predictions_and_send_to_project(
         name=name,
         predictions=predictions,
-        project_id=configured_project_with_one_data_row.uid,
+        project_id=configured_project.uid,
         priority=5)
 
     assert annotation_import.model_run_id == model_run_with_data_rows.uid
@@ -83,7 +83,7 @@ def test_create_from_objects(model_run_with_data_rows,
     assert annotation_import.statuses
 
     assert batch
-    assert batch.project().uid == configured_project_with_one_data_row.uid
+    assert batch.project().uid == configured_project.uid
 
     assert mal_prediction_import
     mal_prediction_import.wait_until_done()

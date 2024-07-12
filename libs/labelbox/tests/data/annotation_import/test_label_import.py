@@ -10,68 +10,68 @@ from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
 """
 
 
-def test_create_with_url_arg(client, configured_project_with_one_data_row,
+def test_create_with_url_arg(client, module_project,
                              annotation_import_test_helpers):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     label_import = LabelImport.create(
         client=client,
-        id=configured_project_with_one_data_row.uid,
+        id=module_project.uid,
         name=name,
         url=url)
-    assert label_import.parent_id == configured_project_with_one_data_row.uid
+    assert label_import.parent_id == module_project.uid
     annotation_import_test_helpers.check_running_state(label_import, name, url)
 
 
-def test_create_from_url(client, configured_project_with_one_data_row,
+def test_create_from_url(client, module_project,
                          annotation_import_test_helpers):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     label_import = LabelImport.create_from_url(
         client=client,
-        project_id=configured_project_with_one_data_row.uid,
+        project_id=module_project.uid,
         name=name,
         url=url)
-    assert label_import.parent_id == configured_project_with_one_data_row.uid
+    assert label_import.parent_id == module_project.uid
     annotation_import_test_helpers.check_running_state(label_import, name, url)
 
 
-def test_create_with_labels_arg(client, configured_project, object_predictions,
+def test_create_with_labels_arg(client, module_project, object_predictions,
                                 annotation_import_test_helpers):
     """this test should check running state only to validate running, not completed"""
     name = str(uuid.uuid4())
 
     label_import = LabelImport.create(client=client,
-                                      id=configured_project.uid,
+                                      id=module_project.uid,
                                       name=name,
                                       labels=object_predictions)
 
-    assert label_import.parent_id == configured_project.uid
+    assert label_import.parent_id == module_project.uid
     annotation_import_test_helpers.check_running_state(label_import, name)
     annotation_import_test_helpers.assert_file_content(
         label_import.input_file_url, object_predictions)
 
 
-def test_create_from_objects(client, configured_project, object_predictions,
+def test_create_from_objects(client, module_project, object_predictions,
                              annotation_import_test_helpers):
     """this test should check running state only to validate running, not completed"""
     name = str(uuid.uuid4())
 
     label_import = LabelImport.create_from_objects(
         client=client,
-        project_id=configured_project.uid,
+        project_id=module_project.uid,
         name=name,
         labels=object_predictions)
 
-    assert label_import.parent_id == configured_project.uid
+    assert label_import.parent_id == module_project.uid
     annotation_import_test_helpers.check_running_state(label_import, name)
     annotation_import_test_helpers.assert_file_content(
         label_import.input_file_url, object_predictions)
 
 
-def test_create_with_path_arg(client, tmp_path, configured_project, object_predictions,
+def test_create_with_path_arg(client, tmp_path, module_project, object_predictions,
                               annotation_import_test_helpers):
-    project = configured_project
+    project = module_project
     name = str(uuid.uuid4())
     file_name = f"{name}.ndjson"
     file_path = tmp_path / file_name
@@ -89,9 +89,9 @@ def test_create_with_path_arg(client, tmp_path, configured_project, object_predi
         label_import.input_file_url, object_predictions)
 
 
-def test_create_from_local_file(client, tmp_path, configured_project, object_predictions,
+def test_create_from_local_file(client, tmp_path, module_project, object_predictions,
                                 annotation_import_test_helpers):
-    project = configured_project
+    project = module_project
     name = str(uuid.uuid4())
     file_name = f"{name}.ndjson"
     file_path = tmp_path / file_name
@@ -109,26 +109,26 @@ def test_create_from_local_file(client, tmp_path, configured_project, object_pre
         label_import.input_file_url, object_predictions)
 
 
-def test_get(client, configured_project_with_one_data_row,
+def test_get(client, module_project,
              annotation_import_test_helpers):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
     label_import = LabelImport.create_from_url(
         client=client,
-        project_id=configured_project_with_one_data_row.uid,
+        project_id=module_project.uid,
         name=name,
         url=url)
 
-    assert label_import.parent_id == configured_project_with_one_data_row.uid
+    assert label_import.parent_id == module_project.uid
     annotation_import_test_helpers.check_running_state(label_import, name, url)
 
 
 @pytest.mark.slow
-def test_wait_till_done(client, configured_project, predictions):
+def test_wait_till_done(client, module_project, predictions):
     name = str(uuid.uuid4())
     label_import = LabelImport.create_from_objects(
         client=client,
-        project_id=configured_project.uid,
+        project_id=module_project.uid,
         name=name,
         labels=predictions)
 

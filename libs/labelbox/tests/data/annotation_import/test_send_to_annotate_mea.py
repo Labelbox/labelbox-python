@@ -8,7 +8,7 @@ def test_send_to_annotate_from_model(client, configured_project,
                                      model_run_predictions,
                                      model_run_with_data_rows, project):
     model_run = model_run_with_data_rows
-    data_row_ids = [p['dataRow']['id'] for p in model_run_predictions]
+    data_row_ids = list(set([p['dataRow']['id'] for p in model_run_predictions]))
     assert len(data_row_ids) > 0
 
     destination_project = project
