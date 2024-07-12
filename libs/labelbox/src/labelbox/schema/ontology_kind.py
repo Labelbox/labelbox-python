@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union
 
 from labelbox.schema.media_type import MediaType
 
@@ -24,7 +24,7 @@ class OntologyKind(Enum):
     
     @staticmethod
     def evaluate_ontology_kind_with_media_type(ontology_kind,
-                                               media_type: MediaType = None) -> MediaType:
+                                               media_type: Union[MediaType, None]) -> MediaType:
         
         if ontology_kind and ontology_kind is OntologyKind.ModelEvaluation:
             if media_type is None:

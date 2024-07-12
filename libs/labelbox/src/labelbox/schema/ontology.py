@@ -569,7 +569,7 @@ class OntologyBuilder:
     def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
         classifications = []
         for c in dictionary["classifications"]:
-            if ["type"] in c and c["type"] in PromptResponseClassification.Type:
+            if "type" in c and c["type"] in PromptResponseClassification.Type:
                 classifications.append(PromptResponseClassification.from_dict(c))
             else:
                 classifications.append(Classification.from_dict(c))
