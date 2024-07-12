@@ -221,6 +221,183 @@ class Classification:
                 f"Duplicate option '{option.value}' "
                 f"for classification '{self.name}'.")
         self.options.append(option)
+        
+@dataclass
+class ResponseOption:
+    """
+    An option is a possible answer within a PromptResponseClassification response object in
+    a Project's ontology.
+
+    To instantiate, only the "value" parameter needs to be passed in.
+
+    Example(s):
+        option = ResponseOption(value = "Response Option Example")
+
+    Attributes:
+        value: (str)
+        schema_id: (str)
+        feature_schema_id: (str)
+        options: (list)
+    """
+    value: Union[str, int]
+    label: Optional[Union[str, int]] = None
+    schema_id: Optional[str] = None
+    feature_schema_id: Optional[FeatureSchemaId] = None
+    options: List["Classification"] = field(default_factory=list)
+
+    def __post_init__(self):
+        if self.label is None:
+            self.label = self.value
+
+    @classmethod
+    def from_dict(
+            cls,
+            dictionary: Dict[str,
+                             Any]) -> Dict[Union[str, int], Union[str, int]]:
+        return cls(value=dictionary["value"],
+                   label=dictionary["label"],
+                   schema_id=dictionary.get("schemaNodeId", None),
+                   feature_schema_id=dictionary.get("featureSchemaId", None),
+                   options=[
+                       PromptResponseClassification.from_dict(o)
+                       for o in dictionary.get("options", [])
+                   ])
+
+    def asdict(self) -> Dict[str, Any]:
+        return {
+            "schemaNodeId": self.schema_id,
+            "featureSchemaId": self.feature_schema_id,
+            "label": self.label,
+            "value": self.value,
+            "options": [o.asdict(is_subclass=True) for o in self.options]
+        }
+
+    def add_option(self, option: 'Classification') -> None:
+        if option.name in (o.name for o in self.options):
+            raise InconsistentOntologyException(
+                f"Duplicate nested classification '{option.name}' "
+                f"for option '{self.label}'")
+        self.options.append(option)
+
+
+@dataclass
+class PromptResponseClassification:
+    """
+            
+    A PromptResponseClassification to be added to a Project's ontology. The
+    classification is dependent on the PromptResponseClassification Type.
+
+    To instantiate, the "class_type" and "name" parameters must
+    be passed in.
+
+    The "options" parameter holds a list of Response Option objects. This is not
+    necessary for some Classification types, such as RESPONSE_TEXT or PROMPT. To see which
+    types require options, look at the "_REQUIRES_OPTIONS" class variable.
+
+    Example(s):
+    >>>    classification = PromptResponseClassification(
+    >>>        class_type = PromptResponseClassification.Type.Prompt,
+    >>>        character_min = 1,
+    >>>        character_max = 1
+    >>>        name = "Prompt Classification Example")
+
+    >>>    classification_two = PromptResponseClassification(
+    >>>        class_type = PromptResponseClassification.Type.RESPONSE_RADIO,
+    >>>        name = "Second Example")
+            
+    >>>    classification_two.add_option(ResponseOption(
+    >>>        value = "Option Example"))
+
+    Attributes:
+        class_type: (Classification.Type)
+        name: (str)
+        instructions: (str)
+        required: (bool)
+        options: (list)
+        character_min: (int)
+        character_max: (int)
+        ui_mode: (Classification.UIMode)
+        schema_id: (str)
+        feature_schema_id: (str)
+        scope: (Classification.Scope)
+    """
+    
+    def __post_init__(self):
+        if self.name is None:
+            msg = (
+                "When creating the Classification feature, please use “name” "
+                "for the classification schema name, which will be used when "
+                "creating annotation payload for Model-Assisted Labeling "
+                "Import and Label Import. “instructions” is no longer "
+                "supported to specify classification schema name.")
+            if self.instructions is not None:
+                self.name = self.instructions
+                warnings.warn(msg)
+            else:
+                raise ValueError(msg)
+        else:
+            if self.instructions is None:
+                self.instructions = self.name
+
+    class Type(Enum):
+        PROMPT = "prompt"
+        RESPONSE_TEXT= "response-text"
+        RESPONSE_CHECKLIST = "response-checklist"
+        RESPONSE_RADIO = "response-radio"
+
+    _REQUIRES_OPTIONS = {Type.RESPONSE_CHECKLIST, Type.RESPONSE_RADIO}
+
+    class_type: Type
+    name: Optional[str] = None
+    instructions: Optional[str] = None
+    required: bool = True
+    options: List[ResponseOption] = field(default_factory=list)
+    character_min: Optional[int] = None
+    character_max: Optional[int] = None
+    schema_id: Optional[str] = None
+    feature_schema_id: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
+        return cls(class_type=cls.Type(dictionary["type"]),
+                   name=dictionary["name"],
+                   instructions=dictionary["instructions"],
+                   required=True, # always required
+                   options=[ResponseOption.from_dict(o) for o in dictionary["options"]],
+                   character_min=dictionary.get("minCharacters", None),
+                   character_max=dictionary.get("maxCharacters", None),
+                   schema_id=dictionary.get("schemaNodeId", None),
+                   feature_schema_id=dictionary.get("featureSchemaId", None))
+
+    def asdict(self, is_subclass: bool = False) -> Dict[str, Any]:
+        if self.class_type in self._REQUIRES_OPTIONS \
+                and len(self.options) < 1:
+            raise InconsistentOntologyException(
+                f"Response Classification '{self.name}' requires options.")
+        classification = {
+            "type": self.class_type.value,
+            "instructions": self.instructions,
+            "name": self.name,
+            "required": True, # always required
+            "options": [o.asdict() for o in self.options],
+            "schemaNodeId": self.schema_id,
+            "featureSchemaId": self.feature_schema_id
+        }
+        if (self.class_type == self.Type.PROMPT or self.class_type == self.Type.RESPONSE_TEXT):
+            if self.character_min:
+                classification["minCharacters"] = self.character_min
+            if self.character_max:
+                classification["maxCharacters"] = self.character_max
+        if is_subclass:
+            return classification
+        return classification
+
+    def add_option(self, option: ResponseOption) -> None:
+        if option.value in (o.value for o in self.options):
+            raise InconsistentOntologyException(
+                f"Duplicate option '{option.value}' "
+                f"for response classification '{self.name}'.")
+        self.options.append(option)
 
 
 @dataclass
@@ -338,7 +515,7 @@ class Ontology(DbObject):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._tools: Optional[List[Tool]] = None
-        self._classifications: Optional[List[Classification]] = None
+        self._classifications: Optional[Union[List[Classification],List[PromptResponseClassification]]] = None
 
     def tools(self) -> List[Tool]:
         """Get list of tools (AKA objects) in an Ontology."""
@@ -348,13 +525,15 @@ class Ontology(DbObject):
             ]
         return self._tools
 
-    def classifications(self) -> List[Classification]:
+    def classifications(self) -> List[Union[Classification, PromptResponseClassification]]:
         """Get list of classifications in an Ontology."""
         if self._classifications is None:
-            self._classifications = [
-                Classification.from_dict(classification)
-                for classification in self.normalized['classifications']
-            ]
+            self._classifications = []
+            for classification in self.normalized["classifications"]:
+                if "type" in classification and classification["type"] in PromptResponseClassification.Type._value2member_map_.keys():
+                    self._classifications.append(PromptResponseClassification.from_dict(classification))
+                else:
+                    self._classifications.append(Classification.from_dict(classification))
         return self._classifications
 
 
@@ -384,21 +563,35 @@ class OntologyBuilder:
 
     """
     tools: List[Tool] = field(default_factory=list)
-    classifications: List[Classification] = field(default_factory=list)
+    classifications: List[Union[Classification, PromptResponseClassification]] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
+        classifications = []
+        for c in dictionary["classifications"]:
+            if ["type"] in c and c["type"] in PromptResponseClassification.Type:
+                classifications.append(PromptResponseClassification.from_dict(c))
+            else:
+                classifications.append(Classification.from_dict(c))
         return cls(tools=[Tool.from_dict(t) for t in dictionary["tools"]],
-                   classifications=[
-                       Classification.from_dict(c)
-                       for c in dictionary["classifications"]
-                   ])
+                   classifications=classifications)
 
     def asdict(self) -> Dict[str, Any]:
         self._update_colors()
+        classifications = []
+        prompts = 0
+        for c in self.classifications:
+            if hasattr(c, "class_type") and c.class_type in PromptResponseClassification.Type:
+                if c.class_type == PromptResponseClassification.Type.PROMPT:
+                    prompts += 1
+                    if prompts > 1:
+                        raise ValueError("Only one prompt is allowed per ontology")
+                classifications.append(PromptResponseClassification.asdict(c))
+            else:
+                classifications.append(Classification.asdict(c))
         return {
             "tools": [t.asdict() for t in self.tools],
-            "classifications": [c.asdict() for c in self.classifications]
+            "classifications": classifications
         }
 
     def _update_colors(self):
@@ -426,7 +619,7 @@ class OntologyBuilder:
                 f"Duplicate tool name '{tool.name}'. ")
         self.tools.append(tool)
 
-    def add_classification(self, classification: Classification) -> None:
+    def add_classification(self, classification: Union[Classification, PromptResponseClassification]) -> None:
         if classification.name in (c.name for c in self.classifications):
             raise InconsistentOntologyException(
                 f"Duplicate classification name '{classification.name}'. ")

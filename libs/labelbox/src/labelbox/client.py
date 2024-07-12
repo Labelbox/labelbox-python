@@ -41,7 +41,7 @@ from labelbox.schema.model import Model
 from labelbox.schema.model_config import ModelConfig
 from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
-from labelbox.schema.ontology import Tool, Classification, FeatureSchema
+from labelbox.schema.ontology import Tool, Classification, FeatureSchema, PromptResponseClassification
 from labelbox.schema.organization import Organization
 from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import QualityMode, BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS, \
@@ -874,6 +874,99 @@ class Client:
         kwargs.pop("data_row_count", None)
 
         return self._create_project(**kwargs)
+    
+    @overload
+    def create_prompt_response_generation_project(self,
+                                                  dataset_name: str,
+                                                  dataset_id: str = None,
+                                                  data_row_count: int = 100,
+                                                  **kwargs) -> Project:
+        pass
+
+    @overload
+    def create_prompt_response_generation_project(self,
+                                                  dataset_id: str,
+                                                  dataset_name: str = None,
+                                                  data_row_count: int = 100,
+                                                  **kwargs) -> Project:
+        pass
+
+    def create_prompt_response_generation_project(self,
+                                                  dataset_id: Optional[str] = None,
+                                                  dataset_name: Optional[str] = None,
+                                                  data_row_count: int = 100,
+                                                  **kwargs) -> Project:
+        """
+        Use this method exclusively to create a prompt and response generation project. 
+        
+        Args:
+            dataset_name: When creating a new dataset, pass the name
+            dataset_id: When using an existing dataset, pass the id
+            data_row_count: The number of data row assets to use for the project
+            **kwargs: Additional parameters to pass to the the create_project method
+        Returns:
+            Project: The created project
+
+        Examples:
+            >>> client.create_prompt_response_generation_project(name=project_name, dataset_name="new data set", project_kind=MediaType.LLMPromptResponseCreation)
+            >>>     This creates a new dataset with a default number of rows (100), creates new project and assigns a batch of the newly created datarows to the project.
+
+            >>> client.create_prompt_response_generation_project(name=project_name, dataset_name="new data set", data_row_count=10, project_kind=MediaType.LLMPromptCreation)
+            >>>     This creates a new dataset with 10 data rows, creates new project and assigns a batch of the newly created datarows to the project.
+
+            >>> client.create_prompt_response_generation_project(name=project_name, dataset_id="clr00u8j0j0j0", project_kind=MediaType.LLMPromptCreation)
+            >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created data rows to the project.
+
+            >>> client.create_prompt_response_generation_project(name=project_name, dataset_id="clr00u8j0j0j0", data_row_count=10, project_kind=MediaType.LLMPromptCreation)
+            >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created 10 data rows to the project.
+
+        """
+        if not dataset_id and not dataset_name:
+            raise ValueError(
+                "dataset_name or data_set_id must be present and not be an empty string."
+            )
+        if data_row_count <= 0:
+            raise ValueError("data_row_count must be a positive integer.")
+
+        if dataset_id:
+            append_to_existing_dataset = True
+            dataset_name_or_id = dataset_id
+        else:
+            append_to_existing_dataset = False
+            dataset_name_or_id = dataset_name
+            
+        if "media_type" in kwargs and kwargs.get("media_type") not in [MediaType.LLMPromptCreation, MediaType.LLMPromptResponseCreation]:
+            raise ValueError(
+                "media_type must be either LLMPromptCreation or LLMPromptResponseCreation"
+            )
+
+        kwargs["dataset_name_or_id"] = dataset_name_or_id
+        kwargs["append_to_existing_dataset"] = append_to_existing_dataset
+        kwargs["data_row_count"] = data_row_count
+        
+        kwargs.pop("editor_task_type", None)
+        
+        return self._create_project(**kwargs)
+    
+    def create_response_creation_project(self, **kwargs) -> Project:
+        """
+        Creates a project for response creation.
+        Args:
+            **kwargs: Additional parameters to pass see the create_project method
+        Returns:
+            Project: The created project
+        """
+        kwargs[
+            "media_type"] = MediaType.Text  # Only Text is supported
+        kwargs[
+            "editor_task_type"] = EditorTaskType.ResponseCreation.value  # Special editor task type for offline model evaluation
+
+        # The following arguments are not supported for offline model evaluation
+        kwargs.pop("dataset_name_or_id", None)
+        kwargs.pop("append_to_existing_dataset", None)
+        kwargs.pop("data_row_count", None)
+
+        return self._create_project(**kwargs)
 
     def _create_project(self, **kwargs) -> Project:
         auto_audit_percentage = kwargs.get("auto_audit_percentage")
@@ -1189,11 +1282,13 @@ class Client:
             name (str): Name of the ontology
             feature_schema_ids (List[str]): List of feature schema ids corresponding to
                 top level tools and classifications to include in the ontology
-            media_type (MediaType or None): Media type of a new ontology. NOTE for chat evaluation, we currently foce media_type to Conversational
+            media_type (MediaType or None): Media type of a new ontology.
             ontology_kind (OntologyKind or None): set to OntologyKind.ModelEvaluation if the ontology is for chat evaluation,
                 leave as None otherwise.
         Returns:
             The created Ontology
+        
+        NOTE for chat evaluation, we currently force media_type to Conversational and for response creation, we force media_type to Text.
         """
         tools, classifications = [], []
         for feature_schema_id in feature_schema_ids:
@@ -1209,10 +1304,13 @@ class Client:
                         f"Tool `{tool}` not in list of supported tools.")
             elif 'type' in feature_schema.normalized:
                 classification = feature_schema.normalized['type']
-                try:
+                if classification in Classification.Type._value2member_map_.keys():
                     Classification.Type(classification)
                     classifications.append(feature_schema.normalized)
-                except ValueError:
+                elif classification in PromptResponseClassification.Type._value2member_map_.keys():
+                    PromptResponseClassification.Type(classification)
+                    classifications.append(feature_schema.normalized)
+                else:
                     raise ValueError(
                         f"Classification `{classification}` not in list of supported classifications."
                     )
@@ -1222,15 +1320,7 @@ class Client:
                 )
         normalized = {'tools': tools, 'classifications': classifications}
 
-        if ontology_kind and ontology_kind is OntologyKind.ModelEvaluation:
-            if media_type is None:
-                media_type = MediaType.Conversational
-            else:
-                if media_type is not MediaType.Conversational:
-                    raise ValueError(
-                        "For chat evaluation, media_type must be Conversational."
-                    )
-
+        # validation for ontology_kind and media_type is done within self.create_ontology
         return self.create_ontology(name=name,
                                     normalized=normalized,
                                     media_type=media_type,
@@ -1424,7 +1514,7 @@ class Client:
         Returns:
             The created Ontology
 
-        NOTE caller of this method is expected to set media_type to Conversational if ontology_kind is ModelEvaluation
+        NOTE for chat evaluation, we currently force media_type to Conversational and for response creation, we force media_type to Text.
         """
 
         media_type_value = None
@@ -1435,6 +1525,7 @@ class Client:
                 raise get_media_type_validation_error(media_type)
 
         if ontology_kind and OntologyKind.is_supported(ontology_kind):
+            media_type = OntologyKind.evaluate_ontology_kind_with_media_type(ontology_kind, media_type)
             editor_task_type_value = EditorTaskTypeMapper.to_editor_task_type(
                 ontology_kind, media_type).value
         elif ontology_kind:

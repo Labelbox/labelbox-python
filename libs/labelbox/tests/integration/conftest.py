@@ -17,7 +17,7 @@ import requests
 
 from labelbox import Dataset, DataRow
 from labelbox import LabelingFrontend
-from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
+from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType, PromptResponseClassification, ResponseOption
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport
@@ -342,6 +342,129 @@ def upload_invalid_data_rows_for_dataset():
 
     return _upload_invalid_data_rows_for_dataset
 
+@pytest.fixture
+def prompt_response_generation_project_with_new_dataset(client: Client, rand_gen, request):
+    """fixture is parametrize and needs project_type in request"""
+    media_type = request.param
+    prompt_response_project = client.create_prompt_response_generation_project(name=f"{media_type.value}-{rand_gen(str)}",
+                                                                               dataset_name=f"{media_type.value}-{rand_gen(str)}",
+                                                                               data_row_count=1,
+                                                                               media_type=media_type)
+    
+    yield prompt_response_project
+    
+    prompt_response_project.delete()
+
+@pytest.fixture
+def prompt_response_generation_project_with_dataset_id(client: Client, dataset, rand_gen, request):
+    """fixture is parametrized and needs project_type in request"""
+    media_type = request.param
+    prompt_response_project = client.create_prompt_response_generation_project(name=f"{media_type.value}-{rand_gen(str)}",
+                                                                               dataset_id=dataset.uid,
+                                                                               data_row_count=1,
+                                                                               media_type=media_type)
+    
+    yield prompt_response_project
+    
+    prompt_response_project.delete()
+
+@pytest.fixture
+def response_creation_project(client: Client, rand_gen):
+    project_name = f"response-creation-project-{rand_gen(str)}"
+    project = client.create_response_creation_project(name=project_name)
+
+    yield project
+
+    project.delete()
+
+@pytest.fixture 
+def prompt_response_features(rand_gen):
+    
+    prompt_text = PromptResponseClassification(class_type=PromptResponseClassification.Type.PROMPT,
+                                               name=f"{rand_gen(str)}-prompt text")
+    
+    response_radio = PromptResponseClassification(class_type=PromptResponseClassification.Type.RESPONSE_RADIO,
+                                                  name=f"{rand_gen(str)}-response radio classification",
+                                                  options=[
+                                                      ResponseOption(value=f"{rand_gen(str)}-first radio option answer"),
+                                                      ResponseOption(value=f"{rand_gen(str)}-second radio option answer"),
+                                                  ])
+    
+    response_checklist = PromptResponseClassification(class_type=PromptResponseClassification.Type.RESPONSE_CHECKLIST,
+                                                      name=f"{rand_gen(str)}-response checklist classification",
+                                                      options=[
+                                                          ResponseOption(value=f"{rand_gen(str)}-first checklist option answer"),
+                                                          ResponseOption(value=f"{rand_gen(str)}-second checklist option answer"),
+                                                          ])
+    
+    response_text_with_char = PromptResponseClassification(class_type=PromptResponseClassification.Type.RESPONSE_TEXT,
+                                                           name=f"{rand_gen(str)}-response text with character min and max",
+                                                           character_min = 1,
+                                                           character_max = 10)
+    
+    response_text = PromptResponseClassification(class_type=PromptResponseClassification.Type.RESPONSE_TEXT,
+                                                 name=f"{rand_gen(str)}-response text")
+    
+    nested_response_radio = PromptResponseClassification(class_type=PromptResponseClassification.Type.RESPONSE_RADIO,
+                                                         name=f"{rand_gen(str)}-nested response radio classification",
+                                                         options=[
+                                                         ResponseOption(f"{rand_gen(str)}-first_radio_answer",
+                                                                 options=[
+                                                                     PromptResponseClassification(
+                                                                         class_type=PromptResponseClassification.Type.RESPONSE_RADIO,
+                                                                         name=f"{rand_gen(str)}-sub_radio_question",
+                                                                         options=[ResponseOption(f"{rand_gen(str)}-first_sub_radio_answer")])
+                                                                 ])
+                                                         ])
+    yield {
+        "prompts": [prompt_text],
+        "responses": [response_text, response_radio, response_checklist, response_text_with_char, nested_response_radio]
+    }
+
+@pytest.fixture
+def prompt_response_ontology(client: Client, rand_gen, prompt_response_features, request):
+    """fixture is parametrize and needs project_type in request"""
+    
+    project_type = request.param
+    if project_type == MediaType.LLMPromptCreation:
+        ontology_builder = OntologyBuilder(
+            tools=[],
+            classifications=prompt_response_features["prompts"])
+    elif project_type == MediaType.LLMPromptResponseCreation:
+        ontology_builder = OntologyBuilder(
+            tools=[],
+            classifications=prompt_response_features["prompts"] + prompt_response_features["responses"])
+    else:
+        ontology_builder = OntologyBuilder(
+            tools=[],
+            classifications=prompt_response_features["responses"]
+        )
+        
+    ontology_name = f"prompt-response-{rand_gen(str)}"
+
+    if project_type in MediaType:
+        ontology = client.create_ontology(
+            ontology_name,
+            ontology_builder.asdict(),
+            media_type=project_type)
+    else:
+        ontology = client.create_ontology(
+            ontology_name,
+            ontology_builder.asdict(),
+            media_type=MediaType.Text,
+            ontology_kind=OntologyKind.ResponseCreation
+        )
+    yield ontology
+    
+    featureSchemaIds = [feature["featureSchemaId"] for feature in ontology.normalized["classifications"]]
+    
+    try:
+        client.delete_unused_ontology(ontology.uid)
+        for featureSchemaId in featureSchemaIds:
+            client.delete_unused_feature_schema(featureSchemaId)
+    except Exception as e:
+        print(f"Failed to delete ontology {ontology.uid}: {str(e)}")
+
 
 @pytest.fixture
 def chat_evaluation_ontology(client, rand_gen):
@@ -557,6 +680,15 @@ def offline_conversational_data_row(initial_dataset):
     }
     data_row = initial_dataset.create_data_row(convo_v2_asset)
 
+    return data_row
+
+@pytest.fixture
+def response_data_row(initial_dataset):
+    text_asset = {
+        "row_data": "response sample text"
+    }
+    data_row = initial_dataset.create_data_row(text_asset)
+    
     return data_row
 
 

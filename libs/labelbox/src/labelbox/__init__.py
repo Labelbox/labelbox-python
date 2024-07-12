@@ -23,6 +23,8 @@ from labelbox.schema.labeling_frontend import LabelingFrontend, LabelingFrontend
 from labelbox.schema.asset_attachment import AssetAttachment
 from labelbox.schema.webhook import Webhook
 from labelbox.schema.ontology import Ontology, OntologyBuilder, Classification, Option, Tool, FeatureSchema
+from labelbox.schema.ontology import PromptResponseClassification
+from labelbox.schema.ontology import ResponseOption
 from labelbox.schema.role import Role, ProjectRole
 from labelbox.schema.invite import Invite, InviteLimit
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology, DataRowMetadataField, DataRowMetadata, DeleteDataRowMetadata
