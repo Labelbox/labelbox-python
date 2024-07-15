@@ -9,7 +9,6 @@ class MediaType(Enum):
     Geospatial_Tile = "TMS_GEO"
     Html = "HTML"
     Image = "IMAGE"
-    Json = "JSON"
     LLMPromptCreation = "LLM_PROMPT_CREATION"
     LLMPromptResponseCreation = "LLM_PROMPT_RESPONSE_CREATION"
     Pdf = "PDF"
