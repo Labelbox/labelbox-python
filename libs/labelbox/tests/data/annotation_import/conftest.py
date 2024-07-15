@@ -787,7 +787,6 @@ def rectangle_inference_with_confidence(prediction_id_mapping):
         if "rectangle_nested" not in feature:
             continue
         rectangle = feature["rectangle_nested"].copy()
-        print(rectangle)
         rectangle.update({
             "bbox": {
                 "top": 48,
