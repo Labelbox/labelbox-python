@@ -919,7 +919,6 @@ class Client:
                 params.pop("append_to_existing_dataset", None),
         }
         extra_params = {k: v for k, v in extra_params.items() if v is not None}
-
         return self._create(Entity.Project, params, extra_params)
 
     def get_roles(self) -> List[Role]:
