@@ -1,4 +1,8 @@
 # Changelog
+# Version 3.76.0 (2024-07-16)
+## Remove
+* Project MEDIA_TYPE JSON
+
 # Version 3.75.0 (2024-07-10)
 ## Added
 * Added Project set_project_model_setup_complete() method by @vbrodsky in https://github.com/Labelbox/labelbox-python/pull/1685
