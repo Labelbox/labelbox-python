@@ -1,0 +1,13 @@
+name: 'lbox-matrix'
+description: 'Generate running matrix for an lbox package'
+inputs:
+  files-changed:
+    description: 'Files changed as json array'
+    required: true
+    default: '[]'
+outputs:
+  matrix: 
+    description: 'Matrix to run lbox packages tests against'
+runs:
+  using: 'node20'
+  main: 'index.js'

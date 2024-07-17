@@ -10,10 +10,13 @@
 #   universal: false
 
 -e file:libs/labelbox
+-e file:libs/lbox-example
 alabaster==0.7.13
     # via sphinx
 annotated-types==0.7.0
     # via pydantic
+art==6.2
+    # via lbox-example
 babel==2.15.0
     # via sphinx
 cachetools==5.3.3
