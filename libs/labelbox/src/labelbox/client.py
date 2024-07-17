@@ -115,16 +115,25 @@ class Client:
         self.app_url = app_url
         self.endpoint = endpoint
         self.rest_endpoint = rest_endpoint
+        self._data_row_metadata_ontology = None
+        self._adv_client = AdvClient.factory(rest_endpoint, api_key)
+        self._connection: requests.Session = self._init_connection()
 
-        self.headers = {
+    def _init_connection(self) -> requests.Session:
+        connection = requests.Session(
+        )  # using default connection pool size of 10
+        connection.headers.update(self._default_headers())
+
+        return connection
+
+    def _default_headers(self):
+        return {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer %s' % api_key,
+            'Authorization': 'Bearer %s' % self.api_key,
             'X-User-Agent': f"python-sdk {SDK_VERSION}",
             'X-Python-Version': f"{python_version_info()}",
         }
-        self._data_row_metadata_ontology = None
-        self._adv_client = AdvClient.factory(rest_endpoint, api_key)
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
@@ -193,18 +202,13 @@ class Client:
             "/graphql", "/_gql")
 
         try:
-            request = {
-                'url': endpoint,
-                'data': data,
-                'headers': self.headers,
-                'timeout': timeout
-            }
+            request = {'url': endpoint, 'data': data, 'timeout': timeout}
             if files:
                 request.update({'files': files})
                 request['headers'] = {
-                    'Authorization': self.headers['Authorization']
+                    'Authorization': self._connection.headers['Authorization']
                 }
-            response = requests.post(**request)
+            response = self._connection.post(**request)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
@@ -409,7 +413,7 @@ class Client:
             "map": (None, json.dumps({"1": ["variables.file"]})),
         }
 
-        response = requests.post(
+        response = self._connection.post(
             self.endpoint,
             headers={"authorization": "Bearer %s" % self.api_key},
             data=request_data,
@@ -1195,7 +1199,7 @@ class Client:
 
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id)
-        response = requests.delete(
+        response = self._connection.delete(
             endpoint,
             headers=self.headers,
         )
@@ -1215,7 +1219,7 @@ class Client:
         """
         endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id)
-        response = requests.delete(
+        response = self._connection.delete(
             endpoint,
             headers=self.headers,
         )
@@ -1240,7 +1244,7 @@ class Client:
 
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id) + '/definition'
-        response = requests.patch(
+        response = self._connection.patch(
             endpoint,
             headers=self.headers,
             json={"title": title},
@@ -1273,7 +1277,7 @@ class Client:
             "featureSchemaId") or "new_feature_schema_id"
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id)
-        response = requests.put(
+        response = self._connection.put(
             endpoint,
             headers=self.headers,
             json={"normalized": json.dumps(feature_schema)},
@@ -1303,7 +1307,7 @@ class Client:
         endpoint = self.rest_endpoint + '/ontologies/' + urllib.parse.quote(
             ontology_id) + "/feature-schemas/" + urllib.parse.quote(
                 feature_schema_id)
-        response = requests.post(
+        response = self._connection.post(
             endpoint,
             headers=self.headers,
             json={"position": position},
@@ -1328,7 +1332,7 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/ontologies/unused"
-        response = requests.get(
+        response = self._connection.get(
             endpoint,
             headers=self.headers,
             json={"after": after},
@@ -1356,7 +1360,7 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/feature-schemas/unused"
-        response = requests.get(
+        response = self._connection.get(
             endpoint,
             headers=self.headers,
             json={"after": after},
@@ -1881,7 +1885,7 @@ class Client:
 
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id)
-        response = requests.get(
+        response = self._connection.get(
             ontology_endpoint,
             headers=self.headers,
         )
@@ -1960,7 +1964,7 @@ class Client:
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + "/feature-schemas/" + urllib.parse.quote(
                 feature_schema_id)
-        response = requests.delete(
+        response = self._connection.delete(
             ontology_endpoint,
             headers=self.headers,
         )
@@ -1997,7 +2001,7 @@ class Client:
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + '/feature-schemas/' + urllib.parse.quote(
                 root_feature_schema_id) + '/unarchive'
-        response = requests.patch(
+        response = self._connection.patch(
             ontology_endpoint,
             headers=self.headers,
         )
