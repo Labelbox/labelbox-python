@@ -959,9 +959,9 @@ class Client:
         kwargs[
             "media_type"] = MediaType.Text  # Only Text is supported
         kwargs[
-            "editor_task_type"] = EditorTaskType.ResponseCreation.value  # Special editor task type for offline model evaluation
+            "editor_task_type"] = EditorTaskType.ResponseCreation.value  # Special editor task type for response creation projects
 
-        # The following arguments are not supported for offline model evaluation
+        # The following arguments are not supported for response creation projects
         kwargs.pop("dataset_name_or_id", None)
         kwargs.pop("append_to_existing_dataset", None)
         kwargs.pop("data_row_count", None)
