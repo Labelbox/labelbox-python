@@ -1,4 +1,4 @@
-from labelbox.pydantic_compat import ValidationError
+from pydantic import ValidationError
 import numpy as np
 
 import labelbox.types as lb_types

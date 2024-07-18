@@ -2,17 +2,17 @@ import pytest
 import cv2
 
 from labelbox.data.annotation_types import Polygon, Point
-from labelbox import pydantic_compat
+from pydantic import ValidationError
 
 
 def test_polygon():
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         polygon = Polygon()
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         polygon = Polygon(points=[[0, 1], [2, 3]])
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         polygon = Polygon(points=[Point(x=0, y=1), Point(x=0, y=1)])
 
     points = [[0., 1.], [0., 2.], [2., 2.], [2., 0.]]
