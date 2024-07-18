@@ -144,7 +144,6 @@ def test_attach_instructions(client, project):
     assert str(
         execinfo.value
     ) == "Cannot attach instructions to a project that has not been set up."
-
     editor = list(
         client.get_labeling_frontends(
             where=LabelingFrontend.name == "editor"))[0]
@@ -218,7 +217,7 @@ def test_create_batch_with_global_keys_sync(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
     batch = project.create_batch(batch_name, global_keys=global_keys)
-    
+
     assert batch.size == len(set(data_rows))
 
 
@@ -227,7 +226,7 @@ def test_create_batch_with_global_keys_async(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     batch_name = f'batch {uuid.uuid4()}'
     batch = project._create_batch_async(batch_name, global_keys=global_keys)
-    
+
     assert batch.size == len(set(data_rows))
 
 
@@ -245,8 +244,7 @@ def test_media_type(client, project: Project, rand_gen):
         # Exclude LLM media types for now, as they are not supported
         if MediaType[media_type] in [
                 MediaType.LLMPromptCreation,
-                MediaType.LLMPromptResponseCreation,
-                MediaType.LLM
+                MediaType.LLMPromptResponseCreation, MediaType.LLM
         ]:
             continue
 
@@ -284,7 +282,8 @@ def test_label_count(client, configured_batch_project_with_label):
 
 def test_clone(client, project, rand_gen):
     # cannot clone unknown project media type
-    project = client.create_project(name=rand_gen(str), media_type=MediaType.Image)
+    project = client.create_project(name=rand_gen(str),
+                                    media_type=MediaType.Image)
     cloned_project = project.clone()
 
     assert cloned_project.description == project.description

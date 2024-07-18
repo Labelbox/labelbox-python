@@ -128,8 +128,6 @@ class Client:
 
     def _default_headers(self):
         return {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
             'Authorization': 'Bearer %s' % self.api_key,
             'X-User-Agent': f"python-sdk {SDK_VERSION}",
             'X-Python-Version': f"{python_version_info()}",
@@ -202,13 +200,21 @@ class Client:
             "/graphql", "/_gql")
 
         try:
-            request = {'url': endpoint, 'data': data, 'timeout': timeout}
-            if files:
-                request.update({'files': files})
-                request['headers'] = {
-                    'Authorization': self._connection.headers['Authorization']
-                }
-            response = self._connection.post(**request)
+            request = requests.Request('POST',
+                                       endpoint,
+                                       headers=self._connection.headers,
+                                       data=data,
+                                       files=files if files else None)
+
+            prepped: requests.PreparedRequest = request.prepare()
+
+            if not files:
+                prepped.headers.update({
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                })
+
+            response = self._connection.send(prepped, timeout=timeout)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
@@ -415,7 +421,6 @@ class Client:
 
         response = self._connection.post(
             self.endpoint,
-            headers={"authorization": "Bearer %s" % self.api_key},
             data=request_data,
             files={
                 "1": (filename, content, content_type) if
