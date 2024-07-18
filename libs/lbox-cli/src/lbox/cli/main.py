@@ -8,6 +8,7 @@ def cli():
     db = tinydb.TinyDB(
         Path.home() / "~/.lbox/db.json", create_dirs=True, access_mode="r+"
     )
+    print(db.count())
 
 
 @cli.group()
