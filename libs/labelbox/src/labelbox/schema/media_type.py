@@ -21,6 +21,7 @@ class MediaType(Enum):
     Video = "VIDEO"
     Point_Cloud = "POINT_CLOUD"
     LLM = "LLM"
+    Json = "JSON"
 
     @classmethod
     def _missing_(cls, name):
