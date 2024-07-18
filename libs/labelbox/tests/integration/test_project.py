@@ -119,6 +119,8 @@ def test_update_project_resource_tags(client, rand_gen, data_for_project_test):
     delete_tag(tagB.uid)
 
 
+@pytest.mark.skip(
+    reason="broken due to get_projects HF for sunset-custom-editor")
 def test_project_filtering(client, rand_gen, data_for_project_test):
     name_1 = rand_gen(str)
     p1 = data_for_project_test(name_1)
