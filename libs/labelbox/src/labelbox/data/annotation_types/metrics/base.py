@@ -2,8 +2,9 @@ from abc import ABC
 from typing import Dict, Optional, Any, Union
 
 from labelbox import pydantic_compat
+from pydantic import confloat
 
-ConfidenceValue = pydantic_compat.confloat(ge=0, le=1)
+ConfidenceValue = confloat(ge=0, le=1)
 
 MIN_CONFIDENCE_SCORES = 2
 MAX_CONFIDENCE_SCORES = 15

@@ -11,6 +11,7 @@ from ...annotation_types.llm_prompt_response.prompt import PromptClassificationA
 from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
+from pydantic import model_validator, Field, BaseModel
 
 
 class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
@@ -18,7 +19,7 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
     schema_id: Optional[Cuid] = None
     classifications: Optional[List['NDSubclassificationType']] = []
 
-    @pydantic_compat.root_validator()
+    @model_validator(mode="after")
     def must_set_one(cls, values):
         if ('schema_id' not in values or values['schema_id']
                 is None) and ('name' not in values or values['name'] is None):
@@ -26,7 +27,7 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
         return values
 
     def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
+        res = super().model_dump(*args, **kwargs)
         if 'name' in res and res['name'] is None:
             res.pop('name')
         if 'schemaId' in res and res['schemaId'] is None:
@@ -44,17 +45,17 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
         alias_generator = camel_case
 
 
-class FrameLocation(pydantic_compat.BaseModel):
+class FrameLocation(BaseModel):
     end: int
     start: int
 
 
-class VideoSupported(pydantic_compat.BaseModel):
+class VideoSupported(BaseModel):
     # Note that frames are only allowed as top level inferences for video
     frames: Optional[List[FrameLocation]] = None
 
     def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
+        res = super().model_dump(*args, **kwargs)
         # This means these are no video frames ..
         if self.frames is None:
             res.pop('frames')
@@ -82,7 +83,7 @@ class NDTextSubclass(NDAnswer):
 
 
 class NDChecklistSubclass(NDAnswer):
-    answer: List[NDAnswer] = pydantic_compat.Field(..., alias='answers')
+    answer: List[NDAnswer] = Field(..., alias='answers')
 
     def to_common(self) -> Checklist:
 

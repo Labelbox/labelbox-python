@@ -1,14 +1,17 @@
 from typing import Optional, List
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, field_validator, model_serializer
 
 from labelbox.exceptions import ConfidenceNotSupportedException, CustomMetricsNotSupportedException
 
+from warnings import warn
+from labelbox.pydantic_serializers import feature_serializer
 
-class ConfidenceMixin(pydantic_compat.BaseModel):
+
+class ConfidenceMixin(BaseModel):
     confidence: Optional[float] = None
 
-    @pydantic_compat.validator("confidence")
+    @field_validator("confidence")
     def confidence_valid_float(cls, value):
         if value is None:
             return value
@@ -16,10 +19,10 @@ class ConfidenceMixin(pydantic_compat.BaseModel):
             raise ValueError("must be a number within [0,1] range")
         return value
 
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
-        if "confidence" in res and res["confidence"] is None:
-            res.pop("confidence")
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
+        res = feature_serializer(res)
         return res
 
 
@@ -32,35 +35,35 @@ class ConfidenceNotSupportedMixin:
         return super().__new__(cls)
 
 
-class CustomMetric(pydantic_compat.BaseModel):
+class CustomMetric(BaseModel):
     name: str
     value: float
 
-    @pydantic_compat.validator("name")
+    @field_validator("name")
     def confidence_valid_float(cls, value):
         if not isinstance(value, str):
             raise ValueError("Name must be a string")
         return value
 
-    @pydantic_compat.validator("value")
+    @field_validator("value")
     def value_valid_float(cls, value):
         if not isinstance(value, (int, float)):
             raise ValueError("Value must be a number")
         return value
 
 
-class CustomMetricsMixin(pydantic_compat.BaseModel):
+class CustomMetricsMixin(BaseModel):
     custom_metrics: Optional[List[CustomMetric]] = None
 
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
-
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
         if "customMetrics" in res and res["customMetrics"] is None:
             res.pop("customMetrics")
-
+        
         if "custom_metrics" in res and res["custom_metrics"] is None:
             res.pop("custom_metrics")
-
+            
         return res
 
 

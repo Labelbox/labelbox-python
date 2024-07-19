@@ -8,6 +8,7 @@ from labelbox.data.annotation_types.annotation import ClassificationAnnotation, 
 from labelbox.data.annotation_types.feature import FeatureSchema
 from labelbox.data.mixins import ConfidenceNotSupportedMixin, CustomMetricsNotSupportedMixin
 from labelbox.utils import _CamelCaseMixin, is_valid_uri
+from pydantic import model_validator, BaseModel, field_validator
 
 
 class VideoClassificationAnnotation(ClassificationAnnotation):
@@ -87,12 +88,12 @@ class DICOMObjectAnnotation(VideoObjectAnnotation):
     group_key: GroupKey
 
 
-class MaskFrame(_CamelCaseMixin, pydantic_compat.BaseModel):
+class MaskFrame(_CamelCaseMixin, BaseModel):
     index: int
     instance_uri: Optional[str] = None
     im_bytes: Optional[bytes] = None
 
-    @pydantic_compat.root_validator()
+    @model_validator(mode="after")
     def validate_args(cls, values):
         im_bytes = values.get("im_bytes")
         instance_uri = values.get("instance_uri")
@@ -101,7 +102,7 @@ class MaskFrame(_CamelCaseMixin, pydantic_compat.BaseModel):
             raise ValueError("One of `instance_uri`, `im_bytes` required.")
         return values
 
-    @pydantic_compat.validator("instance_uri")
+    @field_validator("instance_uri")
     def validate_uri(cls, v):
         if not is_valid_uri(v):
             raise ValueError(f"{v} is not a valid uri")
@@ -113,7 +114,7 @@ class MaskInstance(_CamelCaseMixin, FeatureSchema):
     name: str
 
 
-class VideoMaskAnnotation(pydantic_compat.BaseModel):
+class VideoMaskAnnotation(BaseModel):
     """Video mask annotation
        >>> VideoMaskAnnotation(
        >>>     frames=[

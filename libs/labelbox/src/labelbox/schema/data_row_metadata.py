@@ -10,6 +10,7 @@ from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, 
 from labelbox import pydantic_compat
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.identifiable import UniqueId, GlobalKey
+from pydantic import BaseModel, constr
 
 from labelbox.schema.ontology import SchemaId
 from labelbox.utils import _CamelCaseMixin, camel_case, format_iso_datetime, format_iso_from_string
@@ -45,7 +46,7 @@ String: Type[str] = pydantic_compat.constr(max_length=4096)
 
 
 # Metadata base class
-class DataRowMetadataField(_CamelCaseMixin):
+class DataRowMetadataField(BaseModel):
     # One of `schema_id` or `name` must be provided. If `schema_id` is not provided, it is
     # inferred from `name`
     schema_id: Optional[SchemaId] = None
@@ -124,15 +125,15 @@ _BatchFunction = Callable[[_BatchInputs], List[DataRowMetadataBatchResponse]]
 
 class _UpsertCustomMetadataSchemaEnumOptionInput(_CamelCaseMixin):
     id: Optional[SchemaId]
-    name: pydantic_compat.constr(strip_whitespace=True,
-                                 min_length=1,
-                                 max_length=100)
+    name: constr(strip_whitespace=True,
+                 min_length=1,
+                 max_length=100)
     kind: str
 
 
 class _UpsertCustomMetadataSchemaInput(_CamelCaseMixin):
     id: Optional[SchemaId]
-    name: pydantic_compat.constr(strip_whitespace=True,
+    name: constr(strip_whitespace=True,
                                  min_length=1,
                                  max_length=100)
     kind: str

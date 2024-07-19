@@ -24,6 +24,7 @@ from .classification import NDChecklistSubclass, NDClassification, NDClassificat
 from .objects import NDObject, NDObjectType, NDSegments, NDDicomSegments, NDVideoMasks, NDDicomMasks
 from .relationship import NDRelationship
 from .base import DataRow
+from pydantic import BaseModel
 
 AnnotationType = Union[NDObjectType, NDClassificationType, NDPromptClassificationType,
                        NDConfusionMatrixMetric, NDScalarMetric, NDDicomSegments,
@@ -31,16 +32,16 @@ AnnotationType = Union[NDObjectType, NDClassificationType, NDPromptClassificatio
                        NDPromptText]
 
 
-class NDLabel(pydantic_compat.BaseModel):
+class NDLabel(BaseModel):
     annotations: List[AnnotationType]
 
-    class _Relationship(pydantic_compat.BaseModel):
+    class _Relationship(BaseModel):
         """This object holds information about the relationship"""
         ndjson: NDRelationship
         source: str
         target: str
 
-    class _AnnotationGroup(pydantic_compat.BaseModel):
+    class _AnnotationGroup(BaseModel):
         """Stores all the annotations and relationships per datarow"""
         data_row: DataRow = None
         ndjson_annotations: Dict[str, AnnotationType] = {}

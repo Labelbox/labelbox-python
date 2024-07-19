@@ -1,14 +1,14 @@
 import pytest
 
 from labelbox.data.annotation_types import (Checklist, ClassificationAnswer,
-                                            Dropdown, Radio, Text,
+                                            Radio, Text,
                                             ClassificationAnnotation)
 
-from labelbox import pydantic_compat
+from pydantic import ValidationError
 
 
 def test_classification_answer():
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         ClassificationAnswer()
 
     feature_schema_id = "schema_id"
@@ -22,7 +22,7 @@ def test_classification_answer():
     assert answer.feature_schema_id is None
     assert answer.name == name
     assert answer.confidence == confidence
-    assert answer.custom_metrics == custom_metrics
+    assert [answer.custom_metrics[0].model_dump()] == custom_metrics
 
     answer = ClassificationAnswer(feature_schema_id=feature_schema_id,
                                   name=name)
@@ -35,9 +35,9 @@ def test_classification():
     answer = "1234"
     classification = ClassificationAnnotation(value=Text(answer=answer),
                                               name="a classification")
-    assert classification.dict()['value']['answer'] == answer
+    assert classification.model_dump()['value']['answer'] == answer
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         ClassificationAnnotation()
 
 
@@ -45,12 +45,13 @@ def test_subclass():
     answer = "1234"
     feature_schema_id = "11232"
     name = "my_feature"
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         # Should have feature schema info
         classification = ClassificationAnnotation(value=Text(answer=answer))
     classification = ClassificationAnnotation(value=Text(answer=answer),
                                               name=name)
-    assert classification.dict() == {
+    print(classification.model_dump())
+    assert classification.model_dump() == {
         'name': name,
         'feature_schema_id': None,
         'extra': {},
@@ -63,7 +64,7 @@ def test_subclass():
         value=Text(answer=answer),
         name=name,
         feature_schema_id=feature_schema_id)
-    assert classification.dict() == {
+    assert classification.model_dump() == {
         'name': None,
         'feature_schema_id': feature_schema_id,
         'extra': {},
@@ -77,7 +78,7 @@ def test_subclass():
         value=Text(answer=answer),
         feature_schema_id=feature_schema_id,
         name=name)
-    assert classification.dict() == {
+    assert classification.model_dump() == {
         'name': name,
         'feature_schema_id': feature_schema_id,
         'extra': {},
@@ -98,14 +99,15 @@ def test_radio():
     feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         classification = ClassificationAnnotation(value=Radio(
             answer=answer.name))
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         classification = Radio(answer=[answer])
-    classification = Radio(answer=answer,)
-    assert classification.dict() == {
+    classification = Radio(answer=answer)
+
+    assert classification.model_dump() == {
         'answer': {
             'name': answer.name,
             'feature_schema_id': None,
@@ -125,7 +127,7 @@ def test_radio():
             'name': 'metric1',
             'value': 0.99
         }])
-    assert classification.dict() == {
+    assert classification.model_dump() == {
         'name': name,
         'feature_schema_id': feature_schema_id,
         'extra': {},
@@ -159,14 +161,14 @@ def test_checklist():
     feature_schema_id = "feature_schema_id"
     name = "my_feature"
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         classification = Checklist(answer=answer.name)
 
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         classification = Checklist(answer=answer)
 
     classification = Checklist(answer=[answer])
-    assert classification.dict() == {
+    assert classification.model_dump() == {
         'answer': [{
             'name': answer.name,
             'feature_schema_id': None,
@@ -183,7 +185,7 @@ def test_checklist():
         feature_schema_id=feature_schema_id,
         name=name,
     )
-    assert classification.dict() == {
+    assert classification.model_dump() == {
         'name': name,
         'feature_schema_id': feature_schema_id,
         'extra': {},
@@ -197,46 +199,6 @@ def test_checklist():
                     'name': 'metric1',
                     'value': 2
                 }],
-            }]
-        },
-        'message_id': None,
-    }
-
-
-def test_dropdown():
-    answer = ClassificationAnswer(name="1", confidence=1)
-    feature_schema_id = "feature_schema_id"
-    name = "my_feature"
-
-    with pytest.raises(pydantic_compat.ValidationError):
-        classification = ClassificationAnnotation(
-            value=Dropdown(answer=answer.name), name="test")
-
-    with pytest.raises(pydantic_compat.ValidationError):
-        classification = Dropdown(answer=answer)
-    classification = Dropdown(answer=[answer])
-    assert classification.dict() == {
-        'answer': [{
-            'name': '1',
-            'feature_schema_id': None,
-            'extra': {},
-            'confidence': 1
-        }]
-    }
-    classification = ClassificationAnnotation(
-        value=Dropdown(answer=[answer]),
-        feature_schema_id=feature_schema_id,
-        name=name)
-    assert classification.dict() == {
-        'name': name,
-        'feature_schema_id': feature_schema_id,
-        'extra': {},
-        'value': {
-            'answer': [{
-                'name': answer.name,
-                'feature_schema_id': None,
-                'confidence': 1,
-                'extra': {}
             }]
         },
         'message_id': None,

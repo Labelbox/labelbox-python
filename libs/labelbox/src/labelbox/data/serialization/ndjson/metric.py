@@ -19,7 +19,7 @@ class BaseNDMetric(NDJsonBase):
         use_enum_values = True
 
     def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
+        res = super().model_dump(*args, **kwargs)
         for field in ['featureName', 'subclassName']:
             if res[field] is None:
                 res.pop(field)

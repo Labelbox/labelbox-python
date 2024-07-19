@@ -1,13 +1,9 @@
-from typing import Union
-
 from labelbox.data.annotation_types.base_annotation import BaseAnnotation
-
 from labelbox.data.mixins import ConfidenceMixin, CustomMetricsMixin
+from pydantic import BaseModel
 
-from labelbox import pydantic_compat
 
-
-class PromptText(ConfidenceMixin, CustomMetricsMixin, pydantic_compat.BaseModel):
+class PromptText(ConfidenceMixin, CustomMetricsMixin, BaseModel):
     """ Prompt text for LLM data generation
 
     >>> PromptText(answer = "some text answer",

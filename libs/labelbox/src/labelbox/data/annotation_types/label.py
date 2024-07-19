@@ -19,6 +19,7 @@ from .types import Cuid
 from .video import VideoClassificationAnnotation
 from .video import VideoObjectAnnotation, VideoMaskAnnotation
 from ..ontology import get_feature_schema_lookup
+from pydantic import BaseModel
 
 DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
                  ConversationData, DicomData, DocumentData, HTMLData,
@@ -26,7 +27,7 @@ DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
                  LlmResponseCreationData, GenericDataRowData]
 
 
-class Label(pydantic_compat.BaseModel):
+class Label(BaseModel):
     """Container for holding data and annotations
 
     >>> Label(

@@ -29,7 +29,6 @@ from .ner import TextEntity
 
 from .classification import Checklist
 from .classification import ClassificationAnswer
-from .classification import Dropdown
 from .classification import Radio
 from .classification import Text
 
