@@ -10,7 +10,7 @@ def test_point():
         line = Point()
 
     with pytest.raises(TypeError):
-        line = Point([0, 1])
+        line = Point([0, 2])
 
     point = Point(x=0, y=1)
     expected = {"coordinates": [0, 1], "type": "Point"}
