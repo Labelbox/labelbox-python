@@ -1,4 +1,5 @@
 from labelbox import LabelingFrontend
+import pytest
 
 
 def test_get_labeling_frontends(client):
@@ -7,6 +8,8 @@ def test_get_labeling_frontends(client):
     assert len(filtered_frontends)
 
 
+@pytest.mark.skip(
+    reason="broken due to get_projects HF for sunset-custom-editor")
 def test_labeling_frontend_connecting_to_project(project):
     client = project.client
     default_labeling_frontend = next(

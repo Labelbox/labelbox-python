@@ -24,6 +24,8 @@ def project_to_test_where(client, rand_gen):
 
 # Avoid assertions using equality to prevent intermittent failures due to
 # other builds simultaneously adding projects to test org
+@pytest.mark.skip(
+    reason="broken due to get_projects HF for sunset-custom-editor")
 def test_where(client, project_to_test_where):
     p_a, p_b, p_c = project_to_test_where
     p_a_name = p_a.name
