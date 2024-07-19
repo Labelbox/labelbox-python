@@ -4,8 +4,8 @@ import os
 
 
 @pytest.mark.skipif(
-    condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
-    reason="longer runtime than expected for onprem. unskip when resolved.")
+    condition=os.environ['LABELBOX_TEST_ENVIRON'] != "prod",
+    reason="new labeler performance dashboard can only be tested in prod")
 def test_labeler_performance(configured_project_with_label):
     project, _, _, _ = configured_project_with_label
 
