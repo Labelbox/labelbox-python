@@ -1213,7 +1213,7 @@ class Client:
 
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id)
-        response = self._connection.delete(endpoint,)
+        response = self._connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
             raise labelbox.exceptions.LabelboxError(
@@ -1230,7 +1230,7 @@ class Client:
         """
         endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id)
-        response = self._connection.delete(endpoint,)
+        response = self._connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
             raise labelbox.exceptions.LabelboxError(
@@ -1252,10 +1252,7 @@ class Client:
 
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id) + '/definition'
-        response = self._connection.patch(
-            endpoint,
-            json={"title": title},
-        )
+        response = self._connection.patch(endpoint, json={"title": title})
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(feature_schema_id)
@@ -1285,9 +1282,7 @@ class Client:
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id)
         response = self._connection.put(
-            endpoint,
-            json={"normalized": json.dumps(feature_schema)},
-        )
+            endpoint, json={"normalized": json.dumps(feature_schema)})
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(response.json()['schemaId'])
@@ -1313,10 +1308,7 @@ class Client:
         endpoint = self.rest_endpoint + '/ontologies/' + urllib.parse.quote(
             ontology_id) + "/feature-schemas/" + urllib.parse.quote(
                 feature_schema_id)
-        response = self._connection.post(
-            endpoint,
-            json={"position": position},
-        )
+        response = self._connection.post(endpoint, json={"position": position})
         if response.status_code != requests.codes.created:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to insert the feature schema into the ontology, message: "
@@ -1337,10 +1329,7 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/ontologies/unused"
-        response = self._connection.get(
-            endpoint,
-            json={"after": after},
-        )
+        response = self._connection.get(endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
@@ -1364,10 +1353,7 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/feature-schemas/unused"
-        response = self._connection.get(
-            endpoint,
-            json={"after": after},
-        )
+        response = self._connection.get(endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
@@ -1888,7 +1874,7 @@ class Client:
 
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id)
-        response = self._connection.get(ontology_endpoint,)
+        response = self._connection.get(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             feature_schema_nodes = response.json()['featureSchemaNodes']
@@ -1964,7 +1950,7 @@ class Client:
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + "/feature-schemas/" + urllib.parse.quote(
                 feature_schema_id)
-        response = self._connection.delete(ontology_endpoint,)
+        response = self._connection.delete(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
@@ -1998,7 +1984,7 @@ class Client:
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + '/feature-schemas/' + urllib.parse.quote(
                 root_feature_schema_id) + '/unarchive'
-        response = self._connection.patch(ontology_endpoint,)
+        response = self._connection.patch(ontology_endpoint)
         if response.status_code == requests.codes.ok:
             if not bool(response.json()['unarchived']):
                 raise labelbox.exceptions.LabelboxError(
