@@ -4,8 +4,9 @@ from enum import Enum
 from .base import ConfidenceValue, BaseMetric
 
 from labelbox import pydantic_compat
+from pydantic import confloat
 
-ScalarMetricValue = pydantic_compat.confloat(ge=0, le=100_000_000)
+ScalarMetricValue = confloat(ge=0, le=100_000_000)
 ScalarMetricConfidenceValue = Dict[ConfidenceValue, ScalarMetricValue]
 
 

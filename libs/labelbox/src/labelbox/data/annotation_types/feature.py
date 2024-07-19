@@ -1,11 +1,10 @@
 from typing import Optional
-
-from labelbox import pydantic_compat
-
+from pydantic import BaseModel, model_validator, model_serializer
 from .types import Cuid
+from labelbox.pydantic_serializers import feature_serializer
 
 
-class FeatureSchema(pydantic_compat.BaseModel):
+class FeatureSchema(BaseModel):
     """
     Class that represents a feature schema.
     Could be a annotation, a subclass, or an option.
@@ -14,18 +13,14 @@ class FeatureSchema(pydantic_compat.BaseModel):
     name: Optional[str] = None
     feature_schema_id: Optional[Cuid] = None
 
-    @pydantic_compat.root_validator
-    def must_set_one(cls, values):
-        if values['feature_schema_id'] is None and values['name'] is None:
+    @model_validator(mode="after")
+    def must_set_one(self):
+        if self.feature_schema_id is None and self.name is None:
             raise ValueError(
                 "Must set either feature_schema_id or name for all feature schemas"
             )
-        return values
-
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
-        if 'name' in res and res['name'] is None:
-            res.pop('name')
-        if 'featureSchemaId' in res and res['featureSchemaId'] is None:
-            res.pop('featureSchemaId')
-        return res
+        return self
+    @model_serializer(mode="wrap")
+    def model_serializer(self, handler):
+        res = handler(self)
+        return feature_serializer(res)

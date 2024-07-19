@@ -27,6 +27,7 @@ from labelbox import pydantic_compat
 
 from labelbox.schema.task import Task
 from labelbox.utils import _CamelCaseMixin
+from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from labelbox import Client
@@ -41,19 +42,19 @@ class StreamType(Enum):
     ERRORS = "ERRORS"
 
 
-class Range(_CamelCaseMixin, pydantic_compat.BaseModel):  # pylint: disable=too-few-public-methods
+class Range(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-public-methods
     """Represents a range."""
 
     start: int
     end: int
 
 
-class _MetadataHeader(_CamelCaseMixin, pydantic_compat.BaseModel):  # pylint: disable=too-few-public-methods
+class _MetadataHeader(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-public-methods
     total_size: int
     total_lines: int
 
 
-class _MetadataFileInfo(_CamelCaseMixin, pydantic_compat.BaseModel):  # pylint: disable=too-few-public-methods
+class _MetadataFileInfo(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-public-methods
     offsets: Range
     lines: Range
     file: str

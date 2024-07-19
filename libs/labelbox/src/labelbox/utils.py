@@ -6,6 +6,7 @@ from dateutil.parser import isoparse as dateutil_parse
 from dateutil.utils import default_tzinfo
 
 from urllib.parse import urlparse
+from pydantic import BaseModel
 from labelbox import pydantic_compat
 
 UPPERCASE_COMPONENTS = ['uri', 'rgb']
@@ -60,7 +61,7 @@ def is_valid_uri(uri):
         return False
 
 
-class _CamelCaseMixin(pydantic_compat.BaseModel):
+class _CamelCaseMixin(BaseModel):
 
     class Config:
         allow_population_by_field_name = True

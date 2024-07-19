@@ -21,27 +21,28 @@ from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnot
 from ...annotation_types.video import VideoMaskAnnotation, DICOMMaskAnnotation, MaskFrame, MaskInstance
 from .classification import NDClassification, NDSubclassification, NDSubclassificationType
 from .base import DataRow, NDAnnotation, NDJsonBase
+from pydantic import BaseModel
 
 
 class NDBaseObject(NDAnnotation):
     classifications: List[NDSubclassificationType] = []
 
 
-class VideoSupported(pydantic_compat.BaseModel):
+class VideoSupported(BaseModel):
     # support for video for objects are per-frame basis
     frame: int
 
 
-class DicomSupported(pydantic_compat.BaseModel):
+class DicomSupported(BaseModel):
     group_key: str
 
 
-class _Point(pydantic_compat.BaseModel):
+class _Point(BaseModel):
     x: float
     y: float
 
 
-class Bbox(pydantic_compat.BaseModel):
+class Bbox(BaseModel):
     top: float
     left: float
     height: float
@@ -328,7 +329,7 @@ class NDFrameRectangle(VideoSupported):
                    classifications=classifications)
 
 
-class NDSegment(pydantic_compat.BaseModel):
+class NDSegment(BaseModel):
     keyframes: List[Union[NDFrameRectangle, NDFramePoint, NDFrameLine]]
 
     @staticmethod
@@ -512,7 +513,7 @@ class NDMask(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
                    custom_metrics=custom_metrics)
 
 
-class NDVideoMasksFramesInstances(pydantic_compat.BaseModel):
+class NDVideoMasksFramesInstances(BaseModel):
     frames: List[MaskFrame]
     instances: List[MaskInstance]
 

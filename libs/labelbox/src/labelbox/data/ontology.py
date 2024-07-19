@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple, Union
 
 from labelbox.schema import ontology
-from .annotation_types import (Text, Dropdown, Checklist, Radio,
+from .annotation_types import (Text, Checklist, Radio,
                                ClassificationAnnotation, ObjectAnnotation, Mask,
                                Point, Line, Polygon, Rectangle, TextEntity)
 
@@ -46,11 +46,11 @@ def _get_options(annotation: ClassificationAnnotation,
         answers = [annotation.value.answer]
     elif isinstance(annotation.value, Text):
         return existing_options
-    elif isinstance(annotation.value, (Checklist, Dropdown)):
+    elif isinstance(annotation.value, (Checklist)):
         answers = annotation.value.answer
     else:
         raise TypeError(
-            f"Expected one of Radio, Text, Checklist, Dropdown. Found {type(annotation.value)}"
+            f"Expected one of Radio, Text, Checklist. Found {type(annotation.value)}"
         )
 
     option_names = {option.value for option in existing_options}
@@ -123,13 +123,12 @@ def tool_mapping(
 
 
 def classification_mapping(
-        annotation) -> Union[Text, Checklist, Radio, Dropdown]:
+        annotation) -> Union[Text, Checklist, Radio]:
     classification_types = ontology.Classification.Type
     mapping = {
         Text: classification_types.TEXT,
         Checklist: classification_types.CHECKLIST,
         Radio: classification_types.RADIO,
-        Dropdown: classification_types.DROPDOWN
     }
     result = mapping.get(type(annotation.value))
     if result is None:
