@@ -17,6 +17,7 @@ from labelbox import pydantic_compat
 from labelbox.data.annotation_types import Rectangle, Point, Line, Polygon
 from .base_data import BaseData
 from .raster import RasterData
+from pydantic import BaseModel, field_validator, model_validator
 
 VALID_LAT_RANGE = range(-90, 90)
 VALID_LNG_RANGE = range(-180, 180)
@@ -40,7 +41,7 @@ class EPSG(Enum):
     EPSG3857 = 3857
 
 
-class TiledBounds(pydantic_compat.BaseModel):
+class TiledBounds(BaseModel):
     """ Bounds for a tiled image asset related to the relevant epsg.
 
     Bounds should be Point objects.
@@ -54,7 +55,7 @@ class TiledBounds(pydantic_compat.BaseModel):
     epsg: EPSG
     bounds: List[Point]
 
-    @pydantic_compat.validator('bounds')
+    @field_validator('bounds')
     def validate_bounds_not_equal(cls, bounds):
         first_bound = bounds[0]
         second_bound = bounds[1]
@@ -66,7 +67,7 @@ class TiledBounds(pydantic_compat.BaseModel):
         return bounds
 
     #validate bounds are within lat,lng range if they are EPSG4326
-    @pydantic_compat.root_validator
+    @model_validator(mode="after")
     def validate_bounds_lat_lng(cls, values):
         epsg = values.get('epsg')
         bounds = values.get('bounds')
