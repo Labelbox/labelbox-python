@@ -9,7 +9,7 @@ import requests
 from requests import Session, Response
 
 logger = logging.getLogger(__name__)
-
+test = "test"
 
 class AdvClient:
 
