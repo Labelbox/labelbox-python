@@ -8,10 +8,10 @@ import warnings
 from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload
 from typing_extensions import Annotated
 
-from labelbox import pydantic_compat
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.identifiable import UniqueId, GlobalKey
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, ConfigDict, AliasGenerator, model_serializer, conlist
+from pydantic.alias_generators import to_camel
 
 from labelbox.schema.ontology import SchemaId
 from labelbox.utils import _CamelCaseMixin, camel_case, format_iso_datetime, format_iso_from_string
@@ -27,23 +27,23 @@ class DataRowMetadataKind(Enum):
 
 
 # Metadata schema
-class DataRowMetadataSchema(pydantic_compat.BaseModel):
+class DataRowMetadataSchema(BaseModel):
     uid: SchemaId
-    name: pydantic_compat.constr(strip_whitespace=True,
-                                 min_length=1,
-                                 max_length=100)
+    name: str = Annotated[str, StringConstraints(strip_whitespace=True,
+                                                min_length=1,
+                                                max_length=100)]
     reserved: bool
     kind: DataRowMetadataKind
     options: Optional[List["DataRowMetadataSchema"]]
     parent: Optional[SchemaId]
 
 
-DataRowMetadataSchema.update_forward_refs()
+DataRowMetadataSchema.model_rebuild()
 
-Embedding: Type[List[float]] = pydantic_compat.conlist(float,
-                                                       min_items=128,
-                                                       max_items=128)
-String: Type[str] = pydantic_compat.constr(max_length=4096)
+Embedding: Type[List[float]] = conlist(float,
+                                    min_length=128,
+                                    max_length=128)
+String: Type[str] = Annotated[str, StringConstraints(max_length=4096)]
 
 
 # Metadata base class
@@ -99,13 +99,11 @@ class _UpsertBatchDataRowMetadata(_CamelCaseMixin):
 class _DeleteBatchDataRowMetadata(_CamelCaseMixin):
     data_row_identifier: Union[UniqueId, GlobalKey]
     schema_ids: List[SchemaId]
+    model_config = ConfigDict(arbitrary_types_allowed=True, alias_generator=AliasGenerator(serialization_alias=to_camel))
 
-    class Config:
-        arbitrary_types_allowed = True
-        alias_generator = camel_case
-
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
         if 'data_row_identifier' in res.keys():
             key = 'data_row_identifier'
             id_type_key = 'id_type'

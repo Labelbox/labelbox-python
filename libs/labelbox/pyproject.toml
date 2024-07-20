@@ -86,7 +86,7 @@ unit = "pytest tests/unit"
 # SERVICE_API_KEY=${SERVICE_API_KEY} \
 # LABELBOX_TEST_BASE_URL="http://host.docker.internal:8080" \
 integration = { cmd = "pytest tests/integration" }
-data = { cmd = "pytest tests/unit/test_label_data_type.py" }
+data = { cmd = "pytest tests/unit/test_unit_delete_batch_data_row_metadata.py" }
 yapf-lint = "yapf tests src -i --verbose --recursive --parallel --style \"google\""
 mypy-lint = "mypy src --pretty --show-error-codes --non-interactive --install-types"
 lint = { chain = ["yapf-lint", "mypy-lint"] }
