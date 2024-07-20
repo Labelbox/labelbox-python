@@ -5,9 +5,9 @@ from typing_extensions import Annotated
 from packaging import version
 import numpy as np
 
-from labelbox import pydantic_compat
+from pydantic import StringConstraints, Field
 
-Cuid = Annotated[str, pydantic_compat.Field(min_length=25, max_length=25)]
+Cuid = Annotated[str, StringConstraints(min_length=25, max_length=25)]
 
 DType = TypeVar('DType')
 DShape = TypeVar('DShape')
@@ -20,7 +20,7 @@ class _TypedArray(np.ndarray, Generic[DType, DShape]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, val, field: pydantic_compat.ModelField):
+    def validate(cls, val, field: Field):
         if not isinstance(val, np.ndarray):
             raise TypeError(f"Expected numpy array. Found {type(val)}")
 

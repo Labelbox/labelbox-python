@@ -2,8 +2,6 @@ from collections import defaultdict
 from typing import Any, Callable, Dict, List, Union, Optional
 import warnings
 
-from labelbox import pydantic_compat
-
 import labelbox
 from labelbox.data.annotation_types.data.generic_data_row_data import GenericDataRowData
 from labelbox.data.annotation_types.data.tiled_image import TiledImageData
@@ -20,7 +18,7 @@ from .video import VideoClassificationAnnotation
 from .video import VideoObjectAnnotation, VideoMaskAnnotation
 from .mmc import MessageEvaluationTaskAnnotation
 from ..ontology import get_feature_schema_lookup
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
                  ConversationData, DicomData, DocumentData, HTMLData,
@@ -57,15 +55,15 @@ class Label(BaseModel):
     extra: Dict[str, Any] = {}
     is_benchmark_reference: Optional[bool] = False
 
-    @pydantic_compat.root_validator(pre=True)
-    def validate_data(cls, label):
-        if isinstance(label.get("data"), Dict):
-            label["data"]["class_name"] = "GenericDataRowData"
+    @field_validator("data", mode="before")
+    def validate_data(cls, data):
+        if isinstance(data, Dict):
+            data["class_name"] = "GenericDataRowData"
         else:
             warnings.warn(
-                f"Using {type(label['data']).__name__} class for label.data is deprecated. "
+                f"Using {type(data).__name__} class for label.data is deprecated. "
                 "Use a dict or an instance of GenericDataRowData instead.")
-        return label
+        return data
 
     def object_annotations(self) -> List[ObjectAnnotation]:
         return self._get_annotations_by_type(ObjectAnnotation)
@@ -205,11 +203,11 @@ class Label(BaseModel):
                 f"Unexpected type for answer found. {type(classification.value.answer)}"
             )
 
-    @pydantic_compat.validator("annotations", pre=True)
+    @field_validator("annotations", mode="before")
     def validate_union(cls, value):
         supported = tuple([
             field.type_
-            for field in cls.__fields__['annotations'].sub_fields[0].sub_fields
+            for field in cls.model_fields['annotations'].sub_fields[0].sub_fields
         ])
         if not isinstance(value, list):
             raise TypeError(f"Annotations must be a list. Found {type(value)}")
