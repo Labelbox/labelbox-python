@@ -23,11 +23,10 @@ import requests
 import warnings
 import tempfile
 import os
-from labelbox import pydantic_compat
 
 from labelbox.schema.task import Task
 from labelbox.utils import _CamelCaseMixin
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, AliasChoices
 
 if TYPE_CHECKING:
     from labelbox import Client
@@ -50,8 +49,8 @@ class Range(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-public-metho
 
 
 class _MetadataHeader(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-public-methods
-    total_size: int = Field(validation_alias="total_size")
-    total_lines: int = Field(validation_alias="total_lines")
+    total_size: int = Field(validation_alias=AliasChoices("total_size", "totalSize"))
+    total_lines: int = Field(validation_alias=AliasChoices("total_lines", "totalLines"))
 
 
 class _MetadataFileInfo(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-public-methods

@@ -34,8 +34,8 @@ class DataRowMetadataSchema(BaseModel):
                                                 max_length=100)]
     reserved: bool
     kind: DataRowMetadataKind
-    options: Optional[List["DataRowMetadataSchema"]]
-    parent: Optional[SchemaId]
+    options: Optional[List["DataRowMetadataSchema"]] = None
+    parent: Optional[SchemaId] = None
 
 
 DataRowMetadataSchema.model_rebuild()
