@@ -5,7 +5,7 @@ from pydantic import BaseModel, field_validator, model_serializer
 from labelbox.exceptions import ConfidenceNotSupportedException, CustomMetricsNotSupportedException
 
 from warnings import warn
-from labelbox.pydantic_serializers import feature_serializer
+from labelbox.pydantic_serializers import _feature_serializer
 
 
 class ConfidenceMixin(BaseModel):
@@ -22,7 +22,7 @@ class ConfidenceMixin(BaseModel):
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         res = handler(self)
-        res = feature_serializer(res)
+        res = _feature_serializer(res)
         return res
 
 

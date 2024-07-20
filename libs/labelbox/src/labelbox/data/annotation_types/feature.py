@@ -1,7 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, model_validator, model_serializer
 from .types import Cuid
-from labelbox.pydantic_serializers import feature_serializer
+from labelbox.pydantic_serializers import _feature_serializer
 
 
 class FeatureSchema(BaseModel):
@@ -23,4 +23,4 @@ class FeatureSchema(BaseModel):
     @model_serializer(mode="wrap")
     def model_serializer(self, handler):
         res = handler(self)
-        return feature_serializer(res)
+        return _feature_serializer(res)

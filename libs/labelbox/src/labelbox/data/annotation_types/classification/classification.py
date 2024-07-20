@@ -10,7 +10,7 @@ except:
 
 from pydantic import BaseModel, model_serializer
 from ..feature import FeatureSchema
-from labelbox.pydantic_serializers import feature_serializer
+from labelbox.pydantic_serializers import _feature_serializer
 
 
 class ClassificationAnswer(FeatureSchema, ConfidenceMixin, CustomMetricsMixin):
@@ -30,7 +30,7 @@ class ClassificationAnswer(FeatureSchema, ConfidenceMixin, CustomMetricsMixin):
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
-        return feature_serializer(handler(self))
+        return _feature_serializer(handler(self))
 
 class Radio(ConfidenceMixin, CustomMetricsMixin, BaseModel):
     """ A classification with only one selected option allowed
@@ -42,7 +42,7 @@ class Radio(ConfidenceMixin, CustomMetricsMixin, BaseModel):
     
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
-        return feature_serializer(handler(self))
+        return _feature_serializer(handler(self))
 
 
 class Checklist(ConfidenceMixin, BaseModel):
@@ -55,7 +55,7 @@ class Checklist(ConfidenceMixin, BaseModel):
     
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
-        return feature_serializer(handler(self))
+        return _feature_serializer(handler(self))
 
 
 class Text(ConfidenceMixin, CustomMetricsMixin, BaseModel):
@@ -68,7 +68,7 @@ class Text(ConfidenceMixin, CustomMetricsMixin, BaseModel):
     
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
-        return feature_serializer(handler(self))
+        return _feature_serializer(handler(self))
 
 
 class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
@@ -93,4 +93,4 @@ class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
-        return feature_serializer(handler(self))
+        return _feature_serializer(handler(self))
