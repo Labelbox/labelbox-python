@@ -6,11 +6,12 @@ from itertools import chain
 import warnings
 
 from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload
+from typing_extensions import Annotated
 
 from labelbox import pydantic_compat
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.identifiable import UniqueId, GlobalKey
-from pydantic import BaseModel, constr
+from pydantic import BaseModel, Field, StringConstraints
 
 from labelbox.schema.ontology import SchemaId
 from labelbox.utils import _CamelCaseMixin, camel_case, format_iso_datetime, format_iso_from_string
@@ -49,9 +50,10 @@ String: Type[str] = pydantic_compat.constr(max_length=4096)
 class DataRowMetadataField(BaseModel):
     # One of `schema_id` or `name` must be provided. If `schema_id` is not provided, it is
     # inferred from `name`
-    schema_id: Optional[SchemaId] = None
+    # schema id alias to json key name for pydantic v2 support
+    schema_id: Optional[SchemaId] = Field(default=None, serialization_alias="schemaId")
     name: Optional[str] = None
-    # value is of type `Any` so that we do not improperly coerce the value to the wrong tpye
+    # value is of type `Any` so that we do not improperly coerce the value to the wrong type
     # Additional validation is performed before upload using the schema information
     value: Any
 
@@ -125,19 +127,18 @@ _BatchFunction = Callable[[_BatchInputs], List[DataRowMetadataBatchResponse]]
 
 class _UpsertCustomMetadataSchemaEnumOptionInput(_CamelCaseMixin):
     id: Optional[SchemaId]
-    name: constr(strip_whitespace=True,
-                 min_length=1,
-                 max_length=100)
+    name: Annotated[str, StringConstraints(strip_whitespace=True,
+                                        min_length=1,
+                                        max_length=100)]
     kind: str
-
 
 class _UpsertCustomMetadataSchemaInput(_CamelCaseMixin):
-    id: Optional[SchemaId]
-    name: constr(strip_whitespace=True,
-                                 min_length=1,
-                                 max_length=100)
+    id: Optional[SchemaId] = None
+    name: Annotated[str, StringConstraints(strip_whitespace=True,
+                                        min_length=1,
+                                        max_length=100)]
     kind: str
-    options: Optional[List[_UpsertCustomMetadataSchemaEnumOptionInput]]
+    options: Optional[List[_UpsertCustomMetadataSchemaEnumOptionInput]] = None
 
 
 class DataRowMetadataOntology:
@@ -779,7 +780,7 @@ class DataRowMetadataOntology:
         metadata_fields = [_convert_metadata_field(m) for m in metadata_fields]
         parsed_metadata = list(
             chain.from_iterable(self._parse_upsert(m) for m in metadata_fields))
-        return [m.dict(by_alias=True) for m in parsed_metadata]
+        return [m.model_dump(by_alias=True) for m in parsed_metadata]
 
     def _upsert_schema(
         self, upsert_schema: _UpsertCustomMetadataSchemaInput
@@ -863,7 +864,6 @@ class DataRowMetadataOntology:
             if data_row_id:
                 error_str += f", data_row_id='{data_row_id}'"
             raise ValueError(f"{error_str}. Reason: {e}")
-
         return [_UpsertDataRowMetadataInput(**p) for p in parsed]
 
     def _validate_delete(self, delete: DeleteDataRowMetadata):
@@ -934,14 +934,14 @@ def _validate_parse_embedding(
     else:
         raise ValueError(
             f"Expected a list for embedding. Found {type(field.value)}")
-    return [field.dict(by_alias=True)]
+    return [field.model_dump(by_alias=True)]
 
 
 def _validate_parse_number(
     field: DataRowMetadataField
 ) -> List[Dict[str, Union[SchemaId, str, float, int]]]:
     field.value = float(field.value)
-    return [field.dict(by_alias=True)]
+    return [field.model_dump(by_alias=True)]
 
 
 def _validate_parse_datetime(
@@ -969,8 +969,7 @@ def _validate_parse_text(
     if len(field.value) > String.max_length:
         raise ValueError(
             f"String fields cannot exceed {String.max_length} characters.")
-
-    return [field.dict(by_alias=True)]
+    return [field.model_dump(by_alias=True)]
 
 
 def _validate_enum_parse(
