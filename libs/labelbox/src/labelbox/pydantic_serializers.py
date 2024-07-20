@@ -1,6 +1,6 @@
 from typing import Dict
 
-def feature_serializer(res: Dict) -> Dict:
+def _feature_serializer(res: Dict) -> Dict:
     """Used as a with custom model serializer for pydantics. This ensures backwards compatibility since pydantic V1 allowed you to override Dict method. This method needs to be used for all base classes and sub classes. We should look at getting this removed."""
     if "customMetrics" in res and res["customMetrics"] is None:
         res.pop("customMetrics")
