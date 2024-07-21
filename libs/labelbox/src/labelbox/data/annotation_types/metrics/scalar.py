@@ -3,8 +3,7 @@ from enum import Enum
 
 from .base import ConfidenceValue, BaseMetric
 
-from labelbox import pydantic_compat
-from pydantic import confloat
+from pydantic import confloat, field_validator, model_serializer
 
 ScalarMetricValue = confloat(ge=0, le=100_000_000)
 ScalarMetricConfidenceValue = Dict[ConfidenceValue, ScalarMetricValue]
@@ -34,7 +33,7 @@ class ScalarMetric(BaseMetric):
     value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
     aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN
 
-    @pydantic_compat.validator('metric_name')
+    @field_validator.validator('metric_name')
     def validate_metric_name(cls, name: Union[str, None]):
         if name is None:
             return None
@@ -44,8 +43,9 @@ class ScalarMetric(BaseMetric):
                              "Please provide another value for `metric_name`.")
         return name
 
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
+    @model_serializer(mode="wrap")
+    def dict(self, handler):
+        res = handler(self)
         if res.get('metric_name') is None:
             res.pop('aggregation')
         return res

@@ -4,7 +4,6 @@ try:
 except:
     from typing_extensions import Literal
 
-from labelbox import pydantic_compat
 import numpy as np
 
 from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text, LBV1Dropdown
@@ -15,6 +14,7 @@ from ...annotation_types.data import MaskData
 from ...annotation_types.geometry import Line, Mask, Point, Polygon, Rectangle
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.types import Cuid
+from pydantic import BaseModel, Field, model_serializer, field_serializer
 
 
 class LBV1ObjectBase(LBV1Feature):
@@ -25,15 +25,16 @@ class LBV1ObjectBase(LBV1Feature):
     page: Optional[int] = None
     unit: Optional[str] = None
 
-    def dict(self, *args, **kwargs) -> Dict[str, Any]:
-        res = super().dict(*args, **kwargs)
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
         # This means these are not video frames ..
         if self.instanceURI is None:
             res.pop('instanceURI')
         return res
 
-    @pydantic_compat.validator('classifications', pre=True)
-    def validate_subclasses(cls, value, field):
+    @field_serializer('classifications', mode="before")
+    def validate_subclasses(cls, value):
         # checklist subclasses create extra unessesary nesting. So we just remove it.
         if isinstance(value, list) and len(value):
             subclasses = []
@@ -49,24 +50,24 @@ class LBV1ObjectBase(LBV1Feature):
         return value
 
 
-class TIPointCoordinate(pydantic_compat.BaseModel):
+class TIPointCoordinate(BaseModel):
     coordinates: List[float]
 
 
-class TILineCoordinate(pydantic_compat.BaseModel):
+class TILineCoordinate(BaseModel):
     coordinates: List[List[float]]
 
 
-class TIPolygonCoordinate(pydantic_compat.BaseModel):
+class TIPolygonCoordinate(BaseModel):
     coordinates: List[List[List[float]]]
 
 
-class TIRectangleCoordinate(pydantic_compat.BaseModel):
+class TIRectangleCoordinate(BaseModel):
     coordinates: List[List[List[float]]]
 
 
 class LBV1TIPoint(LBV1ObjectBase):
-    object_type: Literal['point'] = pydantic_compat.Field(..., alias='type')
+    object_type: Literal['point'] = Field(..., alias='type')
     geometry: TIPointCoordinate
 
     def to_common(self) -> Point:
@@ -75,7 +76,7 @@ class LBV1TIPoint(LBV1ObjectBase):
 
 
 class LBV1TILine(LBV1ObjectBase):
-    object_type: Literal['polyline'] = pydantic_compat.Field(..., alias='type')
+    object_type: Literal['polyline'] = Field(..., alias='type')
     geometry: TILineCoordinate
 
     def to_common(self) -> Line:
@@ -85,7 +86,7 @@ class LBV1TILine(LBV1ObjectBase):
 
 
 class LBV1TIPolygon(LBV1ObjectBase):
-    object_type: Literal['polygon'] = pydantic_compat.Field(..., alias='type')
+    object_type: Literal['polygon'] = Field(..., alias='type')
     geometry: TIPolygonCoordinate
 
     def to_common(self) -> Polygon:
@@ -95,7 +96,7 @@ class LBV1TIPolygon(LBV1ObjectBase):
 
 
 class LBV1TIRectangle(LBV1ObjectBase):
-    object_type: Literal['rectangle'] = pydantic_compat.Field(..., alias='type')
+    object_type: Literal['rectangle'] = Field(..., alias='type')
     geometry: TIRectangleCoordinate
 
     def to_common(self) -> Rectangle:
@@ -111,12 +112,12 @@ class LBV1TIRectangle(LBV1ObjectBase):
                          end=Point(x=end[0], y=end[1]))
 
 
-class _Point(pydantic_compat.BaseModel):
+class _Point(BaseModel):
     x: float
     y: float
 
 
-class _Box(pydantic_compat.BaseModel):
+class _Box(BaseModel):
     top: float
     left: float
     height: float
@@ -230,12 +231,12 @@ class LBV1Mask(LBV1ObjectBase):
                    })
 
 
-class _TextPoint(pydantic_compat.BaseModel):
+class _TextPoint(BaseModel):
     start: int
     end: int
 
 
-class _Location(pydantic_compat.BaseModel):
+class _Location(BaseModel):
     location: _TextPoint
 
 
@@ -263,7 +264,7 @@ class LBV1TextEntity(LBV1ObjectBase):
                    **extra)
 
 
-class LBV1Objects(pydantic_compat.BaseModel):
+class LBV1Objects(BaseModel):
     objects: List[Union[
         LBV1Line,
         LBV1Point,

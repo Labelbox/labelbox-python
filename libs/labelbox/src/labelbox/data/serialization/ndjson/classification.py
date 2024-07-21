@@ -1,23 +1,23 @@
 from typing import Any, Dict, List, Union, Optional
 
-from labelbox import pydantic_compat
 from labelbox.data.mixins import ConfidenceMixin, CustomMetric, CustomMetricsMixin
 from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 
-from labelbox.utils import camel_case
 from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.video import VideoClassificationAnnotation
 from ...annotation_types.llm_prompt_response.prompt import PromptClassificationAnnotation, PromptText
 from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
-from pydantic import model_validator, Field, BaseModel
+from pydantic import model_validator, Field, BaseModel, ConfigDict, model_serializer
+from pydantic.alias_generators import to_camel
 
 
 class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
     name: Optional[str] = None
     schema_id: Optional[Cuid] = None
     classifications: Optional[List['NDSubclassificationType']] = []
+    model_config = ConfigDict(populate_by_name = True, alias_generator = to_camel)
 
     @model_validator(mode="after")
     def must_set_one(cls, values):
@@ -26,8 +26,9 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
             raise ValueError("Schema id or name are not set. Set either one.")
         return values
 
-    def dict(self, *args, **kwargs):
-        res = super().model_dump(*args, **kwargs)
+    @model_serializer(mode = "wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
         if 'name' in res and res['name'] is None:
             res.pop('name')
         if 'schemaId' in res and res['schemaId'] is None:
@@ -36,13 +37,9 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
             res.pop('classifications')
         else:
             res['classifications'] = [
-                c.dict(*args, **kwargs) for c in self.classifications
+                c.model_dump() for c in self.classifications
             ]
         return res
-
-    class Config:
-        allow_population_by_field_name = True
-        alias_generator = camel_case
 
 
 class FrameLocation(BaseModel):
@@ -54,8 +51,9 @@ class VideoSupported(BaseModel):
     # Note that frames are only allowed as top level inferences for video
     frames: Optional[List[FrameLocation]] = None
 
-    def dict(self, *args, **kwargs):
-        res = super().model_dump(*args, **kwargs)
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
         # This means these are no video frames ..
         if self.frames is None:
             res.pop('frames')
@@ -116,8 +114,9 @@ class NDChecklistSubclass(NDAnswer):
                    name=name,
                    schema_id=feature_schema_id)
 
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
+    @model_serializer(mode="wrap")
+    def dict(self, handler):
+        res = handler(self)
         if 'answers' in res:
             res['answer'] = res.pop('answers')
         return res
@@ -410,14 +409,14 @@ class NDPromptClassification:
 NDSubclassificationType = Union[NDChecklistSubclass, NDRadioSubclass,
                                 NDTextSubclass]
 
-NDAnswer.update_forward_refs()
-NDChecklistSubclass.update_forward_refs()
-NDChecklist.update_forward_refs()
-NDRadioSubclass.update_forward_refs()
-NDRadio.update_forward_refs()
-NDText.update_forward_refs()
-NDPromptText.update_forward_refs()
-NDTextSubclass.update_forward_refs()
+NDAnswer.model_rebuild()
+NDChecklistSubclass.model_rebuild()
+NDChecklist.model_rebuild()
+NDRadioSubclass.model_rebuild()
+NDRadio.model_rebuild()
+NDText.model_rebuild()
+NDPromptText.model_rebuild()
+NDTextSubclass.model_rebuild()
 
 # Make sure to keep NDChecklist prior to NDRadio in the list,
 # otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used

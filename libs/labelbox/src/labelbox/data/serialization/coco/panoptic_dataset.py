@@ -2,7 +2,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Dict, Any, List, Union
 from pathlib import Path
 
-from labelbox import pydantic_compat
 from tqdm import tqdm
 import numpy as np
 from PIL import Image
@@ -16,6 +15,7 @@ from ...annotation_types.collection import LabelCollection
 from .categories import Categories, hash_category_name
 from .image import CocoImage, get_image, get_image_id, id_to_rgb
 from .annotation import PanopticAnnotation, SegmentInfo, get_annotation_lookup
+from pydantic import BaseModel
 
 
 def vector_to_coco_segment_info(canvas: np.ndarray,
@@ -115,7 +115,7 @@ def process_label(label: Label,
         segments_info=segments), categories, is_thing
 
 
-class CocoPanopticDataset(pydantic_compat.BaseModel):
+class CocoPanopticDataset(BaseModel):
     info: Dict[str, Any] = {}
     images: List[CocoImage]
     annotations: List[PanopticAnnotation]

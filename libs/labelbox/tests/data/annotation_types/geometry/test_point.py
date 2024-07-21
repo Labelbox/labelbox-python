@@ -2,11 +2,11 @@ import pytest
 import cv2
 
 from labelbox.data.annotation_types import Point
-from labelbox import pydantic_compat
+from pydantic import ValidationError
 
 
 def test_point():
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         line = Point()
 
     with pytest.raises(TypeError):

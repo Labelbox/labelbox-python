@@ -6,11 +6,11 @@ import pytest
 from PIL import Image
 
 from labelbox.data.annotation_types.data import ImageData
-from labelbox import pydantic_compat
+from pydantic import ValidationError
 
 
 def test_validate_schema():
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         data = ImageData()
 
 

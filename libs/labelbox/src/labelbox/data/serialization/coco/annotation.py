@@ -10,10 +10,10 @@ from ...annotation_types.video import VideoMaskAnnotation
 from ...annotation_types.annotation import ObjectAnnotation
 from ...annotation_types.classification.classification import ClassificationAnnotation
 
-from .... import pydantic_compat
 import numpy as np
 
 from .path import PathSerializerMixin
+from pydantic import BaseModel
 
 
 def rle_decoding(rle_arr: List[int], w: int, h: int) -> np.ndarray:
@@ -40,7 +40,7 @@ def get_annotation_lookup(annotations):
     return annotation_lookup 
 
 
-class SegmentInfo(pydantic_compat.BaseModel):
+class SegmentInfo(BaseModel):
     id: int
     category_id: int
     area: int
@@ -48,12 +48,12 @@ class SegmentInfo(pydantic_compat.BaseModel):
     iscrowd: int = 0
 
 
-class RLE(pydantic_compat.BaseModel):
+class RLE(BaseModel):
     counts: List[int]
     size: Tuple[int, int]  # h,w or w,h?
 
 
-class COCOObjectAnnotation(pydantic_compat.BaseModel):
+class COCOObjectAnnotation(BaseModel):
     # All segmentations for a particular class in an image...
     # So each image will have one of these for each class present in the image..
     # Annotations only exist if there is data..

@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 
 from typing import List, Tuple, Optional
 
-from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.data_row import DataRow
 from pydantic import BaseModel

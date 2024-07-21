@@ -4,7 +4,6 @@ from typing import Dict, Generator, List, Tuple, Union
 from collections import defaultdict
 import warnings
 
-from labelbox import pydantic_compat
 
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.relationship import RelationshipAnnotation

@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Tuple
 
-from labelbox import pydantic_compat
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation

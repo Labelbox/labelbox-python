@@ -7,7 +7,6 @@ from labelbox.data.annotation_types.video import VideoObjectAnnotation, DICOMObj
 from labelbox.data.mixins import ConfidenceMixin, CustomMetricsMixin, CustomMetric, CustomMetricsNotSupportedMixin
 import numpy as np
 
-from labelbox import pydantic_compat
 from PIL import Image
 from labelbox.data.annotation_types import feature
 
@@ -455,12 +454,12 @@ class NDDicomSegments(NDBaseObject, DicomSupported):
                    group_key=group_key)
 
 
-class _URIMask(pydantic_compat.BaseModel):
+class _URIMask(BaseModel):
     instanceURI: str
     colorRGB: Tuple[int, int, int]
 
 
-class _PNGMask(pydantic_compat.BaseModel):
+class _PNGMask(BaseModel):
     png: str
 
 
@@ -565,7 +564,7 @@ class NDDicomMasks(NDVideoMasks, DicomSupported):
         )
 
 
-class Location(pydantic_compat.BaseModel):
+class Location(BaseModel):
     start: int
     end: int
 
