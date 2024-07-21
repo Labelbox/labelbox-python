@@ -15,7 +15,7 @@ class EmbeddingVector(BaseModel):
     """
     embedding_id: str
     vector: List[float]
-    clusters: Optional[List[int]]
+    clusters: Optional[List[int]] = None
 
     def to_gql(self) -> Dict[str, Any]:
         result = {"embeddingId": self.embedding_id, "vector": self.vector}

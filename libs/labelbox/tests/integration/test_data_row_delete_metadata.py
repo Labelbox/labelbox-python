@@ -1,9 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 import pytest
 
-from labelbox import DataRow, Dataset
+from labelbox import DataRow, Dataset, Client, DataRowMetadataOntology
 from labelbox.exceptions import MalformedQueryException
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadata, DataRowMetadataKind, DeleteDataRowMetadata
 from labelbox.schema.identifiable import GlobalKey, UniqueId
@@ -27,7 +27,7 @@ FAKE_NUMBER_FIELD = {
 
 
 @pytest.fixture
-def mdo(client):
+def mdo(client: Client):
     mdo = client.get_data_row_metadata_ontology()
     try:
         mdo.create_schema(CUSTOM_TEXT_SCHEMA_NAME, DataRowMetadataKind.string)
@@ -56,7 +56,7 @@ def big_dataset(dataset: Dataset, image_url):
 
 def make_metadata(dr_id: str = None, gk: str = None) -> DataRowMetadata:
     msg = "A message"
-    time = datetime.utcnow()
+    time = datetime.now(timezone.utc)
 
     metadata = DataRowMetadata(
         global_key=gk,
@@ -72,7 +72,7 @@ def make_metadata(dr_id: str = None, gk: str = None) -> DataRowMetadata:
 
 def make_named_metadata(dr_id) -> DataRowMetadata:
     msg = "A message"
-    time = datetime.utcnow()
+    time = datetime.now(timezone.utc)
 
     metadata = DataRowMetadata(data_row_id=dr_id,
                                fields=[
@@ -233,7 +233,7 @@ def test_large_bulk_delete_datarow_metadata(data_rows_for_delete, big_dataset,
     'data_row_for_delete',
     ['data_row_id_as_str', 'data_row_unique_id', 'data_row_global_key'])
 def test_bulk_delete_datarow_enum_metadata(data_row_for_delete,
-                                           data_row: DataRow, mdo, request):
+                                           data_row: DataRow, mdo: DataRowMetadataOntology, request):
     """test bulk deletes for non non fields"""
     metadata = make_metadata(data_row.uid)
     metadata.fields = [

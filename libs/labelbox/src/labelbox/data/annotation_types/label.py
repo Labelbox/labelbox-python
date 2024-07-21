@@ -58,7 +58,9 @@ class Label(BaseModel):
     @field_validator("data", mode="before")
     def validate_data(cls, data):
         if isinstance(data, Dict):
-            data["class_name"] = "GenericDataRowData"
+            return GenericDataRowData(**data)
+        elif isinstance(data, GenericDataRowData):
+            return data
         else:
             warnings.warn(
                 f"Using {type(data).__name__} class for label.data is deprecated. "

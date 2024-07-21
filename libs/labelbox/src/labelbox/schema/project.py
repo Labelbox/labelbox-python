@@ -935,7 +935,7 @@ class Project(DbObject, Updateable, Deletable):
             dr_ids, global_keys, self._wait_processing_max_seconds)
 
         if consensus_settings:
-            consensus_settings = ConsensusSettings(**consensus_settings).dict(
+            consensus_settings = ConsensusSettings(**consensus_settings).model_dump(
                 by_alias=True)
 
         if row_count >= MAX_SYNC_BATCH_ROW_COUNT:
