@@ -15,8 +15,8 @@ class LBV1Feature(BaseModel):
 
     @model_validator(mode = "after")
     def check_ids(cls, values):
-        if values.get('value') is None:
-            values['value'] = values['title']
+        if values.value is None:
+            values.value = values.title
         return values
 
     @model_serializer(mode = "wrap")

@@ -93,11 +93,11 @@ class TextData(BaseData, _NoCoercionMixin):
 
     @model_validator(mode="after")
     def validate_date(cls, values):
-        file_path = values.get("file_path")
-        text = values.get("text")
-        url = values.get("url")
-        uid = values.get('uid')
-        global_key = values.get('global_key')
+        file_path = values.file_path
+        text = values.text
+        url = values.url
+        uid = values.uid
+        global_key = values.global_key
         if uid == file_path == text == url == global_key == None:
             raise ValueError(
                 "One of `file_path`, `text`, `uid`, `global_key` or `url` required."

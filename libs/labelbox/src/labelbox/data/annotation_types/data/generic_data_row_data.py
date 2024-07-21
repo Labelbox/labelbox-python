@@ -17,7 +17,7 @@ class GenericDataRowData(BaseData, _NoCoercionMixin):
     @model_validator(mode="before")
     def validate_one_datarow_key_present(cls, data):
         keys = ['external_id', 'global_key', 'uid']
-        count = sum([key in data for key in keys])
+        count = sum([hasattr(data, key) for key in keys])
 
         if count < 1:
             raise ValueError(f"Exactly one of {keys} must be present.")
