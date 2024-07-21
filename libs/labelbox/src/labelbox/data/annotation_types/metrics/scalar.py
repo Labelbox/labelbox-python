@@ -33,7 +33,7 @@ class ScalarMetric(BaseMetric):
     value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
     aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN
 
-    @field_validator.validator('metric_name')
+    @field_validator('metric_name')
     def validate_metric_name(cls, name: Union[str, None]):
         if name is None:
             return None

@@ -8,19 +8,19 @@ from pathlib import Path
 from google.api_core import retry
 from labelbox import parser
 import requests
-from pydantic import ValidationError, BaseModel, Field, field_validator, model_validator, ConfigDict
-from typing_extensions import Literal
+from pydantic import ValidationError, BaseModel, Field, field_validator, model_validator, ConfigDict, StringConstraints
+from typing_extensions import Literal, Annotated
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set, TYPE_CHECKING)
 
 from labelbox import exceptions as lb_exceptions
-from labelbox.orm.model import Entity
 from labelbox import utils
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field, Relationship
+from labelbox.orm.model import Relationship
 from labelbox.schema.enums import BulkImportRequestState
 from labelbox.schema.serialization import serialize_labels
+from labelbox.orm.model import Field as lb_Field
 
 if TYPE_CHECKING:
     from labelbox import Project
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 def _determinants(parent_cls: Any) -> List[str]:
     return [
         k for k, v in parent_cls.model_fields.items()
-        if 'determinant' in v.field_info.extra
+        if v.json_schema_extra and "determinant" in v.json_schema_extra
     ]
 
 
@@ -101,12 +101,12 @@ class BulkImportRequest(DbObject):
         project (Relationship): `ToOne` relationship to Project
         created_by (Relationship): `ToOne` relationship to User
     """
-    name = Field.String("name")
-    state = Field.Enum(BulkImportRequestState, "state")
-    input_file_url = Field.String("input_file_url")
-    error_file_url = Field.String("error_file_url")
-    status_file_url = Field.String("status_file_url")
-    created_at = Field.DateTime("created_at")
+    name = lb_Field.String("name")
+    state = lb_Field.Enum(BulkImportRequestState, "state")
+    input_file_url = lb_Field.String("input_file_url")
+    error_file_url = lb_Field.String("error_file_url")
+    status_file_url = lb_Field.String("status_file_url")
+    created_at = lb_Field.DateTime("created_at")
 
     project = Relationship.ToOne("Project")
     created_by = Relationship.ToOne("User", False, "created_by")
@@ -513,7 +513,7 @@ def get_mal_schemas(ontology):
     return valid_feature_schemas_by_schema_id, valid_feature_schemas_by_name
 
 
-LabelboxID: str = Field(..., min_length=25, max_length=25)
+LabelboxID: str = Annotated[str, StringConstraints(min_length=25, max_length=25)]
 
 
 class Bbox(BaseModel):
@@ -627,7 +627,7 @@ class NDFeatureSchema(BaseModel):
 
     @model_validator(mode="after")
     def must_set_one(cls, values):
-        if values['schemaId'] is None and values['name'] is None:
+        if values.schemaId is None and values.name is None:
             raise ValueError(
                 "Must set either schemaId or name for all feature schemas")
         return values
