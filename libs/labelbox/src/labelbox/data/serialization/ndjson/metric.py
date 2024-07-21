@@ -8,18 +8,18 @@ from labelbox.data.annotation_types.metrics.scalar import (
 from labelbox.data.annotation_types.metrics.confusion_matrix import (
     ConfusionMatrixAggregation, ConfusionMatrixMetric,
     ConfusionMatrixMetricValue, ConfusionMatrixMetricConfidenceValue)
+from pydantic import ConfigDict, model_serializer
 
 
 class BaseNDMetric(NDJsonBase):
     metric_value: float
     feature_name: Optional[str] = None
     subclass_name: Optional[str] = None
+    model_config = ConfigDict(use_enum_values = True)
 
-    class Config:
-        use_enum_values = True
-
-    def dict(self, *args, **kwargs):
-        res = super().model_dump(*args, **kwargs)
+    @model_serializer(mode = "wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
         for field in ['featureName', 'subclassName']:
             if res[field] is None:
                 res.pop(field)
@@ -77,8 +77,9 @@ class NDScalarMetric(BaseNDMetric):
                    aggregation=metric.aggregation.value,
                    data_row=DataRow(id=data.uid, global_key=data.global_key))
 
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
+    @model_serializer(mode = "wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
         # For backwards compatibility.
         if res['metricName'] is None:
             res.pop('metricName')

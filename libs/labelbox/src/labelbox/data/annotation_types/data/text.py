@@ -4,7 +4,7 @@ import requests
 from requests.exceptions import ConnectTimeout
 from google.api_core import retry
 
-from labelbox import pydantic_compat
+from pydantic import ConfigDict, model_validator
 from labelbox.exceptions import InternalServerError
 from labelbox.typing_imports import Literal
 from labelbox.utils import _NoCoercionMixin
@@ -26,6 +26,7 @@ class TextData(BaseData, _NoCoercionMixin):
     file_path: Optional[str] = None
     text: Optional[str] = None
     url: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
     @property
     def value(self) -> str:
@@ -64,7 +65,7 @@ class TextData(BaseData, _NoCoercionMixin):
         """
         response = requests.get(self.url)
         if response.status_code in [500, 502, 503, 504]:
-            raise labelbox.exceptions.InternalServerError(response.text)
+            raise InternalServerError(response.text)
         response.raise_for_status()
         return response.text
 
@@ -90,7 +91,7 @@ class TextData(BaseData, _NoCoercionMixin):
                 "One of url, im_bytes, file_path, numpy must not be None.")
         return self.url
 
-    @pydantic_compat.root_validator
+    @model_validator(mode="after")
     def validate_date(cls, values):
         file_path = values.get("file_path")
         text = values.get("text")
@@ -107,7 +108,3 @@ class TextData(BaseData, _NoCoercionMixin):
         return  f"TextData(file_path={self.file_path}," \
                 f"text={self.text[:30] + '...' if self.text is not None else None}," \
                 f"url={self.url})"
-
-    class config:
-        # Required for discriminating between data types
-        extra = 'forbid'

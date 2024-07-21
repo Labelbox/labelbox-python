@@ -9,7 +9,7 @@ from requests.exceptions import ConnectTimeout
 import requests
 import numpy as np
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, ConfigDict
 from labelbox.exceptions import InternalServerError
 from .base_data import BaseData
 from ..types import TypedArray
@@ -22,6 +22,7 @@ class RasterData(BaseModel, ABC):
     file_path: Optional[str] = None
     url: Optional[str] = None
     arr: Optional[TypedArray[Literal['uint8']]] = None
+    model_config = ConfigDict(extra="forbid", copy_on_model_validation="none")
 
     @classmethod
     def from_2D_arr(cls, arr: Union[TypedArray[Literal['uint8']],
@@ -184,12 +185,6 @@ class RasterData(BaseModel, ABC):
                f"file_path={self.file_path}," \
                f"url={self.url}," \
                f"arr={symbol_or_none(self.arr)})"
-
-    class Config:
-        # Required for sharing references
-        copy_on_model_validation = 'none'
-        # Required for discriminating between data types
-        extra = 'forbid'
 
 
 class MaskData(RasterData):

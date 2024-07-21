@@ -8,7 +8,7 @@ from shapely.geometry import MultiPolygon, Polygon
 from ..data import MaskData
 from .geometry import Geometry
 
-from labelbox import pydantic_compat
+from pydantic import field_validator
 
 
 class Mask(Geometry):
@@ -122,7 +122,7 @@ class Mask(Geometry):
         """
         return self.mask.create_url(signer)
 
-    @pydantic_compat.validator('color')
+    @field_validator('color')
     def is_valid_color(cls, color):
         if isinstance(color, (tuple, list)):
             if len(color) == 1:

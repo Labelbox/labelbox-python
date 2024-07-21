@@ -6,7 +6,7 @@ from dateutil.parser import isoparse as dateutil_parse
 from dateutil.utils import default_tzinfo
 
 from urllib.parse import urlparse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_serializer
 from pydantic.alias_generators import to_camel
 
 UPPERCASE_COMPONENTS = ['uri', 'rgb']
@@ -81,9 +81,9 @@ class _NoCoercionMixin:
             class_name: Literal["ConversationData"] = "ConversationData"
 
     """
-
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
         res.pop('class_name')
         return res
 

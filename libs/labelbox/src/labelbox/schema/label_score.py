@@ -1,7 +1,7 @@
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 
 
-class LabelScore(pydantic_compat.BaseModel):
+class LabelScore(BaseModel):
     """
     A label score.
 

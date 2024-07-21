@@ -1,6 +1,5 @@
 from typing import List
 
-from labelbox import pydantic_compat
 from labelbox.utils import _CamelCaseMixin
 from pydantic import BaseModel, field_validator
 

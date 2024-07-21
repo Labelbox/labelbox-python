@@ -2,9 +2,8 @@ from typing import Optional
 from uuid import uuid4
 
 from labelbox.utils import _CamelCaseMixin, is_exactly_one_set
-from labelbox import pydantic_compat
 from ...annotation_types.types import Cuid
-from pydantic import field_validator, model_validator
+from pydantic import field_validator, model_validator, model_serializer
 
 
 class DataRow(_CamelCaseMixin):
@@ -43,15 +42,16 @@ class NDAnnotation(NDJsonBase):
     page: Optional[int] = None
     unit: Optional[str] = None
 
-    @pydantic_compat.root_validator()
+    @model_validator(mode="after")
     def must_set_one(cls, values):
         if ('schema_id' not in values or values['schema_id']
                 is None) and ('name' not in values or values['name'] is None):
             raise ValueError("Schema id or name are not set. Set either one.")
         return values
 
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
         if 'name' in res and res['name'] is None:
             res.pop('name')
         if 'schemaId' in res and res['schemaId'] is None:

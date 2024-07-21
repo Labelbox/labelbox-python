@@ -12,12 +12,11 @@ from google.api_core import retry
 from PIL import Image
 from pyproj import Transformer
 from pygeotile.point import Point as PygeoPoint
-from labelbox import pydantic_compat
 
 from labelbox.data.annotation_types import Rectangle, Point, Line, Polygon
 from .base_data import BaseData
 from .raster import RasterData
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, field_validator, model_validator, ConfigDict
 
 VALID_LAT_RANGE = range(-90, 90)
 VALID_LNG_RANGE = range(-180, 180)
@@ -83,7 +82,7 @@ class TiledBounds(BaseModel):
         return values
 
 
-class TileLayer(pydantic_compat.BaseModel):
+class TileLayer(BaseModel):
     """ Url that contains the tile layer. Must be in the format:
 
     https://c.tile.openstreetmap.org/{z}/{x}/{y}.png
@@ -99,7 +98,7 @@ class TileLayer(pydantic_compat.BaseModel):
     def asdict(self) -> Dict[str, str]:
         return {"tileLayerUrl": self.url, "name": self.name}
 
-    @pydantic_compat.validator('url')
+    @field_validator('url')
     def validate_url(cls, url):
         xyz_format = "/{z}/{x}/{y}"
         if xyz_format not in url:
@@ -344,7 +343,7 @@ class TiledImageData(BaseData):
                              f"Max allowed tiles are {max_tiles}"
                              f"Increase max tiles or reduce zoom level.")
 
-    @pydantic_compat.validator('zoom_levels')
+    @field_validator('zoom_levels')
     def validate_zoom_levels(cls, zoom_levels):
         if zoom_levels[0] > zoom_levels[1]:
             raise ValueError(
@@ -353,15 +352,12 @@ class TiledImageData(BaseData):
         return zoom_levels
 
 
-class EPSGTransformer(pydantic_compat.BaseModel):
+class EPSGTransformer(BaseModel):
     """Transformer class between different EPSG's. Useful when wanting to project
     in different formats.
     """
-
-    class Config:
-        arbitrary_types_allowed = True
-
     transformer: Any
+    model_config = ConfigDict(arbitrary_types_allowed = True)
 
     @staticmethod
     def _is_simple(epsg: EPSG) -> bool:

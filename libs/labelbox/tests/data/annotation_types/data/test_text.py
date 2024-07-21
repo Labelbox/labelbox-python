@@ -3,11 +3,11 @@ import os
 import pytest
 
 from labelbox.data.annotation_types import TextData
-from labelbox import pydantic_compat
+from pydantic import ValidationError
 
 
 def test_validate_schema():
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         data = TextData()
 
 

@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field, StringConstraints, ConfigDict, AliasGener
 from pydantic.alias_generators import to_camel
 
 from labelbox.schema.ontology import SchemaId
-from labelbox.utils import _CamelCaseMixin, camel_case, format_iso_datetime, format_iso_from_string
+from labelbox.utils import _CamelCaseMixin, format_iso_datetime, format_iso_from_string
 
 
 class DataRowMetadataKind(Enum):
@@ -67,9 +67,7 @@ class DataRowMetadata(_CamelCaseMixin):
 class DeleteDataRowMetadata(_CamelCaseMixin):
     data_row_id: Union[str, UniqueId, GlobalKey]
     fields: List[SchemaId]
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed = True)
 
 
 class DataRowMetadataBatchResponse(_CamelCaseMixin):
@@ -577,7 +575,7 @@ class DataRowMetadataOntology:
                     fields=list(
                         chain.from_iterable(
                             self._parse_upsert(f, m.data_row_id)
-                            for f in m.fields))).dict(by_alias=True))
+                            for f in m.fields))).model_dump(by_alias=True))
         res = _batch_operations(_batch_upsert, items, self._batch_size)
         return res
 
@@ -796,7 +794,7 @@ class DataRowMetadataOntology:
                 }
             }"""
         res = self._client.execute(
-            query, {"data": upsert_schema.dict(exclude_none=True)
+            query, {"data": upsert_schema.model_dump(exclude_none=True)
                    })['upsertCustomMetadataSchema']
         self.refresh_ontology()
         return _parse_metadata_schema(res)
@@ -886,7 +884,7 @@ class DataRowMetadataOntology:
 
         return _DeleteBatchDataRowMetadata(
             data_row_identifier=delete.data_row_id,
-            schema_ids=list(delete.fields)).dict(by_alias=True)
+            schema_ids=list(delete.fields)).model_dump(by_alias=True)
 
     def _validate_custom_schema_by_name(self,
                                         name: str) -> DataRowMetadataSchema:

@@ -1,11 +1,11 @@
 from typing import List, Union
 
-from labelbox import pydantic_compat
 
 from .feature import LBV1Feature
 from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.classification import Checklist, ClassificationAnswer, Radio, Text, Dropdown
 from ...annotation_types.types import Cuid
+from pydantic import BaseModel
 
 
 class LBV1ClassificationAnswer(LBV1Feature):
@@ -90,7 +90,7 @@ class LBV1Text(LBV1Feature):
         return cls(schema_id=feature_schema_id, answer=text.answer, **extra)
 
 
-class LBV1Classifications(pydantic_compat.BaseModel):
+class LBV1Classifications(BaseModel):
     classifications: List[Union[LBV1Text, LBV1Radio, LBV1Dropdown,
                                 LBV1Checklist]] = []
 

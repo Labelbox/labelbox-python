@@ -2,11 +2,11 @@ import numpy as np
 import pytest
 
 from labelbox.data.annotation_types import VideoData
-from labelbox import pydantic_compat
+from pydantic import ValidationError
 
 
 def test_validate_schema():
-    with pytest.raises(pydantic_compat.ValidationError):
+    with pytest.raises(ValidationError):
         data = VideoData()
 
 

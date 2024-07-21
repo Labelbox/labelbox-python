@@ -10,12 +10,11 @@ import warnings
 from labelbox.exceptions import InconsistentOntologyException
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-from labelbox import pydantic_compat
 import json
 from pydantic import StringConstraints
 
-FeatureSchemaId: Type[str] = pydantic_compat.constr(min_length=25,
-                                                    max_length=25)
+FeatureSchemaId: Type[str] = Annotated[str, StringConstraints(min_length=25,
+                                                            max_length=25)]
 SchemaId: Type[str] = Annotated[str, StringConstraints(min_length=25, max_length=25)]
 
 
