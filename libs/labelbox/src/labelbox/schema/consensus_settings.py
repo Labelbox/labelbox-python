@@ -1,4 +1,5 @@
 from labelbox.utils import _CamelCaseMixin
+from pydantic import Field, AliasChoices
 
 
 class ConsensusSettings(_CamelCaseMixin):
@@ -14,5 +15,5 @@ class ConsensusSettings(_CamelCaseMixin):
         coverage_percentage: Percentage of data rows to be labeled more than once
     """
 
-    number_of_labels: int
-    coverage_percentage: float
+    number_of_labels: int = Field(validation_alias=AliasChoices("numberOfLabels", "number_of_labels"))
+    coverage_percentage: float = Field(validation_alias=AliasChoices("coveragePercentage", "coverage_percentage"))

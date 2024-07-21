@@ -10,7 +10,7 @@ from typing_extensions import Annotated
 
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.identifiable import UniqueId, GlobalKey
-from pydantic import BaseModel, Field, StringConstraints, ConfigDict, AliasGenerator, model_serializer, conlist
+from pydantic import BaseModel, Field, StringConstraints, ConfigDict, AliasGenerator, model_serializer, conlist, AliasChoices
 from pydantic.alias_generators import to_camel
 
 from labelbox.schema.ontology import SchemaId
@@ -29,9 +29,9 @@ class DataRowMetadataKind(Enum):
 # Metadata schema
 class DataRowMetadataSchema(BaseModel):
     uid: SchemaId
-    name: str = Annotated[str, StringConstraints(strip_whitespace=True,
-                                                min_length=1,
-                                                max_length=100)]
+    name: str = Field(strip_whitespace=True,
+                    min_length=1,
+                    max_length=100)
     reserved: bool
     kind: DataRowMetadataKind
     options: Optional[List["DataRowMetadataSchema"]] = None
@@ -43,7 +43,7 @@ DataRowMetadataSchema.model_rebuild()
 Embedding: Type[List[float]] = conlist(float,
                                     min_length=128,
                                     max_length=128)
-String: Type[str] = Annotated[str, StringConstraints(max_length=4096)]
+String: Type[str] = Field(max_length=4096)
 
 
 # Metadata base class
@@ -59,13 +59,13 @@ class DataRowMetadataField(BaseModel):
 
 
 class DataRowMetadata(_CamelCaseMixin):
-    global_key: Optional[str] = None
-    data_row_id: Optional[str] = None
+    global_key: Optional[str] = Field(default=None, validation_alias=AliasChoices("global_key", "globalKey"))
+    data_row_id: Optional[str] = Field(default=None, validation_alias=AliasChoices("data_row_id", "dataRowId"))
     fields: List[DataRowMetadataField]
 
 
 class DeleteDataRowMetadata(_CamelCaseMixin):
-    data_row_id: Union[str, UniqueId, GlobalKey]
+    data_row_id: Union[str, UniqueId, GlobalKey] = Field(validation_alias=AliasChoices("data_row_id", "dataRowId"))
     fields: List[SchemaId]
     model_config = ConfigDict(arbitrary_types_allowed = True)
 
@@ -89,8 +89,8 @@ class _UpsertDataRowMetadataInput(_CamelCaseMixin):
 
 # Batch of upsert values for a datarow
 class _UpsertBatchDataRowMetadata(_CamelCaseMixin):
-    global_key: Optional[str] = None
-    data_row_id: Optional[str] = None
+    global_key: Optional[str] = Field(default=None, validation_alias=AliasChoices("global_key", "globalKey"))
+    data_row_id: Optional[str] = Field(default=None, validation_alias=AliasChoices("data_row_id", "dataRowId"))
     fields: List[_UpsertDataRowMetadataInput]
 
 
@@ -961,10 +961,10 @@ def _validate_parse_text(
         raise ValueError(
             f"Expected a string type for the text field. Found {type(field.value)}"
         )
-
-    if len(field.value) > String.max_length:
+    print(String.metadata[0].max_length)
+    if len(field.value) > String.metadata[0].max_length:
         raise ValueError(
-            f"String fields cannot exceed {String.max_length} characters.")
+            f"String fields cannot exceed {String.metadata.max_length} characters.")
     return [field.model_dump(by_alias=True)]
 
 

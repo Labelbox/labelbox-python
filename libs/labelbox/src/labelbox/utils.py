@@ -6,8 +6,8 @@ from dateutil.parser import isoparse as dateutil_parse
 from dateutil.utils import default_tzinfo
 
 from urllib.parse import urlparse
-from pydantic import BaseModel, ConfigDict, model_serializer
-from pydantic.alias_generators import to_camel
+from pydantic import BaseModel, ConfigDict, model_serializer, AliasGenerator, AliasChoices
+from pydantic.alias_generators import to_camel, to_pascal
 
 UPPERCASE_COMPONENTS = ['uri', 'rgb']
 ISO_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
