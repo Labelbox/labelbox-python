@@ -68,8 +68,8 @@ class TiledBounds(BaseModel):
     #validate bounds are within lat,lng range if they are EPSG4326
     @model_validator(mode="after")
     def validate_bounds_lat_lng(cls, values):
-        epsg = values.get('epsg')
-        bounds = values.get('bounds')
+        epsg = values.epsg
+        bounds = values.bounds
 
         if epsg == EPSG.EPSG4326:
             for bound in bounds:

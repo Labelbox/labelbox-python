@@ -152,11 +152,11 @@ class VideoData(BaseData):
 
     @model_validator(mode="after")
     def validate_data(cls, values):
-        file_path = values.get("file_path")
-        url = values.get("url")
-        frames = values.get("frames")
-        uid = values.get("uid")
-        global_key = values.get("global_key")
+        file_path = values.file_path
+        url = values.url
+        frames = values.frames
+        uid = values.uid
+        global_key = values.global_key
 
         if uid == file_path == frames == url == global_key == None:
             raise ValueError(
