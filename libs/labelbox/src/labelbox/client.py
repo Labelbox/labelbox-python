@@ -925,10 +925,7 @@ class Client:
                 "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
-        elif (
-            QualityMode.Consensus in (quality_modes if quality_modes else [])
-            or quality_mode is QualityMode.Consensus
-        ):
+        elif quality_modes == [QualityMode.Consensus] or quality_mode is QualityMode.Consensus:
             data[
                 "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
