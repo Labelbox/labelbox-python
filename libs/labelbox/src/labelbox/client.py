@@ -905,17 +905,22 @@ class Client:
                 "Cannot use both quality_modes and quality_mode at the same time. Use one or the other.")
 
         if not quality_modes and not quality_mode:
-            logger.info("Defaulting quality modes to Benchmark.")
+            logger.info("Defaulting quality modes to Benchmark and Consensus.")
 
         data = kwargs
         data.pop("quality_modes", None)
         data.pop("quality_mode", None)
-        if quality_modes is None or len(quality_modes) == 0 or quality_modes == [QualityMode.Benchmark] or quality_mode is QualityMode.Benchmark:
+        if quality_modes == [QualityMode.Benchmark] or quality_mode is QualityMode.Benchmark:
             data[
                 "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
-        elif QualityMode.Consensus in (quality_modes if quality_modes else []) or quality_mode is QualityMode.Consensus:
+        elif (
+            quality_modes is None
+            or len(quality_modes) == 0
+            or QualityMode.Consensus in (quality_modes if quality_modes else [])
+            or quality_mode is QualityMode.Consensus
+        ):
             data[
                 "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
