@@ -992,7 +992,7 @@ class Project(DbObject, Updateable, Deletable):
             dr_ids, global_keys, self._wait_processing_max_seconds)
 
         if consensus_settings:
-            consensus_settings = ConsensusSettings(**consensus_settings).dict(
+            consensus_settings = ConsensusSettings(**consensus_settings).model_dump(
                 by_alias=True)
 
         method = 'createBatches'
@@ -1059,7 +1059,7 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError("Project must be in batch mode")
 
         if consensus_settings:
-            consensus_settings = ConsensusSettings(**consensus_settings).dict(
+            consensus_settings = ConsensusSettings(**consensus_settings).model_dump(
                 by_alias=True)
 
         method = 'createBatchesFromDataset'

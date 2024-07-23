@@ -26,7 +26,7 @@ class ClassificationAnswer(FeatureSchema, ConfidenceMixin, CustomMetricsMixin):
     """
     extra: Dict[str, Any] = {}
     keyframe: Optional[bool] = None
-    classifications: List['ClassificationAnnotation'] = []
+    classifications: Optional[List['ClassificationAnnotation']] = None
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
@@ -84,7 +84,7 @@ class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
         name (Optional[str])
         classifications (Optional[List[ClassificationAnnotation]]): Optional sub classification of the annotation
         feature_schema_id (Optional[Cuid])
-        value (Union[Text, Checklist, Radio, Dropdown])
+        value (Union[Text, Checklist, Radio])
         extra (Dict[str, Any])
      """
 

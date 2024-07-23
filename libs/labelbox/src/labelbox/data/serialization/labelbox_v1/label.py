@@ -31,7 +31,7 @@ class LBV1LabelAnnotations(LBV1Classifications, LBV1Objects):
             [x for x in annotations if isinstance(x, ObjectAnnotation)])
         classifications = LBV1Classifications.from_common(
             [x for x in annotations if isinstance(x, ClassificationAnnotation)])
-        return cls(**objects.dict(), **classifications.dict())
+        return cls(**objects.model_dump(), **classifications.model_dump())
 
 
 class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
@@ -119,7 +119,7 @@ class LBV1Label(BaseModel):
                  List[LBV1LabelAnnotationsVideo]] = Field(
                      ..., alias='Label')
     data_row_id: str = Field(..., alias="DataRow ID")
-    row_data: str = Field(None, alias="Labeled Data")
+    row_data: Optional[str] = Field(None, alias="Labeled Data")
     id: Optional[str] = Field(None, alias='ID')
     external_id: Optional[str] = Field(None, alias="External ID")
     data_row_media_attributes: Optional[Dict[str, Any]] = Field(

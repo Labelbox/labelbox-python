@@ -65,7 +65,7 @@ class COCOConverter:
         image_root = create_path_if_not_exists(image_root, ignore_existing_data)
         return CocoInstanceDataset.from_common(labels=labels,
                                                image_root=image_root,
-                                               max_workers=max_workers).dict()
+                                               max_workers=max_workers).model_dump()
 
     @staticmethod
     def serialize_panoptic(labels: LabelCollection,
@@ -104,7 +104,7 @@ class COCOConverter:
                                                image_root=image_root,
                                                mask_root=mask_root,
                                                all_stuff=all_stuff,
-                                               max_workers=max_workers).dict()
+                                               max_workers=max_workers).model_dump()
 
     @staticmethod
     def deserialize_panoptic(json_data: Dict[str, Any], image_root: Union[Path,

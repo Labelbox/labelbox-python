@@ -43,7 +43,7 @@ def test_deserialize_label():
     if hasattr(deserialized_label.annotations[0], 'extra'):
         # Extra fields are added to deserialized label by default need removed to match
         deserialized_label.annotations[0].extra = {}
-    assert deserialized_label.annotations == data_gen_label.annotations
+    assert deserialized_label.model_dump(exclude_none=True) == data_gen_label.model_dump(exclude_none=True)
 
 
 def test_serialize_deserialize_label():
@@ -52,6 +52,4 @@ def test_serialize_deserialize_label():
     if hasattr(deserialized.annotations[0], 'extra'):
         # Extra fields are added to deserialized label by default need removed to match
         deserialized.annotations[0].extra = {}
-    print(data_gen_label.annotations)
-    print(deserialized.annotations)
-    assert deserialized.annotations == data_gen_label.annotations
+    assert deserialized.model_dump(exclude_none=True) == data_gen_label.model_dump(exclude_none=True)

@@ -6,7 +6,7 @@ except:
 
 import numpy as np
 
-from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text, LBV1Dropdown
+from .classification import LBV1Checklist, LBV1Classifications, LBV1Radio, LBV1Text
 from .feature import LBV1Feature
 from ...annotation_types.annotation import (ClassificationAnnotation,
                                             ObjectAnnotation)
@@ -14,13 +14,13 @@ from ...annotation_types.data import MaskData
 from ...annotation_types.geometry import Line, Mask, Point, Polygon, Rectangle
 from ...annotation_types.ner import TextEntity
 from ...annotation_types.types import Cuid
-from pydantic import BaseModel, Field, model_serializer, field_serializer
+from pydantic import BaseModel, Field, model_serializer, field_validator
 
 
 class LBV1ObjectBase(LBV1Feature):
     color: Optional[str] = None
     instanceURI: Optional[str] = None
-    classifications: List[Union[LBV1Text, LBV1Radio, LBV1Dropdown,
+    classifications: List[Union[LBV1Text, LBV1Radio,
                                 LBV1Checklist]] = []
     page: Optional[int] = None
     unit: Optional[str] = None
@@ -33,7 +33,7 @@ class LBV1ObjectBase(LBV1Feature):
             res.pop('instanceURI')
         return res
 
-    @field_serializer('classifications', mode="before")
+    @field_validator('classifications', mode="before")
     def validate_subclasses(cls, value):
         # checklist subclasses create extra unessesary nesting. So we just remove it.
         if isinstance(value, list) and len(value):

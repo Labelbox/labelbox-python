@@ -7,6 +7,7 @@ from labelbox.data.mixins import ConfidenceMixin, CustomMetricsMixin
 
 from labelbox.data.annotation_types.classification.classification import ClassificationAnnotation
 from .ner import DocumentEntity, TextEntity, ConversationEntity
+from typing import Optional
 
 
 class ObjectAnnotation(BaseAnnotation, ConfidenceMixin, CustomMetricsMixin):
@@ -29,4 +30,4 @@ class ObjectAnnotation(BaseAnnotation, ConfidenceMixin, CustomMetricsMixin):
     """
 
     value: Union[TextEntity, ConversationEntity, DocumentEntity, Geometry]
-    classifications: List[ClassificationAnnotation] = []
+    classifications: Optional[List[ClassificationAnnotation]] = []

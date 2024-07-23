@@ -49,8 +49,8 @@ class Range(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-public-metho
 
 
 class _MetadataHeader(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-public-methods
-    total_size: int = Field(validation_alias=AliasChoices("total_size", "totalSize"))
-    total_lines: int = Field(validation_alias=AliasChoices("total_lines", "totalLines"))
+    total_size: int
+    total_lines: int
 
 
 class _MetadataFileInfo(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-public-methods

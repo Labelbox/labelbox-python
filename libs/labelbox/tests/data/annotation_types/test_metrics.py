@@ -34,7 +34,7 @@ def test_legacy_scalar_metric():
         'uid': None,
         'is_benchmark_reference': False
     }
-    assert label.dict() == expected
+    assert label.model_dump() == expected
 
 
 # TODO: Test with confidence
@@ -97,7 +97,7 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
         'is_benchmark_reference': False
     }
 
-    assert label.dict() == expected
+    assert label.model_dump() == expected
 
 
 @pytest.mark.parametrize('feature_name,subclass_name,aggregation,value', [
@@ -154,7 +154,7 @@ def test_custom_confusison_matrix_metric(feature_name, subclass_name,
         'uid': None,
         'is_benchmark_reference': False
     }
-    assert label.dict() == expected
+    assert label.model_dump() == expected
 
 
 def test_name_exists():

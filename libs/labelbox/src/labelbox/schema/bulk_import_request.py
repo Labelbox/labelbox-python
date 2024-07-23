@@ -513,7 +513,7 @@ def get_mal_schemas(ontology):
     return valid_feature_schemas_by_schema_id, valid_feature_schemas_by_name
 
 
-LabelboxID: str = Annotated[str, StringConstraints(min_length=25, max_length=25)]
+LabelboxID: Type[str] = Annotated[str, StringConstraints(min_length=25, max_length=25)]
 
 
 class Bbox(BaseModel):
@@ -535,7 +535,7 @@ class FrameLocation(BaseModel):
 
 class VideoSupported(BaseModel):
     #Note that frames are only allowed as top level inferences for video
-    frames: Optional[List[FrameLocation]]
+    frames: Optional[List[FrameLocation]] = None
 
 
 # Base class for a special kind of union.
@@ -825,7 +825,7 @@ class NDTextEntity(NDBaseTool):
     @field_validator('location')
     def is_valid_location(cls, v):
         if isinstance(v, BaseModel):
-            v = v.dict()
+            v = v.model_dump()
 
         if len(v) < 2:
             raise ValueError(

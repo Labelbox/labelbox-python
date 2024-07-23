@@ -6,17 +6,18 @@ from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.video import VideoClassificationAnnotation
 from ...annotation_types.llm_prompt_response.prompt import PromptClassificationAnnotation, PromptText
-from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
+from ...annotation_types.classification.classification import ClassificationAnswer, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
 from pydantic import model_validator, Field, BaseModel, ConfigDict, model_serializer
 from pydantic.alias_generators import to_camel
+from .base import SubclassRegistryBase
 
 
 class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
     name: Optional[str] = None
     schema_id: Optional[Cuid] = None
-    classifications: Optional[List['NDSubclassificationType']] = []
+    classifications: Optional[List['NDSubclassificationType']] = None
     model_config = ConfigDict(populate_by_name = True, alias_generator = to_camel)
 
     @model_validator(mode="after")
@@ -32,11 +33,9 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
             res.pop('name')
         if 'schemaId' in res and res['schemaId'] is None:
             res.pop('schemaId')
-        if self.classifications is None or len(self.classifications) == 0:
-            res.pop('classifications')
-        else:
+        if self.classifications:
             res['classifications'] = [
-                c.model_dump() for c in self.classifications
+                c.model_dump(exclude_none=True) for c in self.classifications
             ]
         return res
 
@@ -80,7 +79,7 @@ class NDTextSubclass(NDAnswer):
 
 
 class NDChecklistSubclass(NDAnswer):
-    answer: List[NDAnswer] = Field(..., alias='answers')
+    answer: List[NDAnswer] = Field(..., validation_alias='answers')
 
     def to_common(self) -> Checklist:
 
@@ -91,7 +90,7 @@ class NDChecklistSubclass(NDAnswer):
                                  classifications=[
                                      NDSubclassification.to_common(annot)
                                      for annot in answer.classifications
-                                 ],
+                                 ] if answer.classifications else None,
                                  custom_metrics=answer.custom_metrics)
             for answer in self.answer
         ])
@@ -103,10 +102,7 @@ class NDChecklistSubclass(NDAnswer):
             NDAnswer(name=answer.name,
                      schema_id=answer.feature_schema_id,
                      confidence=answer.confidence,
-                     classifications=[
-                         NDSubclassification.from_common(annot)
-                         for annot in answer.classifications
-                     ],
+                     classifications=[NDSubclassification.from_common(annot) for annot in answer.classifications] if answer.classifications else None,
                      custom_metrics=answer.custom_metrics)
             for answer in checklist.answer
         ],
@@ -114,10 +110,11 @@ class NDChecklistSubclass(NDAnswer):
                    schema_id=feature_schema_id)
 
     @model_serializer(mode="wrap")
-    def dict(self, handler):
+    def serialize_model(self, handler):
         res = handler(self)
         if 'answers' in res:
-            res['answer'] = res.pop('answers')
+            res['answer'] = res['answers']
+            del res["answers"]
         return res
 
 
@@ -132,7 +129,7 @@ class NDRadioSubclass(NDAnswer):
             classifications=[
                 NDSubclassification.to_common(annot)
                 for annot in self.answer.classifications
-            ],
+            ] if self.answer.classifications else None,
             custom_metrics=self.answer.custom_metrics))
 
     @classmethod
@@ -144,7 +141,7 @@ class NDRadioSubclass(NDAnswer):
                                    classifications=[
                                        NDSubclassification.from_common(annot)
                                        for annot in radio.answer.classifications
-                                   ],
+                                   ] if radio.answer.classifications else None,
                                    custom_metrics=radio.answer.custom_metrics),
                    name=name,
                    schema_id=feature_schema_id)
@@ -173,7 +170,7 @@ class NDPromptTextSubclass(NDAnswer):
 # ====== End of subclasses
 
 
-class NDText(NDAnnotation, NDTextSubclass):
+class NDText(NDAnnotation, NDTextSubclass, SubclassRegistryBase):
 
     @classmethod
     def from_common(cls,
@@ -197,7 +194,14 @@ class NDText(NDAnnotation, NDTextSubclass):
         )
 
 
-class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
+class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported, SubclassRegistryBase):
+
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
+        if "classifications" in res and res["classifications"] == []:
+            del res["classifications"]
+        return res
 
     @classmethod
     def from_common(
@@ -220,7 +224,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                      classifications=[
                          NDSubclassification.from_common(annot)
                          for annot in answer.classifications
-                     ],
+                     ] if answer.classifications else None,
                      custom_metrics=answer.custom_metrics)
             for answer in checklist.answer
         ],
@@ -233,7 +237,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                    confidence=confidence)
 
 
-class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
+class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported, SubclassRegistryBase):
 
     @classmethod
     def from_common(
@@ -253,7 +257,7 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
                                    classifications=[
                                        NDSubclassification.from_common(annot)
                                        for annot in radio.answer.classifications
-                                   ],
+                                   ] if radio.answer.classifications else None,
                                    custom_metrics=radio.answer.custom_metrics),
                    data_row=DataRow(id=data.uid, global_key=data.global_key),
                    name=name,
@@ -263,8 +267,15 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
                    message_id=message_id,
                    confidence=confidence)
         
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
+        if "classifications" in res and res["classifications"] == []:
+            del res["classifications"]
+        return res
         
-class NDPromptText(NDAnnotation, NDPromptTextSubclass):
+        
+class NDPromptText(NDAnnotation, NDPromptTextSubclass, SubclassRegistryBase):
     
     @classmethod
     def from_common(
@@ -311,8 +322,6 @@ class NDSubclassification:
     def lookup_subclassification(
         annotation: ClassificationAnnotation
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
-        if isinstance(annotation.value, Dropdown):
-            raise TypeError("Dropdowns are not supported for MAL.")
         return {
             Text: NDTextSubclass,
             Checklist: NDChecklistSubclass,
@@ -341,7 +350,7 @@ class NDClassification:
         for frame in annotation.frames:
             for idx in range(frame.start, frame.end + 1, 1):
                 results.append(
-                    VideoClassificationAnnotation(frame=idx, **common.dict()))
+                    VideoClassificationAnnotation(frame=idx, **common.model_dump(exclude_none=True)))
         return results
 
     @classmethod
@@ -367,8 +376,6 @@ class NDClassification:
         annotation: Union[ClassificationAnnotation,
                           VideoClassificationAnnotation]
     ) -> Union[NDText, NDChecklist, NDRadio]:
-        if isinstance(annotation.value, Dropdown):
-            raise TypeError("Dropdowns are not supported for MAL.")
         return {
             Text: NDText,
             Checklist: NDChecklist,

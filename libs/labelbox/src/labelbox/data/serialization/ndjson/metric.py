@@ -9,6 +9,7 @@ from labelbox.data.annotation_types.metrics.confusion_matrix import (
     ConfusionMatrixAggregation, ConfusionMatrixMetric,
     ConfusionMatrixMetricValue, ConfusionMatrixMetricConfidenceValue)
 from pydantic import ConfigDict, model_serializer
+from .base import SubclassRegistryBase
 
 
 class BaseNDMetric(NDJsonBase):
@@ -21,12 +22,12 @@ class BaseNDMetric(NDJsonBase):
     def serialize_model(self, handler):
         res = handler(self)
         for field in ['featureName', 'subclassName']:
-            if res[field] is None:
+            if field in res and res[field] is None:
                 res.pop(field)
         return res
 
 
-class NDConfusionMatrixMetric(BaseNDMetric):
+class NDConfusionMatrixMetric(BaseNDMetric, SubclassRegistryBase):
     metric_value: Union[ConfusionMatrixMetricValue,
                         ConfusionMatrixMetricConfidenceValue]
     metric_name: str
@@ -53,10 +54,10 @@ class NDConfusionMatrixMetric(BaseNDMetric):
                    data_row=DataRow(id=data.uid, global_key=data.global_key))
 
 
-class NDScalarMetric(BaseNDMetric):
+class NDScalarMetric(BaseNDMetric, SubclassRegistryBase):
     metric_value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
-    metric_name: Optional[str]
-    aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN
+    metric_name: Optional[str] = None
+    aggregation: Optional[ScalarMetricAggregation] = ScalarMetricAggregation.ARITHMETIC_MEAN
 
     def to_common(self) -> ScalarMetric:
         return ScalarMetric(value=self.metric_value,
@@ -76,15 +77,6 @@ class NDScalarMetric(BaseNDMetric):
                    subclass_name=metric.subclass_name,
                    aggregation=metric.aggregation.value,
                    data_row=DataRow(id=data.uid, global_key=data.global_key))
-
-    @model_serializer(mode = "wrap")
-    def serialize_model(self, handler):
-        res = handler(self)
-        # For backwards compatibility.
-        if res['metricName'] is None:
-            res.pop('metricName')
-            res.pop('aggregation')
-        return res
 
 
 class NDMetricAnnotation:

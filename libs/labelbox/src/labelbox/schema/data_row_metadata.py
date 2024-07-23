@@ -47,11 +47,11 @@ String: Type[str] = Field(max_length=4096)
 
 
 # Metadata base class
-class DataRowMetadataField(BaseModel):
+class DataRowMetadataField(_CamelCaseMixin):
     # One of `schema_id` or `name` must be provided. If `schema_id` is not provided, it is
     # inferred from `name`
     # schema id alias to json key name for pydantic v2 support
-    schema_id: Optional[SchemaId] = Field(default=None, serialization_alias="schemaId")
+    schema_id: Optional[SchemaId] = None
     name: Optional[str] = None
     # value is of type `Any` so that we do not improperly coerce the value to the wrong type
     # Additional validation is performed before upload using the schema information
@@ -59,15 +59,14 @@ class DataRowMetadataField(BaseModel):
 
 
 class DataRowMetadata(_CamelCaseMixin):
-    global_key: Optional[str] = Field(default=None, validation_alias=AliasChoices("global_key", "globalKey"))
-    data_row_id: Optional[str] = Field(default=None, validation_alias=AliasChoices("data_row_id", "dataRowId"))
+    global_key: Optional[str] = None
+    data_row_id: Optional[str] = None
     fields: List[DataRowMetadataField]
 
 
 class DeleteDataRowMetadata(_CamelCaseMixin):
-    data_row_id: Union[str, UniqueId, GlobalKey] = Field(validation_alias=AliasChoices("data_row_id", "dataRowId"))
+    data_row_id: Union[str, UniqueId, GlobalKey] = None
     fields: List[SchemaId]
-    model_config = ConfigDict(arbitrary_types_allowed = True)
 
 
 class DataRowMetadataBatchResponse(_CamelCaseMixin):
@@ -89,15 +88,14 @@ class _UpsertDataRowMetadataInput(_CamelCaseMixin):
 
 # Batch of upsert values for a datarow
 class _UpsertBatchDataRowMetadata(_CamelCaseMixin):
-    global_key: Optional[str] = Field(default=None, validation_alias=AliasChoices("global_key", "globalKey"))
-    data_row_id: Optional[str] = Field(default=None, validation_alias=AliasChoices("data_row_id", "dataRowId"))
+    global_key: Optional[str] = None
+    data_row_id: Optional[str] = None
     fields: List[_UpsertDataRowMetadataInput]
 
 
 class _DeleteBatchDataRowMetadata(_CamelCaseMixin):
     data_row_identifier: Union[UniqueId, GlobalKey]
     schema_ids: List[SchemaId]
-    model_config = ConfigDict(arbitrary_types_allowed=True, alias_generator=AliasGenerator(serialization_alias=to_camel))
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):

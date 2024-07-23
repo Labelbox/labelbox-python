@@ -23,16 +23,6 @@ class _TypedArray(np.ndarray, Generic[DType, DShape]):
     def validate(cls, val, field: Field):
         if not isinstance(val, np.ndarray):
             raise TypeError(f"Expected numpy array. Found {type(val)}")
-
-        if sys.version_info.minor > 6:
-            actual_dtype = field.sub_fields[-1].type_.__args__[0]
-        else:
-            actual_dtype = field.sub_fields[-1].type_.__values__[0]
-
-        if val.dtype != actual_dtype:
-            raise TypeError(
-                f"Expected numpy array have type {actual_dtype}. Found {val.dtype}"
-            )
         return val
 
 

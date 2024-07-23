@@ -62,7 +62,7 @@ def is_valid_uri(uri):
 
 
 class _CamelCaseMixin(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed = True, alias_generator = to_camel)
+    model_config = ConfigDict(arbitrary_types_allowed = True, alias_generator = to_camel, populate_by_name = True)
 
 
 class _NoCoercionMixin:

@@ -16,6 +16,7 @@ from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.relationship import RelationshipAnnotation
 from ...annotation_types.mmc import MessageEvaluationTaskAnnotation
 from .label import NDLabel
+import copy
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,8 @@ class NDJsonConverter:
         Returns:
             LabelGenerator containing the ndjson data.
         """
-        data = NDLabel(**{"annotations": json_data})
+        data = copy.copy(json_data)
+        data = NDLabel(**{"annotations": data})
         res = data.to_common()
         return res
 
@@ -108,10 +110,10 @@ class NDJsonConverter:
                     if not isinstance(annotation, RelationshipAnnotation):
                         uuid_safe_annotations.append(annotation)
             label.annotations = uuid_safe_annotations
-            for annotation in NDLabel.from_common([label]):
-                annotation_uuid = getattr(annotation, "uuid", None)
-
-                res = annotation.dict(
+            for example in NDLabel.from_common([label]):
+                annotation_uuid = getattr(example, "uuid", None)
+                res = example.model_dump(
+                    exclude_none=True,
                     by_alias=True,
                     exclude={"uuid"} if annotation_uuid == "None" else None,
                 )

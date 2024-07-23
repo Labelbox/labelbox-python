@@ -4,4 +4,4 @@ from .base_data import BaseData
 
 
 class ConversationData(BaseData):
-    class_name: Literal["ConversationData"] = "ConversationData"
+    pass
