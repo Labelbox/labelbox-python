@@ -911,27 +911,36 @@ class Client:
         data.pop("quality_modes", None)
         data.pop("quality_mode", None)
 
+        # check if quality_modes is a set, if not, convert to set
+        quality_modes_set = quality_modes
+        if quality_modes and not isinstance(quality_modes, set):
+            quality_modes_set = set(quality_modes)
+        if quality_mode:
+            quality_modes_set = {quality_mode}
+
         if (
-            quality_modes is None
-            or len(quality_modes) == 0
-            or quality_modes == [QualityMode.Benchmark, QualityMode.Consensus]
+            quality_modes_set is None
+            or len(quality_modes_set) == 0
+            or quality_modes_set == {QualityMode.Benchmark, QualityMode.Consensus}
         ):
             data["auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
             data["is_consensus_enabled"] = True
-        elif quality_modes == [QualityMode.Benchmark] or quality_mode is QualityMode.Benchmark:
+        elif quality_modes_set == {QualityMode.Benchmark}:
             data[
                 "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
-        elif quality_modes == [QualityMode.Consensus] or quality_mode is QualityMode.Consensus:
+        elif quality_modes_set == {QualityMode.Consensus}:
             data[
                 "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
             data["is_consensus_enabled"] = True
         else:
-            raise ValueError(f"{quality_modes} is not a valid quality modes array. Allowed values are [Benchmark, Consensus]")
+            raise ValueError(
+                f"{quality_modes_set} is not a valid quality modes set. Allowed values are [Benchmark, Consensus]"
+            )
 
         params = {**data}
         if media_type_value:
