@@ -120,7 +120,7 @@ _BatchFunction = Callable[[_BatchInputs], List[DataRowMetadataBatchResponse]]
 
 
 class _UpsertCustomMetadataSchemaEnumOptionInput(_CamelCaseMixin):
-    id: Optional[SchemaId]
+    id: Optional[SchemaId] = None
     name: Annotated[str, StringConstraints(strip_whitespace=True,
                                         min_length=1,
                                         max_length=100)]
