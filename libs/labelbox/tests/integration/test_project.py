@@ -257,17 +257,17 @@ def test_media_type(client, project: Project, rand_gen):
 
 
 def test_queue_mode(client, rand_gen):
-    project = client.create_project(name=rand_gen(str))  # defaults to benchmark
+    project = client.create_project(name=rand_gen(str))  # defaults to benchmark and consensus
+    assert project.auto_audit_number_of_labels == 3
+    assert project.auto_audit_percentage == 0
+
+    project = client.create_project(name=rand_gen(str), quality_modes=[QualityMode.Benchmark])
     assert project.auto_audit_number_of_labels == 1
     assert project.auto_audit_percentage == 1
 
-    project = client.create_project(name=rand_gen(str),
-                                    quality_mode=QualityMode.Benchmark)
-    assert project.auto_audit_number_of_labels == 1
-    assert project.auto_audit_percentage == 1
-
-    project = client.create_project(name=rand_gen(str),
-                                    quality_mode=QualityMode.Consensus)
+    project = client.create_project(
+        name=rand_gen(str), quality_modes=[QualityMode.Benchmark, QualityMode.Consensus]
+    )
     assert project.auto_audit_number_of_labels == 3
     assert project.auto_audit_percentage == 0
 
