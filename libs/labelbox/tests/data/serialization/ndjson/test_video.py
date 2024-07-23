@@ -437,19 +437,6 @@ def test_video_classification_frameline():
         'classifications': [],
         'segments': [{
             'keyframes': [{
-                'classifications': [{
-                    'name': 'radio_question_nested',
-                    'answer': {
-                        'classifications': [{
-                            'name': 'sub_question_radio',
-                            'answer': [{
-                                'name': 'sub_answer'
-                            }]
-                        }],
-                        'name':
-                            'first_radio_question'
-                    }
-                }],
                 'frame':
                     13,
                 'line': [{
@@ -458,8 +445,30 @@ def test_video_classification_frameline():
                 }, {
                     'x': 10.0,
                     'y': 9.0,
+                }],
+                'classifications': [{
+                    'name': 'radio_question_nested',
+                    'answer': {
+                        'name':
+                            'first_radio_question',
+                        'classifications': [{
+                            'name': 'sub_question_radio',
+                            'answer': [{
+                                'name': 'sub_answer'
+                            }]
+                        }]
+                    }
                 }]
             }, {
+                'frame':
+                    15,
+                'line': [{
+                    'x': 18.0,
+                    'y': 20.0,
+                }, {
+                    'x': 20.0,
+                    'y': 19.0,
+                }],
                 'classifications': [{
                     'name':
                         'nested_checklist_question',
@@ -473,18 +482,8 @@ def test_video_classification_frameline():
                             }
                         }]
                     }]
-                }],
-                'frame':
-                    15,
-                'line': [{
-                    'x': 18.0,
-                    'y': 20.0,
-                }, {
-                    'x': 20.0,
-                    'y': 19.0,
                 }]
             }, {
-                'classifications': [],
                 'frame': 19,
                 'line': [{
                     'x': 28.0,
@@ -492,7 +491,8 @@ def test_video_classification_frameline():
                 }, {
                     'x': 30.0,
                     'y': 29.0,
-                }]
+                }],
+                'classifications': []
             }]
         }]
     }]
