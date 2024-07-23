@@ -8,7 +8,6 @@ from labelbox.data.annotation_types.feature import FeatureSchema
 from labelbox.data.mixins import ConfidenceNotSupportedMixin, CustomMetricsNotSupportedMixin
 from labelbox.utils import _CamelCaseMixin, is_valid_uri
 from pydantic import model_validator, BaseModel, field_validator, model_serializer, Field, ConfigDict, AliasChoices
-from labelbox.pydantic_serializers import _feature_serializer
 
 
 class VideoClassificationAnnotation(ClassificationAnnotation):
@@ -96,12 +95,12 @@ class MaskFrame(_CamelCaseMixin, BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="after")
-    def validate_args(cls, values):
-        im_bytes = cls.im_bytes
-        instance_uri = cls.instance_uri
+    def validate_args(self, values):
+        im_bytes = self.im_bytes
+        instance_uri = self.instance_uri
         if im_bytes == instance_uri == None:
             raise ValueError("One of `instance_uri`, `im_bytes` required.")
-        return cls
+        return self
 
     @field_validator("instance_uri")
     def validate_uri(cls, v):

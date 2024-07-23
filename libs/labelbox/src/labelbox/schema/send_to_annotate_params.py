@@ -42,16 +42,16 @@ class SendToAnnotateFromCatalogParams(BaseModel):
     batch_priority: Optional[int] = 5
 
     @model_validator(mode="after")
-    def check_project_id_or_model_run_id(cls):
-        if not cls.source_model_run_id and not cls.source_project_id:
+    def check_project_id_or_model_run_id(self):
+        if not self.source_model_run_id and not self.source_project_id:
             raise ValueError(
                 'Either source_project_id or source_model_id are required'
             )
-        if cls.source_model_run_id and cls.source_project_id:
+        if self.source_model_run_id and self.source_project_id:
             raise ValueError(
                 'Provide only a source_project_id or source_model_id not both'
             ) 
-        return cls
+        return self
 
 class SendToAnnotateFromModelParams(TypedDict):
     """
