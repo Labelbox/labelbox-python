@@ -885,8 +885,8 @@ class Client:
 
     @overload
     def create_prompt_response_generation_project(self,
-                                                  dataset_id: str,
                                                   dataset_name: str = None,
+                                                  dataset_id: str,
                                                   data_row_count: int = 100,
                                                   **kwargs) -> Project:
         pass
@@ -903,7 +903,7 @@ class Client:
             dataset_name: When creating a new dataset, pass the name
             dataset_id: When using an existing dataset, pass the id
             data_row_count: The number of data row assets to use for the project
-            **kwargs: Additional parameters to pass to the the create_project method
+            **kwargs: Additional parameters to pass see the create_project method
         Returns:
             Project: The created project
 
@@ -917,7 +917,7 @@ class Client:
             >>> client.create_prompt_response_generation_project(name=project_name, dataset_id="clr00u8j0j0j0", project_kind=MediaType.LLMPromptCreation)
             >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created data rows to the project.
 
-            >>> client.create_prompt_response_generation_project(name=project_name, dataset_id="clr00u8j0j0j0", data_row_count=10, project_kind=MediaType.LLMPromptCreation)
+            >>> client.create_prompt_response_generation_project(name=project_name, dataset_id="clr00u8j0j0j0", data_row_count=10, project_kind=MediaType.LLMPromptResponseCreation)
             >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created 10 data rows to the project.
 
         """
