@@ -24,7 +24,7 @@ class OntologyKind(Enum):
     
     @staticmethod
     def evaluate_ontology_kind_with_media_type(ontology_kind,
-                                               media_type: Union[MediaType, None]) -> Union[MediaType, None]:
+                                               media_type: Optional[MediaType]) -> Union[MediaType, None]:
         
         if ontology_kind and ontology_kind is OntologyKind.ModelEvaluation:
             if media_type is None:
