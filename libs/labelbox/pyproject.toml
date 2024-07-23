@@ -1,12 +1,12 @@
 [project]
 name = "labelbox"
-version = "3.74.0"
+version = "3.75.1"
 description = "Labelbox Python API"
 authors = [{ name = "Labelbox", email = "engineering@labelbox.com" }]
 dependencies = [
     "google-api-core>=1.22.1",
     "pydantic>=1.8",
-    "python-dateutil>=2.8.2, <2.9.0",
+    "python-dateutil>=2.8.2, <2.10.0",
     "requests>=2.22.0",
     "strenum>=0.4.15",
     "tqdm>=4.66.2",

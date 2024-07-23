@@ -115,16 +115,25 @@ class Client:
         self.app_url = app_url
         self.endpoint = endpoint
         self.rest_endpoint = rest_endpoint
+        self._data_row_metadata_ontology = None
+        self._adv_client = AdvClient.factory(rest_endpoint, api_key)
+        self._connection: requests.Session = self._init_connection()
 
-        self.headers = {
+    def _init_connection(self) -> requests.Session:
+        connection = requests.Session(
+        )  # using default connection pool size of 10
+        connection.headers.update(self._default_headers())
+
+        return connection
+
+    def _default_headers(self):
+        return {
+            'Authorization': 'Bearer %s' % self.api_key,
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f"python-sdk {SDK_VERSION}",
             'X-Python-Version': f"{python_version_info()}",
         }
-        self._data_row_metadata_ontology = None
-        self._adv_client = AdvClient.factory(rest_endpoint, api_key)
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
@@ -193,18 +202,19 @@ class Client:
             "/graphql", "/_gql")
 
         try:
-            request = {
-                'url': endpoint,
-                'data': data,
-                'headers': self.headers,
-                'timeout': timeout
-            }
+            headers = self._connection.headers.copy()
             if files:
-                request.update({'files': files})
-                request['headers'] = {
-                    'Authorization': self.headers['Authorization']
-                }
-            response = requests.post(**request)
+                del headers['Content-Type']
+                del headers['Accept']
+            request = requests.Request('POST',
+                                       endpoint,
+                                       headers=headers,
+                                       data=data,
+                                       files=files if files else None)
+
+            prepped: requests.PreparedRequest = request.prepare()
+
+            response = self._connection.send(prepped, timeout=timeout)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
@@ -409,14 +419,21 @@ class Client:
             "map": (None, json.dumps({"1": ["variables.file"]})),
         }
 
-        response = requests.post(
-            self.endpoint,
-            headers={"authorization": "Bearer %s" % self.api_key},
-            data=request_data,
-            files={
-                "1": (filename, content, content_type) if
-                     (filename and content_type) else content
-            })
+        files = {
+            "1": (filename, content, content_type) if
+                 (filename and content_type) else content
+        }
+        headers = self._connection.headers.copy()
+        headers.pop("Content-Type", None)
+        request = requests.Request('POST',
+                                   self.endpoint,
+                                   headers=headers,
+                                   data=request_data,
+                                   files=files)
+
+        prepped: requests.PreparedRequest = request.prepare()
+
+        response = self._connection.send(prepped)
 
         if response.status_code == 502:
             error_502 = '502 Bad Gateway'
@@ -953,7 +970,6 @@ class Client:
                 params.pop("append_to_existing_dataset", None),
         }
         extra_params = {k: v for k, v in extra_params.items() if v is not None}
-
         return self._create(Entity.Project, params, extra_params)
 
     def get_roles(self) -> List[Role]:
@@ -1120,6 +1136,7 @@ class Client:
         query_str = """query rootSchemaNodePyApi($rootSchemaNodeWhere: RootSchemaNodeWhere!){
               rootSchemaNode(where: $rootSchemaNodeWhere){%s}
         }""" % query.results_query_part(Entity.FeatureSchema)
+
         res = self.execute(
             query_str,
             {'rootSchemaNodeWhere': {
@@ -1230,10 +1247,7 @@ class Client:
 
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id)
-        response = requests.delete(
-            endpoint,
-            headers=self.headers,
-        )
+        response = self._connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
             raise labelbox.exceptions.LabelboxError(
@@ -1250,10 +1264,7 @@ class Client:
         """
         endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id)
-        response = requests.delete(
-            endpoint,
-            headers=self.headers,
-        )
+        response = self._connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
             raise labelbox.exceptions.LabelboxError(
@@ -1275,11 +1286,7 @@ class Client:
 
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id) + '/definition'
-        response = requests.patch(
-            endpoint,
-            headers=self.headers,
-            json={"title": title},
-        )
+        response = self._connection.patch(endpoint, json={"title": title})
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(feature_schema_id)
@@ -1308,11 +1315,8 @@ class Client:
             "featureSchemaId") or "new_feature_schema_id"
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id)
-        response = requests.put(
-            endpoint,
-            headers=self.headers,
-            json={"normalized": json.dumps(feature_schema)},
-        )
+        response = self._connection.put(
+            endpoint, json={"normalized": json.dumps(feature_schema)})
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(response.json()['schemaId'])
@@ -1338,11 +1342,7 @@ class Client:
         endpoint = self.rest_endpoint + '/ontologies/' + urllib.parse.quote(
             ontology_id) + "/feature-schemas/" + urllib.parse.quote(
                 feature_schema_id)
-        response = requests.post(
-            endpoint,
-            headers=self.headers,
-            json={"position": position},
-        )
+        response = self._connection.post(endpoint, json={"position": position})
         if response.status_code != requests.codes.created:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to insert the feature schema into the ontology, message: "
@@ -1363,11 +1363,7 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/ontologies/unused"
-        response = requests.get(
-            endpoint,
-            headers=self.headers,
-            json={"after": after},
-        )
+        response = self._connection.get(endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
@@ -1391,11 +1387,7 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/feature-schemas/unused"
-        response = requests.get(
-            endpoint,
-            headers=self.headers,
-            json={"after": after},
-        )
+        response = self._connection.get(endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
@@ -1916,10 +1908,7 @@ class Client:
 
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id)
-        response = requests.get(
-            ontology_endpoint,
-            headers=self.headers,
-        )
+        response = self._connection.get(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             feature_schema_nodes = response.json()['featureSchemaNodes']
@@ -1995,10 +1984,7 @@ class Client:
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + "/feature-schemas/" + urllib.parse.quote(
                 feature_schema_id)
-        response = requests.delete(
-            ontology_endpoint,
-            headers=self.headers,
-        )
+        response = self._connection.delete(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
@@ -2032,10 +2018,7 @@ class Client:
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + '/feature-schemas/' + urllib.parse.quote(
                 root_feature_schema_id) + '/unarchive'
-        response = requests.patch(
-            ontology_endpoint,
-            headers=self.headers,
-        )
+        response = self._connection.patch(ontology_endpoint)
         if response.status_code == requests.codes.ok:
             if not bool(response.json()['unarchived']):
                 raise labelbox.exceptions.LabelboxError(

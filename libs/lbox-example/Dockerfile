@@ -5,7 +5,7 @@ ENV LANG="C.UTF-8" \
     LC_ALL="C.UTF-8" \
     PATH="/home/python/.local/bin:/home/python/.rye/shims:$PATH" \
     PIP_NO_CACHE_DIR="false" \
-    RYE_VERSION="0.36.0" \
+    RYE_VERSION="0.34.0" \
     RYE_INSTALL_OPTION="--yes" \
     LABELBOX_TEST_ENVIRON="prod"
 
@@ -41,4 +41,4 @@ RUN rye config --set-bool behavior.global-python=true && \
     rye pin 3.8 && \
     rye sync
 
-CMD cd libs/labelbox && rye run integration && rye sync -f --features labelbox/data && rye run unit && rye run data
+CMD rye run unit && rye integration
