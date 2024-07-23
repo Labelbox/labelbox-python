@@ -19,11 +19,15 @@ def test_legacy_scalar_metric():
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
         },
         'annotations': [{
+            'aggregation': 'ARITHMETIC_MEAN',
             'value': 10.0,
             'extra': {},
         }],
         'extra': {},
     }
+    from pprint import pprint
+    pprint(label.model_dump(exclude_none=True))
+    pprint(expected)
     assert label.model_dump(exclude_none=True) == expected
 
 
