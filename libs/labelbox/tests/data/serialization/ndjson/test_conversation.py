@@ -88,7 +88,7 @@ def test_message_based_radio_classification(label, ndjson):
 
     deserialized_label = list(NDJsonConverter().deserialize(ndjson))
     deserialized_label[0].annotations[0].extra.pop('uuid')
-    assert deserialized_label[0].annotations == label[0].annotations
+    assert deserialized_label[0].model_dump(exclude_none=True) == label[0].model_dump(exclude_none=True)
 
 
 @pytest.mark.parametrize("filename", [

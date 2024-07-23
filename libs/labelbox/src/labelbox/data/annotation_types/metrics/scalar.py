@@ -44,7 +44,7 @@ class ScalarMetric(BaseMetric):
         return name
 
     @model_serializer(mode="wrap")
-    def dict(self, handler):
+    def serialize_model(self, handler):
         res = handler(self)
         if res.get('metric_name') is None:
             res.pop('aggregation')

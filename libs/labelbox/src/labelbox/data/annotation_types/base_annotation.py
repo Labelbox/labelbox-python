@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 from typing import Any, Dict, Optional
 
 from .feature import FeatureSchema
-from pydantic import PrivateAttr
+from pydantic import PrivateAttr, ConfigDict
 
 
 class BaseAnnotation(FeatureSchema, abc.ABC):
@@ -11,6 +11,8 @@ class BaseAnnotation(FeatureSchema, abc.ABC):
     """
     _uuid: Optional[UUID] = PrivateAttr()
     extra: Dict[str, Any] = {}
+    
+    model_config = ConfigDict(extra="allow")
 
     def __init__(self, **data):
         super().__init__(**data)

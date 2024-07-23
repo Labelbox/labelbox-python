@@ -30,7 +30,7 @@ class FoundryClient:
             }}
             """
 
-        params = app.dict(by_alias=True, exclude={"id"})
+        params = app.model_dump(by_alias=True, exclude={"id"})
 
         try:
             response = self.client.execute(query_str, params)

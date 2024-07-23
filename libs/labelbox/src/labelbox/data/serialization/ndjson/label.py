@@ -2,6 +2,7 @@ from itertools import groupby
 from operator import itemgetter
 from typing import Dict, Generator, List, Tuple, Union
 from collections import defaultdict
+from typing_extensions import Unpack
 import warnings
 
 
@@ -14,7 +15,6 @@ from ...annotation_types.data import DicomData, ImageData, TextData, VideoData
 from ...annotation_types.data.generic_data_row_data import GenericDataRowData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity, ConversationEntity
-from ...annotation_types.classification import Dropdown
 from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
 from ...annotation_types.llm_prompt_response.prompt import PromptClassificationAnnotation
 
@@ -23,7 +23,12 @@ from .classification import NDChecklistSubclass, NDClassification, NDClassificat
 from .objects import NDObject, NDObjectType, NDSegments, NDDicomSegments, NDVideoMasks, NDDicomMasks
 from .relationship import NDRelationship
 from .base import DataRow
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, model_serializer, ValidationError
+from labelbox.pydantic_serializers import _feature_serializer
+from .base import subclass_registry, SubclassRegistryBase, NDAnnotation
+from pydantic_core import PydanticUndefined
+from pydantic.alias_generators import to_camel
+from contextlib import suppress
 
 AnnotationType = Union[NDObjectType, NDClassificationType, NDPromptClassificationType,
                        NDConfusionMatrixMetric, NDScalarMetric, NDDicomSegments,
@@ -32,7 +37,42 @@ AnnotationType = Union[NDObjectType, NDClassificationType, NDPromptClassificatio
 
 
 class NDLabel(BaseModel):
-    annotations: List[AnnotationType]
+    annotations: List[SubclassRegistryBase]
+    
+    def __init__(self, **kwargs):
+        for index in range(len(kwargs["annotations"])):
+            annotation = kwargs["annotations"][index]
+            if isinstance(annotation, dict):
+                item_annotation_keys = annotation.keys()
+                key_subclass_combos = defaultdict(list)
+                for name, subclass in subclass_registry.items():
+                    subclass: BaseModel = subclass
+                    
+                    # NDJSON has all required keys for a subclass. Serialize to first subclass.
+                    annotation_keys = []
+                    for k, field in subclass.model_fields.items():
+                        # must account for alias
+                        if hasattr(field, "validation_alias") and field.validation_alias == "answers" and "answers" in item_annotation_keys:
+                            annotation_keys.append("answers")
+                        elif field.default == PydanticUndefined and k != "uuid":
+                            annotation_keys.append(to_camel(k))
+                    key_subclass_combos[subclass].extend(annotation_keys)
+
+                # Sort by subclass that has the most keys
+                key_subclass_combos = dict(sorted(key_subclass_combos.items(), key = lambda x : len(x[1]), reverse=True))
+                for subclass, key_subclass_combo in key_subclass_combos.items():
+                    check_required_keys = all(key in list(item_annotation_keys) for key in key_subclass_combo)
+                    if check_required_keys:
+                        # Keep trying subclasses until we find one that has valid values
+                        with suppress(ValidationError):
+                            annotation = subclass(**annotation)
+                            break
+                kwargs["annotations"][index] = annotation
+        super().__init__(**kwargs)
+    
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        return _feature_serializer(handler(self))
 
     class _Relationship(BaseModel):
         """This object holds information about the relationship"""
@@ -263,11 +303,6 @@ class NDLabel(BaseModel):
         ]
         for annotation in non_video_annotations:
             if isinstance(annotation, ClassificationAnnotation):
-                if isinstance(annotation.value, Dropdown):
-                    raise ValueError(
-                        "Dropdowns are not supported by the NDJson format."
-                        " Please filter out Dropdown annotations before converting."
-                    )
                 yield NDClassification.from_common(annotation, label.data)
             elif isinstance(annotation, ObjectAnnotation):
                 yield NDObject.from_common(annotation, label.data)

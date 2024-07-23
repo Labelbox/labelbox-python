@@ -7,7 +7,8 @@ from labelbox.data.annotation_types.annotation import ClassificationAnnotation, 
 from labelbox.data.annotation_types.feature import FeatureSchema
 from labelbox.data.mixins import ConfidenceNotSupportedMixin, CustomMetricsNotSupportedMixin
 from labelbox.utils import _CamelCaseMixin, is_valid_uri
-from pydantic import model_validator, BaseModel, field_validator
+from pydantic import model_validator, BaseModel, field_validator, model_serializer, Field, ConfigDict, AliasChoices
+from labelbox.pydantic_serializers import _feature_serializer
 
 
 class VideoClassificationAnnotation(ClassificationAnnotation):
@@ -15,7 +16,7 @@ class VideoClassificationAnnotation(ClassificationAnnotation):
     Args:
         name (Optional[str])
         feature_schema_id (Optional[Cuid])
-        value (Union[Text, Checklist, Radio, Dropdown])
+        value (Union[Text, Checklist, Radio])
         frame (int): The frame index that this annotation corresponds to
         segment_id (Optional[Int]): Index of video segment this annotation belongs to
         extra (Dict[str, Any])
@@ -89,14 +90,15 @@ class DICOMObjectAnnotation(VideoObjectAnnotation):
 
 class MaskFrame(_CamelCaseMixin, BaseModel):
     index: int
-    instance_uri: Optional[str] = None
+    instance_uri: Optional[str] = Field(default=None, validation_alias=AliasChoices("instanceURI", "instanceUri"), serialization_alias="instanceURI")
     im_bytes: Optional[bytes] = None
+    
+    model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="after")
     def validate_args(cls, values):
         im_bytes = values.im_bytes
         instance_uri = values.instance_uri
-
         if im_bytes == instance_uri == None:
             raise ValueError("One of `instance_uri`, `im_bytes` required.")
         return values
@@ -109,9 +111,10 @@ class MaskFrame(_CamelCaseMixin, BaseModel):
 
 
 class MaskInstance(_CamelCaseMixin, FeatureSchema):
-    color_rgb: Tuple[int, int, int]
+    color_rgb: Tuple[int, int, int] = Field(validation_alias=AliasChoices("colorRGB", "colorRgb"), serialization_alias="colorRGB")
     name: str
 
+    model_config = ConfigDict(populate_by_name=True)
 
 class VideoMaskAnnotation(BaseModel):
     """Video mask annotation

@@ -58,12 +58,6 @@ class CustomMetricsMixin(BaseModel):
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         res = handler(self)
-        if "customMetrics" in res and res["customMetrics"] is None:
-            res.pop("customMetrics")
-        
-        if "custom_metrics" in res and res["custom_metrics"] is None:
-            res.pop("custom_metrics")
-            
         return res
 
 

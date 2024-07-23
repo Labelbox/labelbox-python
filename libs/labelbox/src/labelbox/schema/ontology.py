@@ -93,12 +93,7 @@ class Option:
 
 @dataclass
 class Classification:
-    """
-
-    Deprecation Notice: Dropdown classification is deprecated and will be
-        removed in a future release. Dropdown will also
-        no longer be able to be created in the Editor on 3/31/2022.
-            
+    """     
     A classification to be added to a Project's ontology. The
     classification is dependent on the Classification Type.
 
@@ -136,7 +131,6 @@ class Classification:
         TEXT = "text"
         CHECKLIST = "checklist"
         RADIO = "radio"
-        DROPDOWN = "dropdown"
 
     class Scope(Enum):
         GLOBAL = "global"
@@ -146,7 +140,7 @@ class Classification:
         HOTKEY = "hotkey"
         SEARCHABLE = "searchable"
 
-    _REQUIRES_OPTIONS = {Type.CHECKLIST, Type.RADIO, Type.DROPDOWN}
+    _REQUIRES_OPTIONS = {Type.CHECKLIST, Type.RADIO}
 
     class_type: Type
     name: Optional[str] = None
@@ -159,12 +153,6 @@ class Classification:
     ui_mode: Optional[UIMode] = None # How this classification should be answered (e.g. hotkeys / autocomplete, etc)
 
     def __post_init__(self):
-        if self.class_type == Classification.Type.DROPDOWN:
-            warnings.warn(
-                "Dropdown classification is deprecated and will be "
-                "removed in a future release. Dropdown will also "
-                "no longer be able to be created in the Editor on 3/31/2022.")
-
         if self.name is None:
             msg = (
                 "When creating the Classification feature, please use “name” "

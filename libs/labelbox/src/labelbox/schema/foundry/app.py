@@ -1,10 +1,11 @@
-from labelbox.utils import _CamelCaseMixin
 from typing import Any, Dict, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, AliasGenerator
+from pydantic.alias_generators import to_camel, to_snake
+from labelbox.utils import _CamelCaseMixin
 
 
-class App(_CamelCaseMixin, BaseModel):
-    id: Optional[str]
+class App(_CamelCaseMixin):
+    id: Optional[str] = None
     model_id: str
     name: str
     description: Optional[str] = None

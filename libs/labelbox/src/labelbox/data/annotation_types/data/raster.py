@@ -21,6 +21,8 @@ class RasterData(BaseModel, ABC):
     im_bytes: Optional[bytes] = None
     file_path: Optional[str] = None
     url: Optional[str] = None
+    uid: Optional[str] = None
+    global_key: Optional[str] = None
     arr: Optional[TypedArray[Literal['uint8']]] = None
     model_config = ConfigDict(extra="forbid", copy_on_model_validation="none")
 

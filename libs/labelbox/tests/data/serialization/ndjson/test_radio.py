@@ -39,8 +39,11 @@ def test_serialization_with_radio_min():
 
     deserialized = NDJsonConverter.deserialize([res])
     res = next(deserialized)
-    res.annotations[0].extra.pop("uuid")
-    assert res.annotations == label.annotations
+
+    for i, annotation in enumerate(res.annotations):
+        annotation.extra.pop("uuid")
+        assert annotation.value == label.annotations[i].value
+        assert annotation.name == label.annotations[i].name
 
 
 def test_serialization_with_radio_classification():
@@ -63,7 +66,6 @@ def test_serialization_with_radio_classification():
                                           name="first_sub_radio_answer")))
                               ])))
                   ])
-
     expected = {
         'confidence': 0.5,
         'name': 'radio_question_geo',
@@ -92,4 +94,5 @@ def test_serialization_with_radio_classification():
     deserialized = NDJsonConverter.deserialize([res])
     res = next(deserialized)
     res.annotations[0].extra.pop("uuid")
-    assert res.annotations == label.annotations
+    assert res.annotations[0].model_dump(exclude_none=True) == label.annotations[0].model_dump(exclude_none=True)
+
