@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional, Tuple, Dict, Union
 
-from pydantic import conint
+from pydantic import conint, Field
 
 from .base import ConfidenceValue, BaseMetric
 from typing import Literal
@@ -31,4 +31,4 @@ class ConfusionMatrixMetric(BaseMetric):
     metric_name: str
     value: Union[ConfusionMatrixMetricValue,
                  ConfusionMatrixMetricConfidenceValue]
-    aggregation: Optional[ConfusionMatrixAggregation] =  ConfusionMatrixAggregation.CONFUSION_MATRIX
+    aggregation: Optional[ConfusionMatrixAggregation] = ConfusionMatrixAggregation.CONFUSION_MATRIX

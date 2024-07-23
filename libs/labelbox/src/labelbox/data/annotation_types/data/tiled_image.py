@@ -67,9 +67,9 @@ class TiledBounds(BaseModel):
 
     #validate bounds are within lat,lng range if they are EPSG4326
     @model_validator(mode="after")
-    def validate_bounds_lat_lng(cls, values):
-        epsg = values.epsg
-        bounds = values.bounds
+    def validate_bounds_lat_lng(cls):
+        epsg = cls.epsg
+        bounds = cls.bounds
 
         if epsg == EPSG.EPSG4326:
             for bound in bounds:
@@ -79,7 +79,7 @@ class TiledBounds(BaseModel):
                     raise ValueError(f"Invalid lat/lng bounds. Found {bounds}. "
                                      f"lat must be in {VALID_LAT_RANGE}. "
                                      f"lng must be in {VALID_LNG_RANGE}.")
-        return values
+        return cls
 
 
 class TileLayer(BaseModel):

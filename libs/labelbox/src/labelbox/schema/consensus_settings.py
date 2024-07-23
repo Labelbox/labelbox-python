@@ -1,5 +1,4 @@
 from labelbox.utils import _CamelCaseMixin
-from pydantic import Field, AliasChoices
 
 
 class ConsensusSettings(_CamelCaseMixin):

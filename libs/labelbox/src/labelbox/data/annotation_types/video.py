@@ -97,11 +97,11 @@ class MaskFrame(_CamelCaseMixin, BaseModel):
 
     @model_validator(mode="after")
     def validate_args(cls, values):
-        im_bytes = values.im_bytes
-        instance_uri = values.instance_uri
+        im_bytes = cls.im_bytes
+        instance_uri = cls.instance_uri
         if im_bytes == instance_uri == None:
             raise ValueError("One of `instance_uri`, `im_bytes` required.")
-        return values
+        return cls
 
     @field_validator("instance_uri")
     def validate_uri(cls, v):

@@ -23,10 +23,10 @@ class DataRow(_CamelCaseMixin):
     
 
     @model_validator(mode="after")
-    def must_set_one(cls, values):
-        if not is_exactly_one_set(values.id, values.global_key):
+    def must_set_one(cls):
+        if not is_exactly_one_set(cls.id, cls.global_key):
             raise ValueError("Must set either id or global_key")
-        return values
+        return cls
 
 
 class NDJsonBase(_CamelCaseMixin):
@@ -42,16 +42,7 @@ class NDAnnotation(NDJsonBase):
     unit: Optional[str] = None
 
     @model_validator(mode="after")
-    def must_set_one(cls, values):
-        if (not hasattr(values, "schema_id") or values.schema_id is None) and (not hasattr(values, "name") or values.name is None):
+    def must_set_one(cls):
+        if (not hasattr(cls, "schema_id") or cls.schema_id is None) and (not hasattr(cls, "name") or cls.name is None):
             raise ValueError("Schema id or name are not set. Set either one.")
-        return values
-
-    @model_serializer(mode="wrap")
-    def serialize_model(self, handler):
-        res = handler(self)
-        if 'name' in res and res['name'] is None:
-            res.pop('name')
-        if 'schemaId' in res and res['schemaId'] is None:
-            res.pop('schemaId')
-        return res
+        return cls

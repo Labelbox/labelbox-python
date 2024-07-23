@@ -21,12 +21,12 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
     model_config = ConfigDict(populate_by_name = True, alias_generator = to_camel)
 
     @model_validator(mode="after")
-    def must_set_one(cls, values):
-        if (not hasattr(values, "schema_id") or values.schema_id is None) and (not hasattr(values, "name") or values.name is None):
+    def must_set_one(cls):
+        if (not hasattr(cls, "schema_id") or cls.schema_id is None) and (not hasattr(cls, "name") or cls.name is None):
             raise ValueError("Schema id or name are not set. Set either one.")
-        return values
+        return cls
 
-    @model_serializer(mode = "wrap")
+    @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         res = handler(self)
         if 'name' in res and res['name'] is None:

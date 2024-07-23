@@ -3,14 +3,8 @@ from labelbox.data.annotation_types.base_annotation import BaseAnnotation
 
 from labelbox.data.mixins import ConfidenceMixin, CustomMetricsMixin
 
-try:
-    from typing import Literal
-except:
-    from typing_extensions import Literal
-
-from pydantic import BaseModel, model_serializer
+from pydantic import BaseModel
 from ..feature import FeatureSchema
-from labelbox.pydantic_serializers import _feature_serializer
 
 
 class ClassificationAnswer(FeatureSchema, ConfidenceMixin, CustomMetricsMixin):
@@ -28,9 +22,6 @@ class ClassificationAnswer(FeatureSchema, ConfidenceMixin, CustomMetricsMixin):
     keyframe: Optional[bool] = None
     classifications: Optional[List['ClassificationAnnotation']] = None
 
-    @model_serializer(mode="wrap")
-    def serialize_model(self, handler):
-        return _feature_serializer(handler(self))
 
 class Radio(ConfidenceMixin, CustomMetricsMixin, BaseModel):
     """ A classification with only one selected option allowed
@@ -39,10 +30,6 @@ class Radio(ConfidenceMixin, CustomMetricsMixin, BaseModel):
 
     """
     answer: ClassificationAnswer
-    
-    @model_serializer(mode="wrap")
-    def serialize_model(self, handler):
-        return _feature_serializer(handler(self))
 
 
 class Checklist(ConfidenceMixin, BaseModel):
@@ -52,10 +39,6 @@ class Checklist(ConfidenceMixin, BaseModel):
 
     """
     answer: List[ClassificationAnswer]
-    
-    @model_serializer(mode="wrap")
-    def serialize_model(self, handler):
-        return _feature_serializer(handler(self))
 
 
 class Text(ConfidenceMixin, CustomMetricsMixin, BaseModel):
@@ -65,10 +48,6 @@ class Text(ConfidenceMixin, CustomMetricsMixin, BaseModel):
 
     """
     answer: str
-    
-    @model_serializer(mode="wrap")
-    def serialize_model(self, handler):
-        return _feature_serializer(handler(self))
 
 
 class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
@@ -90,7 +69,3 @@ class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
 
     value: Union[Text, Checklist, Radio]
     message_id: Optional[str] = None
-
-    @model_serializer(mode="wrap")
-    def serialize_model(self, handler):
-        return _feature_serializer(handler(self))

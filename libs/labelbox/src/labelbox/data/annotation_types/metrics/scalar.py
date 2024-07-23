@@ -42,10 +42,3 @@ class ScalarMetric(BaseMetric):
             raise ValueError(f"`{clean_name}` is a reserved metric name. "
                              "Please provide another value for `metric_name`.")
         return name
-
-    @model_serializer(mode="wrap")
-    def serialize_model(self, handler):
-        res = handler(self)
-        if res.get('metric_name') is None:
-            res.pop('aggregation')
-        return res
