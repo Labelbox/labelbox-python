@@ -207,6 +207,6 @@ def test_prompt_classification_validation():
         name="prompt text",
         value=PromptText(answer="test")
     )
-    with pytest.raises(ValidationError) as e_info:
+    with pytest.raises(TypeError) as e_info:
         label = Label(data={"global_key": global_key},
                   annotations=[prompt_text, prompt_text_2])

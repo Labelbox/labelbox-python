@@ -43,7 +43,7 @@ def get_annotation_lookup(annotations):
 class SegmentInfo(BaseModel):
     id: int
     category_id: int
-    area: int
+    area: Union[float, int]
     bbox: Tuple[float, float, float, float]  #[x,y,w,h],
     iscrowd: int = 0
 

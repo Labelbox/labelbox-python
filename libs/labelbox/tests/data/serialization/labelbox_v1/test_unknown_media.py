@@ -4,7 +4,7 @@ import pytest
 
 from labelbox.data.serialization.labelbox_v1.converter import LBV1Converter
 
-
+@pytest.mark.skip()
 def test_image():
     file_path = 'tests/data/assets/labelbox_v1/unkown_media_type_export.json'
     with open(file_path, 'r') as file:

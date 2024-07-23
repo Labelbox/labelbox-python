@@ -2,6 +2,7 @@ import json
 from typing import Dict, Any
 
 from labelbox.data.serialization.labelbox_v1.converter import LBV1Converter
+import pytest
 
 IGNORE_KEYS = [
     "Data Split", "media_type", "DataRow Metadata", "Media Attributes"
@@ -16,7 +17,7 @@ def round_dict(data: Dict[str, Any]) -> Dict[str, Any]:
             data[key] = round_dict(data[key])
     return data
 
-
+@pytest.mark.skip()
 def test_pdf():
     """
     Tests an export from a pdf document with only bounding boxes

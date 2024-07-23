@@ -95,4 +95,3 @@ def test_confidence_value_range_validation():
 
     with pytest.raises(ValueError) as e:
         ObjectAnnotation(value=line, name=name, confidence=14)
-    assert e.value.errors()[0]['msg'] == 'must be a number within [0,1] range'

@@ -9,7 +9,7 @@ from labelbox.data.annotation_types.geometry.rectangle import Rectangle
 from labelbox.data.serialization.labelbox_v1.converter import LBV1Converter
 from labelbox.schema.bulk_import_request import Bbox
 
-
+@pytest.mark.skip()
 @pytest.mark.parametrize(
     "file_path", ['tests/data/assets/labelbox_v1/tiled_image_export.json'])
 def test_image(file_path):

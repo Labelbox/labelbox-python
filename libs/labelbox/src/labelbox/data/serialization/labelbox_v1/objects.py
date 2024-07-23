@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field, model_serializer, field_validator
 
 class LBV1ObjectBase(LBV1Feature):
     color: Optional[str] = None
-    instanceURI: Optional[str] = None
+    instanceURI: Optional[str] = Field(default=None, serialization_alias="instanceURI")
     classifications: List[Union[LBV1Text, LBV1Radio,
                                 LBV1Checklist]] = []
     page: Optional[int] = None
@@ -30,7 +30,10 @@ class LBV1ObjectBase(LBV1Feature):
         res = handler(self)
         # This means these are not video frames ..
         if self.instanceURI is None:
-            res.pop('instanceURI')
+            if "instanceURI" in res:
+                res.pop('instanceURI')
+            if "instanceuri" in res:
+                res.pop("instanceuri")
         return res
 
     @field_validator('classifications', mode="before")

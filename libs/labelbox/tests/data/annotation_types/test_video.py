@@ -13,7 +13,7 @@ def test_mask_frame():
 
 def test_mask_instance():
     mask_instance = lb_types.MaskInstance(color_rgb=(0, 0, 255), name="mask1")
-    assert mask_instance.model_dump(by_alias=True) == {
+    assert mask_instance.model_dump(by_alias=True, exclude_none=True) == {
         'colorRGB': (0, 0, 255),
         'name': 'mask1'
     }
