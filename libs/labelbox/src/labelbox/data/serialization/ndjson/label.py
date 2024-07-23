@@ -41,6 +41,13 @@ class NDLabel(BaseModel):
     annotations: List[SubclassRegistryBase]
     
     def __init__(self, **kwargs):
+        # NOTE: Deserialization of subclasses in pydantic is difficult, see here https://blog.devgenius.io/deserialize-child-classes-with-pydantic-that-gonna-work-784230e1cf83
+        # Below implements the subclass registry as mentioned in the article. The python dicts we pass in can be missing certain fields
+        # we essentially have to infer the type against all sub classes that have the SubclasssRegistryBase inheritance. 
+        # It works by checking if the keys of our annotations we are missing in matches any required subclass.
+        # More keys are prioritized over less keys (closer match). This is used when importing json to our base models not a lot of customer workflows
+        # depend on this method but this works for all our existing tests with the bonus of added validation. (no subclass found it throws an error)
+        # Previous strategies hacked but dont work for pydantic V2
         for index in range(len(kwargs["annotations"])):
             annotation = kwargs["annotations"][index]
             if isinstance(annotation, dict):
@@ -49,7 +56,7 @@ class NDLabel(BaseModel):
                 for name, subclass in subclass_registry.items():
                     subclass: BaseModel = subclass
                     
-                    # NDJSON has all required keys for a subclass. Serialize to first subclass.
+                    # Get all required keys from subclass
                     annotation_keys = []
                     for k, field in subclass.model_fields.items():
                         # must account for alias
@@ -61,6 +68,8 @@ class NDLabel(BaseModel):
 
                 # Sort by subclass that has the most keys
                 key_subclass_combos = dict(sorted(key_subclass_combos.items(), key = lambda x : len(x[1]), reverse=True))
+                
+                # Choose the key that our dict we are passing in has all the keys to match
                 for subclass, key_subclass_combo in key_subclass_combos.items():
                     check_required_keys = all(key in list(item_annotation_keys) for key in key_subclass_combo)
                     if check_required_keys:
