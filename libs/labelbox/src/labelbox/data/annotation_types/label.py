@@ -18,7 +18,6 @@ from .video import VideoClassificationAnnotation
 from .video import VideoObjectAnnotation, VideoMaskAnnotation
 from ..ontology import get_feature_schema_lookup
 from pydantic import BaseModel, field_validator, model_serializer
-from labelbox.pydantic_serializers import _feature_serializer
 
 DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
                  ConversationData, DicomData, DocumentData, HTMLData,

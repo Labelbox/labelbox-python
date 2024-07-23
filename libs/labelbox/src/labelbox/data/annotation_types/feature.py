@@ -19,7 +19,3 @@ class FeatureSchema(BaseModel):
                 "Must set either feature_schema_id or name for all feature schemas"
             )
         return self
-    @model_serializer(mode="wrap")
-    def model_serializer(self, handler):
-        res = handler(self)
-        return _feature_serializer(res)
