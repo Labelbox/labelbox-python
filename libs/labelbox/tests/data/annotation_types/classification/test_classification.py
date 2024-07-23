@@ -11,7 +11,7 @@ def test_classification_answer():
     with pytest.raises(ValidationError):
         ClassificationAnswer()
 
-    feature_schema_id = "schema_id"
+    feature_schema_id = "immunoelectrophoretically"
     name = "my_feature"
     confidence = 0.9
     custom_metrics = [{'name': 'metric1', 'value': 2}]
@@ -22,7 +22,7 @@ def test_classification_answer():
     assert answer.feature_schema_id is None
     assert answer.name == name
     assert answer.confidence == confidence
-    assert [answer.custom_metrics[0].model_dump()] == custom_metrics
+    assert [answer.custom_metrics[0].model_dump(exclude_none=True)] == custom_metrics
 
     answer = ClassificationAnswer(feature_schema_id=feature_schema_id,
                                   name=name)
@@ -35,7 +35,7 @@ def test_classification():
     answer = "1234"
     classification = ClassificationAnnotation(value=Text(answer=answer),
                                               name="a classification")
-    assert classification.model_dump()['value']['answer'] == answer
+    assert classification.model_dump(exclude_none=True)['value']['answer'] == answer
 
     with pytest.raises(ValidationError):
         ClassificationAnnotation()
@@ -43,49 +43,43 @@ def test_classification():
 
 def test_subclass():
     answer = "1234"
-    feature_schema_id = "11232"
+    feature_schema_id = "immunoelectrophoretically"
     name = "my_feature"
     with pytest.raises(ValidationError):
         # Should have feature schema info
         classification = ClassificationAnnotation(value=Text(answer=answer))
     classification = ClassificationAnnotation(value=Text(answer=answer),
                                               name=name)
-    print(classification.model_dump())
-    assert classification.model_dump() == {
+    assert classification.model_dump(exclude_none=True) == {
         'name': name,
-        'feature_schema_id': None,
         'extra': {},
         'value': {
             'answer': answer,
         },
-        'message_id': None,
     }
     classification = ClassificationAnnotation(
         value=Text(answer=answer),
         name=name,
         feature_schema_id=feature_schema_id)
-    assert classification.model_dump() == {
-        'name': None,
+    assert classification.model_dump(exclude_none=True) == {
         'feature_schema_id': feature_schema_id,
         'extra': {},
         'value': {
             'answer': answer,
         },
         'name': name,
-        'message_id': None,
     }
     classification = ClassificationAnnotation(
         value=Text(answer=answer),
         feature_schema_id=feature_schema_id,
         name=name)
-    assert classification.model_dump() == {
+    assert classification.model_dump(exclude_none=True) == {
         'name': name,
         'feature_schema_id': feature_schema_id,
         'extra': {},
         'value': {
             'answer': answer,
         },
-        'message_id': None,
     }
 
 
@@ -96,7 +90,7 @@ def test_radio():
                                       'name': 'metric1',
                                       'value': 0.99
                                   }])
-    feature_schema_id = "feature_schema_id"
+    feature_schema_id = "immunoelectrophoretically"
     name = "my_feature"
 
     with pytest.raises(ValidationError):
@@ -107,10 +101,9 @@ def test_radio():
         classification = Radio(answer=[answer])
     classification = Radio(answer=answer)
 
-    assert classification.model_dump() == {
+    assert classification.model_dump(exclude_none=True) == {
         'answer': {
             'name': answer.name,
-            'feature_schema_id': None,
             'extra': {},
             'confidence': 0.81,
             'custom_metrics': [{
@@ -127,7 +120,7 @@ def test_radio():
             'name': 'metric1',
             'value': 0.99
         }])
-    assert classification.model_dump() == {
+    assert classification.model_dump(exclude_none=True) == {
         'name': name,
         'feature_schema_id': feature_schema_id,
         'extra': {},
@@ -138,7 +131,6 @@ def test_radio():
         'value': {
             'answer': {
                 'name': answer.name,
-                'feature_schema_id': None,
                 'extra': {},
                 'confidence': 0.81,
                 'custom_metrics': [{
@@ -147,7 +139,6 @@ def test_radio():
                 }]
             },
         },
-        'message_id': None,
     }
 
 
@@ -158,7 +149,7 @@ def test_checklist():
                                       'name': 'metric1',
                                       'value': 2
                                   }])
-    feature_schema_id = "feature_schema_id"
+    feature_schema_id = "immunoelectrophoretically"
     name = "my_feature"
 
     with pytest.raises(ValidationError):
@@ -168,10 +159,9 @@ def test_checklist():
         classification = Checklist(answer=answer)
 
     classification = Checklist(answer=[answer])
-    assert classification.model_dump() == {
+    assert classification.model_dump(exclude_none=True) == {
         'answer': [{
             'name': answer.name,
-            'feature_schema_id': None,
             'extra': {},
             'confidence': 0.99,
             'custom_metrics': [{
@@ -185,14 +175,13 @@ def test_checklist():
         feature_schema_id=feature_schema_id,
         name=name,
     )
-    assert classification.model_dump() == {
+    assert classification.model_dump(exclude_none=True) == {
         'name': name,
         'feature_schema_id': feature_schema_id,
         'extra': {},
         'value': {
             'answer': [{
                 'name': answer.name,
-                'feature_schema_id': None,
                 'extra': {},
                 'confidence': 0.99,
                 'custom_metrics': [{
@@ -201,5 +190,4 @@ def test_checklist():
                 }],
             }]
         },
-        'message_id': None,
     }

@@ -1,7 +1,8 @@
 from abc import ABC
 from typing import Dict, Optional, Any, Union
 
-from pydantic import confloat, BaseModel, model_serializer, field_validator, ValidationError, error_wrappers
+from pydantic import confloat, BaseModel, model_serializer, field_validator, error_wrappers
+from pydantic_core import ValidationError, InitErrorDetails
 
 ConfidenceValue = confloat(ge=0, le=1)
 
@@ -26,12 +27,9 @@ class BaseMetric(BaseModel, ABC):
         if isinstance(value, Dict):
             if not (MIN_CONFIDENCE_SCORES <= len(value) <=
                     MAX_CONFIDENCE_SCORES):
-                raise ValidationError([
-                    error_wrappers(ValueError(
-                        "Number of confidence scores must be greater"
-                        f" than or equal to {MIN_CONFIDENCE_SCORES} and"
-                        f" less than or equal to {MAX_CONFIDENCE_SCORES}. Found {len(value)}"
-                    ),
-                                                 loc='value')
-                ], cls)
+                raise ValueError(
+                        f"Number of confidence scores must be greater than\n \
+                        or equal to {MIN_CONFIDENCE_SCORES} and less than\n \
+                        or equal to {MAX_CONFIDENCE_SCORES}. Found {len(value)}"
+                    )
         return value

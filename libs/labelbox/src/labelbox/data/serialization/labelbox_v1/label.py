@@ -9,7 +9,7 @@ from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
 from .classification import LBV1Classifications
 from .objects import LBV1Objects, LBV1TextEntity
-from pydantic import Field, BaseModel, ConfigDict
+from pydantic import Field, BaseModel, ConfigDict, model_serializer
 from pydantic.alias_generators import to_camel
 
 
@@ -152,14 +152,14 @@ class LBV1Label(BaseModel):
                 annotations.extend(lbl.to_common())
         else:
             annotations = self.label.to_common()
-
+            
         return Label(data=self._data_row_to_common(),
                      uid=self.id,
                      annotations=annotations,
                      extra={
                          field.alias: getattr(self, field_name)
-                         for field_name, field in self.__fields__.items()
-                         if field.field_info.extra.get('extra_field')
+                         for field_name, field in self.model_fields.items()
+                         if isinstance(field.json_schema_extra, Dict) and field.json_schema_extra["extra_field"]
                      })
 
     @classmethod

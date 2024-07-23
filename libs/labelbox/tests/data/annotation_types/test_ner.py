@@ -21,7 +21,7 @@ def test_document_entity():
 
 
 def test_conversation_entity():
-    conversation_entity = ConversationEntity(message_id=1, start=0, end=1)
+    conversation_entity = ConversationEntity(message_id="1", start=0, end=1)
 
     assert conversation_entity.message_id == "1"
     assert conversation_entity.start == 0

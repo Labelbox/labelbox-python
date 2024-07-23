@@ -513,9 +513,6 @@ def get_mal_schemas(ontology):
     return valid_feature_schemas_by_schema_id, valid_feature_schemas_by_name
 
 
-LabelboxID: Type[str] = Annotated[str, StringConstraints(min_length=25, max_length=25)]
-
-
 class Bbox(BaseModel):
     top: float
     left: float
