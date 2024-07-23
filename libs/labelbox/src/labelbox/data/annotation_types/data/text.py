@@ -93,16 +93,16 @@ class TextData(BaseData, _NoCoercionMixin):
 
     @model_validator(mode="after")
     def validate_date(cls, values):
-        file_path = values.file_path
-        text = values.text
-        url = values.url
-        uid = values.uid
-        global_key = values.global_key
+        file_path = cls.file_path
+        text = cls.text
+        url = cls.url
+        uid = cls.uid
+        global_key = cls.global_key
         if uid == file_path == text == url == global_key == None:
             raise ValueError(
                 "One of `file_path`, `text`, `uid`, `global_key` or `url` required."
             )
-        return values
+        return cls
 
     def __repr__(self) -> str:
         return  f"TextData(file_path={self.file_path}," \

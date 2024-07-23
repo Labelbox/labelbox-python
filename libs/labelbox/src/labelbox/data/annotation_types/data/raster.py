@@ -160,12 +160,12 @@ class RasterData(BaseModel, ABC):
 
     @model_validator(mode="after")
     def validate_args(cls, values):
-        file_path = values.file_path
-        im_bytes = values.im_bytes
-        url = values.url
-        arr = values.arr
-        uid = values.uid
-        global_key = values.global_key
+        file_path = cls.file_path
+        im_bytes = cls.im_bytes
+        url = cls.url
+        arr = cls.arr
+        uid = cls.uid
+        global_key = cls.global_key
         if uid == file_path == im_bytes == url == global_key == None and arr is None:
             raise ValueError(
                 "One of `file_path`, `im_bytes`, `url`, `uid`, `global_key` or `arr` required."
@@ -179,7 +179,7 @@ class RasterData(BaseModel, ABC):
                 raise ValueError(
                     "unsupported image format. Must be 3D ([H,W,C])."
                     f"Use {cls.__name__}.from_2D_arr to construct from 2D")
-        return values
+        return cls
 
     def __repr__(self) -> str:
         symbol_or_none = lambda data: '...' if data is not None else None

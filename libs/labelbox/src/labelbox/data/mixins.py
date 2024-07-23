@@ -19,12 +19,6 @@ class ConfidenceMixin(BaseModel):
             raise ValueError("must be a number within [0,1] range")
         return value
 
-    @model_serializer(mode="wrap")
-    def serialize_model(self, handler):
-        res = handler(self)
-        res = _feature_serializer(res)
-        return res
-
 
 class ConfidenceNotSupportedMixin:
 
@@ -54,11 +48,6 @@ class CustomMetric(BaseModel):
 
 class CustomMetricsMixin(BaseModel):
     custom_metrics: Optional[List[CustomMetric]] = None
-
-    @model_serializer(mode="wrap")
-    def serialize_model(self, handler):
-        res = handler(self)
-        return res
 
 
 class CustomMetricsNotSupportedMixin:

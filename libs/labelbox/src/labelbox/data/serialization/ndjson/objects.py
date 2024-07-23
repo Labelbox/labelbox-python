@@ -715,7 +715,7 @@ class NDObject:
             if isinstance(first_video_annotation, DICOMObjectAnnotation):
                 group_key = first_video_annotation.group_key.value
                 args.update(dict(group_key=group_key))
-                
+
             return obj.from_common(**args)
         elif (obj == NDVideoMasks or obj == NDDicomMasks):
             return obj.from_common(annotation, data)
