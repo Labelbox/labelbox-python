@@ -10,7 +10,7 @@ from typing_extensions import Annotated
 
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.identifiable import UniqueId, GlobalKey
-from pydantic import BaseModel, Field, StringConstraints, conlist
+from pydantic import BaseModel, Field, StringConstraints, conlist, ConfigDict, model_serializer
 
 from labelbox.schema.ontology import SchemaId
 from labelbox.utils import _CamelCaseMixin, format_iso_datetime, format_iso_from_string
@@ -95,6 +95,24 @@ class _UpsertBatchDataRowMetadata(_CamelCaseMixin):
 class _DeleteBatchDataRowMetadata(_CamelCaseMixin):
     data_row_identifier: Union[UniqueId, GlobalKey]
     schema_ids: List[SchemaId]
+    
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    @model_serializer(mode="wrap")
+    def model_serializer(self, handler):
+        res = handler(self)
+        if 'data_row_identifier' in res.keys():
+            key = 'data_row_identifier'
+            id_type_key = 'id_type'
+        else:
+            key = 'dataRowIdentifier'
+            id_type_key = 'idType'
+        data_row_identifier = res.pop(key)
+        res[key] = {
+            "id": data_row_identifier.key,
+            id_type_key: data_row_identifier.id_type
+        }
+        return res
 
 
 _BatchInputs = Union[List[_UpsertBatchDataRowMetadata],

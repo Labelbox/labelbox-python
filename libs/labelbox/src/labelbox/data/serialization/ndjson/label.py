@@ -26,7 +26,6 @@ from .mmc import NDMessageTask
 from .relationship import NDRelationship
 from .base import DataRow
 from pydantic import BaseModel, ConfigDict, model_serializer, ValidationError
-from labelbox.pydantic_serializers import _feature_serializer
 from .base import subclass_registry, SubclassRegistryBase, NDAnnotation
 from pydantic_core import PydanticUndefined
 from pydantic.alias_generators import to_camel
@@ -71,10 +70,6 @@ class NDLabel(BaseModel):
                             break
                 kwargs["annotations"][index] = annotation
         super().__init__(**kwargs)
-    
-    @model_serializer(mode="wrap")
-    def serialize_model(self, handler):
-        return _feature_serializer(handler(self))
 
     class _Relationship(BaseModel):
         """This object holds information about the relationship"""
