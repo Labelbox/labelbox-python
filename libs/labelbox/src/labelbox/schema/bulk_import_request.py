@@ -623,11 +623,11 @@ class NDFeatureSchema(BaseModel):
     name: Optional[str] = None
 
     @model_validator(mode="after")
-    def must_set_one(cls):
-        if cls.schemaId is None and cls.name is None:
+    def most_set_one(self):
+        if self.schemaId is None and self.name is None:
             raise ValueError(
                 "Must set either schemaId or name for all feature schemas")
-        return cls
+        return self
 
 
 class NDBase(NDFeatureSchema):

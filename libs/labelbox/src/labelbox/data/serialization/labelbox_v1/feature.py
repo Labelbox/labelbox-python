@@ -14,10 +14,10 @@ class LBV1Feature(BaseModel):
     model_config = ConfigDict(populate_by_name = True, alias_generator = to_camel)
 
     @model_validator(mode = "after")
-    def check_ids(cls, values):
-        if values.value is None:
-            values.value = values.title
-        return values
+    def check_ids(self, values):
+        if self.value is None:
+            self.value = self.title
+        return self
 
     @model_serializer(mode = "wrap")
     def serialize_model(self, handler):

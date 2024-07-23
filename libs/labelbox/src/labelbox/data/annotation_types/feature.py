@@ -1,7 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel, model_validator, model_serializer
 from .types import Cuid
-from labelbox.pydantic_serializers import _feature_serializer
 
 
 class FeatureSchema(BaseModel):

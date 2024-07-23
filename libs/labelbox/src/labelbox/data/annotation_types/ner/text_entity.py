@@ -10,10 +10,10 @@ class TextEntity(BaseModel):
     extra: Dict[str, Any] = {}
 
     @model_validator(mode="after")
-    def validate_start_end(cls, values):
-        if hasattr(cls, 'start') and hasattr(cls, 'end'):
-            if (isinstance(cls.start, int) and
-                    cls.start > cls.end):
+    def validate_start_end(self, values):
+        if hasattr(self, 'start') and hasattr(self, 'end'):
+            if (isinstance(self.start, int) and
+                    self.start > self.end):
                 raise ValueError(
                     "Location end must be greater or equal to start")
-        return cls
+        return self
