@@ -34,7 +34,7 @@ class OntologyKind(Enum):
         if ontology_kind in ontology_to_media:
             expected_media_type, error_message = ontology_to_media[ontology_kind]
 
-            if media_type is None:
+            if media_type is None or media_type == expected_media_type:
                 media_type = expected_media_type
             else:
                 raise ValueError(error_message)
