@@ -26,23 +26,18 @@ class OntologyKind(Enum):
     def evaluate_ontology_kind_with_media_type(ontology_kind,
                                                media_type: Optional[MediaType]) -> Union[MediaType, None]:
         
-        if ontology_kind and ontology_kind is OntologyKind.ModelEvaluation:
+        ontology_to_media = {
+            OntologyKind.ModelEvaluation: (MediaType.Conversational, "For chat evaluation, media_type must be Conversational."),
+            OntologyKind.ResponseCreation: (MediaType.Text, "For response creation, media_type must be Text.")
+        }
+
+        if ontology_kind in ontology_to_media:
+            expected_media_type, error_message = ontology_to_media[ontology_kind]
+
             if media_type is None:
-                media_type = MediaType.Conversational
+                media_type = expected_media_type
             else:
-                if media_type is not MediaType.Conversational:
-                    raise ValueError(
-                        "For chat evaluation, media_type must be Conversational."
-                    )
-        
-        elif ontology_kind == OntologyKind.ResponseCreation:
-            if media_type is None:
-                media_type = MediaType.Text
-            else:
-                if media_type is not MediaType.Text:
-                    raise ValueError(
-                        "For response creation, media_type must be Text."
-                    )
+                raise ValueError(error_message)
                     
         return media_type
 
