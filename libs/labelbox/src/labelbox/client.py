@@ -768,6 +768,8 @@ class Client:
             queue_mode (Optional[QueueMode]): The queue mode to use
             quality_mode (Optional[QualityMode]): The quality mode to use (e.g. Benchmark, Consensus). Defaults to
                 Benchmark
+            quality_modes (Optional[List[QualityMode]]): The quality modes to use (e.g. Benchmark, Consensus). Defaults to
+                Benchmark.
         Returns:
             A new Project object.
         Raises:
@@ -878,7 +880,7 @@ class Client:
         auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
         if auto_audit_percentage is not None or auto_audit_number_of_labels is not None:
             raise ValueError(
-                "quality_mode must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
+                "quality_modes must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
             )
 
         name = kwargs.get("name")
@@ -908,22 +910,54 @@ class Client:
                 " through this method will soon no longer be supported.")
             media_type_value = None
 
+        quality_modes = kwargs.get("quality_modes")
         quality_mode = kwargs.get("quality_mode")
-        if not quality_mode:
-            logger.info("Defaulting quality mode to Benchmark.")
+        if quality_mode:
+            logger.warning(
+                "Passing quality_mode is deprecated and will soon no longer be supported. Use quality_modes instead."
+            )
+
+        if quality_modes and quality_mode:
+            raise ValueError(
+                "Cannot use both quality_modes and quality_mode at the same time. Use one or the other.")
+
+        if not quality_modes and not quality_mode:
+            logger.info("Defaulting quality modes to Benchmark and Consensus.")
 
         data = kwargs
+        data.pop("quality_modes", None)
         data.pop("quality_mode", None)
-        if quality_mode is None or quality_mode is QualityMode.Benchmark:
+
+        # check if quality_modes is a set, if not, convert to set
+        quality_modes_set = quality_modes
+        if quality_modes and not isinstance(quality_modes, set):
+            quality_modes_set = set(quality_modes)
+        if quality_mode:
+            quality_modes_set = {quality_mode}
+
+        if (
+            quality_modes_set is None
+            or len(quality_modes_set) == 0
+            or quality_modes_set == {QualityMode.Benchmark, QualityMode.Consensus}
+        ):
+            data["auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
+            data["is_benchmark_enabled"] = True
+            data["is_consensus_enabled"] = True
+        elif quality_modes_set == {QualityMode.Benchmark}:
             data[
                 "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
-        elif quality_mode is QualityMode.Consensus:
+            data["is_benchmark_enabled"] = True
+        elif quality_modes_set == {QualityMode.Consensus}:
             data[
                 "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
+            data["is_consensus_enabled"] = True
         else:
-            raise ValueError(f"{quality_mode} is not a valid quality mode.")
+            raise ValueError(
+                f"{quality_modes_set} is not a valid quality modes set. Allowed values are [Benchmark, Consensus]"
+            )
 
         params = {**data}
         if media_type_value:
