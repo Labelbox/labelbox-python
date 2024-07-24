@@ -891,7 +891,9 @@ class Client:
             **kwargs: Additional parameters to pass see the create_project method
         Returns:
             Project: The created project
-
+            
+        NOTE: Only a dataset_name or dataset_id should be included 
+        
         Examples:
             >>> client.create_prompt_response_generation_project(name=project_name, dataset_name="new data set", project_kind=MediaType.LLMPromptResponseCreation)
             >>>     This creates a new dataset with a default number of rows (100), creates new project and assigns a batch of the newly created datarows to the project.
@@ -908,8 +910,14 @@ class Client:
         """
         if not dataset_id and not dataset_name:
             raise ValueError(
-                "dataset_name or data_set_id must be present and not be an empty string."
+                "dataset_name or dataset_id must be present and not be an empty string."
             )
+        
+        if dataset_id and dataset_name:
+            raise ValueError(
+                "Only provide a dataset_name or dataset_id, not both."
+            )    
+            
         if data_row_count <= 0:
             raise ValueError("data_row_count must be a positive integer.")
 
