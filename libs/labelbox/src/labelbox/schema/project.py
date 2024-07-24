@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, TypeVar, Union, overload
 from urllib.parse import urlparse
 
+from labelbox.schema.labeling_service import LabelingService
 import requests
 
 from labelbox import parser
@@ -1914,6 +1915,35 @@ class Project(DbObject, Updateable, Deletable):
         """
         result = self.client.execute(mutation, {"projectId": self.uid})
         return self.client.get_project(result["cloneProject"]["id"])
+
+    @experimental
+    def get_labeling_service(self) -> LabelingService:
+        """
+        Returns the labeling service associated with the project.
+
+        Returns:
+            LabelingService: The labeling service associated with the project.
+
+        Raises:
+            ResourceNotFoundError: If the project does not have a labeling service.
+        """
+        query = """
+            query GetProjectBoostWorkforcePyApi($projectId: ID!) {
+            projectBoostWorkforce(data: { projectId: $projectId }) {
+                    id
+                    projectId
+                    createdAt
+                    updatedAt
+                    createdById
+                    status
+                }
+            }
+        """
+        result = self.client.execute(query, {"projectId": self.uid})
+        if result["projectBoostWorkforce"] is None:
+            raise ResourceNotFoundError(
+                message="The project does not have a labeling service.")
+        return LabelingService(**result["projectBoostWorkforce"])
 
 
 class ProjectMember(DbObject):
