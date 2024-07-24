@@ -875,21 +875,6 @@ class Client:
 
         return self._create_project(**kwargs)
     
-    @overload
-    def create_prompt_response_generation_project(self,
-                                                  dataset_name: str,
-                                                  dataset_id: str = None,
-                                                  data_row_count: int = 100,
-                                                  **kwargs) -> Project:
-        pass
-
-    @overload
-    def create_prompt_response_generation_project(self,
-                                                  dataset_name: str = None,
-                                                  dataset_id: str,
-                                                  data_row_count: int = 100,
-                                                  **kwargs) -> Project:
-        pass
 
     def create_prompt_response_generation_project(self,
                                                   dataset_id: Optional[str] = None,
