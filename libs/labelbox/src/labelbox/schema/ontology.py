@@ -223,7 +223,7 @@ class Classification:
         self.options.append(option)
         
 @dataclass
-class ResponseOption:
+class ResponseOption(Option):
     """
     An option is a possible answer within a PromptResponseClassification response object in
     a Project's ontology.
@@ -239,45 +239,7 @@ class ResponseOption:
         feature_schema_id: (str)
         options: (list)
     """
-    value: Union[str, int]
-    label: Optional[Union[str, int]] = None
-    schema_id: Optional[str] = None
-    feature_schema_id: Optional[FeatureSchemaId] = None
-    options: List["Classification"] = field(default_factory=list)
-
-    def __post_init__(self):
-        if self.label is None:
-            self.label = self.value
-
-    @classmethod
-    def from_dict(
-            cls,
-            dictionary: Dict[str,
-                             Any]) -> Dict[Union[str, int], Union[str, int]]:
-        return cls(value=dictionary["value"],
-                   label=dictionary["label"],
-                   schema_id=dictionary.get("schemaNodeId", None),
-                   feature_schema_id=dictionary.get("featureSchemaId", None),
-                   options=[
-                       PromptResponseClassification.from_dict(o)
-                       for o in dictionary.get("options", [])
-                   ])
-
-    def asdict(self) -> Dict[str, Any]:
-        return {
-            "schemaNodeId": self.schema_id,
-            "featureSchemaId": self.feature_schema_id,
-            "label": self.label,
-            "value": self.value,
-            "options": [o.asdict(is_subclass=True) for o in self.options]
-        }
-
-    def add_option(self, option: 'Classification') -> None:
-        if option.name in (o.name for o in self.options):
-            raise InconsistentOntologyException(
-                f"Duplicate nested classification '{option.name}' "
-                f"for option '{self.label}'")
-        self.options.append(option)
+    pass
 
 
 @dataclass
