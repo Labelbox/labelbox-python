@@ -11,6 +11,7 @@ dependencies = [
     "strenum>=0.4.15",
     "tqdm>=4.66.2",
     "geojson>=3.1.0",
+    "mypy==1.10.1",
 ]
 readme = "README.md"
 requires-python = ">=3.8"
