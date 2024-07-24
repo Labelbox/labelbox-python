@@ -53,7 +53,7 @@ class Option:
     label: Optional[Union[str, int]] = None
     schema_id: Optional[str] = None
     feature_schema_id: Optional[FeatureSchemaId] = None
-    options: List["Classification"] = field(default_factory=list)
+    options: Union[List["Classification"], List["PromptResponseClassification"]] = field(default_factory=list)
 
     def __post_init__(self):
         if self.label is None:
@@ -82,7 +82,7 @@ class Option:
             "options": [o.asdict(is_subclass=True) for o in self.options]
         }
 
-    def add_option(self, option: 'Classification') -> None:
+    def add_option(self, option: Union["Classification", "PromptResponseClassification"]) -> None:
         if option.name in (o.name for o in self.options):
             raise InconsistentOntologyException(
                 f"Duplicate nested classification '{option.name}' "
@@ -239,7 +239,20 @@ class ResponseOption(Option):
         feature_schema_id: (str)
         options: (list)
     """
-    pass
+    
+    @classmethod
+    def from_dict(
+            cls,
+            dictionary: Dict[str,
+                             Any]) -> Dict[Union[str, int], Union[str, int]]:
+        return cls(value=dictionary["value"],
+                   label=dictionary["label"],
+                   schema_id=dictionary.get("schemaNodeId", None),
+                   feature_schema_id=dictionary.get("featureSchemaId", None),
+                   options=[
+                       PromptResponseClassification.from_dict(o)
+                       for o in dictionary.get("options", [])
+                   ])
 
 
 @dataclass
