@@ -291,10 +291,8 @@ class PromptResponseClassification:
         options: (list)
         character_min: (int)
         character_max: (int)
-        ui_mode: (Classification.UIMode)
         schema_id: (str)
         feature_schema_id: (str)
-        scope: (Classification.Scope)
     """
     
     def __post_init__(self):
