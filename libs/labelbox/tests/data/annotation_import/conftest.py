@@ -754,7 +754,7 @@ def configured_project(client: Client, rand_gen, data_row_json_by_media_type, re
 
 
 @pytest.fixture()
-def configured_project_by_global_key(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
+def configured_project_by_global_key(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type, export_v2_test_helpers):
     """Does the same thing as configured project but with global keys focus."""
     
     media_type = getattr(request, "param", MediaType.Image)
@@ -763,7 +763,7 @@ def configured_project_by_global_key(client: Client, rand_gen, data_row_json_by_
     if media_type == MediaType.LLMPromptCreation or media_type == MediaType.LLMPromptResponseCreation:
         project, ontology = _create_prompt_response_project(client, rand_gen, media_type, normalized_ontology_by_media_type)
     elif media_type == OntologyKind.ResponseCreation:
-        project, ontology, dataset = _create_response_creation_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
+        project, ontology, dataset = _create_response_creation_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type, export_v2_test_helpers)
     else:    
         project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
 
@@ -1692,8 +1692,8 @@ def expected_export_v2_audio():
                 },
             },
         ],
-        "timestamp": {},
-        "segments": {},
+        'objects': [],
+        'relationships': [],
     }
     return expected_annotations
 
