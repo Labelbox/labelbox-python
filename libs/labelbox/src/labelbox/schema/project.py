@@ -1945,7 +1945,6 @@ class Project(DbObject, Updateable, Deletable):
                 message="The project does not have a labeling service.")
         return LabelingService(**result["projectBoostWorkforce"])
 
-
 class ProjectMember(DbObject):
     user = Relationship.ToOne("User", cache=True)
     role = Relationship.ToOne("Role", cache=True)
