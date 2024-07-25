@@ -761,9 +761,9 @@ def configured_project_by_global_key(client: Client, rand_gen, data_row_json_by_
     dataset = None
     
     if media_type == MediaType.LLMPromptCreation or media_type == MediaType.LLMPromptResponseCreation:
-        project, ontology = _create_prompt_response_project(client, rand_gen, media_type, normalized_ontology_by_media_type)
+        project, ontology = _create_prompt_response_project(client, rand_gen, media_type, normalized_ontology_by_media_type, export_v2_test_helpers)
     elif media_type == OntologyKind.ResponseCreation:
-        project, ontology, dataset = _create_response_creation_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type, export_v2_test_helpers)
+        project, ontology, dataset = _create_response_creation_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
     else:    
         project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
 
