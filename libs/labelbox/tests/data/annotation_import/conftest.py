@@ -1692,8 +1692,8 @@ def expected_export_v2_audio():
                 },
             },
         ],
-        'objects': [],
-        'relationships': [],
+        "segments": {},
+        "timestamp": {}
     }
     return expected_annotations
 
