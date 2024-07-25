@@ -149,6 +149,13 @@ class Project(DbObject, Updateable, Deletable):
             True if this project is a live chat evaluation project, False otherwise
         """
         return self.media_type == MediaType.Conversational and self.editor_task_type == EditorTaskType.ModelChatEvaluation
+    
+    def is_prompt_response(self) -> bool:
+        """
+        Returns:
+            True if this project is a prompt response project, False otherwise
+        """
+        return self.media_type == MediaType.LLMPromptResponseCreation or self.media_type == MediaType.LLMPromptCreation or self.editor_task_type == EditorTaskType.ResponseCreation
 
     def is_auto_data_generation(self) -> bool:
         return (self.upload_type == UploadType.Auto)  # type: ignore
@@ -829,9 +836,9 @@ class Project(DbObject, Updateable, Deletable):
                 "labeling_frontend parameter will not be used to create a new labeling frontend."
             )
 
-        if self.is_chat_evaluation():
+        if self.is_chat_evaluation() or self.is_prompt_response():
             warnings.warn("""
-            This project is a live chat evaluation project.
+            This project is a live chat evaluation project or prompt and response generation project.
             Editor was setup automatically.
             """)
             return

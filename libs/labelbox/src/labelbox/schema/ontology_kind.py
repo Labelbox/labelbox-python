@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union
 
 from labelbox.schema.media_type import MediaType
 
@@ -7,9 +7,9 @@ from labelbox.schema.media_type import MediaType
 class OntologyKind(Enum):
     """
     OntologyKind is an enum that represents the different types of ontologies
-    At the moment it is only limited to ModelEvaluation
     """
     ModelEvaluation = "MODEL_EVALUATION"
+    ResponseCreation = "RESPONSE_CREATION"
     Missing = None
 
     @classmethod
@@ -21,6 +21,25 @@ class OntologyKind(Enum):
         return TypeError(f"{ontology_kind}: is not a valid ontology kind. Use"
                          f" any of {OntologyKind.__members__.items()}"
                          " from OntologyKind.")
+    
+    @staticmethod
+    def evaluate_ontology_kind_with_media_type(ontology_kind,
+                                               media_type: Optional[MediaType]) -> Union[MediaType, None]:
+        
+        ontology_to_media = {
+            OntologyKind.ModelEvaluation: (MediaType.Conversational, "For chat evaluation, media_type must be Conversational."),
+            OntologyKind.ResponseCreation: (MediaType.Text, "For response creation, media_type must be Text.")
+        }
+
+        if ontology_kind in ontology_to_media:
+            expected_media_type, error_message = ontology_to_media[ontology_kind]
+
+            if media_type is None or media_type == expected_media_type:
+                media_type = expected_media_type
+            else:
+                raise ValueError(error_message)
+                    
+        return media_type
 
 
 class EditorTaskType(Enum):
@@ -69,6 +88,8 @@ class EditorTaskTypeMapper:
                                 media_type: MediaType) -> EditorTaskType:
         if onotology_kind == OntologyKind.ModelEvaluation and media_type == MediaType.Conversational:
             return EditorTaskType.ModelChatEvaluation
+        elif onotology_kind == OntologyKind.ResponseCreation and media_type == MediaType.Text:
+            return EditorTaskType.ResponseCreation
         else:
             return EditorTaskType.Missing
 
