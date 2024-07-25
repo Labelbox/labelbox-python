@@ -17,16 +17,14 @@ def test_project_dataset(client, rand_gen):
 
 def test_project_auto_audit_parameters(client, rand_gen):
     with pytest.raises(
-            ValueError,
-            match=
-            "quality_mode must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
+        ValueError,
+        match="quality_modes must be set instead of auto_audit_percentage or auto_audit_number_of_labels.",
     ):
         client.create_project(name=rand_gen(str), auto_audit_percentage=0.5)
 
     with pytest.raises(
-            ValueError,
-            match=
-            "quality_mode must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
+        ValueError,
+        match="quality_modes must be set instead of auto_audit_percentage or auto_audit_number_of_labels.",
     ):
         client.create_project(name=rand_gen(str), auto_audit_number_of_labels=2)
 

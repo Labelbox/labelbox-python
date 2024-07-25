@@ -83,7 +83,7 @@ def validate_labeling_parameter_overrides(
 
 
 class Project(DbObject, Updateable, Deletable):
-    """ A Project is a container that includes a labeling frontend, an ontology,
+    """A Project is a container that includes a labeling frontend, an ontology,
     datasets and labels.
 
     Attributes:
@@ -96,6 +96,8 @@ class Project(DbObject, Updateable, Deletable):
         queue_mode (string)
         auto_audit_number_of_labels (int)
         auto_audit_percentage (float)
+        is_benchmark_enabled (bool)
+        is_consensus_enabled (bool)
 
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
@@ -123,6 +125,8 @@ class Project(DbObject, Updateable, Deletable):
     data_row_count = Field.Int("data_row_count")
     model_setup_complete: Field = Field.Boolean("model_setup_complete")
     upload_type: Field = Field.Enum(UploadType, "upload_type")
+    is_benchmark_enabled = Field.Boolean("is_benchmark_enabled")
+    is_consensus_enabled = Field.Boolean("is_consensus_enabled")
 
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
