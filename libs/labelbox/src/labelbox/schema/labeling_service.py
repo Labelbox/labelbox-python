@@ -1,9 +1,10 @@
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
-from ..client import Client
+from labelbox.exceptions import ResourceNotFoundError
+
 from labelbox.data.annotation_types.types import Cuid
-from labelbox.orm.db_object import experimental
 from labelbox.pydantic_compat import BaseModel
 from labelbox.utils import _CamelCaseMixin
 
@@ -17,43 +18,69 @@ class LabelingServiceStatus(Enum):
     SetUp = 'SET_UP'
 
 
-@experimental
-class LabelingService(_CamelCaseMixin, BaseModel):
+class LabelingService(BaseModel):
     id: Cuid
     project_id: Cuid
     created_at: datetime
     updated_at: datetime
     created_by_id: Cuid
     status: LabelingServiceStatus
+    client: Any  # type Any to avoid circular import from client
 
-    @classmethod
-    def start(cls, client: Client, project_id: Cuid) -> 'LabelingService':
-        return cls._create(client=client, project_id=project_id)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if not self.client.enable_experimental:
+            raise RuntimeError(
+                "Please enable experimental in client to use LabelingService")
 
-"""
-mutation CreateProjectBoostWorkforce($projectId: ID!) {
-  upsertProjectBoostWorkforce(data: { projectId: $projectId }) {
-    success
-    __typename
-  }
-}
-{
-  "projectId": "clz0b7jg901fh07zic3u67b7g"
-}
-
-
-{
-  "data": {
-    "upsertProjectBoostWorkforce": {
-      "success": true,
-      "__typename": "ProjectBoostWorkforceResult"
-    }
-  }
-}
-"""
-    @classmethod
-    def _create(cls, client: Client, project_id: Cuid) -> 'LabelingService':
+    class Config(_CamelCaseMixin.Config):
         ...
-    
-    def status_as_string(self):
-        return self.status.value
+
+    @classmethod
+    def start(cls, client, project_id: Cuid) -> 'LabelingService':
+        """
+        Starts the labeling service for the project. This is equivalent to a UI acction to Request Specialized Labelers
+
+        Returns:
+            LabelingService: The labeling service for the project.
+        Raises:
+            Exception: If the service fails to start.
+        """
+        query_str = """mutation CreateProjectBoostWorkforcePyApi($projectId: ID!) {
+          upsertProjectBoostWorkforce(data: { projectId: $projectId }) {
+            success
+          }
+        }"""
+        result = client.execute(query_str, {"projectId": project_id})
+        success = result["upsertProjectBoostWorkforce"]["success"]
+        if not success:
+            raise Exception("Failed to start labeling service")
+        return cls.get(client, project_id)
+
+    @classmethod
+    def get(cls, client, project_id: Cuid) -> 'LabelingService':
+        """
+        Returns the labeling service associated with the project.
+
+        Raises:
+            ResourceNotFoundError: If the project does not have a labeling service.
+        """
+        query = """
+            query GetProjectBoostWorkforcePyApi($projectId: ID!) {
+            projectBoostWorkforce(data: { projectId: $projectId }) {
+                    id
+                    projectId
+                    createdAt
+                    updatedAt
+                    createdById
+                    status
+                }
+            }
+        """
+        result = client.execute(query, {"projectId": project_id})
+        if result["projectBoostWorkforce"] is None:
+            raise ResourceNotFoundError(
+                message="The project does not have a labeling service.")
+        data = result["projectBoostWorkforce"]
+        data["client"] = client
+        return LabelingService(**data)

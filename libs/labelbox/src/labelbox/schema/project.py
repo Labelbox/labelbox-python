@@ -150,7 +150,7 @@ class Project(DbObject, Updateable, Deletable):
             True if this project is a live chat evaluation project, False otherwise
         """
         return self.media_type == MediaType.Conversational and self.editor_task_type == EditorTaskType.ModelChatEvaluation
-    
+
     def is_prompt_response(self) -> bool:
         """
         Returns:
@@ -1918,32 +1918,13 @@ class Project(DbObject, Updateable, Deletable):
 
     @experimental
     def get_labeling_service(self) -> LabelingService:
-        """
-        Returns the labeling service associated with the project.
+        """Get the labeling service for this project.
 
         Returns:
-            LabelingService: The labeling service associated with the project.
+            LabelingService: The labeling service for this project.
+        """
+        return LabelingService.get(self.client, self.uid)  # type: ignore
 
-        Raises:
-            ResourceNotFoundError: If the project does not have a labeling service.
-        """
-        query = """
-            query GetProjectBoostWorkforcePyApi($projectId: ID!) {
-            projectBoostWorkforce(data: { projectId: $projectId }) {
-                    id
-                    projectId
-                    createdAt
-                    updatedAt
-                    createdById
-                    status
-                }
-            }
-        """
-        result = self.client.execute(query, {"projectId": self.uid})
-        if result["projectBoostWorkforce"] is None:
-            raise ResourceNotFoundError(
-                message="The project does not have a labeling service.")
-        return LabelingService(**result["projectBoostWorkforce"])
 
 class ProjectMember(DbObject):
     user = Relationship.ToOne("User", cache=True)

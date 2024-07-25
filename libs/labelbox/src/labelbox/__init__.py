@@ -43,3 +43,4 @@ from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.project_overview import ProjectOverview, ProjectOverviewDetailed
+from labelbox.schema.labeling_service import LabelingService, LabelingServiceStatus
