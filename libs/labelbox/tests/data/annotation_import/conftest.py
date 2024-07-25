@@ -1448,7 +1448,6 @@ def expected_export_v2_image():
 @pytest.fixture()
 def expected_export_v2_audio():
     expected_annotations = {
-        "objects": [],
         "classifications": [
             {
                 "name":
@@ -1474,7 +1473,8 @@ def expected_export_v2_audio():
                 },
             },
         ],
-        "relationships": [],
+        "timestamp": {},
+        "segments": {},
     }
     return expected_annotations
 
