@@ -8,12 +8,13 @@ import pytest
 import time
 import requests
 
-from labelbox import parser, MediaType
+from labelbox import parser, MediaType, OntologyKind
 from labelbox import Client, Dataset
 
 from typing import Tuple, Type
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from pytest import FixtureRequest
+from contextlib import suppress
 
 """
 The main fixtures of this library are configured_project and configured_project_by_global_key. Both fixtures generate data rows with a parametrize media type. They create the amount of data rows equal to the DATA_ROW_COUNT variable below. The data rows are generated with a factory fixture that returns a function that allows you to pass a global key. The ontologies are generated normalized and based on the MediaType given (i.e. only features supported by MediaType are created). This ontology is later used to obtain the correct annotations with the prediction_id_mapping and corresponding inferences. Each data row will have all possible annotations attached supported for the MediaType. 
@@ -385,6 +386,60 @@ def normalized_ontology_by_media_type():
             },
         ],
     }
+    
+    prompt_text = {
+        "instructions": "prompt-text",
+        "name": "prompt-text",
+        "options": [],
+        "required": True,
+        "maxCharacters": 50,
+        "minCharacters": 1,
+        "schemaNodeId": None,
+        "type": "prompt"
+    }
+    
+    response_radio = {
+        "instructions": "radio-response",
+        "name": "radio-response",
+        "options": [{
+                    "label": "first_radio_answer",
+                    "value": "first_radio_answer",
+                    "options": []
+                    },
+                    {
+                    "label": "second_radio_answer",
+                    "value": "second_radio_answer",
+                    "options": []
+                    }],
+        "required": True,
+        "type": "response-radio"
+    }
+    
+    response_checklist = {
+        "instructions": "checklist-response",
+        "name": "checklist-response",
+        "options": [{
+                    "label": "first_checklist_answer",
+                    "value": "first_checklist_answer",
+                    "options": []
+                    },
+                    {
+                    "label": "second_checklist_answer",
+                    "value": "second_checklist_answer",
+                    "options": []
+                    }],
+        "required": True,
+        "type": "response-checklist"
+    }
+    
+    response_text = {
+        "instructions": "response-text",
+        "maxCharacters": 20,
+        "minCharacters": 1,
+        "name": "response-text",
+        "required": True,
+        "type": "response-text"
+    }
 
     return {
     MediaType.Image: {
@@ -489,6 +544,29 @@ def normalized_ontology_by_media_type():
             free_form_text_index
             ]
         },
+    MediaType.LLMPromptResponseCreation: {
+        "tools": [],
+        "classifications": [
+            prompt_text,
+            response_text,
+            response_radio,
+            response_checklist
+        ]
+    },
+    MediaType.LLMPromptCreation: {
+        "tools": [],
+        "classifications": [
+            prompt_text
+        ]
+    },
+    OntologyKind.ResponseCreation: {
+        "tools": [],
+        "classifications": [
+            response_text,
+            response_radio,
+            response_checklist
+        ]
+    },
     "all": {
         "tools":[
             bbox_tool,
@@ -561,14 +639,67 @@ def hardcoded_global_key():
 
 ##### Integration test strategies #####
 
+def _create_response_creation_project(client: Client, rand_gen, data_row_json_by_media_type, ontology_kind, normalized_ontology_by_media_type) -> Tuple[Project, Ontology, Dataset]:
+    "For response creation projects"
+    
+    dataset = client.create_dataset(name=rand_gen(str))
+        
+    project = client.create_response_creation_project(name=f"{ontology_kind}-{rand_gen(str)}")
+    
+    ontology = client.create_ontology(name=f"{ontology_kind}-{rand_gen(str)}", 
+                                      normalized=normalized_ontology_by_media_type[ontology_kind], 
+                                      media_type=MediaType.Text,                      
+                                      ontology_kind=ontology_kind)
+
+    project.connect_ontology(ontology)
+
+    data_row_data = []
+
+    for _ in range(DATA_ROW_COUNT):
+        data_row_data.append(data_row_json_by_media_type[MediaType.Text](rand_gen(str)))
+        
+    task = dataset.create_data_rows(data_row_data)
+    task.wait_till_done()
+    global_keys = [row['global_key'] for row in task.result]
+    data_row_ids = [row['id'] for row in task.result]
+
+    project.create_batch(
+        rand_gen(str),
+        data_row_ids,  # sample of data row objects
+        5,  # priority between 1(Highest) - 5(lowest)
+    )
+    project.data_row_ids = data_row_ids
+    project.global_keys = global_keys
+    
+    return project, ontology, dataset
+
+def _create_prompt_response_project(client: Client, rand_gen, media_type, normalized_ontology_by_media_type, export_v2_test_helpers) -> Tuple[Project, Ontology]:
+    """For prompt response data row auto gen projects"""
+    
+    prompt_response_project = client.create_prompt_response_generation_project(name=f"{media_type.value}-{rand_gen(str)}",
+                                                                               dataset_name=rand_gen(str),
+                                                                               data_row_count=1,
+                                                                               media_type=media_type)
+    
+    ontology = client.create_ontology(name=f"{media_type}-{rand_gen(str)}", normalized=normalized_ontology_by_media_type[media_type], media_type=media_type)
+    
+    prompt_response_project.connect_ontology(ontology)
+    
+    # We have to export to get data row ids
+    result = export_v2_test_helpers.run_project_export_v2_task(prompt_response_project)
+    
+    data_row_ids = [dr["data_row"]["id"] for dr in result]
+    global_keys = [dr["data_row"]["global_key"] for dr in result]
+    
+    prompt_response_project.data_row_ids = data_row_ids
+    prompt_response_project.global_keys = global_keys
+    
+    return prompt_response_project, ontology
+
 def _create_project(client: Client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type) -> Tuple[Project, Ontology, Dataset]:
     """ Shared function to configure project for integration tests """
     
     dataset = client.create_dataset(name=rand_gen(str))
-
-    # LLMPromptResponseCreation is not support for project or ontology creation needs to be conversational
-    if media_type == MediaType.LLMPromptResponseCreation:
-        media_type = MediaType.Conversational
         
     project = client.create_project(name=f"{media_type}-{rand_gen(str)}",
                                     media_type=media_type)
@@ -599,17 +730,26 @@ def _create_project(client: Client, rand_gen, data_row_json_by_media_type, media
 
 
 @pytest.fixture
-def configured_project(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
+def configured_project(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type, export_v2_test_helpers):
     """Configure project for test. Request.param will contain the media type if not present will use Image MediaType. The project will have 10 data rows."""
     
     media_type = getattr(request, "param", MediaType.Image)
-        
-    project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
+    dataset = None
+    
+    if media_type == MediaType.LLMPromptCreation or media_type == MediaType.LLMPromptResponseCreation:
+        project, ontology = _create_prompt_response_project(client, rand_gen, media_type, normalized_ontology_by_media_type, export_v2_test_helpers)
+    elif media_type == OntologyKind.ResponseCreation:
+        project, ontology, dataset = _create_response_creation_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
+    else:    
+        project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
 
     yield project
     
     project.delete()
-    dataset.delete()
+    
+    if dataset:
+        dataset.delete()
+    
     client.delete_unused_ontology(ontology.uid)
 
 
@@ -617,16 +757,23 @@ def configured_project(client: Client, rand_gen, data_row_json_by_media_type, re
 def configured_project_by_global_key(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type):
     """Does the same thing as configured project but with global keys focus."""
     
-    dataset = client.create_dataset(name=rand_gen(str))
-    
     media_type = getattr(request, "param", MediaType.Image)
-        
-    project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
+    dataset = None
+    
+    if media_type == MediaType.LLMPromptCreation or media_type == MediaType.LLMPromptResponseCreation:
+        project, ontology = _create_prompt_response_project(client, rand_gen, media_type, normalized_ontology_by_media_type)
+    elif media_type == OntologyKind.ResponseCreation:
+        project, ontology, dataset = _create_response_creation_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
+    else:    
+        project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
 
     yield project
     
     project.delete()
-    dataset.delete()
+    
+    if dataset:
+        dataset.delete()
+        
     client.delete_unused_ontology(ontology.uid)
 
 
@@ -636,13 +783,23 @@ def module_project(client: Client, rand_gen, data_row_json_by_media_type, reques
     """Generates a image project that scopes to the test module(file). Used to reduce api calls."""
     
     media_type = getattr(request, "param", MediaType.Image)
+    media_type = getattr(request, "param", MediaType.Image)
+    dataset = None
     
-    project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
+    if media_type == MediaType.LLMPromptCreation or media_type == MediaType.LLMPromptResponseCreation:
+        project, ontology = _create_prompt_response_project(client, rand_gen, media_type, normalized_ontology_by_media_type)
+    elif media_type == OntologyKind.ResponseCreation:
+        project, ontology, dataset = _create_response_creation_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
+    else:    
+        project, ontology, dataset = _create_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
 
     yield project
     
     project.delete()
-    dataset.delete()
+    
+    if dataset:
+        dataset.delete()
+        
     client.delete_unused_ontology(ontology.uid)
 
 
@@ -1051,6 +1208,61 @@ def checklist_inference_index(prediction_id_mapping):
         checklists.append(checklist)
     return checklists
 
+@pytest.fixture
+def prompt_text_inference(prediction_id_mapping):
+    prompt_texts = []
+    for feature in prediction_id_mapping:
+        if "prompt" not in feature:
+            continue
+        text = feature["prompt"].copy()
+        text.update({"answer": "free form text..."})
+        del text["tool"]
+        prompt_texts.append(text)
+    return prompt_texts
+
+@pytest.fixture
+def radio_response_inference(prediction_id_mapping):
+    response_radios = []
+    for feature in prediction_id_mapping:
+        if "response-radio" not in feature:
+            continue
+        response_radio = feature["response-radio"].copy()
+        response_radio.update({
+            "answer": {"name": "first_radio_answer"},
+        })
+        del response_radio["tool"]
+        response_radios.append(response_radio)
+    return response_radios
+
+@pytest.fixture
+def checklist_response_inference(prediction_id_mapping):
+    response_checklists = []
+    for feature in prediction_id_mapping:
+        if "response-checklist" not in feature:
+            continue
+        response_checklist = feature["response-checklist"].copy()
+        response_checklist.update({
+            "answer": [
+                {"name": "first_checklist_answer"},
+                {"name": "second_checklist_answer"}
+            ]
+        })
+        del response_checklist["tool"]
+        response_checklists.append(response_checklist)
+    return response_checklists
+
+@pytest.fixture
+def text_response_inference(prediction_id_mapping):
+    response_texts = []
+    for feature in prediction_id_mapping:
+        if "response-text" not in feature:
+            continue
+        text = feature["response-text"].copy()
+        text.update({"answer": "free form text..."})
+        del text["tool"]
+        response_texts.append(text)
+    return response_texts
+
 
 @pytest.fixture
 def text_inference(prediction_id_mapping):
@@ -1133,6 +1345,10 @@ def annotations_by_media_type(
     checklist_inference,
     text_inference,
     video_checklist_inference,
+    prompt_text_inference,
+    checklist_response_inference,
+    radio_response_inference,
+    text_response_inference
 ):
     return {
         MediaType.Audio: [checklist_inference, text_inference],
@@ -1158,6 +1374,9 @@ def annotations_by_media_type(
         ],
         MediaType.Text: [checklist_inference, text_inference, entity_inference],
         MediaType.Video: [video_checklist_inference],
+        MediaType.LLMPromptResponseCreation: [prompt_text_inference, text_response_inference, checklist_response_inference, radio_response_inference],
+        MediaType.LLMPromptCreation: [prompt_text_inference],
+        OntologyKind.ResponseCreation: [text_response_inference, checklist_response_inference, radio_response_inference]
     }
 
 
@@ -1773,6 +1992,40 @@ def expected_export_v2_document():
     }
     return expected_annotations
 
+@pytest.fixture()
+def expected_export_v2_llm_prompt_response_creation():
+    expected_annotations = {
+        "objects": [],
+        "classifications": [
+                {
+                "name": "prompt-text",
+                "value": "prompt-text",
+                "text_answer": {
+                    "content": "free form text..."
+                },
+                },
+                {'name': 'response-text',
+                      'text_answer': {'content': 'free form text...'},
+                      'value': 'response-text'},
+                {'checklist_answers': [
+                        {'classifications': [],
+                            'name': 'first_checklist_answer',
+                            'value': 'first_checklist_answer'},
+                        {'classifications': [],
+                            'name': 'second_checklist_answer',
+                            'value': 'second_checklist_answer'}],
+                'name': 'checklist-response',
+                'value': 'checklist-response'},
+                {'name': 'radio-response',
+                'radio_answer': {'classifications': [],
+                                'name': 'first_radio_answer',
+                                'value': 'first_radio_answer'},
+                'name': 'radio-response',
+                'value': 'radio-response'},
+        ],
+        "relationships": [],
+    }
+    return expected_annotations
 
 @pytest.fixture()
 def expected_export_v2_llm_prompt_creation():
@@ -1780,24 +2033,8 @@ def expected_export_v2_llm_prompt_creation():
         "objects": [],
         "classifications": [
             {
-                "name":
-                    "checklist",
-                "value":
-                    "checklist",
-                "checklist_answers": [{
-                    "name": "first_checklist_answer",
-                    "value": "first_checklist_answer",
-                    "classifications": []
-                },
-                {
-                    "name": "second_checklist_answer",
-                    "value": "second_checklist_answer",
-                    "classifications": []                        
-                }],
-            },
-            {
-                "name": "text",
-                "value": "text",
+                "name": "prompt-text",
+                "value": "prompt-text",
                 "text_answer": {
                     "content": "free form text..."
                 },
@@ -1806,41 +2043,34 @@ def expected_export_v2_llm_prompt_creation():
         "relationships": [],
     }
     return expected_annotations
-
 
 @pytest.fixture()
-def expected_export_v2_llm_prompt_response_creation():
+def expected_export_v2_llm_response_creation():
     expected_annotations = {
-        "objects": [],
+        'objects': [],
+        'relationships': [],
         "classifications": [
-            {
-                "name":
-                    "checklist",
-                "value":
-                    "checklist",
-                "checklist_answers": [{
-                    "name": "first_checklist_answer",
-                    "value": "first_checklist_answer",
-                    "classifications": []
-                },
-                {
-                    "name": "second_checklist_answer",
-                    "value": "second_checklist_answer",
-                    "classifications": []                        
-                }],
-            },
-            {
-                "name": "text",
-                "value": "text",
-                "text_answer": {
-                    "content": "free form text..."
-                },
-            },
+            {'name': 'response-text',
+                      'text_answer': {'content': 'free form text...'},
+                      'value': 'response-text'},
+            {'checklist_answers': [
+                    {'classifications': [],
+                        'name': 'first_checklist_answer',
+                        'value': 'first_checklist_answer'},
+                    {'classifications': [],
+                        'name': 'second_checklist_answer',
+                        'value': 'second_checklist_answer'}],
+            'name': 'checklist-response',
+            'value': 'checklist-response'},
+            {'name': 'radio-response',
+            'radio_answer': {'classifications': [],
+                            'name': 'first_radio_answer',
+                            'value': 'first_radio_answer'},
+            'name': 'radio-response',
+            'value': 'radio-response'},
         ],
-        "relationships": [],
     }
     return expected_annotations
-
 
 @pytest.fixture
 def exports_v2_by_media_type(
@@ -1852,6 +2082,9 @@ def exports_v2_by_media_type(
     expected_export_v2_conversation,
     expected_export_v2_dicom,
     expected_export_v2_document,
+    expected_export_v2_llm_prompt_response_creation,
+    expected_export_v2_llm_prompt_creation,
+    expected_export_v2_llm_response_creation
 ):
     return {
         MediaType.Image:
@@ -1870,6 +2103,12 @@ def exports_v2_by_media_type(
             expected_export_v2_dicom,
         MediaType.Document:
             expected_export_v2_document,
+        MediaType.LLMPromptResponseCreation:
+            expected_export_v2_llm_prompt_response_creation,
+        MediaType.LLMPromptCreation:
+            expected_export_v2_llm_prompt_creation,
+        OntologyKind.ResponseCreation:
+            expected_export_v2_llm_response_creation
     }
     
     

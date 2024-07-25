@@ -8,7 +8,7 @@ import uuid
 import labelbox as lb
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.annotation_import import AnnotationImportState
-from labelbox import Project, Client
+from labelbox import Project, Client, OntologyKind
 import itertools
 
 """
@@ -33,6 +33,9 @@ def validate_iso_format(date_string: str):
         (MediaType.Video, GenericDataRowData),
         (MediaType.Conversational, GenericDataRowData),
         (MediaType.Document, GenericDataRowData),
+        (MediaType.LLMPromptResponseCreation, GenericDataRowData),
+        (MediaType.LLMPromptCreation, GenericDataRowData),
+        (OntologyKind.ResponseCreation, GenericDataRowData)
     ],
 )
 def test_generic_data_row_type_by_data_row_id(
@@ -63,6 +66,9 @@ def test_generic_data_row_type_by_data_row_id(
         (MediaType.Video, GenericDataRowData),
         (MediaType.Conversational, GenericDataRowData),
         (MediaType.Document, GenericDataRowData),
+        (MediaType.LLMPromptResponseCreation, GenericDataRowData),
+        (MediaType.LLMPromptCreation, GenericDataRowData),
+        (OntologyKind.ResponseCreation, GenericDataRowData)
     ],
 )
 def test_generic_data_row_type_by_global_key(
@@ -83,20 +89,22 @@ def test_generic_data_row_type_by_global_key(
     assert label.annotations == data_label.annotations
 
 
-# TODO: add MediaType.LLMPromptResponseCreation(data gen) once supported and llm human preference once media type is added
 @pytest.mark.parametrize(
-    "configured_project",
+    "configured_project, media_type",
     [
-        MediaType.Audio,
-        MediaType.Html,
-        MediaType.Image,
-        MediaType.Text,
-        MediaType.Video,
-        MediaType.Conversational,
-        MediaType.Document,
-        MediaType.Dicom,
+        (MediaType.Audio, MediaType.Audio),
+        (MediaType.Html, MediaType.Html),
+        (MediaType.Image, MediaType.Image),
+        (MediaType.Text, MediaType.Text),
+        (MediaType.Video, MediaType.Video),
+        (MediaType.Conversational, MediaType.Conversational),
+        (MediaType.Document, MediaType.Document),
+        (MediaType.Dicom, MediaType.Dicom),
+        (MediaType.LLMPromptResponseCreation, MediaType.LLMPromptResponseCreation),
+        (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
+        (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation)
     ],
-    indirect=True
+    indirect=["configured_project"]
 )
 def test_import_media_types(
     client: Client,
@@ -105,11 +113,12 @@ def test_import_media_types(
     exports_v2_by_media_type,
     export_v2_test_helpers,
     helpers,
+    media_type,
 ):
-    annotations_ndjson =  list(itertools.chain.from_iterable(annotations_by_media_type[configured_project.media_type]))
+    annotations_ndjson =  list(itertools.chain.from_iterable(annotations_by_media_type[media_type]))
 
     label_import = lb.LabelImport.create_from_objects(
-        client, configured_project.uid, f"test-import-{configured_project.media_type}", annotations_ndjson)
+        client, configured_project.uid, f"test-import-{media_type}", annotations_ndjson)
     label_import.wait_until_done()
 
     assert label_import.state == AnnotationImportState.FINISHED
@@ -133,7 +142,7 @@ def test_import_media_types(
         exported_project_labels = exported_project["labels"][0]
         exported_annotations = exported_project_labels["annotations"]
 
-        expected_data = exports_v2_by_media_type[configured_project.media_type]
+        expected_data = exports_v2_by_media_type[media_type]
         helpers.remove_keys_recursive(exported_annotations,
                                     ["feature_id", "feature_schema_id"])     
         helpers.rename_cuid_key_recursive(exported_annotations)
@@ -141,20 +150,22 @@ def test_import_media_types(
         assert exported_annotations == expected_data 
 
 
-@pytest.mark.order(1)
 @pytest.mark.parametrize(
-    "configured_project_by_global_key",
+    "configured_project_by_global_key, media_type",
     [
-        MediaType.Audio,
-        MediaType.Html,
-        MediaType.Image,
-        MediaType.Text,
-        MediaType.Video,
-        MediaType.Conversational,
-        MediaType.Document,
-        MediaType.Dicom,
+        (MediaType.Audio, MediaType.Audio),
+        (MediaType.Html, MediaType.Html),
+        (MediaType.Image, MediaType.Image),
+        (MediaType.Text, MediaType.Text),
+        (MediaType.Video, MediaType.Video),
+        (MediaType.Conversational, MediaType.Conversational),
+        (MediaType.Document, MediaType.Document),
+        (MediaType.Dicom, MediaType.Dicom),
+        (MediaType.LLMPromptResponseCreation, MediaType.LLMPromptResponseCreation),
+        (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
+        (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation)
     ],
-    indirect=True
+    indirect=["configured_project_by_global_key"]
 )
 def test_import_media_types_by_global_key(
     client,
@@ -163,11 +174,12 @@ def test_import_media_types_by_global_key(
     exports_v2_by_media_type,
     export_v2_test_helpers,
     helpers,
-):
-    annotations_ndjson =  list(itertools.chain.from_iterable(annotations_by_media_type[configured_project_by_global_key.media_type]))
+    media_type
+    ):
+    annotations_ndjson =  list(itertools.chain.from_iterable(annotations_by_media_type[media_type]))
 
     label_import = lb.LabelImport.create_from_objects(
-        client, configured_project_by_global_key.uid, f"test-import-{configured_project_by_global_key.media_type}", annotations_ndjson)
+        client, configured_project_by_global_key.uid, f"test-import-{media_type}", annotations_ndjson)
     label_import.wait_until_done()
 
     assert label_import.state == AnnotationImportState.FINISHED
@@ -191,7 +203,7 @@ def test_import_media_types_by_global_key(
         exported_project_labels = exported_project["labels"][0]
         exported_annotations = exported_project_labels["annotations"]
 
-        expected_data = exports_v2_by_media_type[configured_project_by_global_key.media_type]
+        expected_data = exports_v2_by_media_type[media_type]
         helpers.remove_keys_recursive(exported_annotations,
                                     ["feature_id", "feature_schema_id"])     
         helpers.rename_cuid_key_recursive(exported_annotations)
@@ -200,25 +212,29 @@ def test_import_media_types_by_global_key(
 
 
 @pytest.mark.parametrize(
-    "configured_project",
+    "configured_project, media_type",
     [
-        MediaType.Audio,
-        MediaType.Html,
-        MediaType.Image,
-        MediaType.Text,
-        MediaType.Video,
-        MediaType.Conversational,
-        MediaType.Document,
-        MediaType.Dicom,
+        (MediaType.Audio, MediaType.Audio),
+        (MediaType.Html, MediaType.Html),
+        (MediaType.Image, MediaType.Image),
+        (MediaType.Text, MediaType.Text),
+        (MediaType.Video, MediaType.Video),
+        (MediaType.Conversational, MediaType.Conversational),
+        (MediaType.Document, MediaType.Document),
+        (MediaType.Dicom, MediaType.Dicom),
+        (MediaType.LLMPromptResponseCreation, MediaType.LLMPromptResponseCreation),
+        (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
+        (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation)
     ],
-    indirect=True
+    indirect=["configured_project"]
 )
 def test_import_mal_annotations(
     client,
     configured_project: Project,
     annotations_by_media_type,
+    media_type
 ):
-    annotations_ndjson =  list(itertools.chain.from_iterable(annotations_by_media_type[configured_project.media_type]))
+    annotations_ndjson =  list(itertools.chain.from_iterable(annotations_by_media_type[media_type]))
 
     import_annotations = lb.MALPredictionImport.create_from_objects(
         client=client,
@@ -233,24 +249,28 @@ def test_import_mal_annotations(
     
 
 @pytest.mark.parametrize(
-    "configured_project_by_global_key",
+    "configured_project_by_global_key, media_type",
     [
-        MediaType.Audio,
-        MediaType.Html,
-        MediaType.Image,
-        MediaType.Text,
-        MediaType.Video,
-        MediaType.Conversational,
-        MediaType.Document,
-        MediaType.Dicom,
+        (MediaType.Audio, MediaType.Audio),
+        (MediaType.Html, MediaType.Html),
+        (MediaType.Image, MediaType.Image),
+        (MediaType.Text, MediaType.Text),
+        (MediaType.Video, MediaType.Video),
+        (MediaType.Conversational, MediaType.Conversational),
+        (MediaType.Document, MediaType.Document),
+        (MediaType.Dicom, MediaType.Dicom),
+        (MediaType.LLMPromptResponseCreation, MediaType.LLMPromptResponseCreation),
+        (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
+        (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation)
     ],
-    indirect=True
+    indirect=["configured_project_by_global_key"]
 )
 def test_import_mal_annotations_global_key(client,
                                            configured_project_by_global_key: Project,
-                                           annotations_by_media_type):
+                                           annotations_by_media_type,
+                                           media_type):
 
-    annotations_ndjson =  list(itertools.chain.from_iterable(annotations_by_media_type[configured_project_by_global_key.media_type]))
+    annotations_ndjson =  list(itertools.chain.from_iterable(annotations_by_media_type[media_type]))
 
     import_annotations = lb.MALPredictionImport.create_from_objects(
         client=client,
