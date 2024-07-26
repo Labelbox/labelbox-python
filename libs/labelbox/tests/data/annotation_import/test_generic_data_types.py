@@ -1,139 +1,20 @@
 import datetime
+from labelbox.data.annotation_types.data.generic_data_row_data import GenericDataRowData
+from labelbox.data.serialization.ndjson.converter import NDJsonConverter
+from labelbox.data.annotation_types import Label
 import pytest
 import uuid
 
 import labelbox as lb
-from labelbox.data.annotation_types.data.video import VideoData
 from labelbox.schema.media_type import MediaType
-import labelbox.types as lb_types
-from labelbox.data.annotation_types.data import (
-    AudioData,
-    ConversationData,
-    DicomData,
-    DocumentData,
-    HTMLData,
-    ImageData,
-    TextData,
-    LlmPromptCreationData,
-    LlmPromptResponseCreationData,
-    LlmResponseCreationData,
-)
-from labelbox.data.serialization import NDJsonConverter
 from labelbox.schema.annotation_import import AnnotationImportState
+from labelbox import Project, Client, OntologyKind
+import itertools
 
-radio_annotation = lb_types.ClassificationAnnotation(
-    name="radio",
-    value=lb_types.Radio(answer=lb_types.ClassificationAnswer(
-        name="second_radio_answer")),
-)
-checklist_annotation = lb_types.ClassificationAnnotation(
-    name="checklist",
-    value=lb_types.Checklist(answer=[
-        lb_types.ClassificationAnswer(name="option1"),
-        lb_types.ClassificationAnswer(name="option2"),
-    ]),
-)
-text_annotation = lb_types.ClassificationAnnotation(
-    name="text", value=lb_types.Text(answer="sample text"))
-
-video_mask_annotation = lb_types.VideoMaskAnnotation(
-    frames=[
-        lb_types.MaskFrame(
-            index=10,
-            instance_uri=
-            "https://storage.googleapis.com/labelbox-datasets/video-sample-data/mask_example.png",
-        )
-    ],
-    instances=[
-        lb_types.MaskInstance(color_rgb=(255, 255, 255),
-                              name="segmentation_mask")
-    ],
-)
-
-test_params = [
-    [
-        "html",
-        lb_types.HTMLData,
-        [radio_annotation, checklist_annotation, text_annotation],
-    ],
-    [
-        "audio",
-        lb_types.AudioData,
-        [radio_annotation, checklist_annotation, text_annotation],
-    ],
-    ["video", lb_types.VideoData, [video_mask_annotation]],
-]
-
-
-def create_data_row_for_project(project, dataset, data_row_ndjson, batch_name):
-    data_row = dataset.create_data_row(data_row_ndjson)
-
-    project.create_batch(
-        batch_name,
-        [data_row.uid],  # sample of data row objects
-        5,  # priority between 1(Highest) - 5(lowest)
-    )
-    project.data_row_ids.append(data_row.uid)
-
-    return data_row
-
-@pytest.mark.order(1)
-def test_import_data_types_by_global_key(
-    client,
-    configured_project,
-    initial_dataset,
-    rand_gen,
-    data_row_json_by_data_type,
-    annotations_by_data_type,
-    export_v2_test_helpers,
-    helpers,
-):
-    project = configured_project
-    project_id = project.uid
-    dataset = initial_dataset
-    data_type_class = ImageData
-    helpers.set_project_media_type_from_data_type(project, data_type_class)
-
-    data_row_ndjson = data_row_json_by_data_type["image"]
-    data_row_ndjson["global_key"] = str(uuid.uuid4())
-    data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
-                                           rand_gen(str))
-
-    annotations_ndjson = annotations_by_data_type["image"]
-    annotations_list = [
-        label.annotations
-        for label in NDJsonConverter.deserialize(annotations_ndjson)
-    ]
-    labels = [
-        lb_types.Label(
-            data={'global_key': data_row.global_key},
-            annotations=annotations,
-        ) for annotations in annotations_list
-    ]
-
-    def find_data_row(dr):
-        return dr['data_row']['id'] == data_row.uid
-
-    label_import = lb.LabelImport.create_from_objects(client, project_id,
-                                                      f"test-import-image",
-                                                      labels)
-    label_import.wait_until_done()
-
-    assert label_import.state == AnnotationImportState.FINISHED
-    assert len(label_import.errors) == 0
-
-    result = export_v2_test_helpers.run_project_export_v2_task(project)
-    exported_data = list(filter(find_data_row, result))[0]
-    assert exported_data
-
-    label = exported_data['projects'][project.uid]['labels'][0]
-    annotations = label['annotations']
-    objects = annotations['objects']
-    classifications = annotations['classifications']
-    assert len(objects) + len(classifications) == len(labels)
-
-    data_row.delete()
-
+"""
+ - integration test for importing mal labels and ground truths with each supported MediaType. 
+ - NDJSON is used to generate annotations.
+"""
 
 def validate_iso_format(date_string: str):
     parsed_t = datetime.datetime.fromisoformat(
@@ -141,175 +22,257 @@ def validate_iso_format(date_string: str):
     assert parsed_t.hour is not None
     assert parsed_t.minute is not None
     assert parsed_t.second is not None
+    
+@pytest.mark.parametrize(
+    "media_type, data_type_class",
+    [
+        (MediaType.Audio, GenericDataRowData),
+        (MediaType.Html, GenericDataRowData),
+        (MediaType.Image, GenericDataRowData),
+        (MediaType.Text, GenericDataRowData),
+        (MediaType.Video, GenericDataRowData),
+        (MediaType.Conversational, GenericDataRowData),
+        (MediaType.Document, GenericDataRowData),
+        (MediaType.LLMPromptResponseCreation, GenericDataRowData),
+        (MediaType.LLMPromptCreation, GenericDataRowData),
+        (OntologyKind.ResponseCreation, GenericDataRowData)
+    ],
+)
+def test_generic_data_row_type_by_data_row_id(
+    media_type,
+    data_type_class,
+    annotations_by_media_type,
+    hardcoded_datarow_id,
+):
+    annotations_ndjson =  annotations_by_media_type[media_type]
+    annotations_ndjson = [annotation[0] for annotation in annotations_ndjson]
+    
+    label = list(NDJsonConverter.deserialize(annotations_ndjson))[0]
+   
+    data_label = Label(data=data_type_class(uid = hardcoded_datarow_id()),
+                       annotations=label.annotations)
+
+    assert data_label.data.uid == label.data.uid
+    assert label.annotations == data_label.annotations
 
 
 @pytest.mark.parametrize(
-    "data_type_class",
+    "media_type, data_type_class",
     [
-        AudioData,
-        HTMLData,
-        ImageData,
-        TextData,
-        VideoData,
-        ConversationData,
-        DocumentData,
-        DicomData,
-        LlmResponseCreationData,
+        (MediaType.Audio, GenericDataRowData),
+        (MediaType.Html, GenericDataRowData),
+        (MediaType.Image, GenericDataRowData),
+        (MediaType.Text, GenericDataRowData),
+        (MediaType.Video, GenericDataRowData),
+        (MediaType.Conversational, GenericDataRowData),
+        (MediaType.Document, GenericDataRowData),
+        (MediaType.LLMPromptResponseCreation, GenericDataRowData),
+        (MediaType.LLMPromptCreation, GenericDataRowData),
+        (OntologyKind.ResponseCreation, GenericDataRowData)
     ],
 )
-def test_import_data_types_v2(
-    client,
-    configured_project,
-    initial_dataset,
-    data_row_json_by_data_type,
-    annotations_by_data_type_v2,
+def test_generic_data_row_type_by_global_key(
+    media_type,
     data_type_class,
-    exports_v2_by_data_type,
-    export_v2_test_helpers,
-    rand_gen,
-    helpers,
+    annotations_by_media_type,
+    hardcoded_global_key,
 ):
-    project = configured_project
-    dataset = initial_dataset
-    project_id = project.uid
+    annotations_ndjson =  annotations_by_media_type[media_type]
+    annotations_ndjson = [annotation[0] for annotation in annotations_ndjson]
+    
+    label = list(NDJsonConverter.deserialize(annotations_ndjson))[0]
+   
+    data_label = Label(data=data_type_class(global_key = hardcoded_global_key()),
+                       annotations=label.annotations)
 
-    helpers.set_project_media_type_from_data_type(project, data_type_class)
+    assert data_label.data.global_key == label.data.global_key
+    assert label.annotations == data_label.annotations
 
-    data_type_string = data_type_class.__name__[:-4].lower()
-    data_row_ndjson = data_row_json_by_data_type[data_type_string]
-    data_row = create_data_row_for_project(project, dataset, data_row_ndjson,
-                                           rand_gen(str))
-    annotations_ndjson = annotations_by_data_type_v2[data_type_string]
-    annotations_list = [
-        label.annotations
-        for label in NDJsonConverter.deserialize(annotations_ndjson)
-    ]
-    labels = [
-        lb_types.Label(data={'uid': data_row.uid}, annotations=annotations)
-        for annotations in annotations_list
-    ]
+
+@pytest.mark.parametrize(
+    "configured_project, media_type",
+    [
+        (MediaType.Audio, MediaType.Audio),
+        (MediaType.Html, MediaType.Html),
+        (MediaType.Image, MediaType.Image),
+        (MediaType.Text, MediaType.Text),
+        (MediaType.Video, MediaType.Video),
+        (MediaType.Conversational, MediaType.Conversational),
+        (MediaType.Document, MediaType.Document),
+        (MediaType.Dicom, MediaType.Dicom),
+        (MediaType.LLMPromptResponseCreation, MediaType.LLMPromptResponseCreation),
+        (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
+        (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation)
+    ],
+    indirect=["configured_project"]
+)
+def test_import_media_types(
+    client: Client,
+    configured_project: Project,
+    annotations_by_media_type,
+    exports_v2_by_media_type,
+    export_v2_test_helpers,
+    helpers,
+    media_type,
+):
+    annotations_ndjson =  list(itertools.chain.from_iterable(annotations_by_media_type[media_type]))
 
     label_import = lb.LabelImport.create_from_objects(
-        client, project_id, f"test-import-{data_type_string}", labels)
+        client, configured_project.uid, f"test-import-{media_type}", annotations_ndjson)
     label_import.wait_until_done()
 
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
 
-    # TODO need to migrate project to the new BATCH mode and change this code
-    # to be similar to tests/integration/test_task_queue.py
+    result = export_v2_test_helpers.run_project_export_v2_task(configured_project)
 
-    result = export_v2_test_helpers.run_project_export_v2_task(project)
+    assert result
 
-    exported_data = next(
-        dr for dr in result if dr['data_row']['id'] == data_row.uid)
-    assert exported_data
+    for exported_data in result:
+        # timestamp fields are in iso format
+        validate_iso_format(exported_data["data_row"]["details"]["created_at"])
+        validate_iso_format(exported_data["data_row"]["details"]["updated_at"])
+        validate_iso_format(exported_data["projects"][configured_project.uid]["labels"][0]
+                            ["label_details"]["created_at"])
+        validate_iso_format(exported_data["projects"][configured_project.uid]["labels"][0]
+                            ["label_details"]["updated_at"])
 
-    # timestamp fields are in iso format
-    validate_iso_format(exported_data["data_row"]["details"]["created_at"])
-    validate_iso_format(exported_data["data_row"]["details"]["updated_at"])
-    validate_iso_format(exported_data["projects"][project_id]["labels"][0]
-                        ["label_details"]["created_at"])
-    validate_iso_format(exported_data["projects"][project_id]["labels"][0]
-                        ["label_details"]["updated_at"])
+        assert exported_data["data_row"]["id"] in configured_project.data_row_ids
+        exported_project = exported_data["projects"][configured_project.uid]
+        exported_project_labels = exported_project["labels"][0]
+        exported_annotations = exported_project_labels["annotations"]
 
-    assert exported_data["data_row"]["id"] == data_row.uid
-    exported_project = exported_data["projects"][project_id]
-    exported_project_labels = exported_project["labels"][0]
-    exported_annotations = exported_project_labels["annotations"]
+        expected_data = exports_v2_by_media_type[media_type]
+        helpers.remove_keys_recursive(exported_annotations,
+                                    ["feature_id", "feature_schema_id"])     
+        helpers.rename_cuid_key_recursive(exported_annotations)
 
-    helpers.remove_keys_recursive(exported_annotations,
-                                  ["feature_id", "feature_schema_id"])
-    helpers.rename_cuid_key_recursive(exported_annotations)
-    assert exported_annotations == exports_v2_by_data_type[data_type_string]
-
-    data_row = client.get_data_row(data_row.uid)
-    data_row.delete()
+        assert exported_annotations == expected_data 
 
 
-@pytest.mark.parametrize("data_type, data_class, annotations", test_params)
-@pytest.fixture
-def one_datarow(client, rand_gen, data_row_json_by_data_type, data_type):
-    dataset = client.create_dataset(name=rand_gen(str))
-    data_row_json = data_row_json_by_data_type[data_type]
-    data_row = dataset.create_data_row(data_row_json)
+@pytest.mark.parametrize(
+    "configured_project_by_global_key, media_type",
+    [
+        (MediaType.Audio, MediaType.Audio),
+        (MediaType.Html, MediaType.Html),
+        (MediaType.Image, MediaType.Image),
+        (MediaType.Text, MediaType.Text),
+        (MediaType.Video, MediaType.Video),
+        (MediaType.Conversational, MediaType.Conversational),
+        (MediaType.Document, MediaType.Document),
+        (MediaType.Dicom, MediaType.Dicom),
+        (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation)
+    ],
+    indirect=["configured_project_by_global_key"]
+)
+def test_import_media_types_by_global_key(
+    client,
+    configured_project_by_global_key,
+    annotations_by_media_type,
+    exports_v2_by_media_type,
+    export_v2_test_helpers,
+    helpers,
+    media_type
+    ):
+    annotations_ndjson =  list(itertools.chain.from_iterable(annotations_by_media_type[media_type]))
 
-    yield data_row
+    label_import = lb.LabelImport.create_from_objects(
+        client, configured_project_by_global_key.uid, f"test-import-{media_type}", annotations_ndjson)
+    label_import.wait_until_done()
 
-    dataset.delete()
+    assert label_import.state == AnnotationImportState.FINISHED
+    assert len(label_import.errors) == 0
+
+    result = export_v2_test_helpers.run_project_export_v2_task(configured_project_by_global_key)
+
+    assert result
+
+    for exported_data in result:
+        # timestamp fields are in iso format
+        validate_iso_format(exported_data["data_row"]["details"]["created_at"])
+        validate_iso_format(exported_data["data_row"]["details"]["updated_at"])
+        validate_iso_format(exported_data["projects"][configured_project_by_global_key.uid]["labels"][0]
+                            ["label_details"]["created_at"])
+        validate_iso_format(exported_data["projects"][configured_project_by_global_key.uid]["labels"][0]
+                            ["label_details"]["updated_at"])
+
+        assert exported_data["data_row"]["id"] in configured_project_by_global_key.data_row_ids
+        exported_project = exported_data["projects"][configured_project_by_global_key.uid]
+        exported_project_labels = exported_project["labels"][0]
+        exported_annotations = exported_project_labels["annotations"]
+
+        expected_data = exports_v2_by_media_type[media_type]
+        helpers.remove_keys_recursive(exported_annotations,
+                                    ["feature_id", "feature_schema_id"])     
+        helpers.rename_cuid_key_recursive(exported_annotations)
+
+        assert exported_annotations == expected_data 
 
 
-@pytest.fixture
-def one_datarow_global_key(client, rand_gen, data_row_json_by_data_type):
-    dataset = client.create_dataset(name=rand_gen(str))
-    data_row_json = data_row_json_by_data_type["video"]
-    data_row = dataset.create_data_row(data_row_json)
-
-    yield data_row
-
-    dataset.delete()
-
-
-@pytest.mark.parametrize("data_type, data_class, annotations", test_params)
+@pytest.mark.parametrize(
+    "configured_project, media_type",
+    [
+        (MediaType.Audio, MediaType.Audio),
+        (MediaType.Html, MediaType.Html),
+        (MediaType.Image, MediaType.Image),
+        (MediaType.Text, MediaType.Text),
+        (MediaType.Video, MediaType.Video),
+        (MediaType.Conversational, MediaType.Conversational),
+        (MediaType.Document, MediaType.Document),
+        (MediaType.Dicom, MediaType.Dicom),
+        (MediaType.LLMPromptResponseCreation, MediaType.LLMPromptResponseCreation),
+        (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
+        (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation)
+    ],
+    indirect=["configured_project"]
+)
 def test_import_mal_annotations(
     client,
-    configured_project_with_one_data_row,
-    data_class,
-    annotations,
-    rand_gen,
-    one_datarow,
-    helpers,
+    configured_project: Project,
+    annotations_by_media_type,
+    media_type
 ):
-    data_row = one_datarow
-    helpers.set_project_media_type_from_data_type(
-        configured_project_with_one_data_row, data_class)
-
-    configured_project_with_one_data_row.create_batch(
-        rand_gen(str),
-        [data_row.uid],
-    )
-
-    labels = [
-        lb_types.Label(data={'uid': data_row.uid}, annotations=annotations)
-    ]
+    annotations_ndjson =  list(itertools.chain.from_iterable(annotations_by_media_type[media_type]))
 
     import_annotations = lb.MALPredictionImport.create_from_objects(
         client=client,
-        project_id=configured_project_with_one_data_row.uid,
+        project_id=configured_project.uid,
         name=f"import {str(uuid.uuid4())}",
-        predictions=labels,
+        predictions=annotations_ndjson,
     )
     import_annotations.wait_until_done()
 
     assert import_annotations.errors == []
     # MAL Labels cannot be exported and compared to input labels
+    
 
-
+@pytest.mark.parametrize(
+    "configured_project_by_global_key, media_type",
+    [
+        (MediaType.Audio, MediaType.Audio),
+        (MediaType.Html, MediaType.Html),
+        (MediaType.Image, MediaType.Image),
+        (MediaType.Text, MediaType.Text),
+        (MediaType.Video, MediaType.Video),
+        (MediaType.Conversational, MediaType.Conversational),
+        (MediaType.Document, MediaType.Document),
+        (MediaType.Dicom, MediaType.Dicom),
+        (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation)
+    ],
+    indirect=["configured_project_by_global_key"]
+)
 def test_import_mal_annotations_global_key(client,
-                                           configured_project_with_one_data_row,
-                                           rand_gen, one_datarow_global_key,
-                                           helpers):
-    data_class = lb_types.VideoData
-    data_row = one_datarow_global_key
-    annotations = [video_mask_annotation]
-    helpers.set_project_media_type_from_data_type(
-        configured_project_with_one_data_row, data_class)
+                                           configured_project_by_global_key: Project,
+                                           annotations_by_media_type,
+                                           media_type):
 
-    configured_project_with_one_data_row.create_batch(
-        rand_gen(str),
-        [data_row.uid],
-    )
-
-    labels = [
-        lb_types.Label(data={'global_key': data_row.global_key},
-                       annotations=annotations)
-    ]
+    annotations_ndjson =  list(itertools.chain.from_iterable(annotations_by_media_type[media_type]))
 
     import_annotations = lb.MALPredictionImport.create_from_objects(
         client=client,
-        project_id=configured_project_with_one_data_row.uid,
+        project_id=configured_project_by_global_key.uid,
         name=f"import {str(uuid.uuid4())}",
-        predictions=labels,
+        predictions=annotations_ndjson,
     )
     import_annotations.wait_until_done()
 

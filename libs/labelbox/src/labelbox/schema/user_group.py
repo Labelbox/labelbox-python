@@ -7,7 +7,7 @@ from labelbox.exceptions import ResourceCreationError
 from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
-from labelbox.exceptions import UnprocessableEntityError, InvalidQueryError
+from labelbox.exceptions import UnprocessableEntityError, MalformedQueryException, ResourceNotFoundError
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.media_type import MediaType
@@ -105,15 +105,15 @@ class UserGroup(BaseModel):
         about the user group, including its name, color, projects, and members. The fetched
         information is then used to update the corresponding attributes of the `Group` object.
 
-        Args:
-            id (str): The ID of the user group to fetch.
-
         Returns:
-            UserGroup of passed in ID (self)
+            UserGroup: The updated `UserGroup` object.
 
         Raises:
-            InvalidQueryError: If the query fails to fetch the group information.
+            ResourceNotFoundError: If the query fails to fetch the group information.
+            ValueError: If the group ID is not provided.
         """
+        if not self.id:
+            raise ValueError("Group id is required")
         query = """
             query GetUserGroupPyApi($id: ID!) {
                 userGroup(where: {id: $id}) {
@@ -142,7 +142,7 @@ class UserGroup(BaseModel):
         }
         result = self.client.execute(query, params)
         if not result:
-            raise InvalidQueryError("Failed to fetch group, ID likely incorrect")
+            raise ResourceNotFoundError(message="Failed to get user group as user group does not exist")
         self.name = result["userGroup"]["name"]
         self.color = UserGroupColor(result["userGroup"]["color"])
         self.projects = self._get_projects_set(result["userGroup"]["projects"]["nodes"])
@@ -157,8 +157,14 @@ class UserGroup(BaseModel):
             UserGroup: The updated UserGroup object. (self)
 
         Raises:
-            UnprocessableEntityError: If the update fails.
+            ResourceNotFoundError: If the update fails due to unknown user group
+            UnprocessableEntityError: If the update fails due to a malformed input
+            ValueError: If the group id or name is not provided
         """
+        if not self.id:
+            raise ValueError("Group id is required")
+        if not self.name:
+            raise ValueError("Group name is required")
         query = """
         mutation UpdateUserGroupPyApi($id: ID!, $name: String!, $color: String!, $projectIds: [String!]!, $userIds: [String!]!) {
             updateUserGroup(
@@ -199,9 +205,12 @@ class UserGroup(BaseModel):
                 user.uid for user in self.users
             ]
         }
-        result = self.client.execute(query, params)
-        if not result:
-            raise UnprocessableEntityError("Failed to update user group, either user group name is in use currently, or provided user or projects don't exist")
+        try:
+            result = self.client.execute(query, params)
+            if not result:
+                raise ResourceNotFoundError(message="Failed to update user group as user group does not exist")
+        except MalformedQueryException as e:
+            raise UnprocessableEntityError("Failed to update user group") from e
         return self
 
     def create(self) -> "UserGroup":
@@ -261,9 +270,15 @@ class UserGroup(BaseModel):
                 user.uid for user in self.users
             ]
         }
-        result = self.client.execute(query, params)
-        if not result:
-            raise ResourceCreationError("Failed to create user group, either user group name is in use currently, or provided user or projects don't exist")
+        result = None
+        error = None
+        try: 
+            result = self.client.execute(query, params)
+        except Exception as e:
+            error = e
+        if not result or error:
+            # this is client side only, server doesn't have an equivalent error
+            raise ResourceCreationError(f"Failed to create user group, either user group name is in use currently, or provided user or projects don't exist server error: {error}")
         result = result["createUserGroup"]["group"]
         self.id = result["id"]
         return self
@@ -280,8 +295,11 @@ class UserGroup(BaseModel):
             bool: True if the user group was successfully deleted, False otherwise.
         
         Raises:
-            UnprocessableEntityError: If the deletion of the user group fails.
+            ResourceNotFoundError: If the deletion of the user group fails due to not existing
+            ValueError: If the group ID is not provided.
         """
+        if not self.id:
+            raise ValueError("Group id is required")
         query = """
         mutation DeleteUserGroupPyApi($id: ID!) {
             deleteUserGroup(where: {id: $id}) {
@@ -292,7 +310,7 @@ class UserGroup(BaseModel):
         params = {"id": self.id}
         result = self.client.execute(query, params)
         if not result:
-            raise UnprocessableEntityError("Failed to delete user group")
+            raise ResourceNotFoundError(message="Failed to delete user group as user group does not exist")
         return result["deleteUserGroup"]["success"]
 
     def get_user_groups(self) -> Iterator["UserGroup"]:
@@ -306,8 +324,8 @@ class UserGroup(BaseModel):
             Iterator[UserGroup]: An iterator over the user groups.
         """
         query = """
-            query GetUserGroupsPyApi {
-                userGroups {
+            query GetUserGroupsPyApi($after: String) {
+                userGroups(after: $after) {
                     nodes {
                         id
                         name
@@ -334,7 +352,7 @@ class UserGroup(BaseModel):
         nextCursor = None
         while True:
             userGroups = self.client.execute(
-                query, {"nextCursor": nextCursor})["userGroups"]
+                query, {"after": nextCursor})["userGroups"]
             if not userGroups:
                 return
                 yield
@@ -348,9 +366,9 @@ class UserGroup(BaseModel):
                 userGroup.projects = self._get_projects_set(group["projects"]["nodes"])
                 yield userGroup
             nextCursor = userGroups["nextCursor"]
-            # this doesn't seem to be implemented right now to return a value other than null from the api
             if not nextCursor:
-                break
+                return
+                yield
 
     def _get_users_set(self, user_nodes):
         """

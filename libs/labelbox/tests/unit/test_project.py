@@ -8,7 +8,8 @@ from labelbox.schema.ontology_kind import EditorTaskType
 @pytest.fixture
 def project_entity():
     return Project(
-        MagicMock(), {
+        MagicMock(),
+        {
             "id": "test",
             "name": "test",
             "createdAt": "2021-06-01T00:00:00.000Z",
@@ -24,7 +25,10 @@ def project_entity():
             "setupComplete": "2021-06-01T00:00:00.000Z",
             "modelSetupComplete": None,
             "uploadType": "Auto",
-        })
+            "isBenchmarkEnabled": False,
+            "isConsensusEnabled": False,
+        },
+    )
 
 
 @pytest.mark.parametrize(
@@ -39,7 +43,8 @@ def test_project_editor_task_type(api_editor_task_type,
                                   expected_editor_task_type, project_entity):
     client = MagicMock()
     project = Project(
-        client, {
+        client,
+        {
             "id": "test",
             "name": "test",
             "createdAt": "2021-06-01T00:00:00.000Z",
@@ -55,7 +60,10 @@ def test_project_editor_task_type(api_editor_task_type,
             "setupComplete": "2021-06-01T00:00:00.000Z",
             "modelSetupComplete": None,
             "uploadType": "Auto",
-        })
+            "isBenchmarkEnabled": False,
+            "isConsensusEnabled": False,
+        },
+    )
 
     assert project.editor_task_type == expected_editor_task_type
 

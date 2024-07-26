@@ -83,7 +83,7 @@ def validate_labeling_parameter_overrides(
 
 
 class Project(DbObject, Updateable, Deletable):
-    """ A Project is a container that includes a labeling frontend, an ontology,
+    """A Project is a container that includes a labeling frontend, an ontology,
     datasets and labels.
 
     Attributes:
@@ -96,6 +96,8 @@ class Project(DbObject, Updateable, Deletable):
         queue_mode (string)
         auto_audit_number_of_labels (int)
         auto_audit_percentage (float)
+        is_benchmark_enabled (bool)
+        is_consensus_enabled (bool)
 
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
@@ -123,6 +125,8 @@ class Project(DbObject, Updateable, Deletable):
     data_row_count = Field.Int("data_row_count")
     model_setup_complete: Field = Field.Boolean("model_setup_complete")
     upload_type: Field = Field.Enum(UploadType, "upload_type")
+    is_benchmark_enabled = Field.Boolean("is_benchmark_enabled")
+    is_consensus_enabled = Field.Boolean("is_consensus_enabled")
 
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
@@ -145,6 +149,13 @@ class Project(DbObject, Updateable, Deletable):
             True if this project is a live chat evaluation project, False otherwise
         """
         return self.media_type == MediaType.Conversational and self.editor_task_type == EditorTaskType.ModelChatEvaluation
+    
+    def is_prompt_response(self) -> bool:
+        """
+        Returns:
+            True if this project is a prompt response project, False otherwise
+        """
+        return self.media_type == MediaType.LLMPromptResponseCreation or self.media_type == MediaType.LLMPromptCreation or self.editor_task_type == EditorTaskType.ResponseCreation
 
     def is_auto_data_generation(self) -> bool:
         return (self.upload_type == UploadType.Auto)  # type: ignore
@@ -790,15 +801,15 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             ontology (Ontology): The ontology to attach to the project
         """
+        if not self.is_empty_ontology():
+            raise ValueError("Ontology already connected to project.")
+
         if self.labeling_frontend(
         ) is None:  # Chat evaluation projects are automatically set up via the same api that creates a project
             self._connect_default_labeling_front_end(ontology_as_dict={
                 "tools": [],
                 "classifications": []
             })
-
-        if not self.is_empty_ontology():
-            raise ValueError("Ontology already connected to project.")
 
         query_str = """mutation ConnectOntologyPyApi($projectId: ID!, $ontologyId: ID!){
             project(where: {id: $projectId}) {connectOntology(ontologyId: $ontologyId) {id}}}"""
@@ -825,26 +836,26 @@ class Project(DbObject, Updateable, Deletable):
                 "labeling_frontend parameter will not be used to create a new labeling frontend."
             )
 
-        if self.is_chat_evaluation():
+        if self.is_chat_evaluation() or self.is_prompt_response():
             warnings.warn("""
-            This project is a live chat evaluation project.
+            This project is a live chat evaluation project or prompt and response generation project.
             Editor was setup automatically.
             """)
             return
 
-        if self.labeling_frontend(
-        ) is None:  # Chat evaluation projects are automatically set up via the same api that creates a project
-            self._connect_default_labeling_front_end(labeling_frontend_options)
+        self._connect_default_labeling_front_end(labeling_frontend_options)
 
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
     def _connect_default_labeling_front_end(self, ontology_as_dict: dict):
-        warnings.warn("Connecting default labeling editor for the project.")
-        labeling_frontend = next(
-            self.client.get_labeling_frontends(
-                where=Entity.LabelingFrontend.name == "Editor"))
-        self.labeling_frontend.connect(labeling_frontend)
+        labeling_frontend = self.labeling_frontend()
+        if labeling_frontend is None:  # Chat evaluation projects are automatically set up via the same api that creates a project
+            warnings.warn("Connecting default labeling editor for the project.")
+            labeling_frontend = next(
+                self.client.get_labeling_frontends(
+                    where=Entity.LabelingFrontend.name == "Editor"))
+            self.labeling_frontend.connect(labeling_frontend)
 
         if not isinstance(ontology_as_dict, str):
             labeling_frontend_options_str = json.dumps(ontology_as_dict)

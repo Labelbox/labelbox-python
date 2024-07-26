@@ -1,0 +1,166 @@
+name: LBox Develop
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+
+jobs:
+  path-filter:
+    runs-on: ubuntu-latest
+    outputs:
+      lbox: ${{ steps.filter.outputs.lbox }}
+      test-matrix: ${{ steps.matrix.outputs.test-matrix }}
+      package-matrix: ${{ steps.matrix.outputs.publish-matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          list-files: 'json'
+          filters: |
+            lbox:
+              - 'libs/lbox*/**'
+      - id: matrix
+        uses: ./.github/actions/lbox-matrix
+        with:
+          files-changed: ${{ steps.filter.outputs.lbox_files }}
+  build:
+    needs: ['path-filter']
+    if: ${{ needs.path-filter.outputs.lbox == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: 
+        include: ${{ fromJSON(needs.path-filter.outputs.test-matrix) }}    
+    concurrency:
+      group: lbox-staging-${{ matrix.python-version }}-${{ matrix.package }}
+      cancel-in-progress: false  
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          ref: ${{ github.head_ref }}
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: ${{ matrix.python-version }}
+      - name: Format
+        run: rye format --check -v -p ${{ matrix.package }}
+      - name: Linting
+        run: rye lint -v -p ${{ matrix.package }}
+      - name: Unit
+        working-directory: libs/${{ matrix.package }}
+        run: rye run unit
+      - name: Integration
+        working-directory: libs/${{ matrix.package }}
+        env:
+          LABELBOX_TEST_API_KEY: ${{ secrets[matrix.api-key] }}
+          DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
+          LABELBOX_TEST_ENVIRON: 'staging'
+        run: rye run integration
+  test-pypi:
+    runs-on: ubuntu-latest
+    needs: ['build', 'path-filter']
+    if: ${{ needs.path-filter.outputs.lbox == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix: 
+        include: ${{ fromJSON(needs.path-filter.outputs.package-matrix) }}
+    environment: 
+      name: Test-PyPI-${{ matrix.package }}
+      url: 'https://test.pypi.org/p/${{ matrix.package }}'
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: '3.8'
+      - name: Create build
+        id: create-build
+        working-directory: libs/${{ matrix.package }}
+        run: |
+          VERSION=$(date +"%Y.%m.%d.%H.%M")
+          echo "pip install --index-url https://test.pypi.org/simple/ --extra-index-url=https://pypi.org/simple/ ${{ matrix.package }}@$VERSION" >> "$GITHUB_STEP_SUMMARY"
+          rye version "$VERSION"
+          rye run toml set --toml-path pyproject.toml project.name  ${{ matrix.package }}
+          rye build
+      - name: Publish package distributions to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          repository-url: https://test.pypi.org/legacy/
+  test-container:
+    runs-on: ubuntu-latest
+    needs: ['build', 'path-filter']
+    if: ${{ needs.path-filter.outputs.lbox == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix: 
+        include: ${{ fromJSON(needs.path-filter.outputs.package-matrix) }}
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push (Develop)
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./libs/${{ matrix.package }}/Dockerfile
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          push: true
+          platforms: |
+            linux/amd64
+            linux/arm64
+          tags: |
+            ghcr.io/labelbox/${{ matrix.package }}:develop
+            ghcr.io/labelbox/${{ matrix.package }}:${{ github.sha }}
+      - name: Build and push (Develop) Output
+        if: github.event_name == 'push'
+        run: |
+          echo "ghcr.io/labelbox/${{ matrix.package }}:develop" >> "$GITHUB_STEP_SUMMARY"
+          echo "ghcr.io/labelbox/${{ matrix.package }}:${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Build and push (Pull Request)
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./libs/${{ matrix.package }}/Dockerfile
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          push: true
+          platforms: |
+            linux/amd64
+            linux/arm64
+          tags: |
+            ghcr.io/labelbox/${{ matrix.package }}:${{ github.sha }}
+      - name: Build and push (Pull Request) Output
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "ghcr.io/labelbox/${{ matrix.package }}:${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"

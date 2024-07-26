@@ -41,7 +41,7 @@ from labelbox.schema.model import Model
 from labelbox.schema.model_config import ModelConfig
 from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
-from labelbox.schema.ontology import Tool, Classification, FeatureSchema
+from labelbox.schema.ontology import Tool, Classification, FeatureSchema, PromptResponseClassification
 from labelbox.schema.organization import Organization
 from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import QualityMode, BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS, \
@@ -115,16 +115,25 @@ class Client:
         self.app_url = app_url
         self.endpoint = endpoint
         self.rest_endpoint = rest_endpoint
+        self._data_row_metadata_ontology = None
+        self._adv_client = AdvClient.factory(rest_endpoint, api_key)
+        self._connection: requests.Session = self._init_connection()
 
-        self.headers = {
+    def _init_connection(self) -> requests.Session:
+        connection = requests.Session(
+        )  # using default connection pool size of 10
+        connection.headers.update(self._default_headers())
+
+        return connection
+
+    def _default_headers(self):
+        return {
+            'Authorization': 'Bearer %s' % self.api_key,
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer %s' % api_key,
             'X-User-Agent': f"python-sdk {SDK_VERSION}",
             'X-Python-Version': f"{python_version_info()}",
         }
-        self._data_row_metadata_ontology = None
-        self._adv_client = AdvClient.factory(rest_endpoint, api_key)
 
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
@@ -193,18 +202,19 @@ class Client:
             "/graphql", "/_gql")
 
         try:
-            request = {
-                'url': endpoint,
-                'data': data,
-                'headers': self.headers,
-                'timeout': timeout
-            }
+            headers = self._connection.headers.copy()
             if files:
-                request.update({'files': files})
-                request['headers'] = {
-                    'Authorization': self.headers['Authorization']
-                }
-            response = requests.post(**request)
+                del headers['Content-Type']
+                del headers['Accept']
+            request = requests.Request('POST',
+                                       endpoint,
+                                       headers=headers,
+                                       data=data,
+                                       files=files if files else None)
+
+            prepped: requests.PreparedRequest = request.prepare()
+
+            response = self._connection.send(prepped, timeout=timeout)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
@@ -409,14 +419,21 @@ class Client:
             "map": (None, json.dumps({"1": ["variables.file"]})),
         }
 
-        response = requests.post(
-            self.endpoint,
-            headers={"authorization": "Bearer %s" % self.api_key},
-            data=request_data,
-            files={
-                "1": (filename, content, content_type) if
-                     (filename and content_type) else content
-            })
+        files = {
+            "1": (filename, content, content_type) if
+                 (filename and content_type) else content
+        }
+        headers = self._connection.headers.copy()
+        headers.pop("Content-Type", None)
+        request = requests.Request('POST',
+                                   self.endpoint,
+                                   headers=headers,
+                                   data=request_data,
+                                   files=files)
+
+        prepped: requests.PreparedRequest = request.prepare()
+
+        response = self._connection.send(prepped)
 
         if response.status_code == 502:
             error_502 = '502 Bad Gateway'
@@ -858,6 +875,92 @@ class Client:
 
         return self._create_project(**kwargs)
 
+
+    def create_prompt_response_generation_project(self,
+                                                  dataset_id: Optional[str] = None,
+                                                  dataset_name: Optional[str] = None,
+                                                  data_row_count: int = 100,
+                                                  **kwargs) -> Project:
+        """
+        Use this method exclusively to create a prompt and response generation project.
+
+        Args:
+            dataset_name: When creating a new dataset, pass the name
+            dataset_id: When using an existing dataset, pass the id
+            data_row_count: The number of data row assets to use for the project
+            **kwargs: Additional parameters to pass see the create_project method
+        Returns:
+            Project: The created project
+
+        NOTE: Only a dataset_name or dataset_id should be included
+
+        Examples:
+            >>> client.create_prompt_response_generation_project(name=project_name, dataset_name="new data set", project_kind=MediaType.LLMPromptResponseCreation)
+            >>>     This creates a new dataset with a default number of rows (100), creates new project and assigns a batch of the newly created datarows to the project.
+
+            >>> client.create_prompt_response_generation_project(name=project_name, dataset_name="new data set", data_row_count=10, project_kind=MediaType.LLMPromptCreation)
+            >>>     This creates a new dataset with 10 data rows, creates new project and assigns a batch of the newly created datarows to the project.
+
+            >>> client.create_prompt_response_generation_project(name=project_name, dataset_id="clr00u8j0j0j0", project_kind=MediaType.LLMPromptCreation)
+            >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created data rows to the project.
+
+            >>> client.create_prompt_response_generation_project(name=project_name, dataset_id="clr00u8j0j0j0", data_row_count=10, project_kind=MediaType.LLMPromptResponseCreation)
+            >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created 10 data rows to the project.
+
+        """
+        if not dataset_id and not dataset_name:
+            raise ValueError(
+                "dataset_name or dataset_id must be present and not be an empty string."
+            )
+
+        if dataset_id and dataset_name:
+            raise ValueError(
+                "Only provide a dataset_name or dataset_id, not both."
+            )
+
+        if data_row_count <= 0:
+            raise ValueError("data_row_count must be a positive integer.")
+
+        if dataset_id:
+            append_to_existing_dataset = True
+            dataset_name_or_id = dataset_id
+        else:
+            append_to_existing_dataset = False
+            dataset_name_or_id = dataset_name
+
+        if "media_type" in kwargs and kwargs.get("media_type") not in [MediaType.LLMPromptCreation, MediaType.LLMPromptResponseCreation]:
+            raise ValueError(
+                "media_type must be either LLMPromptCreation or LLMPromptResponseCreation"
+            )
+
+        kwargs["dataset_name_or_id"] = dataset_name_or_id
+        kwargs["append_to_existing_dataset"] = append_to_existing_dataset
+        kwargs["data_row_count"] = data_row_count
+
+        kwargs.pop("editor_task_type", None)
+
+        return self._create_project(**kwargs)
+
+    def create_response_creation_project(self, **kwargs) -> Project:
+        """
+        Creates a project for response creation.
+        Args:
+            **kwargs: Additional parameters to pass see the create_project method
+        Returns:
+            Project: The created project
+        """
+        kwargs[
+            "media_type"] = MediaType.Text  # Only Text is supported
+        kwargs[
+            "editor_task_type"] = EditorTaskType.ResponseCreation.value  # Special editor task type for response creation projects
+
+        # The following arguments are not supported for response creation projects
+        kwargs.pop("dataset_name_or_id", None)
+        kwargs.pop("append_to_existing_dataset", None)
+        kwargs.pop("data_row_count", None)
+
+        return self._create_project(**kwargs)
+
     def _create_project(self, **kwargs) -> Project:
         auto_audit_percentage = kwargs.get("auto_audit_percentage")
         auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
@@ -905,23 +1008,42 @@ class Client:
                 "Cannot use both quality_modes and quality_mode at the same time. Use one or the other.")
 
         if not quality_modes and not quality_mode:
-            logger.info("Defaulting quality modes to Benchmark.")
+            logger.info("Defaulting quality modes to Benchmark and Consensus.")
 
         data = kwargs
         data.pop("quality_modes", None)
         data.pop("quality_mode", None)
-        if quality_modes is None or len(quality_modes) == 0 or quality_modes == [QualityMode.Benchmark] or quality_mode is QualityMode.Benchmark:
+
+        # check if quality_modes is a set, if not, convert to set
+        quality_modes_set = quality_modes
+        if quality_modes and not isinstance(quality_modes, set):
+            quality_modes_set = set(quality_modes)
+        if quality_mode:
+            quality_modes_set = {quality_mode}
+
+        if (
+            quality_modes_set is None
+            or len(quality_modes_set) == 0
+            or quality_modes_set == {QualityMode.Benchmark, QualityMode.Consensus}
+        ):
+            data["auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
+            data["is_benchmark_enabled"] = True
+            data["is_consensus_enabled"] = True
+        elif quality_modes_set == {QualityMode.Benchmark}:
             data[
                 "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
-        elif QualityMode.Consensus in (quality_modes if quality_modes else []) or quality_mode is QualityMode.Consensus:
+        elif quality_modes_set == {QualityMode.Consensus}:
             data[
                 "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
             data["is_consensus_enabled"] = True
         else:
-            raise ValueError(f"{quality_modes} is not a valid quality modes array. Allowed values are [Benchmark, Consensus]")
+            raise ValueError(
+                f"{quality_modes_set} is not a valid quality modes set. Allowed values are [Benchmark, Consensus]"
+            )
 
         params = {**data}
         if media_type_value:
@@ -934,7 +1056,6 @@ class Client:
                 params.pop("append_to_existing_dataset", None),
         }
         extra_params = {k: v for k, v in extra_params.items() if v is not None}
-
         return self._create(Entity.Project, params, extra_params)
 
     def get_roles(self) -> List[Role]:
@@ -1101,6 +1222,7 @@ class Client:
         query_str = """query rootSchemaNodePyApi($rootSchemaNodeWhere: RootSchemaNodeWhere!){
               rootSchemaNode(where: $rootSchemaNodeWhere){%s}
         }""" % query.results_query_part(Entity.FeatureSchema)
+
         res = self.execute(
             query_str,
             {'rootSchemaNodeWhere': {
@@ -1153,11 +1275,13 @@ class Client:
             name (str): Name of the ontology
             feature_schema_ids (List[str]): List of feature schema ids corresponding to
                 top level tools and classifications to include in the ontology
-            media_type (MediaType or None): Media type of a new ontology. NOTE for chat evaluation, we currently foce media_type to Conversational
+            media_type (MediaType or None): Media type of a new ontology.
             ontology_kind (OntologyKind or None): set to OntologyKind.ModelEvaluation if the ontology is for chat evaluation,
                 leave as None otherwise.
         Returns:
             The created Ontology
+
+        NOTE for chat evaluation, we currently force media_type to Conversational and for response creation, we force media_type to Text.
         """
         tools, classifications = [], []
         for feature_schema_id in feature_schema_ids:
@@ -1173,10 +1297,13 @@ class Client:
                         f"Tool `{tool}` not in list of supported tools.")
             elif 'type' in feature_schema.normalized:
                 classification = feature_schema.normalized['type']
-                try:
+                if classification in Classification.Type._value2member_map_.keys():
                     Classification.Type(classification)
                     classifications.append(feature_schema.normalized)
-                except ValueError:
+                elif classification in PromptResponseClassification.Type._value2member_map_.keys():
+                    PromptResponseClassification.Type(classification)
+                    classifications.append(feature_schema.normalized)
+                else:
                     raise ValueError(
                         f"Classification `{classification}` not in list of supported classifications."
                     )
@@ -1186,15 +1313,7 @@ class Client:
                 )
         normalized = {'tools': tools, 'classifications': classifications}
 
-        if ontology_kind and ontology_kind is OntologyKind.ModelEvaluation:
-            if media_type is None:
-                media_type = MediaType.Conversational
-            else:
-                if media_type is not MediaType.Conversational:
-                    raise ValueError(
-                        "For chat evaluation, media_type must be Conversational."
-                    )
-
+        # validation for ontology_kind and media_type is done within self.create_ontology
         return self.create_ontology(name=name,
                                     normalized=normalized,
                                     media_type=media_type,
@@ -1211,10 +1330,7 @@ class Client:
 
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id)
-        response = requests.delete(
-            endpoint,
-            headers=self.headers,
-        )
+        response = self._connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
             raise labelbox.exceptions.LabelboxError(
@@ -1231,10 +1347,7 @@ class Client:
         """
         endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id)
-        response = requests.delete(
-            endpoint,
-            headers=self.headers,
-        )
+        response = self._connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
             raise labelbox.exceptions.LabelboxError(
@@ -1256,11 +1369,7 @@ class Client:
 
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id) + '/definition'
-        response = requests.patch(
-            endpoint,
-            headers=self.headers,
-            json={"title": title},
-        )
+        response = self._connection.patch(endpoint, json={"title": title})
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(feature_schema_id)
@@ -1289,11 +1398,8 @@ class Client:
             "featureSchemaId") or "new_feature_schema_id"
         endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
             feature_schema_id)
-        response = requests.put(
-            endpoint,
-            headers=self.headers,
-            json={"normalized": json.dumps(feature_schema)},
-        )
+        response = self._connection.put(
+            endpoint, json={"normalized": json.dumps(feature_schema)})
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(response.json()['schemaId'])
@@ -1319,11 +1425,7 @@ class Client:
         endpoint = self.rest_endpoint + '/ontologies/' + urllib.parse.quote(
             ontology_id) + "/feature-schemas/" + urllib.parse.quote(
                 feature_schema_id)
-        response = requests.post(
-            endpoint,
-            headers=self.headers,
-            json={"position": position},
-        )
+        response = self._connection.post(endpoint, json={"position": position})
         if response.status_code != requests.codes.created:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to insert the feature schema into the ontology, message: "
@@ -1344,11 +1446,7 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/ontologies/unused"
-        response = requests.get(
-            endpoint,
-            headers=self.headers,
-            json={"after": after},
-        )
+        response = self._connection.get(endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
@@ -1372,11 +1470,7 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/feature-schemas/unused"
-        response = requests.get(
-            endpoint,
-            headers=self.headers,
-            json={"after": after},
-        )
+        response = self._connection.get(endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
@@ -1413,7 +1507,7 @@ class Client:
         Returns:
             The created Ontology
 
-        NOTE caller of this method is expected to set media_type to Conversational if ontology_kind is ModelEvaluation
+        NOTE for chat evaluation, we currently force media_type to Conversational and for response creation, we force media_type to Text.
         """
 
         media_type_value = None
@@ -1424,6 +1518,7 @@ class Client:
                 raise get_media_type_validation_error(media_type)
 
         if ontology_kind and OntologyKind.is_supported(ontology_kind):
+            media_type = OntologyKind.evaluate_ontology_kind_with_media_type(ontology_kind, media_type)
             editor_task_type_value = EditorTaskTypeMapper.to_editor_task_type(
                 ontology_kind, media_type).value
         elif ontology_kind:
@@ -1897,10 +1992,7 @@ class Client:
 
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id)
-        response = requests.get(
-            ontology_endpoint,
-            headers=self.headers,
-        )
+        response = self._connection.get(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             feature_schema_nodes = response.json()['featureSchemaNodes']
@@ -1976,10 +2068,7 @@ class Client:
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + "/feature-schemas/" + urllib.parse.quote(
                 feature_schema_id)
-        response = requests.delete(
-            ontology_endpoint,
-            headers=self.headers,
-        )
+        response = self._connection.delete(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
@@ -2013,10 +2102,7 @@ class Client:
         ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
             ontology_id) + '/feature-schemas/' + urllib.parse.quote(
                 root_feature_schema_id) + '/unarchive'
-        response = requests.patch(
-            ontology_endpoint,
-            headers=self.headers,
-        )
+        response = self._connection.patch(ontology_endpoint)
         if response.status_code == requests.codes.ok:
             if not bool(response.json()['unarchived']):
                 raise labelbox.exceptions.LabelboxError(

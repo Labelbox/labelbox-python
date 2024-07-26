@@ -88,11 +88,11 @@ def test_model_run_data_rows_delete(model_run_with_data_rows):
 
 
 def test_model_run_upsert_data_rows(dataset, model_run,
-                                    configured_project_with_one_data_row):
+                                    configured_project):
     n_model_run_data_rows = len(list(model_run.model_run_data_rows()))
     assert n_model_run_data_rows == 0
     data_row = dataset.create_data_row(row_data="test row data")
-    configured_project_with_one_data_row._wait_until_data_rows_are_processed(
+    configured_project._wait_until_data_rows_are_processed(
         data_row_ids=[data_row.uid])
     model_run.upsert_data_rows([data_row.uid])
     n_model_run_data_rows = len(list(model_run.model_run_data_rows()))
@@ -118,11 +118,6 @@ def test_model_run_upsert_data_rows_with_existing_labels(
     ])
     assert n_data_rows == len(
         list(model_run_with_data_rows.model_run_data_rows()))
-
-@pytest.mark.export_v1("tests used export v1 method, v2 test -> test_import_data_types_v2 below")
-def test_model_run_export_labels(model_run_with_data_rows):
-    labels = model_run_with_data_rows.export_labels(download=True)
-    assert len(labels) == 3
 
 
 @pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
