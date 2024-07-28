@@ -11,7 +11,7 @@ from labelbox import pydantic_compat
 
 def test_validate_schema():
     with pytest.raises(pydantic_compat.ValidationError):
-        data = ImageData()
+        ImageData()
 
 
 def test_im_bytes():

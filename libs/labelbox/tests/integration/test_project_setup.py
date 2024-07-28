@@ -5,7 +5,7 @@ import time
 import pytest
 
 from labelbox import LabelingFrontend
-from labelbox.exceptions import InvalidQueryError, ResourceConflict
+from labelbox.exceptions import InvalidQueryError
 
 
 def simple_ontology():

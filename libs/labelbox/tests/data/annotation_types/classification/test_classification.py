@@ -64,7 +64,6 @@ def test_subclass():
         name=name,
         feature_schema_id=feature_schema_id)
     assert classification.dict() == {
-        'name': None,
         'feature_schema_id': feature_schema_id,
         'extra': {},
         'value': {

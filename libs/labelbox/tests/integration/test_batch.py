@@ -1,4 +1,3 @@
-import time
 from typing import List
 from uuid import uuid4
 import pytest
@@ -275,7 +274,7 @@ def test_delete_labels(project, small_dataset):
     export_task.wait_till_done()
     stream = export_task.get_buffered_stream()
     data_rows = [dr.json["data_row"]["id"] for dr in stream]
-    batch = project.create_batch("batch to delete labels", data_rows)
+    project.create_batch("batch to delete labels", data_rows)
 
 
 @pytest.mark.skip(
@@ -294,7 +293,7 @@ def test_delete_labels_with_templates(project: Project, small_dataset: Dataset):
     stream = export_task.get_buffered_stream()
     exported_data_rows = [dr.json["data_row"]["id"] for dr in stream]
 
-    res = batch.delete_labels(labels_as_template=True)
+    batch.delete_labels(labels_as_template=True)
 
     export_task = project.export(filters={"batch_ids": [batch.uid]})
     export_task.wait_till_done()

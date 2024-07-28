@@ -2,8 +2,6 @@ import pytest
 from unittest.mock import patch
 
 from labelbox import MediaType
-from labelbox.schema.ontology_kind import OntologyKind
-from labelbox.exceptions import MalformedQueryException
 
 @pytest.mark.parametrize(
     "prompt_response_ontology, prompt_response_generation_project_with_new_dataset",

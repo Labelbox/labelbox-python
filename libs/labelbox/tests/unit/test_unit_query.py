@@ -1,4 +1,3 @@
-import pytest
 
 from labelbox import Project, Dataset
 from labelbox.orm import query

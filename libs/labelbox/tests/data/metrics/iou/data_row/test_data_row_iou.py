@@ -1,6 +1,5 @@
 from labelbox.data.metrics.iou.iou import miou_metric
 from pytest_cases import parametrize, fixture_ref
-from unittest.mock import patch
 import math
 import numpy as np
 import base64

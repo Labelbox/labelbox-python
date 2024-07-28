@@ -23,19 +23,10 @@ from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode
 from labelbox import Client
 
-from labelbox import Dataset, DataRow
 from labelbox import LabelingFrontend
-from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
-from labelbox.orm import query
-from labelbox.pagination import PaginatedCollection
+from labelbox import OntologyBuilder, Tool, Option, Classification
 from labelbox.schema.annotation_import import LabelImport
-from labelbox.schema.catalog import Catalog
 from labelbox.schema.enums import AnnotationImportState
-from labelbox.schema.invite import Invite
-from labelbox.schema.quality_mode import QualityMode
-from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.user import User
-from labelbox import Client
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
 MASKABLE_IMG_URL = "https://storage.googleapis.com/labelbox-datasets/image_sample_data/2560px-Kitano_Street_Kobe01s5s4110.jpeg"
@@ -297,11 +288,6 @@ class EphemeralClient(Client):
 @pytest.fixture
 def ephmeral_client() -> EphemeralClient:
     return EphemeralClient
-
-
-@pytest.fixture
-def admin_client() -> AdminClient:
-    return AdminClient
 
 
 @pytest.fixture

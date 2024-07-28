@@ -1,5 +1,4 @@
 from labelbox.schema.media_type import MediaType
-from labelbox.schema.project import Project
 import pytest
 
 from labelbox import parser
@@ -8,7 +7,7 @@ from pytest_cases import parametrize, fixture_ref
 from labelbox.exceptions import MALValidationError
 from labelbox.schema.bulk_import_request import (NDChecklist, NDClassification,
                                                  NDMask, NDPolygon, NDPolyline,
-                                                 NDRadio, NDRectangle, NDText,
+                                                 NDRectangle, NDText,
                                                  NDTextEntity, NDTool,
                                                  _validate_ndjson)
 """
@@ -190,7 +189,7 @@ def test_missing_feature_schema(module_project,
 
 
 def test_validate_ndjson(tmp_path, configured_project):
-    file_name = f"broken.ndjson"
+    file_name = "broken.ndjson"
     file_path = tmp_path / file_name
     with file_path.open("w") as f:
         f.write("test")
@@ -202,7 +201,7 @@ def test_validate_ndjson(tmp_path, configured_project):
 
 def test_validate_ndjson_uuid(tmp_path, configured_project,
                               predictions):
-    file_name = f"repeat_uuid.ndjson"
+    file_name = "repeat_uuid.ndjson"
     file_path = tmp_path / file_name
     repeat_uuid = predictions.copy()
     repeat_uuid[0]['uuid'] = 'test_uuid'

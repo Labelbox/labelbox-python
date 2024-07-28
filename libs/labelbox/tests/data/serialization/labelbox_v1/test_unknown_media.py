@@ -1,6 +1,5 @@
 import json
 
-import pytest
 
 from labelbox.data.serialization.labelbox_v1.converter import LBV1Converter
 

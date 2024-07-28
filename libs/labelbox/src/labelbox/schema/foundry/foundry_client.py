@@ -52,7 +52,7 @@ class FoundryClient:
 
         try:
             response = self.client.execute(query_str, params)
-        except exceptions.InvalidQueryError as e:
+        except exceptions.InvalidQueryError:
             raise exceptions.ResourceNotFoundError(App, params)
         except Exception as e:
             raise exceptions.LabelboxError(f'Unable to get app with id {id}', e)

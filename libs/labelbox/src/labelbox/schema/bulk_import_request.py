@@ -14,7 +14,6 @@ from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set, TYPE_CHECKING)
 
 from labelbox import exceptions as lb_exceptions
-from labelbox.orm.model import Entity
 from labelbox import utils
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject

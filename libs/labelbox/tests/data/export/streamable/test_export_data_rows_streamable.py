@@ -1,7 +1,6 @@
 import json
 import time
 
-import pytest
 
 from labelbox import DataRow, ExportTask, StreamType
 

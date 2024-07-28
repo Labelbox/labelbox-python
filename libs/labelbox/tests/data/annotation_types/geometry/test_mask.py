@@ -9,7 +9,7 @@ from labelbox import pydantic_compat
 
 def test_mask():
     with pytest.raises(pydantic_compat.ValidationError):
-        mask = Mask()
+        Mask()
 
     mask_data = np.zeros((32, 32, 3), dtype=np.uint8)
     mask_data = cv2.rectangle(mask_data, (0, 0), (10, 10), (255, 255, 255), -1)

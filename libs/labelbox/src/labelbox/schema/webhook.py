@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import Iterable, List
+from typing import Iterable
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable

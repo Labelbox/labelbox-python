@@ -8,7 +8,7 @@ from labelbox import pydantic_compat
 
 def test_validate_schema():
     with pytest.raises(pydantic_compat.ValidationError):
-        data = TextData()
+        TextData()
 
 
 def test_text():

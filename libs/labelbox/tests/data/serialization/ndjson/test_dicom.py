@@ -1,6 +1,5 @@
 from copy import copy
 import pytest
-import base64
 import labelbox.types as lb_types
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.data.serialization.ndjson.objects import NDDicomSegments, NDDicomSegment, NDDicomLine

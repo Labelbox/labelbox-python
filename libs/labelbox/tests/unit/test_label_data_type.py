@@ -1,6 +1,4 @@
-from email import message
 import pytest
-from pydantic import ValidationError
 
 from labelbox.data.annotation_types.data.generic_data_row_data import GenericDataRowData
 from labelbox.data.annotation_types.data.video import VideoData

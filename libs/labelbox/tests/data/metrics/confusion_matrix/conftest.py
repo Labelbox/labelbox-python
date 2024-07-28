@@ -32,14 +32,6 @@ def get_text(name, text_content):
     return ClassificationAnnotation(name=name, value=Text(answer=text_content))
 
 
-def get_checklist(name, answer_names):
-    return ClassificationAnnotation(name=name,
-                                    value=Radio(answer=[
-                                        ClassificationAnswer(name=answer_name)
-                                        for answer_name in answer_names
-                                    ]))
-
-
 def get_polygon(name, points, subclasses=None):
     return ObjectAnnotation(
         name=name,
@@ -77,11 +69,6 @@ def get_point(name, x, y, subclasses=None):
         name=name,
         value=Point(x=x, y=y),
         classifications=[] if subclasses is None else subclasses)
-
-
-def get_radio(name, answer_name):
-    return ClassificationAnnotation(
-        name=name, value=Radio(answer=ClassificationAnswer(name=answer_name)))
 
 
 def get_checklist(name, answer_names):

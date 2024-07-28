@@ -63,13 +63,6 @@ def test_dataset_filtering(client, dataset_for_filtering):
     assert list(client.get_datasets(where=Dataset.name == name_2)) == [d2]
 
 
-def test_dataset_filtering(client, dataset_for_filtering):
-    name_1, d1, name_2, d2 = dataset_for_filtering
-
-    assert list(client.get_datasets(where=Dataset.name == name_1)) == [d1]
-    assert list(client.get_datasets(where=Dataset.name == name_2)) == [d2]
-
-
 def test_get_data_row_for_external_id(dataset, rand_gen, image_url):
     external_id = rand_gen(str)
 

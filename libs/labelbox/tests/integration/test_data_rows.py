@@ -11,7 +11,7 @@ import pytest
 from labelbox.schema.media_type import MediaType
 from labelbox import DataRow, AssetAttachment
 from labelbox.exceptions import MalformedQueryException, ResourceCreationError, InvalidQueryError
-from labelbox.schema.task import Task, DataUpsertTask
+from labelbox.schema.task import Task
 from labelbox.schema.data_row_metadata import DataRowMetadataField, DataRowMetadataKind
 
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
@@ -170,7 +170,6 @@ def test_lookup_data_rows(client, dataset):
 
 
 def test_data_row_bulk_creation(dataset, rand_gen, image_url):
-    client = dataset.client
     data_rows = []
     assert len(list(dataset.data_rows())) == 0
 
@@ -359,7 +358,7 @@ def test_create_data_row_with_dict_unpacked(dataset, image_url):
 
 
 def test_create_data_row_with_invalid_input(dataset, image_url):
-    with pytest.raises(ResourceCreationError) as exc:
+    with pytest.raises(ResourceCreationError):
         dataset.create_data_row("asdf")
 
 
@@ -566,7 +565,7 @@ def test_create_data_rows_with_metadata_missing_value(dataset, image_url):
     fields = make_metadata_fields()
     fields.append({"schemaId": "some schema id"})
 
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(ValueError):
         dataset.create_data_rows([
             {
                 DataRow.row_data: image_url,
@@ -580,7 +579,7 @@ def test_create_data_rows_with_metadata_missing_schema_id(dataset, image_url):
     fields = make_metadata_fields()
     fields.append({"value": "some value"})
 
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(ValueError):
         dataset.create_data_rows([
             {
                 DataRow.row_data: image_url,
@@ -594,8 +593,8 @@ def test_create_data_rows_with_metadata_wrong_type(dataset, image_url):
     fields = make_metadata_fields()
     fields.append("Neither DataRowMetadataField or dict")
 
-    with pytest.raises(ValueError) as exc:
-        task = dataset.create_data_rows([
+    with pytest.raises(ValueError):
+        dataset.create_data_rows([
             {
                 DataRow.row_data: image_url,
                 DataRow.external_id: "row1",
@@ -639,12 +638,14 @@ def test_data_row_update(client, dataset, rand_gen, image_url,
     data_row.update(row_data=image_url)
     data_row = wait_for_data_row_processing(client, data_row)
     assert data_row.row_data == image_url
+    
+    def custom_check(data_row):
+        return data_row.row_data and 'pdfUrl' not in data_row.row_data
 
     # tileLayer becomes a media attribute
     pdf_url = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
     tileLayerUrl = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483-lb-textlayer.json"
     data_row.update(row_data={'pdfUrl': pdf_url, "tileLayerUrl": tileLayerUrl})
-    custom_check = lambda data_row: data_row.row_data and 'pdfUrl' not in data_row.row_data
     data_row = wait_for_data_row_processing(client,
                                             data_row,
                                             custom_check=custom_check)
@@ -753,7 +754,7 @@ def test_data_row_attachments(dataset, image_url):
         assert len(list(data_row.attachments())) == 1
         assert data_row.external_id == "test-id"
 
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(ValueError):
         task = dataset.create_data_rows([{
             "row_data": image_url,
             "external_id": "test-id",
@@ -961,9 +962,9 @@ def test_data_row_bulk_creation_with_same_global_keys(dataset, sample_image,
     task.wait_till_done()
 
     assert task.status == "COMPLETE"
-    assert type(task.failed_data_rows) is list
+    assert isinstance(task.failed_data_rows, list)
     assert len(task.failed_data_rows) == 1
-    assert type(task.created_data_rows) is list
+    assert isinstance(task.created_data_rows, list)
     assert len(task.created_data_rows) == 1
     assert task.failed_data_rows[0][
         'message'] == f"Duplicate global key: '{global_key_1}'"
@@ -1132,7 +1133,7 @@ def test_create_data_row_with_attachments(dataset):
 
 def test_create_data_row_with_media_type(dataset, image_url):
     with pytest.raises(ResourceCreationError) as exc:
-        dr = dataset.create_data_row(
+        dataset.create_data_row(
             row_data={'invalid_object': 'invalid_value'}, media_type="IMAGE")
 
     assert "Expected type image/*, detected: application/json" in str(exc.value)

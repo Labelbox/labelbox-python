@@ -4,7 +4,6 @@ from typing import List, Optional, Tuple
 from labelbox import pydantic_compat
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 
-from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from labelbox.data.annotation_types.feature import FeatureSchema
 from labelbox.data.mixins import ConfidenceNotSupportedMixin, CustomMetricsNotSupportedMixin
 from labelbox.utils import _CamelCaseMixin, is_valid_uri
@@ -97,7 +96,7 @@ class MaskFrame(_CamelCaseMixin, pydantic_compat.BaseModel):
         im_bytes = values.get("im_bytes")
         instance_uri = values.get("instance_uri")
 
-        if im_bytes == instance_uri == None:
+        if im_bytes == instance_uri is None:
             raise ValueError("One of `instance_uri`, `im_bytes` required.")
         return values
 

@@ -106,7 +106,7 @@ def test_adding_to_dataset(signer):
     assert label.data.url != uuid
     generated_label = next(generator)
     assert generated_label.data.url == uuid
-    assert generated_label.data.external_id != None
+    assert generated_label.data.external_id is not None
     assert generated_label.data.uid == dataset.uid
     assert label.data.url == uuid
 

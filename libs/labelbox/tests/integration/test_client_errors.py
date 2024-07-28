@@ -4,7 +4,7 @@ import time
 import pytest
 from google.api_core.exceptions import RetryError
 
-from labelbox import Project, Dataset, User
+from labelbox import Project, User
 import labelbox.client
 import labelbox.exceptions
 
@@ -27,7 +27,7 @@ def test_bad_key(rand_gen):
     bad_key = "BAD_KEY_" + rand_gen(str)
     client = labelbox.client.Client(api_key=bad_key)
 
-    with pytest.raises(labelbox.exceptions.AuthenticationError) as excinfo:
+    with pytest.raises(labelbox.exceptions.AuthenticationError):
         client.create_project(name=rand_gen(str))
 
 
@@ -44,7 +44,7 @@ def test_semantic_error(client):
 
 
 def test_timeout_error(client, project):
-    with pytest.raises(RetryError) as excinfo:
+    with pytest.raises(RetryError):
         query_str = """query getOntology {
         project (where: {id: %s}) {
             ontology {
@@ -73,7 +73,7 @@ def test_network_error(client):
     client = labelbox.client.Client(api_key=client.api_key,
                                     endpoint="not_a_valid_URL")
 
-    with pytest.raises(labelbox.exceptions.NetworkError) as excinfo:
+    with pytest.raises(labelbox.exceptions.NetworkError):
         client.create_project(name="Project name")
 
 

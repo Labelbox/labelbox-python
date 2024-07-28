@@ -1,13 +1,9 @@
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Union, Optional, Literal
 import warnings
 from labelbox.data.annotation_types.base_annotation import BaseAnnotation
 
 from labelbox.data.mixins import ConfidenceMixin, CustomMetricsMixin
 
-try:
-    from typing import Literal
-except:
-    from typing_extensions import Literal
 
 from labelbox import pydantic_compat
 from ..feature import FeatureSchema

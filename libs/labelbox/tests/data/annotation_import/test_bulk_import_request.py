@@ -1,25 +1,11 @@
-from unittest.mock import patch
 import uuid
 from labelbox import parser, Project
-from labelbox.data.annotation_types.data.generic_data_row_data import GenericDataRowData
 import pytest
-import random
-from labelbox.data.annotation_types.annotation import ObjectAnnotation
-from labelbox.data.annotation_types.classification.classification import Checklist, ClassificationAnnotation, ClassificationAnswer, Radio
-from labelbox.data.annotation_types.data.video import VideoData
-from labelbox.data.annotation_types.geometry.point import Point
-from labelbox.data.annotation_types.geometry.rectangle import Rectangle, RectangleUnit
-from labelbox.data.annotation_types.label import Label
-from labelbox.data.annotation_types.data.text import TextData
-from labelbox.data.annotation_types.ner import DocumentEntity, DocumentTextSelection
-from labelbox.data.annotation_types.video import VideoObjectAnnotation
 
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.exceptions import MALValidationError, UuidError
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.enums import BulkImportRequestState
-from labelbox.schema.annotation_import import LabelImport, MALPredictionImport
-from labelbox.schema.media_type import MediaType
 """
 - Here we only want to check that the uploads are calling the validation
 - Then with unit tests we can check the types of errors raised
@@ -126,7 +112,7 @@ def test_get(client, module_project):
 
 
 def test_validate_ndjson(tmp_path, module_project):
-    file_name = f"broken.ndjson"
+    file_name = "broken.ndjson"
     file_path = tmp_path / file_name
     with file_path.open("w") as f:
         f.write("test")
@@ -137,7 +123,7 @@ def test_validate_ndjson(tmp_path, module_project):
 
 
 def test_validate_ndjson_uuid(tmp_path, module_project, predictions):
-    file_name = f"repeat_uuid.ndjson"
+    file_name = "repeat_uuid.ndjson"
     file_path = tmp_path / file_name
     repeat_uuid = predictions.copy()
     uid = str(uuid.uuid4())

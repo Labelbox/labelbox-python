@@ -24,7 +24,6 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema import role
-from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
@@ -259,7 +258,7 @@ class Client:
         def get_error_status_code(error: dict) -> int:
             try:
                 return int(error["extensions"].get("exception").get("status"))
-            except:
+            except: # noqa: E722
                 return 500
 
         if check_errors(["AUTHENTICATION_ERROR"], "extensions",
@@ -454,7 +453,7 @@ class Client:
                 errors = response.json().get("errors", [])
                 error_msg = next(iter(errors), {}).get("message",
                                                        "Unknown error")
-            except Exception as e:
+            except Exception:
                 error_msg = "Unknown error"
             raise labelbox.exceptions.LabelboxError(
                 "Failed to upload, message: %s" % error_msg)
@@ -538,7 +537,7 @@ class Client:
             An iterable of `db_object_type` instances.
         """
         if filter_deleted:
-            not_deleted = db_object_type.deleted == False
+            not_deleted = db_object_type.deleted is False
             where = not_deleted if where is None else where & not_deleted
         query_str, params = query.get_all(db_object_type, where)
 
@@ -742,7 +741,7 @@ class Client:
 
             if not validation_result['validateDataset']['valid']:
                 raise labelbox.exceptions.LabelboxError(
-                    f"IAMIntegration was not successfully added to the dataset."
+                    "IAMIntegration was not successfully added to the dataset."
                 )
         except Exception as e:
             dataset.delete()
@@ -2072,11 +2071,11 @@ class Client:
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
-            if response_json['archived'] == True:
+            if response_json['archived'] is True:
                 logger.info(
                     'Feature schema was archived from the ontology because it had associated labels.'
                 )
-            elif response_json['deleted'] == True:
+            elif response_json['deleted'] is True:
                 logger.info(
                     'Feature schema was successfully removed from the ontology')
             result = DeleteFeatureFromOntologyResult()

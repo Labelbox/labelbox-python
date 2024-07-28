@@ -1,19 +1,17 @@
 import json
 import os
-import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from typing import Iterable, List, Generator
 
 from labelbox.exceptions import InvalidQueryError
 from labelbox.exceptions import InvalidAttributeError
-from labelbox.exceptions import MalformedQueryException
 from labelbox.orm.model import Entity
 from labelbox.orm.model import Field
 from labelbox.schema.embedding import EmbeddingVector
 from labelbox.schema.internal.datarow_upload_constants import (
     FILE_UPLOAD_THREAD_COUNT)
-from labelbox.schema.internal.data_row_upsert_item import DataRowItemBase, DataRowUpsertItem
+from labelbox.schema.internal.data_row_upsert_item import DataRowItemBase
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -144,7 +142,7 @@ class DescriptorFileCreator:
                     "canLabel"
                 ])
                 for key in message.keys():
-                    if not key in accepted_message_keys:
+                    if key not in accepted_message_keys:
                         raise KeyError(
                             f"Invalid {key} key found! Accepted keys in messages list is {accepted_message_keys}"
                         )

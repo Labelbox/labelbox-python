@@ -17,7 +17,7 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
 from labelbox.schema.export_params import ModelRunExportParams
 from labelbox.schema.export_task import ExportTask
-from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds
+from labelbox.schema.identifiables import GlobalKeys, DataRowIds
 from labelbox.schema.send_to_annotate_params import SendToAnnotateFromModelParams, build_destination_task_queue_input, \
     build_predictions_input
 from labelbox.schema.task import Task
@@ -176,7 +176,7 @@ class ModelRun(DbObject):
             if res['status'] == 'COMPLETE':
                 return True
             elif res['status'] == 'FAILED':
-                raise Exception(f"Job failed.")
+                raise Exception("Job failed.")
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
                 raise TimeoutError(

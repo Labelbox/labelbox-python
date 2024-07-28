@@ -1,9 +1,7 @@
-from datetime import datetime
-from typing import Dict, Generator, List, Optional, Any, Final, Tuple, Union
+from typing import Dict, Generator, List, Optional, Any, Tuple, Union
 import os
 import json
 import logging
-from collections.abc import Iterable
 from string import Template
 import time
 import warnings
@@ -17,26 +15,21 @@ import requests
 
 from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, ResourceCreationError
 from labelbox.orm.comparison import Comparison
-from labelbox.orm.db_object import DbObject, Updateable, Deletable, experimental
+from labelbox.orm.db_object import DbObject, Updateable, Deletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
-from labelbox.exceptions import MalformedQueryException
 from labelbox.pagination import PaginatedCollection
-from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.data_row import DataRow
-from labelbox.schema.embedding import EmbeddingVector
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.task import Task, DataUpsertTask
-from labelbox.schema.user import User
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.internal.data_row_upsert_item import (DataRowItemBase,
                                                            DataRowUpsertItem,
                                                            DataRowCreateItem)
 import labelbox.schema.internal.data_row_uploader as data_row_uploader
-from labelbox.schema.internal.descriptor_file_creator import DescriptorFileCreator
 from labelbox.schema.internal.datarow_upload_constants import (
     FILE_UPLOAD_THREAD_COUNT, UPSERT_CHUNK_SIZE_BYTES)
 
@@ -334,7 +327,7 @@ class Dataset(DbObject, Updateable, Deletable):
                                                    limit=2)
         if len(data_rows) > 1:
             logger.warning(
-                f"More than one data_row has the provided external_id : `%s`. Use function data_rows_for_external_id to fetch all",
+                "More than one data_row has the provided external_id : `%s`. Use function data_rows_for_external_id to fetch all",
                 external_id)
         return data_rows[0]
 
@@ -688,7 +681,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 self.client.get_organization().get_iam_integrations()
                 if integration.uid == iam_integration_id
             ][0]
-        except:
+        except: # noqa: E722
             raise LabelboxError(
                 f"Can't retrieve IAM integration {iam_integration_id}")
 

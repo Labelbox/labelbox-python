@@ -397,7 +397,7 @@ class DataRowMetadataOntology:
         schema = self._validate_custom_schema_by_name(name)
         if schema.kind != DataRowMetadataKind.enum:
             raise ValueError(
-                f"Updating Enum option is only supported for Enum metadata schema"
+                "Updating Enum option is only supported for Enum metadata schema"
             )
         valid_options: List[str] = [o.name for o in schema.options]
 
@@ -757,11 +757,11 @@ class DataRowMetadataOntology:
             if isinstance(metadata_field, DataRowMetadataField):
                 return metadata_field
             elif isinstance(metadata_field, dict):
-                if not "value" in metadata_field:
+                if "value" not in metadata_field:
                     raise ValueError(
                         f"Custom metadata field '{metadata_field}' must have a 'value' key"
                     )
-                if not "schema_id" in metadata_field and not "name" in metadata_field:
+                if "schema_id" not in metadata_field and "name" not in metadata_field:
                     raise ValueError(
                         f"Custom metadata field '{metadata_field}' must have either 'schema_id' or 'name' key"
                     )
@@ -901,9 +901,9 @@ class DataRowMetadataOntology:
 
 
 def _batch_items(iterable: List[Any], size: int) -> Generator[Any, None, None]:
-    l = len(iterable)
-    for ndx in range(0, l, size):
-        yield iterable[ndx:min(ndx + size, l)]
+    iterable_len = len(iterable)
+    for ndx in range(0, iterable_len, size):
+        yield iterable[ndx:min(ndx + size, iterable_len)]
 
 
 def _batch_operations(
