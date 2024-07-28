@@ -15,7 +15,7 @@ on:
       test-env:
         required: true
         type: string
-      fixture-profile: 
+      fixture-profile:
         required: true
         type: boolean
 
@@ -30,9 +30,12 @@ jobs:
         with:
           rye-version: ${{ vars.RYE_VERSION }}
           python-version: ${{ inputs.python-version }}
+      - name: MyPy Type Checking
+        working-directory: libs/labelbox
+        run: rye run mypy-lint
       - name: Linting
         working-directory: libs/labelbox
-        run: rye run lint
+        run: rye lint
   integration:
     runs-on: ubuntu-latest
     concurrency:
