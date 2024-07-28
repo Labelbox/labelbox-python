@@ -47,7 +47,7 @@ def is_valid_uri(uri):
     try:
         result = urlparse(uri)
         return all([result.scheme, result.netloc])
-    except:
+    except ValueError:
         return False
 
 

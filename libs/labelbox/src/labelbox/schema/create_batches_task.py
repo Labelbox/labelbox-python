@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Callable, List, Optional, Dict, Any
 from labelbox.orm.model import Entity
 
 if TYPE_CHECKING:
-    from labelbox import User
 
     def lru_cache() -> Callable[..., Callable[..., Dict[str, Any]]]:
         pass

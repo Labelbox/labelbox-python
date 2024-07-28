@@ -61,6 +61,6 @@ def test_logical_expr_ops():
     # Can't create logical expressions with anything except comparisons and
     # other logical expressions.
     with pytest.raises(TypeError):
-        logical_op = comparison_1 & 42
+        comparison_1 & 42
     with pytest.raises(TypeError):
-        logical_op = comparison_1 | 42
+        comparison_1 | 42

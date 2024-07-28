@@ -68,6 +68,6 @@ class TestExportEmbeddings:
             if emb["id"] == embedding.id:
                 assert emb["name"] == embedding.name
                 assert emb["dimensions"] == embedding.dims
-                assert emb["is_custom"] == True
+                assert emb["is_custom"] is True
                 assert len(emb["values"]) == 1
                 assert emb["values"][0]["value"] == vector

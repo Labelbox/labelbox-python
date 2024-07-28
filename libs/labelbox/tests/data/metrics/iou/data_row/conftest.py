@@ -1,8 +1,6 @@
-from io import BytesIO
 from types import SimpleNamespace
 import pytest
 import numpy as np
-from PIL import Image
 import base64
 
 
@@ -330,8 +328,6 @@ def matching_checklist():
                      classifications=[{
                          'featureId':
                              '1234567890111213141516171',
-                         'schemaId':
-                             'ckppid25v0000aeyjmxfwlc7t',
                          'uuid':
                              '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
                          'schemaId':
@@ -370,8 +366,6 @@ def partially_matching_checklist_1():
                      classifications=[{
                          'featureId':
                              '1234567890111213141516171',
-                         'schemaId':
-                             'ckppid25v0000aeyjmxfwlc7t',
                          'uuid':
                              '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
                          'schemaId':
@@ -417,8 +411,6 @@ def partially_matching_checklist_2():
                      classifications=[{
                          'featureId':
                              '1234567890111213141516171',
-                         'schemaId':
-                             'ckppid25v0000aeyjmxfwlc7t',
                          'uuid':
                              '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
                          'schemaId':
@@ -460,8 +452,6 @@ def partially_matching_checklist_3():
                      classifications=[{
                          'featureId':
                              '1234567890111213141516171',
-                         'schemaId':
-                             'ckppid25v0000aeyjmxfwlc7t',
                          'uuid':
                              '76e0dcea-fe46-43e5-95f5-a5e3f378520a',
                          'schemaId':

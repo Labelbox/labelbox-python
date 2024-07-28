@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Dict, Optional, TYPE_CHECKING
 
-from labelbox.orm.model import Field, Entity
+from labelbox.orm.model import Field
 from labelbox.orm.db_object import DbObject
 
 if TYPE_CHECKING:

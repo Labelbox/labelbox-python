@@ -1,9 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from typing import List
 
 from labelbox import pydantic_compat
-from labelbox.schema.internal.data_row_upsert_item import DataRowItemBase, DataRowUpsertItem, DataRowCreateItem
+from labelbox.schema.internal.data_row_upsert_item import DataRowItemBase
 from labelbox.schema.internal.descriptor_file_creator import DescriptorFileCreator
 
 

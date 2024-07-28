@@ -1,5 +1,5 @@
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation
-from labelbox.data.annotation_types.classification.classification import ClassificationAnswer, Radio, Text
+from labelbox.data.annotation_types.classification.classification import Text
 from labelbox.data.annotation_types.data.text import TextData
 from labelbox.data.annotation_types.label import Label
 

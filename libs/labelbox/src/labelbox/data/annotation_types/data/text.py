@@ -64,7 +64,7 @@ class TextData(BaseData, _NoCoercionMixin):
         """
         response = requests.get(self.url)
         if response.status_code in [500, 502, 503, 504]:
-            raise labelbox.exceptions.InternalServerError(response.text)
+            raise InternalServerError(response.text)
         response.raise_for_status()
         return response.text
 
@@ -97,7 +97,7 @@ class TextData(BaseData, _NoCoercionMixin):
         url = values.get("url")
         uid = values.get('uid')
         global_key = values.get('global_key')
-        if uid == file_path == text == url == global_key == None:
+        if uid == file_path == text == url == global_key is None:
             raise ValueError(
                 "One of `file_path`, `text`, `uid`, `global_key` or `url` required."
             )

@@ -1,4 +1,3 @@
-import json
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation
 from labelbox.data.annotation_types.classification.classification import ClassificationAnswer
 from labelbox.data.annotation_types.classification.classification import Radio

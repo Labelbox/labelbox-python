@@ -1,8 +1,5 @@
-from copy import copy
-import pytest
 import labelbox.types as lb_types
 from labelbox.data.serialization import NDJsonConverter
-from labelbox.data.serialization.ndjson.objects import NDDicomSegments, NDDicomSegment, NDDicomLine
 """
 Data gen prompt test data
 """

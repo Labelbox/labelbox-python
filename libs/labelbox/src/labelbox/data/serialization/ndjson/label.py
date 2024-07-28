@@ -2,7 +2,6 @@ from itertools import groupby
 from operator import itemgetter
 from typing import Dict, Generator, List, Tuple, Union
 from collections import defaultdict
-import warnings
 
 from labelbox import pydantic_compat
 
@@ -215,7 +214,7 @@ class NDLabel(pydantic_compat.BaseModel):
             return frame_ranges
         else:
             raise ValueError(
-                f"Video annotations cannot partially have `segment_index` set")
+                "Video annotations cannot partially have `segment_index` set")
 
     @classmethod
     def _create_video_annotations(

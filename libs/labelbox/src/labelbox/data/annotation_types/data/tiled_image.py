@@ -1,4 +1,3 @@
-from functools import lru_cache
 import math
 import logging
 from enum import Enum
@@ -288,7 +287,7 @@ class TiledImageData(BaseData):
                         row.append(tiles[(x, y)].result())
                     else:
                         row.append(self._fetch_tile(x, y, zoom))
-                except:
+                except: # noqa: E722
                     row.append(
                         np.zeros(shape=(self.tile_size, self.tile_size, 3),
                                  dtype=np.uint8))

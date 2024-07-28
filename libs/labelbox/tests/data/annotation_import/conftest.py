@@ -1,4 +1,3 @@
-import itertools
 import uuid
 
 from labelbox.schema.model_run import ModelRun
@@ -13,8 +12,9 @@ from labelbox import Client, Dataset
 
 from typing import Tuple, Type
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
-from pytest import FixtureRequest
 from contextlib import suppress
+from labelbox.exceptions import MalformedQueryException
+from pytest import FixtureRequest
 
 """
 The main fixtures of this library are configured_project and configured_project_by_global_key. Both fixtures generate data rows with a parametrize media type. They create the amount of data rows equal to the DATA_ROW_COUNT variable below. The data rows are generated with a factory fixture that returns a function that allows you to pass a global key. The ontologies are generated normalized and based on the MediaType given (i.e. only features supported by MediaType are created). This ontology is later used to obtain the correct annotations with the prediction_id_mapping and corresponding inferences. Each data row will have all possible annotations attached supported for the MediaType. 
@@ -1439,11 +1439,8 @@ def model(client, rand_gen, configured_project):
     data = {"name": rand_gen(str), "ontology_id": ontology.uid}
     model = client.create_model(data["name"], data["ontology_id"])
     yield model
-    try:
-        model.delete()
-    except:
-        # Already was deleted by the test
-        pass
+    with suppress(MalformedQueryException):
+        model_run.delete()
 
 
 @pytest.fixture
@@ -1451,11 +1448,8 @@ def model_run(rand_gen, model):
     name = rand_gen(str)
     model_run = model.create_model_run(name)
     yield model_run
-    try:
+    with suppress(MalformedQueryException):
         model_run.delete()
-    except:
-        # Already was deleted by the test
-        pass
 
 
 @pytest.fixture
@@ -1464,11 +1458,8 @@ def model_run_with_training_metadata(rand_gen, model):
     training_metadata = {"batch_size": 1000}
     model_run = model.create_model_run(name, training_metadata)
     yield model_run
-    try:
+    with suppress(MalformedQueryException):
         model_run.delete()
-    except:
-        # Already was deleted by the test
-        pass
 
 
 @pytest.fixture
@@ -2020,7 +2011,6 @@ def expected_export_v2_llm_prompt_response_creation():
                 'radio_answer': {'classifications': [],
                                 'name': 'first_radio_answer',
                                 'value': 'first_radio_answer'},
-                'name': 'radio-response',
                 'value': 'radio-response'},
         ],
         "relationships": [],
@@ -2066,7 +2056,6 @@ def expected_export_v2_llm_response_creation():
             'radio_answer': {'classifications': [],
                             'name': 'first_radio_answer',
                             'value': 'first_radio_answer'},
-            'name': 'radio-response',
             'value': 'radio-response'},
         ],
     }

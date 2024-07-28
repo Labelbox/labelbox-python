@@ -156,7 +156,7 @@ class VideoData(BaseData):
         uid = values.get("uid")
         global_key = values.get("global_key")
 
-        if uid == file_path == frames == url == global_key == None:
+        if uid == file_path == frames == url == global_key is None:
             raise ValueError(
                 "One of `file_path`, `frames`, `uid`, `global_key` or `url` required."
             )

@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 from labelbox import MediaType
 from labelbox.schema.ontology_kind import OntologyKind
-from labelbox.exceptions import MalformedQueryException
 
 
 def test_create_chat_evaluation_ontology_project(

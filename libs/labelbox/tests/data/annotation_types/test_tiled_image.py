@@ -29,8 +29,8 @@ def test_tiled_bounds(epsg):
 def test_tiled_bounds_same(epsg):
     single_bound = Point(x=0, y=0)
     with pytest.raises(pydantic_compat.ValidationError):
-        tiled_bounds = TiledBounds(epsg=epsg,
-                                   bounds=[single_bound, single_bound])
+        TiledBounds(epsg=epsg,
+                    bounds=[single_bound, single_bound])
 
 
 def test_create_tiled_image_data():

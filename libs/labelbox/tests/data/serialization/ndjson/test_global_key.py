@@ -1,10 +1,8 @@
 import json
 import pytest
 
-from labelbox.data.serialization.ndjson.classification import NDRadio
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
-from labelbox.data.serialization.ndjson.objects import NDLine
 
 
 def round_dict(data):

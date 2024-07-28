@@ -1,14 +1,7 @@
-from typing import Any, Tuple, List, Union
+from typing import Tuple, List, Union
 from pathlib import Path
 from collections import defaultdict
-import warnings
 
-from ...annotation_types.relationship import RelationshipAnnotation
-from ...annotation_types.metrics.confusion_matrix import ConfusionMatrixMetric
-from ...annotation_types.metrics.scalar import ScalarMetric
-from ...annotation_types.video import VideoMaskAnnotation
-from ...annotation_types.annotation import ObjectAnnotation
-from ...annotation_types.classification.classification import ClassificationAnnotation
 
 from .... import pydantic_compat
 import numpy as np

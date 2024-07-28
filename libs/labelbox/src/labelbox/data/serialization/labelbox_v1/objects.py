@@ -1,8 +1,4 @@
-from typing import Any, Dict, List, Optional, Union, Type
-try:
-    from typing import Literal
-except:
-    from typing_extensions import Literal
+from typing import Any, Dict, List, Optional, Union, Type, Literal
 
 from labelbox import pydantic_compat
 import numpy as np

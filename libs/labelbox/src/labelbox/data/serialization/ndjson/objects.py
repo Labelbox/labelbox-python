@@ -9,7 +9,6 @@ import numpy as np
 
 from labelbox import pydantic_compat
 from PIL import Image
-from labelbox.data.annotation_types import feature
 
 from labelbox.data.annotation_types.data.video import VideoData
 
@@ -19,7 +18,7 @@ from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import DocumentRectangle, Rectangle, Polygon, Line, Point, Mask
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.video import VideoMaskAnnotation, DICOMMaskAnnotation, MaskFrame, MaskInstance
-from .classification import NDClassification, NDSubclassification, NDSubclassificationType
+from .classification import NDSubclassification, NDSubclassificationType
 from .base import DataRow, NDAnnotation, NDJsonBase
 
 

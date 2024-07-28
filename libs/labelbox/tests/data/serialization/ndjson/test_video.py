@@ -1,15 +1,12 @@
 import json
-from labelbox.client import Client
 from labelbox.data.annotation_types.classification.classification import Checklist, ClassificationAnnotation, ClassificationAnswer, Radio
 from labelbox.data.annotation_types.data.video import VideoData
 from labelbox.data.annotation_types.geometry.line import Line
 from labelbox.data.annotation_types.geometry.point import Point
 from labelbox.data.annotation_types.geometry.rectangle import Rectangle
-from labelbox.data.annotation_types.geometry.point import Point
 
 from labelbox.data.annotation_types.label import Label
 from labelbox.data.annotation_types.video import VideoObjectAnnotation
-from labelbox import parser
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 
@@ -68,7 +65,7 @@ def test_video_classification_global_subclassifications():
         }
     }
 
-    expected_second_annotation = nested_checklist_annotation_ndjson = {
+    expected_second_annotation = {
         "name": "nested_checklist_question",
         "answer": [{
             "name":

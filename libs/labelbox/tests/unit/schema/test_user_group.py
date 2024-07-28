@@ -54,7 +54,7 @@ class TestUserGroup:
         client = MagicMock(Client)
         client.enable_experimental = False
         with pytest.raises(RuntimeError):
-            group = UserGroup(client)
+            UserGroup(client)
 
     def test_constructor(self):
         group = UserGroup(self.client)
@@ -65,7 +65,7 @@ class TestUserGroup:
         assert len(group.projects) == 0
         assert len(group.users) == 0
 
-    def test_update_with_exception_name(self):
+    def test_get_update_with_exception_name(self):
         group = self.group
         group.id = ""
 
@@ -174,7 +174,7 @@ class TestUserGroup:
         group.name = "Test Group"
         group.id = "group_id"
 
-        with pytest.raises(ResourceNotFoundError) as e:
+        with pytest.raises(ResourceNotFoundError):
             group.update()
 
     def test_update_with_exception_name(self):
@@ -184,7 +184,7 @@ class TestUserGroup:
         with pytest.raises(UnprocessableEntityError):
             group.update()
 
-    def test_update_with_exception_name(self):
+    def test_update_with_exception_id(self):
         group = self.group
         group.id = ""
 

@@ -7,10 +7,10 @@ from labelbox import pydantic_compat
 
 def test_point():
     with pytest.raises(pydantic_compat.ValidationError):
-        line = Point()
+        Point()
 
     with pytest.raises(TypeError):
-        line = Point([0, 1])
+        Point([0, 1])
 
     point = Point(x=0, y=1)
     expected = {"coordinates": [0, 1], "type": "Point"}

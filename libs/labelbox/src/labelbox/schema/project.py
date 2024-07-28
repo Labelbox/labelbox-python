@@ -6,7 +6,7 @@ import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Union, overload
 from urllib.parse import urlparse
 
 import requests
@@ -15,10 +15,9 @@ from labelbox import parser
 from labelbox import utils
 from labelbox.exceptions import error_message_for_unparsed_graphql_error
 from labelbox.exceptions import (InvalidQueryError, LabelboxError,
-                                 ProcessingWaitTimeout, ResourceConflict,
-                                 ResourceNotFoundError)
+                                 ProcessingWaitTimeout, ResourceNotFoundError)
 from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
+from labelbox.orm.db_object import DbObject, Deletable, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.consensus_settings import ConsensusSettings
@@ -37,8 +36,7 @@ from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
-from labelbox.schema.ontology_kind import (EditorTaskType, OntologyKind,
-                                           UploadType)
+from labelbox.schema.ontology_kind import (EditorTaskType, UploadType)
 from labelbox.schema.project_overview import ProjectOverview, ProjectOverviewDetailed
 
 if TYPE_CHECKING:
@@ -705,7 +703,7 @@ class Project(DbObject, Updateable, Deletable):
 
         if frontend.name != "Editor":
             logger.warning(
-                f"This function has only been tested to work with the Editor front end. Found %s",
+                "This function has only been tested to work with the Editor front end. Found %s",
                 frontend.name)
 
         supported_instruction_formats = (".pdf", ".html")
@@ -923,7 +921,7 @@ class Project(DbObject, Updateable, Deletable):
 
         if row_count > 100_000:
             raise ValueError(
-                f"Batch exceeds max size, break into smaller batches")
+                "Batch exceeds max size, break into smaller batches")
         if not row_count:
             raise ValueError("You need at least one data row in a batch")
 
@@ -1184,7 +1182,7 @@ class Project(DbObject, Updateable, Deletable):
 
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
-            raise LabelboxError(f"Batch was not created successfully: " +
+            raise LabelboxError("Batch was not created successfully: " +
                                 json.dumps(task.errors))
 
         return self.client.get_batch(self.uid, batch_id)
@@ -1504,7 +1502,7 @@ class Project(DbObject, Updateable, Deletable):
 
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
-            raise LabelboxError(f"Priority was not updated successfully: " +
+            raise LabelboxError("Priority was not updated successfully: " +
                                 json.dumps(task.errors))
         return True
 
@@ -1674,7 +1672,7 @@ class Project(DbObject, Updateable, Deletable):
 
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
-            raise LabelboxError(f"Data rows were not moved successfully: " +
+            raise LabelboxError("Data rows were not moved successfully: " +
                                 json.dumps(task.errors))
 
     def _wait_for_task(self, task_id: str) -> Task:

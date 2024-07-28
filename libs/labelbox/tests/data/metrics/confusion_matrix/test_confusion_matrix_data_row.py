@@ -1,5 +1,5 @@
 from pytest_cases import fixture_ref
-from pytest_cases import parametrize, fixture_ref
+from pytest_cases import parametrize
 
 from labelbox.data.metrics.confusion_matrix.confusion_matrix import confusion_matrix_metric
 

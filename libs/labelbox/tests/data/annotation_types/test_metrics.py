@@ -2,7 +2,7 @@ import pytest
 
 from labelbox.data.annotation_types.metrics import ConfusionMatrixAggregation, ScalarMetricAggregation
 from labelbox.data.annotation_types.metrics import ConfusionMatrixMetric, ScalarMetric
-from labelbox.data.annotation_types import ScalarMetric, Label, ImageData
+from labelbox.data.annotation_types import Label, ImageData
 from labelbox.data.annotation_types.metrics.scalar import RESERVED_METRIC_NAMES
 from labelbox import pydantic_compat
 
@@ -157,38 +157,38 @@ def test_custom_confusison_matrix_metric(feature_name, subclass_name,
 def test_name_exists():
     # Name is only required for ConfusionMatrixMetric for now.
     with pytest.raises(pydantic_compat.ValidationError) as exc_info:
-        metric = ConfusionMatrixMetric(value=[0, 1, 2, 3])
+        ConfusionMatrixMetric(value=[0, 1, 2, 3])
     assert "field required (type=value_error.missing)" in str(exc_info.value)
 
 
 def test_invalid_aggregations():
     with pytest.raises(pydantic_compat.ValidationError) as exc_info:
-        metric = ScalarMetric(
+        ScalarMetric(
             metric_name="invalid aggregation",
             value=0.1,
             aggregation=ConfusionMatrixAggregation.CONFUSION_MATRIX)
     assert "value is not a valid enumeration member" in str(exc_info.value)
     with pytest.raises(pydantic_compat.ValidationError) as exc_info:
-        metric = ConfusionMatrixMetric(metric_name="invalid aggregation",
-                                       value=[0, 1, 2, 3],
-                                       aggregation=ScalarMetricAggregation.SUM)
+        ConfusionMatrixMetric(metric_name="invalid aggregation",
+                              value=[0, 1, 2, 3],
+                              aggregation=ScalarMetricAggregation.SUM)
     assert "value is not a valid enumeration member" in str(exc_info.value)
 
 
 def test_invalid_number_of_confidence_scores():
     with pytest.raises(pydantic_compat.ValidationError) as exc_info:
-        metric = ScalarMetric(metric_name="too few scores", value={0.1: 0.1})
+        ScalarMetric(metric_name="too few scores", value={0.1: 0.1})
     assert "Number of confidence scores must be greater" in str(exc_info.value)
     with pytest.raises(pydantic_compat.ValidationError) as exc_info:
-        metric = ConfusionMatrixMetric(metric_name="too few scores",
-                                       value={0.1: [0, 1, 2, 3]})
+        ConfusionMatrixMetric(metric_name="too few scores",
+                              value={0.1: [0, 1, 2, 3]})
     assert "Number of confidence scores must be greater" in str(exc_info.value)
     with pytest.raises(pydantic_compat.ValidationError) as exc_info:
-        metric = ScalarMetric(metric_name="too many scores",
-                              value={i / 20.: 0.1 for i in range(20)})
+        ScalarMetric(metric_name="too many scores",
+                     value={i / 20.: 0.1 for i in range(20)})
     assert "Number of confidence scores must be greater" in str(exc_info.value)
     with pytest.raises(pydantic_compat.ValidationError) as exc_info:
-        metric = ConfusionMatrixMetric(
+        ConfusionMatrixMetric(
             metric_name="too many scores",
             value={i / 20.: [0, 1, 2, 3] for i in range(20)})
     assert "Number of confidence scores must be greater" in str(exc_info.value)

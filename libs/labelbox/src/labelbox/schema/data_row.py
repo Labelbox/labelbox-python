@@ -1,10 +1,10 @@
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union, Any
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 import json
 
 from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable, experimental
+from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.asset_attachment import AttachmentType
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore

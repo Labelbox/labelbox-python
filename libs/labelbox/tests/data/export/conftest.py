@@ -2,9 +2,10 @@ import uuid
 import time
 import pytest
 from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.media_type import MediaType
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
+from contextlib import suppress
+from labelbox.exceptions import MalformedQueryException
 
 
 @pytest.fixture
@@ -249,28 +250,6 @@ def ontology():
 
 
 @pytest.fixture
-def polygon_inference(prediction_id_mapping):
-    polygon = prediction_id_mapping['polygon'].copy()
-    polygon.update({
-        "polygon": [{
-            "x": 147.692,
-            "y": 118.154
-        }, {
-            "x": 142.769,
-            "y": 104.923
-        }, {
-            "x": 57.846,
-            "y": 118.769
-        }, {
-            "x": 28.308,
-            "y": 169.846
-        }]
-    })
-    del polygon['tool']
-    return polygon
-
-
-@pytest.fixture
 def configured_project_with_ontology(client, initial_dataset, ontology,
                                      rand_gen, image_url):
     dataset = initial_dataset
@@ -346,11 +325,8 @@ def model(client, rand_gen, configured_project):
     data = {"name": rand_gen(str), "ontology_id": ontology.uid}
     model = client.create_model(data["name"], data["ontology_id"])
     yield model
-    try:
-        model.delete()
-    except:
-        # Already was deleted by the test
-        pass
+    with suppress(MalformedQueryException):
+        model_run.delete()
 
 
 @pytest.fixture
@@ -358,11 +334,8 @@ def model_run(rand_gen, model):
     name = rand_gen(str)
     model_run = model.create_model_run(name)
     yield model_run
-    try:
+    with suppress(MalformedQueryException):
         model_run.delete()
-    except:
-        # Already was deleted by the test
-        pass
 
 
 @pytest.fixture

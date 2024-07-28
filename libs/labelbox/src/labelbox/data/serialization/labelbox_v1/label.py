@@ -115,7 +115,8 @@ class Review(pydantic_compat.BaseModel):
         alias_generator = camel_case
 
 
-Extra = lambda name: pydantic_compat.Field(None, alias=name, extra_field=True)
+def Extra (name: str):
+    return pydantic_compat.Field(None, alias=name, extra_field=True)
 
 
 class LBV1Label(pydantic_compat.BaseModel):

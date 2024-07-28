@@ -1,4 +1,3 @@
-import sys
 from hashlib import md5
 
 from .... import pydantic_compat

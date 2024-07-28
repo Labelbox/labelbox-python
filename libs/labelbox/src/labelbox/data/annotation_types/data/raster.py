@@ -163,7 +163,7 @@ class RasterData(pydantic_compat.BaseModel, ABC):
         arr = values.get("arr")
         uid = values.get('uid')
         global_key = values.get('global_key')
-        if uid == file_path == im_bytes == url == global_key == None and arr is None:
+        if uid == file_path == im_bytes == url == global_key is None and arr is None:
             raise ValueError(
                 "One of `file_path`, `im_bytes`, `url`, `uid`, `global_key` or `arr` required."
             )
@@ -179,7 +179,9 @@ class RasterData(pydantic_compat.BaseModel, ABC):
         return values
 
     def __repr__(self) -> str:
-        symbol_or_none = lambda data: '...' if data is not None else None
+        def symbol_or_none(data):
+            return '...' if data is not None else None
+
         return f"{self.__class__.__name__}(im_bytes={symbol_or_none(self.im_bytes)}," \
                f"file_path={self.file_path}," \
                f"url={self.url}," \

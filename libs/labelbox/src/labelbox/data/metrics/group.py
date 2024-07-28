@@ -5,14 +5,14 @@ from collections import defaultdict
 from typing import Dict, List, Tuple, Union
 
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation
-from labelbox.data.annotation_types.classification.classification import Checklist, ClassificationAnswer, Radio, Text
+from labelbox.data.annotation_types.classification.classification import Checklist, Radio, Text
 try:
     from typing import Literal
 except ImportError:
     from typing_extensions import Literal
 
 from ..annotation_types.feature import FeatureSchema
-from ..annotation_types import ObjectAnnotation, ClassificationAnnotation, Label
+from ..annotation_types import ObjectAnnotation, Label
 
 
 def get_identifying_key(

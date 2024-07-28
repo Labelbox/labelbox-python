@@ -222,6 +222,6 @@ class Label(pydantic_compat.BaseModel):
                prompt_count+=1
                if prompt_count > 1:
                    raise TypeError(
-                       f"Only one prompt annotation is allowed per label"
+                       "Only one prompt annotation is allowed per label"
                    )
         return value

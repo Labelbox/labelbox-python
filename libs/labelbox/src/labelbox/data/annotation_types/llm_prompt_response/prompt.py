@@ -1,4 +1,3 @@
-from typing import Union
 
 from labelbox.data.annotation_types.base_annotation import BaseAnnotation
 
