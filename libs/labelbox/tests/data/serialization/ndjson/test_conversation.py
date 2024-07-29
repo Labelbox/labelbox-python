@@ -101,3 +101,18 @@ def test_conversation_entity_import(filename: str):
     res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
     assert res == data
+
+
+def test_benchmark_reference_label_flag():
+    label = lb_types.Label(data=lb_types.ConversationData(global_key='my_global_key'),
+                   annotations=[
+                       lb_types.ClassificationAnnotation(
+                           name='free_text',
+                           message_id="0",
+                           value=lb_types.Text(answer="sample text"))
+                   ],
+                   is_benchmark_reference=True
+                   )
+
+    res = list(NDJsonConverter.serialize([label]))
+    assert res[0]["isBenchmarkReferenceLabel"]

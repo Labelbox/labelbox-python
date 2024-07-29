@@ -85,3 +85,23 @@ def test_rectangle_mixed_start_end_points():
 
     res = list(NDJsonConverter.deserialize(res))
     assert res == [label]
+
+
+def test_benchmark_reference_label_flag():
+    bbox = lb_types.ObjectAnnotation(
+        name="bbox",
+        value=lb_types.Rectangle(
+            start=lb_types.Point(x=81, y=28),
+            end=lb_types.Point(x=38, y=69),
+        ),
+        extra={"uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72"}
+    )
+
+    label = lb_types.Label(
+        data={"uid":DATAROW_ID},
+        annotations=[bbox],
+        is_benchmark_reference=True
+    )
+
+    res = list(NDJsonConverter.serialize([label]))
+    assert res[0]["isBenchmarkReferenceLabel"]
