@@ -1,4 +1,21 @@
 # Changelog
+#  Version 3.76.0 (2024-07-29)
+# Added
+* Added Project get_labeling_service(), request_labeling_service() and get_labeling_service_status()
+* Added project and ontology creation for prompt response projects: Client create_prompt_response_generation_project(), create_response_creation_project() in https://github.com/Labelbox/labelbox-python/pull/1726
+* Added is_benchmark_enabled, is_consensus_enabled to Project in https://github.com/Labelbox/labelbox-python/pull/1745
+
+## Updated
+* Made Project quality modes a list to allow combining more than 1 quality mode per project in https://github.com/Labelbox/labelbox-python/pull/1683
+
+## Notebooks
+* Added back in export migration guide in https://github.com/Labelbox/labelbox-python/pull/1736
+* Added correct data param to video notebookin https://github.com/Labelbox/labelbox-python/pull/1732
+NOTE: the notebooks will be removed and moved to this repo https://github.com/Labelbox/labelbox-notebooks soon
+
+## Other
+* Use connection pool for all http and graphql requests in https://github.com/Labelbox/labelbox-python/pull/1733
+
 # Version 3.75.1 (2024-07-16)
 ## Removed
 * Project MEDIA_TYPE JSON https://github.com/Labelbox/labelbox-python/pull/1728
