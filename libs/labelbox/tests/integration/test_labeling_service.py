@@ -7,6 +7,8 @@ from labelbox.schema.labeling_service import LabelingServiceStatus
 def test_get_labeling_service_throws_exception(project):
     with pytest.raises(ResourceNotFoundError):  # No labeling service by default
         project.get_labeling_service()
+    with pytest.raises(ResourceNotFoundError):  # No labeling service by default
+        project.get_labeling_service_status()
 
 
 def test_start_labeling_service(project):
@@ -18,3 +20,6 @@ def test_start_labeling_service(project):
     labeling_service = project.get_labeling_service()
     assert labeling_service.status == LabelingServiceStatus.SetUp
     assert labeling_service.project_id == project.uid
+
+    labeling_service_status = project.get_labeling_service_status()
+    assert labeling_service_status == LabelingServiceStatus.SetUp
