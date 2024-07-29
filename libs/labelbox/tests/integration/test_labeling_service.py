@@ -1,7 +1,7 @@
 import pytest
 
 from labelbox.exceptions import ResourceNotFoundError
-from labelbox.schema.labeling_service import LabelingService, LabelingServiceStatus
+from labelbox.schema.labeling_service import LabelingServiceStatus
 
 
 def test_get_labeling_service_throws_exception(project):
@@ -10,7 +10,7 @@ def test_get_labeling_service_throws_exception(project):
 
 
 def test_start_labeling_service(project):
-    labeling_service = LabelingService.start(project.client, project.uid)
+    labeling_service = project.request_labeling_service()
     assert labeling_service.status == LabelingServiceStatus.SetUp
     assert labeling_service.project_id == project.uid
 
