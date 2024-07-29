@@ -1,13 +1,14 @@
 from datetime import datetime
 from enum import Enum
 from typing import Any
+from typing_extensions import Annotated
 
 from labelbox.exceptions import ResourceNotFoundError
 
-from labelbox.data.annotation_types.types import Cuid
-from labelbox.pydantic_compat import BaseModel
+from labelbox.pydantic_compat import BaseModel, Field
 from labelbox.utils import _CamelCaseMixin
 
+Cuid = Annotated[str, Field(min_length=25, max_length=25)]
 
 class LabelingServiceStatus(Enum):
     Accepted = 'ACCEPTED',
