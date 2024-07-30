@@ -35,6 +35,8 @@ from labelbox.schema.invite import Invite
 from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
+from labelbox.exceptions import LabelboxError
+from contextlib import suppress
 from labelbox import Client
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
@@ -1063,12 +1065,20 @@ def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
     project.delete()
 
 
-@pytest.fixture
-def embedding(client: Client):
+@pytest.fixture(scope="session")
+def embedding(client: Client, environ):
+
     uuid_str = uuid.uuid4().hex
     embedding = client.create_embedding(f"sdk-int-{uuid_str}", 8)
     yield embedding
-    embedding.delete()
+    # Remove all embeddings on staging
+    if environ == Environ.STAGING:
+        embeddings = client.get_embeddings()
+        for embedding in embeddings:
+            with suppress(LabelboxError):
+                embedding.delete()
+    else:
+        embedding.delete()
 
 
 @pytest.fixture
