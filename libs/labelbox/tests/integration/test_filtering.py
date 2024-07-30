@@ -4,6 +4,7 @@ from labelbox import Project
 from labelbox.exceptions import InvalidQueryError
 from labelbox import MediaType
 import time
+import logging
 
 
 @pytest.fixture
@@ -21,11 +22,12 @@ def project_to_test_where(client, rand_gen):
     while (num_retries > 0):
         projects = client.get_projects()
         try:
+            logging.log(level=2, msg=f"{len(list(projects))}")
             if len(list(projects)) >= 3:
                 break
             else:
                 raise TypeError()
-        except TypeError:
+        except:
             num_retries -= 1
             time.sleep(5)
 
