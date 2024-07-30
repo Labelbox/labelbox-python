@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, TypeVar, Union, overload
 from urllib.parse import urlparse
 
+from labelbox.schema.labeling_service import LabelingService, LabelingServiceStatus
 import requests
 
 from labelbox import parser
@@ -149,7 +150,7 @@ class Project(DbObject, Updateable, Deletable):
             True if this project is a live chat evaluation project, False otherwise
         """
         return self.media_type == MediaType.Conversational and self.editor_task_type == EditorTaskType.ModelChatEvaluation
-    
+
     def is_prompt_response(self) -> bool:
         """
         Returns:
@@ -1914,6 +1915,39 @@ class Project(DbObject, Updateable, Deletable):
         """
         result = self.client.execute(mutation, {"projectId": self.uid})
         return self.client.get_project(result["cloneProject"]["id"])
+
+    @experimental
+    def get_labeling_service(self) -> LabelingService:
+        """Get the labeling service for this project.
+
+        Raises:
+            ResourceNotFoundError if the project does not have a labeling service.
+
+        Returns:
+            LabelingService: The labeling service for this project.
+        """
+        return LabelingService.get(self.client, self.uid)
+
+    @experimental
+    def get_labeling_service_status(self) -> LabelingServiceStatus:
+        """Get the labeling service status for this project.
+
+        Raises:
+            ResourceNotFoundError if the project does not have a labeling service.
+
+        Returns:
+            LabelingServiceStatus: The labeling service status for this project.
+        """
+        return self.get_labeling_service().status
+
+    @experimental
+    def request_labeling_service(self) -> LabelingService:
+        """Get the labeling service for this project.
+
+        Returns:
+            LabelingService: The labeling service for this project.
+        """
+        return LabelingService.start(self.client, self.uid)  # type: ignore
 
 
 class ProjectMember(DbObject):
