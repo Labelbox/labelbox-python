@@ -21,12 +21,16 @@ def project_to_test_where(client, rand_gen):
     
     while (num_retries > 0):
         projects = client.get_projects()
-        if projects is None or len(list(projects)) != 3:
+        try:
+            if len(list(projects)) >= 3:
+                break
+        except TypeError:
             num_retries -= 1
             time.sleep(5)
-        else:
-            break
 
+    if num_retries == 0:
+        raise TimeoutError("Hit max number of retries getting projects")
+    
     yield p_a, p_b, p_c
 
     p_a.delete()
