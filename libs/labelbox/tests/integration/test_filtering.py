@@ -2,7 +2,6 @@ import pytest
 
 from labelbox import Project
 from labelbox.exceptions import InvalidQueryError
-from labelbox.schema.queue_mode import QueueMode
 from labelbox import MediaType
 import time
 
@@ -24,6 +23,8 @@ def project_to_test_where(client, rand_gen):
         try:
             if len(list(projects)) >= 3:
                 break
+            else:
+                raise TypeError()
         except TypeError:
             num_retries -= 1
             time.sleep(5)
