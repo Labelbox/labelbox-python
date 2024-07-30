@@ -3,17 +3,29 @@ import pytest
 from labelbox import Project
 from labelbox.exceptions import InvalidQueryError
 from labelbox.schema.queue_mode import QueueMode
+from labelbox import MediaType
+import time
 
 
 @pytest.fixture
 def project_to_test_where(client, rand_gen):
+    num_retries = 5
+    
     p_a_name = f"a-{rand_gen(str)}"
     p_b_name = f"b-{rand_gen(str)}"
     p_c_name = f"c-{rand_gen(str)}"
-
-    p_a = client.create_project(name=p_a_name, queue_mode=QueueMode.Batch)
-    p_b = client.create_project(name=p_b_name, queue_mode=QueueMode.Batch)
-    p_c = client.create_project(name=p_c_name, queue_mode=QueueMode.Batch)
+    
+    p_a = client.create_project(name=p_a_name, media_type=MediaType.Image)
+    p_b = client.create_project(name=p_b_name, media_type=MediaType.Image)
+    p_c = client.create_project(name=p_c_name, media_type=MediaType.Image)
+    
+    while (num_retries > 0):
+        projects = client.get_projects()
+        if projects is None or len(list(projects)) != 3:
+            num_retries -= 1
+            time.sleep(5)
+        else:
+            break
 
     yield p_a, p_b, p_c
 
