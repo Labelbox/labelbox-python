@@ -1063,7 +1063,7 @@ def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
     project.delete()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def embedding(client: Client):
     uuid_str = uuid.uuid4().hex
     embedding = client.create_embedding(f"sdk-int-{uuid_str}", 8)
