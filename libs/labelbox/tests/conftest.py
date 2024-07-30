@@ -1067,18 +1067,18 @@ def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
 
 @pytest.fixture(scope="session")
 def embedding(client: Client, environ):
-    
+
+    uuid_str = uuid.uuid4().hex
+    embedding = client.create_embedding(f"sdk-int-{uuid_str}", 8)
+    yield embedding
     # Remove all embeddings on staging
     if environ == Environ.STAGING:
         embeddings = client.get_embeddings()
         for embedding in embeddings:
             with suppress(LabelboxError):
                 embedding.delete()
-
-    uuid_str = uuid.uuid4().hex
-    embedding = client.create_embedding(f"sdk-int-{uuid_str}", 8)
-    yield embedding
-    embedding.delete()
+    else:
+        embedding.delete()
 
 
 @pytest.fixture
