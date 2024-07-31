@@ -109,13 +109,17 @@ class NDJsonConverter:
                     if not isinstance(annotation, RelationshipAnnotation):
                         uuid_safe_annotations.append(annotation)
             label.annotations = uuid_safe_annotations
-            for example in NDLabel.from_common([label]):
-                annotation_uuid = getattr(example, "uuid", None)
-                res = example.dict(
+
+            for annotation in NDLabel.from_common([label]):
+                annotation_uuid = getattr(annotation, "uuid", None)
+
+                res = annotation.dict(
                     by_alias=True,
                     exclude={"uuid"} if annotation_uuid == "None" else None,
                 )
                 for k, v in list(res.items()):
                     if k in IGNORE_IF_NONE and v is None:
                         del res[k]
+                if getattr(label, 'is_benchmark_reference'):
+                    res['isBenchmarkReferenceLabel'] = True
                 yield res

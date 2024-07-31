@@ -1,12 +1,8 @@
-import datetime
-from labelbox.schema.label import Label
 import pytest
-import uuid
 
 from labelbox.data.annotation_types.data import (
     AudioData,
     ConversationData,
-    DicomData,
     DocumentData,
     HTMLData,
     ImageData,
@@ -15,11 +11,8 @@ from labelbox.data.annotation_types.data import (
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.data.annotation_types.data.video import VideoData
 
-import labelbox as lb
 import labelbox.types as lb_types
 from labelbox.schema.media_type import MediaType
-from labelbox.schema.annotation_import import AnnotationImportState
-from labelbox import Project, Client
 
 # Unit test for label based on data type.
 # TODO: Dicom removed it is unstable when you deserialize and serialize on label import. If we intend to keep this library this needs add generic data types tests work with this data type.
