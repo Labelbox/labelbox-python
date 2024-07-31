@@ -874,7 +874,7 @@ class Client:
         kwargs.pop("data_row_count", None)
 
         return self._create_project(**kwargs)
-    
+
 
     def create_prompt_response_generation_project(self,
                                                   dataset_id: Optional[str] = None,
@@ -882,8 +882,8 @@ class Client:
                                                   data_row_count: int = 100,
                                                   **kwargs) -> Project:
         """
-        Use this method exclusively to create a prompt and response generation project. 
-        
+        Use this method exclusively to create a prompt and response generation project.
+
         Args:
             dataset_name: When creating a new dataset, pass the name
             dataset_id: When using an existing dataset, pass the id
@@ -891,9 +891,9 @@ class Client:
             **kwargs: Additional parameters to pass see the create_project method
         Returns:
             Project: The created project
-            
-        NOTE: Only a dataset_name or dataset_id should be included 
-        
+
+        NOTE: Only a dataset_name or dataset_id should be included
+
         Examples:
             >>> client.create_prompt_response_generation_project(name=project_name, dataset_name="new data set", media_type=MediaType.LLMPromptResponseCreation)
             >>>     This creates a new dataset with a default number of rows (100), creates new prompt and response creation project and assigns a batch of the newly created data rows to the project.
@@ -912,12 +912,12 @@ class Client:
             raise ValueError(
                 "dataset_name or dataset_id must be present and not be an empty string."
             )
-        
+
         if dataset_id and dataset_name:
             raise ValueError(
                 "Only provide a dataset_name or dataset_id, not both."
-            )    
-            
+            )
+
         if data_row_count <= 0:
             raise ValueError("data_row_count must be a positive integer.")
 
@@ -927,7 +927,7 @@ class Client:
         else:
             append_to_existing_dataset = False
             dataset_name_or_id = dataset_name
-            
+
         if "media_type" in kwargs and kwargs.get("media_type") not in [MediaType.LLMPromptCreation, MediaType.LLMPromptResponseCreation]:
             raise ValueError(
                 "media_type must be either LLMPromptCreation or LLMPromptResponseCreation"
@@ -936,11 +936,11 @@ class Client:
         kwargs["dataset_name_or_id"] = dataset_name_or_id
         kwargs["append_to_existing_dataset"] = append_to_existing_dataset
         kwargs["data_row_count"] = data_row_count
-        
+
         kwargs.pop("editor_task_type", None)
-        
+
         return self._create_project(**kwargs)
-    
+
     def create_response_creation_project(self, **kwargs) -> Project:
         """
         Creates a project for response creation.
@@ -1280,7 +1280,7 @@ class Client:
                 leave as None otherwise.
         Returns:
             The created Ontology
-        
+
         NOTE for chat evaluation, we currently force media_type to Conversational and for response creation, we force media_type to Text.
         """
         tools, classifications = [], []
