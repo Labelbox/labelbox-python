@@ -1,7 +1,7 @@
 from typing import Optional, Union, Type
 
 from labelbox.data.annotation_types.data import ImageData, TextData
-from labelbox.data.serialization.ndjson.base import DataRow, NDJsonBase
+from labelbox.data.serialization.ndjson.base import DataRow, NDJsonBase, SubclassRegistryBase
 from labelbox.data.annotation_types.metrics.scalar import (
     ScalarMetric, ScalarMetricAggregation, ScalarMetricValue,
     ScalarMetricConfidenceValue)
@@ -26,7 +26,7 @@ class BaseNDMetric(NDJsonBase):
         return res
 
 
-class NDConfusionMatrixMetric(BaseNDMetric):
+class NDConfusionMatrixMetric(BaseNDMetric, SubclassRegistryBase):
     metric_value: Union[ConfusionMatrixMetricValue,
                         ConfusionMatrixMetricConfidenceValue]
     metric_name: str
@@ -53,10 +53,10 @@ class NDConfusionMatrixMetric(BaseNDMetric):
                    data_row=DataRow(id=data.uid, global_key=data.global_key))
 
 
-class NDScalarMetric(BaseNDMetric):
+class NDScalarMetric(BaseNDMetric, SubclassRegistryBase):
     metric_value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
     metric_name: Optional[str]
-    aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN
+    aggregation: Optional[ScalarMetricAggregation] = ScalarMetricAggregation.ARITHMETIC_MEAN
 
     def to_common(self) -> ScalarMetric:
         return ScalarMetric(value=self.metric_value,

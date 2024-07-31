@@ -5,6 +5,18 @@ from labelbox.utils import _CamelCaseMixin, is_exactly_one_set
 from labelbox import pydantic_compat
 from ...annotation_types.types import Cuid
 
+subclass_registry = {}
+
+class SubclassRegistryBase(pydantic_compat.BaseModel):
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls.__name__ != "NDAnnotation":
+            subclass_registry[cls.__name__] = cls 
+    
+    class Config:
+        extra = "allow" 
+            
 
 class DataRow(_CamelCaseMixin):
     id: str = None
@@ -19,7 +31,7 @@ class DataRow(_CamelCaseMixin):
 
 class NDJsonBase(_CamelCaseMixin):
     uuid: str = None
-    data_row: DataRow
+    data_row: Optional[DataRow] = None
 
     @pydantic_compat.validator('uuid', pre=True, always=True)
     def set_id(cls, v):
@@ -28,10 +40,18 @@ class NDJsonBase(_CamelCaseMixin):
     def dict(self, *args, **kwargs):
         """ Pop missing id or missing globalKey from dataRow """
         res = super().dict(*args, **kwargs)
-        if not self.data_row.id:
-            res['dataRow'].pop('id')
-        if not self.data_row.global_key:
-            res['dataRow'].pop('globalKey')
+        if self.data_row and not self.data_row.id:
+            if "data_row" in res:
+                res["data_row"].pop("id")
+            else:
+                res['dataRow'].pop('id')
+        if self.data_row and not self.data_row.global_key:
+            if "data_row" in res:
+                res["data_row"].pop("global_key")
+            else:
+                res['dataRow'].pop('globalKey')
+        if not self.data_row:
+            del res["dataRow"]
         return res
 
 

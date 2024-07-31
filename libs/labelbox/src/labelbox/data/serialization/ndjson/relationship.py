@@ -5,7 +5,7 @@ from ...annotation_types.data import ImageData, TextData
 from ...annotation_types.relationship import RelationshipAnnotation
 from ...annotation_types.relationship import Relationship
 from .objects import NDObjectType
-from .base import DataRow
+from labelbox.data.serialization.ndjson.base import DataRow, SubclassRegistryBase
 
 SUPPORTED_ANNOTATIONS = NDObjectType
 
@@ -16,7 +16,7 @@ class _Relationship(pydantic_compat.BaseModel):
     type: str
 
 
-class NDRelationship(NDAnnotation):
+class NDRelationship(NDAnnotation, SubclassRegistryBase):
     relationship: _Relationship
 
     @staticmethod

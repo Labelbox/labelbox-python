@@ -11,6 +11,7 @@ from ...annotation_types.llm_prompt_response.prompt import PromptClassificationA
 from ...annotation_types.classification.classification import ClassificationAnswer, Dropdown, Text, Checklist, Radio
 from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
+from labelbox.data.serialization.ndjson.base import SubclassRegistryBase
 
 
 class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
@@ -174,7 +175,7 @@ class NDPromptTextSubclass(NDAnswer):
 # ====== End of subclasses
 
 
-class NDText(NDAnnotation, NDTextSubclass):
+class NDText(NDAnnotation, NDTextSubclass, SubclassRegistryBase):
 
     @classmethod
     def from_common(cls,
@@ -198,7 +199,7 @@ class NDText(NDAnnotation, NDTextSubclass):
         )
 
 
-class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
+class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported, SubclassRegistryBase):
 
     @classmethod
     def from_common(
@@ -234,7 +235,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
                    confidence=confidence)
 
 
-class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
+class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported, SubclassRegistryBase):
 
     @classmethod
     def from_common(
@@ -265,7 +266,7 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
                    confidence=confidence)
         
         
-class NDPromptText(NDAnnotation, NDPromptTextSubclass):
+class NDPromptText(NDAnnotation, NDPromptTextSubclass, SubclassRegistryBase):
     
     @classmethod
     def from_common(
@@ -404,8 +405,6 @@ class NDPromptClassification:
                                         annotation.confidence)
 
 
-# Make sure to keep NDChecklistSubclass prior to NDRadioSubclass in the list,
-# otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
 NDSubclassificationType = Union[NDChecklistSubclass, NDRadioSubclass,
                                 NDTextSubclass]
 
@@ -418,7 +417,6 @@ NDText.update_forward_refs()
 NDPromptText.update_forward_refs()
 NDTextSubclass.update_forward_refs()
 
-# Make sure to keep NDChecklist prior to NDRadio in the list,
-# otherwise list of answers gets parsed by NDRadio whereas NDChecklist must be used
+
 NDClassificationType = Union[NDChecklist, NDRadio, NDText]
 NDPromptClassificationType = Union[NDPromptText]

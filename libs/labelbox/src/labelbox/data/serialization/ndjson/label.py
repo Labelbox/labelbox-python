@@ -20,10 +20,13 @@ from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
 from ...annotation_types.llm_prompt_response.prompt import PromptClassificationAnnotation
 
 from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
-from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass, NDPromptClassification, NDPromptClassificationType, NDPromptText
+from .classification import NDClassification, NDClassificationType, NDPromptClassification, NDPromptClassificationType, NDPromptText, NDChecklistSubclass, NDRadioSubclass
 from .objects import NDObject, NDObjectType, NDSegments, NDDicomSegments, NDVideoMasks, NDDicomMasks
 from .relationship import NDRelationship
 from .base import DataRow
+from labelbox.utils import camel_case
+from labelbox.data.serialization.ndjson.base import SubclassRegistryBase, subclass_registry
+from contextlib import suppress
 
 AnnotationType = Union[NDObjectType, NDClassificationType, NDPromptClassificationType,
                        NDConfusionMatrixMetric, NDScalarMetric, NDDicomSegments,
@@ -32,8 +35,51 @@ AnnotationType = Union[NDObjectType, NDClassificationType, NDPromptClassificatio
 
 
 class NDLabel(pydantic_compat.BaseModel):
-    annotations: List[AnnotationType]
+    annotations: List[SubclassRegistryBase]
+    
+    def __init__(self, **kwargs):
+        # NOTE: Deserialization of subclasses in pydantic is difficult, see here https://blog.devgenius.io/deserialize-child-classes-with-pydantic-that-gonna-work-784230e1cf83
+        # Below implements the subclass registry as mentioned in the article. The python dicts we pass in can be missing certain fields
+        # we essentially have to infer the type against all sub classes that have the SubclasssRegistryBase inheritance. 
+        # It works by checking if the keys of our annotations any required keys inside subclasses.
+        # More keys are prioritized over less keys (closer match). This is used when importing json to our base models not a lot of customer workflows
+        # depending on this method but this works for all our existing tests with the bonus of added validation. (no subclass found it throws an error)
+        # Previous strategies hacked but dont work for pydantic V2 they also make this part of the code less complicated prior solutions depended on order
+        # of how classes were shown on Python file to work. This should open the door to cut out a lot of the library specifically some subclasses.
+        
+        for index in range(len(kwargs["annotations"])):
+            annotation = kwargs["annotations"][index]
+            if isinstance(annotation, dict):
+                item_annotation_keys = annotation.keys()
+                key_subclass_combos = defaultdict(list)
+                for subclass in subclass_registry.values():
+                    subclass = subclass
 
+                    # Get all required keys from subclass
+                    annotation_keys = []
+                    for k, field in subclass.__fields__.items():
+                        # must account for alias
+                        if hasattr(field, "alias") and field.alias == "answers" and "answers" in item_annotation_keys:
+                            annotation_keys.append("answers")
+                        elif field.required is True and k != "uuid":
+                            annotation_keys.append(camel_case(k))
+                    key_subclass_combos[subclass].extend(annotation_keys)
+                # Sort by subclass that has the most keys i.e. the one with the most keys if a match is likely our class
+                key_subclass_combos = dict(sorted(key_subclass_combos.items(), key = lambda x : len(x[1]), reverse=True))
+
+                # Choose the keys from our dict we supplied that matches the required keys of a subclass
+                for subclass, key_subclass_combo in key_subclass_combos.items():
+                    check_required_keys = all(key in list(item_annotation_keys) for key in key_subclass_combo)
+                    if check_required_keys:
+                        # Keep trying subclasses until we find one that has valid values
+                        with suppress(pydantic_compat.ValidationError):
+                            annotation = subclass(**annotation)
+                            break
+                if isinstance(annotation, dict):
+                    raise ValueError(f"Could not find subclass for fields: {item_annotation_keys}")
+                kwargs["annotations"][index] = annotation
+        super().__init__(**kwargs)
+                    
     class _Relationship(pydantic_compat.BaseModel):
         """This object holds information about the relationship"""
         ndjson: NDRelationship
