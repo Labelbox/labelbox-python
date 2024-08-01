@@ -10,12 +10,13 @@ from labelbox.utils import _CamelCaseMixin
 
 Cuid = Annotated[str, Field(min_length=25, max_length=25)]
 
+
 class LabelingServiceStatus(Enum):
-    Accepted = 'ACCEPTED',
-    Calibration = 'CALIBRATION',
-    Complete = 'COMPLETE',
-    Production = 'PRODUCTION',
-    Requested = 'REQUESTED',
+    Accepted = 'ACCEPTED'
+    Calibration = 'CALIBRATION'
+    Complete = 'COMPLETE'
+    Production = 'PRODUCTION'
+    Requested = 'REQUESTED'
     SetUp = 'SET_UP'
 
 
@@ -40,7 +41,7 @@ class LabelingService(BaseModel):
     @classmethod
     def start(cls, client, project_id: Cuid) -> 'LabelingService':
         """
-        Starts the labeling service for the project. This is equivalent to a UI acction to Request Specialized Labelers
+        Starts the labeling service for the project. This is equivalent to a UI action to Request Specialized Labelers
 
         Returns:
             LabelingService: The labeling service for the project.
@@ -57,6 +58,30 @@ class LabelingService(BaseModel):
         if not success:
             raise Exception("Failed to start labeling service")
         return cls.get(client, project_id)
+
+    def request(self) -> 'LabelingService':
+        """
+        Starts the labeling service for the project. This is equivalent to a UI action to Request Specialized Labelers
+
+        Returns:
+            LabelingService: The labeling service for the project.
+        Raises:
+            Exception: If the service fails to start.
+        """
+
+        query_str = """mutation ValidateAndRequestProjectBoostWorkforcePyApi($projectId: ID!) {
+            validateAndRequestProjectBoostWorkforce(
+                data: { projectId: $projectId }
+            ) {
+                success
+            }
+        }
+        """
+        result = self.client.execute(query_str, {"projectId": self.project_id})
+        success = result["validateAndRequestProjectBoostWorkforce"]["success"]
+        if not success:
+            raise Exception("Failed to start labeling service")
+        return LabelingService.get(self.client, self.project_id)
 
     @classmethod
     def get(cls, client, project_id: Cuid) -> 'LabelingService':
