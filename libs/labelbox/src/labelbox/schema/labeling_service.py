@@ -77,7 +77,8 @@ class LabelingService(BaseModel):
             }
         }
         """
-        result = self.client.execute(query_str, {"projectId": self.project_id})
+        result = self.client.execute(query_str, {"projectId": self.project_id},
+                                     raise_return_resource_not_found=True)
         success = result["validateAndRequestProjectBoostWorkforce"]["success"]
         if not success:
             raise Exception("Failed to start labeling service")

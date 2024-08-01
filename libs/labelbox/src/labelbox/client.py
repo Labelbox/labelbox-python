@@ -145,7 +145,8 @@ class Client:
                 files=None,
                 timeout=60.0,
                 experimental=False,
-                error_log_key="message"):
+                error_log_key="message",
+                raise_return_resource_not_found=False):
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -297,9 +298,13 @@ class Client:
         resource_not_found_error = check_errors(["RESOURCE_NOT_FOUND"],
                                                 "extensions", "code")
         if resource_not_found_error is not None:
-            # Return None and let the caller methods raise an exception
-            # as they already know which resource type and ID was requested
-            return None
+            if raise_return_resource_not_found:
+                raise labelbox.exceptions.ResourceNotFoundError(
+                    message=resource_not_found_error["message"])
+            else:
+                # Return None and let the caller methods raise an exception
+                # as they already know which resource type and ID was requested
+                return None
 
         resource_conflict_error = check_errors(["RESOURCE_CONFLICT"],
                                                "extensions", "code")
@@ -875,12 +880,12 @@ class Client:
 
         return self._create_project(**kwargs)
 
-
-    def create_prompt_response_generation_project(self,
-                                                  dataset_id: Optional[str] = None,
-                                                  dataset_name: Optional[str] = None,
-                                                  data_row_count: int = 100,
-                                                  **kwargs) -> Project:
+    def create_prompt_response_generation_project(
+            self,
+            dataset_id: Optional[str] = None,
+            dataset_name: Optional[str] = None,
+            data_row_count: int = 100,
+            **kwargs) -> Project:
         """
         Use this method exclusively to create a prompt and response generation project.
 
@@ -915,8 +920,7 @@ class Client:
 
         if dataset_id and dataset_name:
             raise ValueError(
-                "Only provide a dataset_name or dataset_id, not both."
-            )
+                "Only provide a dataset_name or dataset_id, not both.")
 
         if data_row_count <= 0:
             raise ValueError("data_row_count must be a positive integer.")
@@ -928,7 +932,9 @@ class Client:
             append_to_existing_dataset = False
             dataset_name_or_id = dataset_name
 
-        if "media_type" in kwargs and kwargs.get("media_type") not in [MediaType.LLMPromptCreation, MediaType.LLMPromptResponseCreation]:
+        if "media_type" in kwargs and kwargs.get("media_type") not in [
+                MediaType.LLMPromptCreation, MediaType.LLMPromptResponseCreation
+        ]:
             raise ValueError(
                 "media_type must be either LLMPromptCreation or LLMPromptResponseCreation"
             )
@@ -949,8 +955,7 @@ class Client:
         Returns:
             Project: The created project
         """
-        kwargs[
-            "media_type"] = MediaType.Text  # Only Text is supported
+        kwargs["media_type"] = MediaType.Text  # Only Text is supported
         kwargs[
             "editor_task_type"] = EditorTaskType.ResponseCreation.value  # Special editor task type for response creation projects
 
@@ -1005,7 +1010,8 @@ class Client:
 
         if quality_modes and quality_mode:
             raise ValueError(
-                "Cannot use both quality_modes and quality_mode at the same time. Use one or the other.")
+                "Cannot use both quality_modes and quality_mode at the same time. Use one or the other."
+            )
 
         if not quality_modes and not quality_mode:
             logger.info("Defaulting quality modes to Benchmark and Consensus.")
@@ -1021,12 +1027,11 @@ class Client:
         if quality_mode:
             quality_modes_set = {quality_mode}
 
-        if (
-            quality_modes_set is None
-            or len(quality_modes_set) == 0
-            or quality_modes_set == {QualityMode.Benchmark, QualityMode.Consensus}
-        ):
-            data["auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+        if (quality_modes_set is None or len(quality_modes_set) == 0 or
+                quality_modes_set
+                == {QualityMode.Benchmark, QualityMode.Consensus}):
+            data[
+                "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
             data["is_consensus_enabled"] = True
@@ -1297,10 +1302,12 @@ class Client:
                         f"Tool `{tool}` not in list of supported tools.")
             elif 'type' in feature_schema.normalized:
                 classification = feature_schema.normalized['type']
-                if classification in Classification.Type._value2member_map_.keys():
+                if classification in Classification.Type._value2member_map_.keys(
+                ):
                     Classification.Type(classification)
                     classifications.append(feature_schema.normalized)
-                elif classification in PromptResponseClassification.Type._value2member_map_.keys():
+                elif classification in PromptResponseClassification.Type._value2member_map_.keys(
+                ):
                     PromptResponseClassification.Type(classification)
                     classifications.append(feature_schema.normalized)
                 else:
@@ -1518,7 +1525,8 @@ class Client:
                 raise get_media_type_validation_error(media_type)
 
         if ontology_kind and OntologyKind.is_supported(ontology_kind):
-            media_type = OntologyKind.evaluate_ontology_kind_with_media_type(ontology_kind, media_type)
+            media_type = OntologyKind.evaluate_ontology_kind_with_media_type(
+                ontology_kind, media_type)
             editor_task_type_value = EditorTaskTypeMapper.to_editor_task_type(
                 ontology_kind, media_type).value
         elif ontology_kind:

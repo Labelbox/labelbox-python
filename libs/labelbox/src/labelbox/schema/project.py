@@ -1949,15 +1949,6 @@ class Project(DbObject, Updateable, Deletable):
         """
         return LabelingService.start(self.client, self.uid)  # type: ignore
 
-    @experimental
-    def start_labeling_service(self) -> LabelingService:
-        """Submit a request to start the labeling service for this project.
-
-        Returns:
-            LabelingService: The labeling service for this project.
-        """
-        return LabelingService.start(self.client, self.uid)  # type: ignore
-
 
 class ProjectMember(DbObject):
     user = Relationship.ToOne("User", cache=True)
