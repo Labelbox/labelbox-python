@@ -61,12 +61,15 @@ class LabelingService(BaseModel):
 
     def request(self) -> 'LabelingService':
         """
-        Starts the labeling service for the project. This is equivalent to a UI action to Request Specialized Labelers
+        Creates a request to labeling service to start labeling for the project. 
+        Our back end will validate that the project is ready for labeling and then request the labeling service.
 
         Returns:
             LabelingService: The labeling service for the project.
         Raises:
-            Exception: If the service fails to start.
+            ResourceNotFoundError: If ontology is not associated with the project
+                or if any projects required prerequisites are missing.
+
         """
 
         query_str = """mutation ValidateAndRequestProjectBoostWorkforcePyApi($projectId: ID!) {
