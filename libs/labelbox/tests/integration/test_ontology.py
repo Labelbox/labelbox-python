@@ -177,16 +177,31 @@ def _get_attr_stringify_json(obj, attr):
     return value
 
 
-def test_feature_schema_create_read(client, rand_gen):
-    name = f"test-root-schema-{rand_gen(str)}"
-    feature_schema_cat_normalized = {
+@pytest.fixture
+def name_for_read(rand_gen):
+    yield f"test-root-schema-{rand_gen(str)}"
+
+
+@pytest.fixture
+def feature_schema_cat_normalized(name_for_read):
+    yield {
         'tool': 'polygon',
-        'name': name,
+        'name': name_for_read,
         'color': 'black',
         'classifications': [],
     }
-    created_feature_schema = client.create_feature_schema(
-        feature_schema_cat_normalized)
+
+
+@pytest.fixture
+def feature_schema_for_read(client, feature_schema_cat_normalized):
+    feature_schema = client.create_feature_schema(feature_schema_cat_normalized)
+    yield feature_schema
+    client.delete_unused_feature_schema(feature_schema.uid)
+
+
+def test_feature_schema_create_read(client, feature_schema_for_read,
+                                    name_for_read):
+    created_feature_schema = feature_schema_for_read
     queried_feature_schema = client.get_feature_schema(
         created_feature_schema.uid)
     for attr in Entity.FeatureSchema.fields():
@@ -195,9 +210,9 @@ def test_feature_schema_create_read(client, rand_gen):
                                             queried_feature_schema, attr)
 
     time.sleep(3)  # Slight delay for searching
-    queried_feature_schemas = list(client.get_feature_schemas(name))
+    queried_feature_schemas = list(client.get_feature_schemas(name_for_read))
     assert [feature_schema.name for feature_schema in queried_feature_schemas
-           ] == [name]
+           ] == [name_for_read]
     queried_feature_schema = queried_feature_schemas[0]
 
     for attr in Entity.FeatureSchema.fields():
@@ -206,7 +221,10 @@ def test_feature_schema_create_read(client, rand_gen):
                                             queried_feature_schema, attr)
 
 
-def test_ontology_create_read(client, rand_gen):
+def test_ontology_create_read(
+    client,
+    rand_gen,
+):
     ontology_name = f"test-ontology-{rand_gen(str)}"
     tool_name = f"test-ontology-tool-{rand_gen(str)}"
     feature_schema_cat_normalized = {
