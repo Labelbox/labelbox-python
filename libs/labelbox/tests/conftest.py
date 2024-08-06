@@ -130,8 +130,7 @@ def rest_url(environ: str) -> str:
 def testing_api_key(environ: Environ) -> str:
     keys = [
         f"LABELBOX_TEST_API_KEY_{environ.value.upper()}",
-        "LABELBOX_TEST_API_KEY",
-        "LABELBOX_API_KEY"
+        "LABELBOX_TEST_API_KEY", "LABELBOX_API_KEY"
     ]
     for key in keys:
         value = os.environ.get(key)
@@ -318,11 +317,7 @@ def environ() -> Environ:
     'prod' or 'staging'
     Make sure to set LABELBOX_TEST_ENVIRON in .github/workflows/python-package.yaml
     """
-    keys = [
-        "LABELBOX_TEST_ENV",
-        "LABELBOX_TEST_ENVIRON",
-        "LABELBOX_ENV"
-    ]
+    keys = ["LABELBOX_TEST_ENV", "LABELBOX_TEST_ENVIRON", "LABELBOX_ENV"]
     for key in keys:
         value = os.environ.get(key)
         if value is not None:
@@ -740,6 +735,23 @@ def configured_batch_project_with_multiple_datarows(project, dataset, data_rows,
 
     for label in project.labels():
         label.delete()
+
+
+@pytest.fixture
+def configured_batch_project_for_labeling_service(project,
+                                                  data_row_and_global_key):
+    """Project with a batch having multiple datarows
+    Project contains an ontology with 1 bbox tool
+    Additionally includes a create_label method for any needed extra labels
+    """
+    global_keys = [data_row_and_global_key[1]]
+
+    batch_name = f'batch {uuid.uuid4()}'
+    project.create_batch(batch_name, global_keys=global_keys)
+
+    _setup_ontology(project)
+
+    yield project
 
 
 # NOTE this is nice heuristics, also there is this logic _wait_until_data_rows_are_processed in Project

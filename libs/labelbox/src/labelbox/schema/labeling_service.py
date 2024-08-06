@@ -10,12 +10,13 @@ from labelbox.utils import _CamelCaseMixin
 
 Cuid = Annotated[str, Field(min_length=25, max_length=25)]
 
+
 class LabelingServiceStatus(Enum):
-    Accepted = 'ACCEPTED',
-    Calibration = 'CALIBRATION',
-    Complete = 'COMPLETE',
-    Production = 'PRODUCTION',
-    Requested = 'REQUESTED',
+    Accepted = 'ACCEPTED'
+    Calibration = 'CALIBRATION'
+    Complete = 'COMPLETE'
+    Production = 'PRODUCTION'
+    Requested = 'REQUESTED'
     SetUp = 'SET_UP'
 
 
@@ -40,7 +41,7 @@ class LabelingService(BaseModel):
     @classmethod
     def start(cls, client, project_id: Cuid) -> 'LabelingService':
         """
-        Starts the labeling service for the project. This is equivalent to a UI acction to Request Specialized Labelers
+        Starts the labeling service for the project. This is equivalent to a UI action to Request Specialized Labelers
 
         Returns:
             LabelingService: The labeling service for the project.
@@ -57,6 +58,34 @@ class LabelingService(BaseModel):
         if not success:
             raise Exception("Failed to start labeling service")
         return cls.get(client, project_id)
+
+    def request(self) -> 'LabelingService':
+        """
+        Creates a request to labeling service to start labeling for the project. 
+        Our back end will validate that the project is ready for labeling and then request the labeling service.
+
+        Returns:
+            LabelingService: The labeling service for the project.
+        Raises:
+            ResourceNotFoundError: If ontology is not associated with the project
+                or if any projects required prerequisites are missing.
+
+        """
+
+        query_str = """mutation ValidateAndRequestProjectBoostWorkforcePyApi($projectId: ID!) {
+            validateAndRequestProjectBoostWorkforce(
+                data: { projectId: $projectId }
+            ) {
+                success
+            }
+        }
+        """
+        result = self.client.execute(query_str, {"projectId": self.project_id},
+                                     raise_return_resource_not_found=True)
+        success = result["validateAndRequestProjectBoostWorkforce"]["success"]
+        if not success:
+            raise Exception("Failed to start labeling service")
+        return LabelingService.get(self.client, self.project_id)
 
     @classmethod
     def get(cls, client, project_id: Cuid) -> 'LabelingService':
