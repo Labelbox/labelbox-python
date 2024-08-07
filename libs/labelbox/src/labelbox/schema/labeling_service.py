@@ -7,6 +7,7 @@ from labelbox.exceptions import ResourceNotFoundError
 
 from labelbox.pydantic_compat import BaseModel, Field
 from labelbox.utils import _CamelCaseMixin
+from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 
 Cuid = Annotated[str, Field(min_length=25, max_length=25)]
 
@@ -59,6 +60,34 @@ class LabelingService(BaseModel):
             raise Exception("Failed to start labeling service")
         return cls.get(client, project_id)
 
+    @classmethod
+    def get(cls, client, project_id: Cuid) -> 'LabelingService':
+        """
+        Returns the labeling service associated with the project.
+
+        Raises:
+            ResourceNotFoundError: If the project does not have a labeling service.
+        """
+        query = """
+            query GetProjectBoostWorkforcePyApi($projectId: ID!) {
+            projectBoostWorkforce(data: { projectId: $projectId }) {
+                    id
+                    projectId
+                    createdAt
+                    updatedAt
+                    createdById
+                    status
+                }
+            }
+        """
+        result = client.execute(query, {"projectId": project_id})
+        if result["projectBoostWorkforce"] is None:
+            raise ResourceNotFoundError(
+                message="The project does not have a labeling service.")
+        data = result["projectBoostWorkforce"]
+        data["client"] = client
+        return LabelingService(**data)
+
     def request(self) -> 'LabelingService':
         """
         Creates a request to labeling service to start labeling for the project. 
@@ -87,30 +116,11 @@ class LabelingService(BaseModel):
             raise Exception("Failed to start labeling service")
         return LabelingService.get(self.client, self.project_id)
 
-    @classmethod
-    def get(cls, client, project_id: Cuid) -> 'LabelingService':
+    def dashboard(self) -> LabelingServiceDashboard:
         """
-        Returns the labeling service associated with the project.
+        Returns the dashboard for the labeling service associated with the project.
 
         Raises:
             ResourceNotFoundError: If the project does not have a labeling service.
         """
-        query = """
-            query GetProjectBoostWorkforcePyApi($projectId: ID!) {
-            projectBoostWorkforce(data: { projectId: $projectId }) {
-                    id
-                    projectId
-                    createdAt
-                    updatedAt
-                    createdById
-                    status
-                }
-            }
-        """
-        result = client.execute(query, {"projectId": project_id})
-        if result["projectBoostWorkforce"] is None:
-            raise ResourceNotFoundError(
-                message="The project does not have a labeling service.")
-        data = result["projectBoostWorkforce"]
-        data["client"] = client
-        return LabelingService(**data)
+        return LabelingServiceDashboard.get(self.client, self.project_id)
