@@ -20,6 +20,7 @@ from labelbox import __version__ as SDK_VERSION
 from labelbox import utils
 from labelbox.adv_client import AdvClient
 from labelbox.orm import query
+from labelbox.orm.comparison import Comparison
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
@@ -56,6 +57,7 @@ from labelbox.schema.user import User
 from labelbox.schema.label_score import LabelScore
 from labelbox.schema.ontology_kind import (OntologyKind, EditorTaskTypeMapper,
                                            EditorTaskType)
+from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 
 logger = logging.getLogger(__name__)
 
@@ -2405,3 +2407,10 @@ class Client:
             labelbox.LabelScore(name=x['name'], score=x['score'])
             for x in scores_raw
         ]
+
+    def get_labeling_service_dashboards(
+        self,
+        from_cursor: Optional[str] = None,
+        where: Optional[Comparison] = None,
+    ) -> PaginatedCollection:
+        return LabelingServiceDashboard.get_all(self, from_cursor, where)

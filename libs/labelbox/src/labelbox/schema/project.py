@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Ty
 from urllib.parse import urlparse
 
 from labelbox.schema.labeling_service import LabelingService, LabelingServiceStatus
+from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 import requests
 
 from labelbox import parser
@@ -1940,6 +1941,15 @@ class Project(DbObject, Updateable, Deletable):
             LabelingServiceStatus: The labeling service status for this project.
         """
         return self.get_labeling_service().status
+
+    @experimental
+    def labeling_service_dashboard(self) -> LabelingServiceDashboard:
+        """Get the labeling service for this project.
+
+        Returns:
+            LabelingService: The labeling service for this project.
+        """
+        return LabelingServiceDashboard.get(self.client, self.uid)
 
 
 class ProjectMember(DbObject):
