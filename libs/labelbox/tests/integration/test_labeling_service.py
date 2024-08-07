@@ -4,38 +4,14 @@ from labelbox.exceptions import LabelboxError, ResourceNotFoundError
 from labelbox.schema.labeling_service import LabelingServiceStatus
 
 
-def test_get_labeling_service_throws_exception(project):
-    with pytest.raises(ResourceNotFoundError):  # No labeling service by default
-        project.get_labeling_service()
-    with pytest.raises(ResourceNotFoundError):  # No labeling service by default
-        project.get_labeling_service_status()
-
-
 def test_start_labeling_service(project):
-    labeling_service = project.request_labeling_service()
-    assert labeling_service.status == LabelingServiceStatus.SetUp
-    assert labeling_service.project_id == project.uid
-
     # Check that the labeling service is now available
-    labeling_service = project.get_labeling_service()
+    labeling_service = project.get_labeling_service()  # creates and gets it
     assert labeling_service.status == LabelingServiceStatus.SetUp
     assert labeling_service.project_id == project.uid
 
     labeling_service_status = project.get_labeling_service_status()
     assert labeling_service_status == LabelingServiceStatus.SetUp
-
-
-def test_request_labeling_service(
-        configured_batch_project_for_labeling_service):
-    project = configured_batch_project_for_labeling_service
-
-    project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
-
-    labeling_service = project.request_labeling_service(
-    )  # project fixture is an Image type project
-    labeling_service.request()
-    assert project.get_labeling_service_status(
-    ) == LabelingServiceStatus.Requested
 
 
 def test_request_labeling_service_moe_offline_project(
@@ -51,7 +27,7 @@ def test_request_labeling_service_moe_offline_project(
 
     project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
 
-    labeling_service = project.request_labeling_service()
+    labeling_service = project.get_labeling_service()
     labeling_service.request()
     assert project.get_labeling_service_status(
     ) == LabelingServiceStatus.Requested
@@ -65,7 +41,7 @@ def test_request_labeling_service_moe_project(
 
     project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
 
-    labeling_service = project.request_labeling_service()
+    labeling_service = project.get_labeling_service()
     with pytest.raises(
             LabelboxError,
             match=
@@ -81,7 +57,7 @@ def test_request_labeling_service_moe_project(
 
 
 def test_request_labeling_service_incomplete_requirements(project, ontology):
-    labeling_service = project.request_labeling_service(
+    labeling_service = project.get_labeling_service(
     )  # project fixture is an Image type project
     with pytest.raises(ResourceNotFoundError,
                        match="Associated ontology id could not be found"

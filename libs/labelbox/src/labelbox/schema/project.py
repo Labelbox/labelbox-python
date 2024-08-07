@@ -1920,13 +1920,12 @@ class Project(DbObject, Updateable, Deletable):
     def get_labeling_service(self) -> LabelingService:
         """Get the labeling service for this project.
 
-        Raises:
-            ResourceNotFoundError if the project does not have a labeling service.
+        Will automatically create a labeling service if one does not exist.
 
         Returns:
             LabelingService: The labeling service for this project.
         """
-        return LabelingService.get(self.client, self.uid)
+        return LabelingService.getOrCreate(self.client, self.uid)
 
     @experimental
     def get_labeling_service_status(self) -> LabelingServiceStatus:
@@ -1939,15 +1938,6 @@ class Project(DbObject, Updateable, Deletable):
             LabelingServiceStatus: The labeling service status for this project.
         """
         return self.get_labeling_service().status
-
-    @experimental
-    def request_labeling_service(self) -> LabelingService:
-        """Get the labeling service for this project.
-
-        Returns:
-            LabelingService: The labeling service for this project.
-        """
-        return LabelingService.start(self.client, self.uid)  # type: ignore
 
 
 class ProjectMember(DbObject):
