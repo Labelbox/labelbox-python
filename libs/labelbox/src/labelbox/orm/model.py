@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Dict, List, Union, Any, Type, TYPE_CHECKING
 
@@ -219,6 +220,10 @@ class Relationship:
 
     """
 
+    @dataclass
+    class Config:
+        disconnect_supported: bool = True
+
     class Type(Enum):
         ToOne = auto()
         ToMany = auto()
@@ -238,12 +243,14 @@ class Relationship:
                  name=None,
                  graphql_name=None,
                  cache=False,
-                 deprecation_warning=None):
+                 deprecation_warning=None,
+                 config=Config()):
         self.relationship_type = relationship_type
         self.destination_type_name = destination_type_name
         self.filter_deleted = filter_deleted
         self.cache = cache
         self.deprecation_warning = deprecation_warning
+        self.config = config
 
         if name is None:
             name = utils.snake_case(destination_type_name) + (

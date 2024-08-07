@@ -44,7 +44,7 @@ class ResourceNotFoundError(LabelboxError):
             super().__init__(message)
         else:
             super().__init__("Resource '%s' not found for params: %r" %
-                                (db_object_type.type_name(), params))
+                             (db_object_type.type_name(), params))
             self.db_object_type = db_object_type
             self.params = params
 
@@ -141,6 +141,11 @@ class MALValidationError(LabelboxError):
 
 class OperationNotAllowedException(Exception):
     """Raised when user does not have permissions to a resource or has exceeded usage limit"""
+    pass
+
+
+class OperationNotSupportedException(Exception):
+    """Raised when sdk does not support requested operation"""
     pass
 
 
