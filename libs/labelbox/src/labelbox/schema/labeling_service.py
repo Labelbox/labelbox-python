@@ -88,6 +88,19 @@ class LabelingService(BaseModel):
         return LabelingService.get(self.client, self.project_id)
 
     @classmethod
+    def getOrCreate(cls, client, project_id: Cuid) -> 'LabelingService':
+        """
+        Returns the labeling service associated with the project. If the project does not have a labeling service, it will create one.
+
+        Returns:
+            LabelingService: The labeling service for the project.
+        """
+        try:
+            return cls.get(client, project_id)
+        except ResourceNotFoundError:
+            return cls.start(client, project_id)
+
+    @classmethod
     def get(cls, client, project_id: Cuid) -> 'LabelingService':
         """
         Returns the labeling service associated with the project.
