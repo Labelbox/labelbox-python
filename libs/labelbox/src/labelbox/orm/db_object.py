@@ -192,10 +192,10 @@ class RelationshipManager:
         self.source.client.execute(query_string, params)
 
     def disconnect(self, other):
+        """ Disconnects source object of this manager from the `other` object. """
         if not self.config.disconnect_supported:
             raise OperationNotSupportedException(
                 "Disconnect is not supported for this relationship")
-        """ Disconnects source object of this manager from the `other` object. """
 
         query_string, params = query.update_relationship(
             self.source, other, self.relationship, "disconnect")
