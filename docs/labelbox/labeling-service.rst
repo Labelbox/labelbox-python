@@ -1,4 +1,4 @@
-Project Labeling Service
+Labeling Service
 ===============================================================================================
 
 .. automodule:: labelbox.schema.labeling_service

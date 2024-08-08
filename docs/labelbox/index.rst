@@ -29,6 +29,7 @@ Labelbox Python SDK Documentation
     labeling-frontend
     labeling-frontend-options
     labeling-parameter-override
+    labeling-service
     model
     model-config
     model-run
