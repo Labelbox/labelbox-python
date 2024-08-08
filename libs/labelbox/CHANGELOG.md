@@ -1,4 +1,16 @@
 # Changelog
+#  Version 3.77.0 (2024-08-09)
+## Added
+* LabelingService request()([#1761](https://github.com/Labelbox/labelbox-python/pull/1761))
+  * Validates all project requirements and requests a labeling service
+* Allow marking Label with is_benchmark_reference flag([#1718](https://github.com/Labelbox/labelbox-python/pull/1718))
+## Updated
+* Project get_labeling_service() will now create labeling service if one is missing([#1762](https://github.com/Labelbox/labelbox-python/pull/1762))
+## Removed
+* **BREAKING CHANGE** Project.labeling_frontend.disconnect() ([#1763](https://github.com/Labelbox/labelbox-python/pull/1763))
+  * We only support one default labeling front end per project and a user can not disconnect it
+* **BREAKING CHANGE** Experimental method project.request_labeling_service() - duplicate, not needed([#1762](https://github.com/Labelbox/labelbox-python/pull/1762)).
+
 #  Version 3.76.0 (2024-07-29)
 # Added
 * Added Project get_labeling_service(), request_labeling_service() and get_labeling_service_status()
