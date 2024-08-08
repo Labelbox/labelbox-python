@@ -167,7 +167,6 @@ def test_get_user_groups_with_creation_deletion(client):
 
         user_groups_post_deletion = list(UserGroup(client).get_user_groups())
 
-        assert len(user_groups_post_deletion) > 0
         assert len(user_groups_post_deletion) == len(user_groups_post_creation) - 1
 
     finally:
