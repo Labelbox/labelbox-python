@@ -132,7 +132,9 @@ class Project(DbObject, Updateable, Deletable):
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
-    labeling_frontend = Relationship.ToOne("LabelingFrontend")
+    labeling_frontend = Relationship.ToOne(
+        "LabelingFrontend",
+        config=Relationship.Config(disconnect_supported=False))
     labeling_frontend_options = Relationship.ToMany(
         "LabelingFrontendOptions", False, "labeling_frontend_options")
     labeling_parameter_overrides = Relationship.ToMany(

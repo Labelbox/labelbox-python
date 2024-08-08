@@ -1,10 +1,11 @@
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import wraps
 import logging
 import json
 
 from labelbox import utils
-from labelbox.exceptions import InvalidQueryError, InvalidAttributeError
+from labelbox.exceptions import InvalidQueryError, InvalidAttributeError, OperationNotSupportedException
 from labelbox.orm import query
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.pagination import PaginatedCollection
@@ -123,6 +124,7 @@ class RelationshipManager:
         self.supports_sorting = True
         self.filter_on_id = True
         self.value = value
+        self.config = relationship.config
 
     def __call__(self, *args, **kwargs):
         """ Forwards the call to either `_to_many` or `_to_one` methods,
@@ -191,6 +193,10 @@ class RelationshipManager:
 
     def disconnect(self, other):
         """ Disconnects source object of this manager from the `other` object. """
+        if not self.config.disconnect_supported:
+            raise OperationNotSupportedException(
+                "Disconnect is not supported for this relationship")
+
         query_string, params = query.update_relationship(
             self.source, other, self.relationship, "disconnect")
         self.source.client.execute(query_string, params)
