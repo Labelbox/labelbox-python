@@ -56,7 +56,7 @@ def test_request_labeling_service_moe_project(
     ) == LabelingServiceStatus.Requested
 
 
-def test_request_labeling_service_incomplete_requirements(project, ontology):
+def test_request_labeling_service_incomplete_requirements(ontology, project):
     labeling_service = project.get_labeling_service(
     )  # project fixture is an Image type project
     with pytest.raises(ResourceNotFoundError,
