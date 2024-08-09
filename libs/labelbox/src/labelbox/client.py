@@ -51,7 +51,7 @@ from labelbox.schema.role import Role
 from labelbox.schema.send_to_annotate_params import SendToAnnotateFromCatalogParams, build_destination_task_queue_input, \
     build_predictions_input, build_annotations_input
 from labelbox.schema.slice import CatalogSlice, ModelSlice
-from labelbox.schema.task import Task
+from labelbox.schema.task import Task, DataUpsertTask
 from labelbox.schema.user import User
 from labelbox.schema.label_score import LabelScore
 from labelbox.schema.ontology_kind import (OntologyKind, EditorTaskTypeMapper,
@@ -2424,3 +2424,51 @@ class Client:
         return LabelingServiceDashboard.get_all(self,
                                                 after,
                                                 search_query=search_query)
+
+    def get_task_by_id(self, task_id: str) -> Union[Task, DataUpsertTask]:
+        """
+        Fetches a task by ID.
+
+        Args:
+            task_id (str): The ID of the task.
+
+        Returns:
+            Task or DataUpsertTask
+        
+        Throws:
+            ResourceNotFoundError: If the task does not exist.
+
+        NOTE: Export task is not supported yet
+        """
+        user = self.get_user()
+        query = """
+            query GetUserCreatedTasksPyApi($userId: ID!, $taskId: ID!) {
+            user(where: {id: $userId}) {
+                createdTasks(where: {id: $taskId} skip: 0 first: 1) {
+                    completionPercentage
+                    createdAt
+                    errors
+                    metadata
+                    name
+                    result
+                    status
+                    type
+                    id
+                    updatedAt
+                }
+            }
+        }
+        """
+        result = self.execute(query, {"userId": user.uid, "taskId": task_id})
+        data = result.get("user", {}).get("createdTasks", [])
+        if not data:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                message=f"The task {task_id} does not exist.")
+        task_data = data[0]
+        if task_data["type"].lower() == 'adv-upsert-data-rows':
+            task = DataUpsertTask(self, task_data)
+        else:
+            task = Task(self, task_data)
+
+        task._user = user
+        return task
