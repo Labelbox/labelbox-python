@@ -12,6 +12,9 @@ Cuid = Annotated[str, Field(min_length=25, max_length=25)]
 
 
 class LabelingServiceStatus(Enum):
+    """"
+    The status of the labeling service.
+    """
     Accepted = 'ACCEPTED'
     Calibration = 'CALIBRATION'
     Complete = 'COMPLETE'
@@ -21,6 +24,9 @@ class LabelingServiceStatus(Enum):
 
 
 class LabelingService(BaseModel):
+    """
+    Labeling service for a project. This is a service that can be requested to label data for a project.
+    """
     id: Cuid
     project_id: Cuid
     created_at: datetime
