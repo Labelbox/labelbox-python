@@ -1,9 +1,10 @@
 from datetime import datetime
 from enum import Enum
+import json
 from typing import Any
 from typing_extensions import Annotated
 
-from labelbox.exceptions import ResourceNotFoundError
+from labelbox.exceptions import LabelboxError, ResourceNotFoundError
 
 from labelbox.pydantic_compat import BaseModel, Field
 from labelbox.utils import _CamelCaseMixin
@@ -87,11 +88,28 @@ class LabelingService(BaseModel):
         }
         """
         result = self.client.execute(query_str, {"projectId": self.project_id},
-                                     raise_return_resource_not_found=True)
+                                     raise_return_resource_not_found=True,
+                                     error_handlers={
+                                         "INTERNAL_SERVER_ERROR":
+                                             self._raise_readable_errors
+                                     })
         success = result["validateAndRequestProjectBoostWorkforce"]["success"]
         if not success:
             raise Exception("Failed to start labeling service")
         return LabelingService.get(self.client, self.project_id)
+
+    def _raise_readable_errors(self, response):
+        errors = response.json().get('errors', [])
+        if errors:
+            message = errors[0].get(
+                'message', json.dumps([{
+                    "errorMessage": "Unknown error"
+                }]))
+            errors = json.loads(message)
+            error_messages = [error['errorMessage'] for error in errors]
+        else:
+            error_messages = ["Uknown error"]
+        raise LabelboxError(". ".join(error_messages))
 
     @classmethod
     def getOrCreate(cls, client, project_id: Cuid) -> 'LabelingService':

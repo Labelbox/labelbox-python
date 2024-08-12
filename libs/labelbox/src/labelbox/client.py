@@ -164,6 +164,13 @@ class Client:
             files (dict): file arguments for request
             timeout (float): Max allowed time for query execution,
                 in seconds.
+            raise_return_resource_not_found: By default the client relies on the caller to raise the correct exception when a resource is not found.
+                If this is set to True, the client will raise a ResourceNotFoundError exception automatically.
+                This simplifies processing.
+                We recommend to use it only of api returns a clear and well-formed error when a resource not found for a given query.
+            error_handlers (dict): A dictionary mapping graphql error code to handler functions.
+                Allows a caller to handle specific errors reporting in a custom way or produce more user-friendly readable messages.
+
         Returns:
             dict, parsed JSON response.
         Raises:
