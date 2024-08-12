@@ -148,7 +148,7 @@ class Client:
         experimental=False,
         error_log_key="message",
         raise_return_resource_not_found=False,
-        error_handlers: Optional[Dict[str, Callable[[Dict[str, Any]],
+        error_handlers: Optional[Dict[str, Callable[[requests.models.Response],
                                                     None]]] = None
     ) -> Dict[str, Any]:
         """ Sends a request to the server for the execution of the

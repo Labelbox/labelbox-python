@@ -16,7 +16,10 @@ class LabelboxError(Exception):
         self.cause = cause
 
     def __str__(self):
-        return self.message + str(self.args)
+        exception_message = self.message
+        if self.cause is not None:
+            exception_message += " (caused by: %s)" % self.cause
+        return exception_message
 
 
 class AuthenticationError(LabelboxError):
