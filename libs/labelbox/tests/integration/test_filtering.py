@@ -30,7 +30,8 @@ def test_where(client, project_to_test_where):
     p_b_name = p_b.name
 
     def get(where=None):
-        date_where = Project.created_at >= p_a.created_at
+        date_where = Project.created_at >= min(p_a.created_at, p_b.created_at,
+                                               p_c.created_at)
         where = date_where if where is None else where & date_where
         return {p.uid for p in client.get_projects(where)}
 
