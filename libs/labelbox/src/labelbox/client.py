@@ -9,7 +9,7 @@ import time
 import urllib.parse
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, List, Dict, Union, Optional, overload
+from typing import Any, List, Dict, Union, Optional, overload, Callable
 
 import requests
 import requests.exceptions
@@ -138,15 +138,19 @@ class Client:
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
         labelbox.exceptions.TimeoutError))
-    def execute(self,
-                query=None,
-                params=None,
-                data=None,
-                files=None,
-                timeout=60.0,
-                experimental=False,
-                error_log_key="message",
-                raise_return_resource_not_found=False):
+    def execute(
+        self,
+        query=None,
+        params=None,
+        data=None,
+        files=None,
+        timeout=60.0,
+        experimental=False,
+        error_log_key="message",
+        raise_return_resource_not_found=False,
+        error_handlers: Optional[Dict[str, Callable[[requests.models.Response],
+                                                    None]]] = None
+    ) -> Dict[str, Any]:
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -160,6 +164,13 @@ class Client:
             files (dict): file arguments for request
             timeout (float): Max allowed time for query execution,
                 in seconds.
+            raise_return_resource_not_found: By default the client relies on the caller to raise the correct exception when a resource is not found.
+                If this is set to True, the client will raise a ResourceNotFoundError exception automatically.
+                This simplifies processing.
+                We recommend to use it only of api returns a clear and well-formed error when a resource not found for a given query.
+            error_handlers (dict): A dictionary mapping graphql error code to handler functions.
+                Allows a caller to handle specific errors reporting in a custom way or produce more user-friendly readable messages.
+
         Returns:
             dict, parsed JSON response.
         Raises:
@@ -323,7 +334,12 @@ class Client:
         # TODO: fix this in the server API
         internal_server_error = check_errors(["INTERNAL_SERVER_ERROR"],
                                              "extensions", "code")
+        error_code = "INTERNAL_SERVER_ERROR"
+
         if internal_server_error is not None:
+            if error_handlers and error_code in error_handlers:
+                handler = error_handlers[error_code]
+                handler(response)
             message = internal_server_error.get("message")
             error_status_code = get_error_status_code(internal_server_error)
             if error_status_code == 400:
