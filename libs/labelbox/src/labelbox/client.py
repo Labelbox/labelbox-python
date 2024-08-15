@@ -2410,7 +2410,7 @@ class Client:
 
     def get_labeling_service_dashboards(
         self,
-        from_cursor: Optional[str] = None,
+        after: Optional[str] = None,
         where: Optional[Comparison] = None,
     ) -> PaginatedCollection:
-        return LabelingServiceDashboard.get_all(self, from_cursor, where)
+        return LabelingServiceDashboard.get_all(self, after, where)

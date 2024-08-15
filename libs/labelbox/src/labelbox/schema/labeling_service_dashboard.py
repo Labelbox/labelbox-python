@@ -1,13 +1,30 @@
 from datetime import datetime
 from string import Template
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.comparison import Comparison
+from labelbox.orm import query
+from ..orm.model import Field
 from labelbox.pagination import PaginatedCollection
 from labelbox.pydantic_compat import BaseModel, root_validator
+from .organization import Organization
 from labelbox.utils import _CamelCaseMixin
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
+
+GRAPHQL_QUERY_SELECTIONS = """
+                id
+                name
+                # serviceType
+                # createdAt
+                # updatedAt
+                # createdById
+                boostStatus
+                dataRowsCount
+                dataRowsInReviewCount
+                dataRowsInReworkCount
+                dataRowsDoneCount
+            """
 
 
 class LabelingServiceDashboard(BaseModel):
@@ -69,40 +86,41 @@ class LabelingServiceDashboard(BaseModel):
     def get_all(
         cls,
         client,
-        from_cursor: Optional[str] = None,
-        where: Optional[Comparison] = None,
+        after: Optional[str] = None,
+        # where: Optional[Comparison] = None,
+        search_query: Optional[List[Dict]] = None,
     ) -> PaginatedCollection:
-        page_size = 500  # hardcode to avoid overloading the server
-        # where_param = query.where_as_dict(Entity.DataRow,
-        #                                   where) if where is not None else None
-
         template = Template(
-            """query SearchProjectsPyApi($$id: ID!, $$after: ID, $$first: Int, $$where: SearchProjectsInput)  {
-                        searchProjects(id: $$id, after: $$after, first: $$first, where: $$where)
+            """query SearchProjectsPyApi($$first: Int, $$from: String) {
+                        searchProjects(input: {after: $$from, searchQuery: $search_query, size: $$first})
                             {
-                                nodes { $datarow_selections }
-                                pageInfo { hasNextPage startCursor }
+                                nodes { $labeling_dashboard_selections }
+                                pageInfo { endCursor }
                             }
                         }
                     """)
+        organization_id = client.get_organization().uid
         query_str = template.substitute(
-            datarow_selections=LabelingServiceDashboard.schema()
-            ['properties'].keys())
+            labeling_dashboard_selections=GRAPHQL_QUERY_SELECTIONS,
+            search_query=
+            f"[{{type: \"organization\", operator: \"is\",  values: [\"{organization_id}\"]}}]"
+        )
 
         params = {
-            'id': self.uid,
-            'from': from_cursor,
-            'first': page_size,
-            'where': where_param,
+            'from': after,
         }
+
+        def convert_to_labeling_service_dashboard(client, data):
+            data['client'] = client
+            return LabelingServiceDashboard(**data)
 
         return PaginatedCollection(
             client=client,
             query=query_str,
             params=params,
             dereferencing=['searchProjects', 'nodes'],
-            obj_class=LabelingServiceDashboard,
-            cursor_path=['datasetDataRows', 'pageInfo', 'endCursor'],
+            obj_class=convert_to_labeling_service_dashboard,
+            cursor_path=['searchProjects', 'pageInfo', 'endCursor'],
         )
 
     @root_validator(pre=True)
