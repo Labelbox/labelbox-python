@@ -56,6 +56,7 @@ from labelbox.schema.user import User
 from labelbox.schema.label_score import LabelScore
 from labelbox.schema.ontology_kind import (OntologyKind, EditorTaskTypeMapper,
                                            EditorTaskType)
+from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 
 logger = logging.getLogger(__name__)
 
@@ -2405,3 +2406,21 @@ class Client:
             labelbox.LabelScore(name=x['name'], score=x['score'])
             for x in scores_raw
         ]
+
+    def get_labeling_service_dashboards(
+        self,
+        after: Optional[str] = None,
+        search_query: Optional[List[Dict]] = None,
+    ) -> PaginatedCollection:
+        """
+        Get all labeling service dashboards for a given org.
+
+        Optional parameters:
+            after: The cursor to use for pagination.
+            where: A filter to apply to the query.
+
+        NOTE: support for after and search_query are not yet implemented.
+        """
+        return LabelingServiceDashboard.get_all(self,
+                                                after,
+                                                search_query=search_query)
