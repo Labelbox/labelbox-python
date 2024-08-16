@@ -20,7 +20,6 @@ from labelbox import __version__ as SDK_VERSION
 from labelbox import utils
 from labelbox.adv_client import AdvClient
 from labelbox.orm import query
-from labelbox.orm.comparison import Comparison
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
@@ -2411,6 +2410,17 @@ class Client:
     def get_labeling_service_dashboards(
         self,
         after: Optional[str] = None,
-        where: Optional[Comparison] = None,
+        search_query: Optional[List[Dict]] = None,
     ) -> PaginatedCollection:
-        return LabelingServiceDashboard.get_all(self, after, where)
+        """
+        Get all labeling service dashboards for a given org.
+
+        Optional parameters:
+            after: The cursor to use for pagination.
+            where: A filter to apply to the query.
+
+        NOTE: support for after and search_query are not yet implemented.
+        """
+        return LabelingServiceDashboard.get_all(self,
+                                                after,
+                                                search_query=search_query)

@@ -1,14 +1,10 @@
-from datetime import datetime
 from string import Template
-from typing import Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Union
 
 from labelbox.exceptions import ResourceNotFoundError
-from labelbox.orm.comparison import Comparison
-from labelbox.orm import query
-from ..orm.model import Field
 from labelbox.pagination import PaginatedCollection
-from labelbox.pydantic_compat import BaseModel, root_validator
-from .organization import Organization
+from labelbox.pydantic_compat import BaseModel, root_validator, Field
 from labelbox.utils import _CamelCaseMixin
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
 
@@ -28,15 +24,29 @@ GRAPHQL_QUERY_SELECTIONS = """
 
 
 class LabelingServiceDashboard(BaseModel):
-    id: str
-    name: str
-    # service_type: str
-    # created_at: datetime
-    # updated_at: datetime
-    # created_by_id: str
-    status: LabelingServiceStatus
-    tasks_completed: int
-    tasks_remaining: int
+    """
+    Represent labeling service data for a project
+
+    Attributes:
+        id (str): project id
+        name (str): project name
+        status (LabelingServiceStatus): status of the labeling service
+        tasks_completed (int): number of data rows completed
+        tasks_remaining (int): number of data rows that have not started
+        client (Any): labelbox client
+    """
+    id: str = Field(frozen=True)
+    name: str = Field(frozen=True)
+    service_type: Optional[str] = Field(frozen=True, default=None)
+    created_at: Optional[datetime] = Field(frozen=True, default=None)
+    updated_at: Optional[datetime] = Field(frozen=True, default=None)
+    created_by_id: Optional[str] = Field(frozen=True, default=None)
+    status: LabelingServiceStatus = Field(frozen=True,
+                                          default=LabelingServiceStatus.Missing)
+    data_rows_count: int = Field(frozen=True)
+    data_rows_in_review_count: int = Field(frozen=True)
+    data_rows_in_rework_count: int = Field(frozen=True)
+    data_rows_done_count: int = Field(frozen=True)
 
     client: Any  # type Any to avoid circular import from client
 
@@ -45,6 +55,14 @@ class LabelingServiceDashboard(BaseModel):
         if not self.client.enable_experimental:
             raise RuntimeError(
                 "Please enable experimental in client to use LabelingService")
+
+    @property
+    def tasks_completed(self):
+        return self.data_rows_done_count
+
+    @property
+    def tasks_remaining(self):
+        return self.data_rows_count - self.data_rows_done_count
 
     class Config(_CamelCaseMixin.Config):
         ...
@@ -57,24 +75,14 @@ class LabelingServiceDashboard(BaseModel):
         Raises:
             ResourceNotFoundError: If the project does not have a labeling service.
         """
-        query = """
-            query GetProjectByIdPyApi($id: ID!) {
-            getProjectById(input: {id: $id}) {
-                    id
-                    name
-                    # serviceType
-                    # createdAt
-                    # updatedAt
-                    # createdById
-                    boostStatus
-                    dataRowsCount
-                    dataRowsInReviewCount
-                    dataRowsInReworkCount
-                    dataRowsDoneCount
-                }
-            }
-        """
-        result = client.execute(query, {"id": project_id})
+        query = f"""
+                    query GetProjectByIdPyApi($id: ID!) {{
+                    getProjectById(input: {{id: $id}}) {{
+                        {GRAPHQL_QUERY_SELECTIONS}
+                        }}
+                    }}
+                """
+        result = client.execute(query, {"id": project_id}, experimental=True)
         if result["getProjectById"] is None:
             raise ResourceNotFoundError(
                 message="The project does not have a labeling service.")
@@ -87,7 +95,6 @@ class LabelingServiceDashboard(BaseModel):
         cls,
         client,
         after: Optional[str] = None,
-        # where: Optional[Comparison] = None,
         search_query: Optional[List[Dict]] = None,
     ) -> PaginatedCollection:
         template = Template(
@@ -106,9 +113,9 @@ class LabelingServiceDashboard(BaseModel):
             f"[{{type: \"organization\", operator: \"is\",  values: [\"{organization_id}\"]}}]"
         )
 
-        params = {
-            'from': after,
-        }
+        params: Dict[str, Union[str, int]] = {}
+        if after:
+            params = {"from": after}
 
         def convert_to_labeling_service_dashboard(client, data):
             data['client'] = client
@@ -121,16 +128,12 @@ class LabelingServiceDashboard(BaseModel):
             dereferencing=['searchProjects', 'nodes'],
             obj_class=convert_to_labeling_service_dashboard,
             cursor_path=['searchProjects', 'pageInfo', 'endCursor'],
+            experimental=True,
         )
 
     @root_validator(pre=True)
-    def convert_graphql_to_attrs(cls, data):
+    def convert_boost_status_to_enum(cls, data):
         if 'boostStatus' in data:
             data['status'] = LabelingServiceStatus(data.pop('boostStatus'))
-        if 'dataRowsDoneCount' in data:
-            data['tasksCompleted'] = data.pop('dataRowsDoneCount')
-        if 'dataRowsCount' in data and 'dataRowsInReviewCount' in data and 'dataRowsInReworkCount' in data:
-            data['tasksRemaining'] = data['dataRowsCount'] - (
-                data['dataRowsInReviewCount'] + data['dataRowsInReworkCount'])
 
         return data
