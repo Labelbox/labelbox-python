@@ -107,16 +107,24 @@ class WorkforceStageUpdatedRangeFilter(BaseSearchFilter):
     value: DateRangeValue
 
 
-SearchFilters = Union[OrganizationFilter, WorkspaceFilter, TagFilter,
-                      ProjectStageFilter, WorkforceRequestedDateFilter,
-                      WorkforceStageUpdatedFilter,
-                      WorkforceRequestedDateRangeFilter,
-                      WorkforceStageUpdatedRangeFilter]
+SearchFilter = Union[OrganizationFilter, WorkspaceFilter, TagFilter,
+                     ProjectStageFilter, WorkforceRequestedDateFilter,
+                     WorkforceStageUpdatedFilter,
+                     WorkforceRequestedDateRangeFilter,
+                     WorkforceStageUpdatedRangeFilter]
 
 
-def _build_search_filter(filter: List[SearchFilters]):
-    operation_types = {f.operation for f in filter}
-    if len(operation_types) < len(filter):
-        raise ValueError("Only one filter per operation type is allowed")
+def _dict_to_graphql_string(d: Union[dict, list]) -> str:
+    if isinstance(d, dict):
+        return "{" + ", ".join(
+            f'{k}: {_dict_to_graphql_string(v)}' for k, v in d.items()) + "}"
+    elif isinstance(d, list):
+        return "[" + ", ".join(
+            _dict_to_graphql_string(item) for item in d) + "]"
+    else:
+        return f'"{d}"' if isinstance(d, str) else str(d)
 
-    return [f.dict() for f in filter]
+
+def build_search_filter(filter: List[SearchFilter]):
+    filters = [_dict_to_graphql_string(f.dict()) for f in filter]
+    return "[" + ", ".join(filters) + "]"

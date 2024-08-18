@@ -1096,3 +1096,21 @@ def embedding(client: Client, environ):
 @pytest.fixture
 def valid_model_id():
     return "2c903542-d1da-48fd-9db1-8c62571bd3d2"
+
+
+@pytest.fixture
+def requested_labeling_service(
+        rand_gen, live_chat_evaluation_project_with_new_dataset,
+        chat_evaluation_ontology, model_config):
+    project = live_chat_evaluation_project_with_new_dataset
+    project.connect_ontology(chat_evaluation_ontology)
+
+    project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
+
+    labeling_service = project.get_labeling_service()
+    project.add_model_config(model_config.uid)
+    project.set_project_model_setup_complete()
+
+    labeling_service.request()
+
+    yield project, labeling_service
