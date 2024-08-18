@@ -2,7 +2,8 @@ import datetime
 from enum import Enum
 from typing import List, Literal, Union
 
-from labelbox.pydantic_compat import BaseModel, Field
+from labelbox.pydantic_compat import BaseModel
+from labelbox.utils import format_iso_datetime
 
 
 class BaseSearchFilter(BaseModel):
@@ -17,8 +18,8 @@ class BaseSearchFilter(BaseModel):
 
         # go through all the keys and convert date to string
         for key in res:
-            if isinstance(res[key], datetime.date):
-                res[key] = res[key].isoformat()
+            if isinstance(res[key], datetime.datetime):
+                res[key] = format_iso_datetime(res[key])
         return res
 
 
@@ -71,8 +72,7 @@ class ProjectStageFilter(BaseSearchFilter):
 
 class DateValue(BaseSearchFilter):
     operator: DateOperator
-    value: datetime.date
-    # timezone: TimeZoneName = Field(default=TimeZoneName.UTC)  # type: ignore
+    value: datetime.datetime
 
 
 class WorkforceStageUpdatedFilter(BaseSearchFilter):
@@ -86,8 +86,8 @@ class WorkforceRequestedDateFilter(BaseSearchFilter):
 
 
 class DateRange(BaseSearchFilter):
-    min: datetime.date
-    max: datetime.date
+    min: datetime.datetime
+    max: datetime.datetime
 
 
 class DateRangeValue(BaseSearchFilter):
@@ -97,13 +97,11 @@ class DateRangeValue(BaseSearchFilter):
 
 class WorkforceRequestedDateRangeFilter(BaseSearchFilter):
     operation: Literal[OperationType.WorforceRequestedDate]
-    # timezone: TimeZoneName = Field(default=TimeZoneName.UTC)  # type: ignore
     value: DateRangeValue
 
 
 class WorkforceStageUpdatedRangeFilter(BaseSearchFilter):
     operation: Literal[OperationType.WorkforceStageUpdatedDate]
-    # timezone: TimeZoneName = Field(default=TimeZoneName.UTC)  # type: ignore
     value: DateRangeValue
 
 
