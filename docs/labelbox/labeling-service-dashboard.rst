@@ -1,6 +1,5 @@
-Labeling Service
+Labeling Service Dashboard
 ===============================================================================================
 
-.. automodule:: labelbox.schema.search_filters
-   :members:
+.. automodule:: labelbox.schema.labeling_service_dashboard
    :show-inheritance:

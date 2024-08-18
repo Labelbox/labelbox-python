@@ -2410,7 +2410,6 @@ class Client:
 
     def get_labeling_service_dashboards(
         self,
-        after: Optional[str] = None,
         search_query: Optional[List[SearchFilter]] = None,
     ) -> PaginatedCollection:
         """
@@ -2419,8 +2418,6 @@ class Client:
         Optional parameters:
         search_query: A list of search filters representing the search
         
-        after: The cursor to use for pagination.
-
         NOTE:
             - Retrieves all projects for the organization or as filtered by the search query.
             - Sorted by project created date in ascending order.
@@ -2444,9 +2441,7 @@ class Client:
 
             See libs/labelbox/src/labelbox/schema/search_filters.py and libs/labelbox/tests/unit/test_unit_search_filters.py for more examples.
         """
-        return LabelingServiceDashboard.get_all(self,
-                                                after,
-                                                search_query=search_query)
+        return LabelingServiceDashboard.get_all(self, search_query=search_query)
 
     def get_task_by_id(self, task_id: str) -> Union[Task, DataUpsertTask]:
         """

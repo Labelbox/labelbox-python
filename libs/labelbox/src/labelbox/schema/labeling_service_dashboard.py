@@ -95,7 +95,6 @@ class LabelingServiceDashboard(BaseModel):
     def get_all(
         cls,
         client,
-        after: Optional[str] = None,
         search_query: Optional[List[SearchFilter]] = None,
     ) -> PaginatedCollection:
 
@@ -126,8 +125,6 @@ class LabelingServiceDashboard(BaseModel):
         )
 
         params: Dict[str, Union[str, int]] = {}
-        if after:
-            params = {"from": after}
 
         def convert_to_labeling_service_dashboard(client, data):
             data['client'] = client
