@@ -30,6 +30,7 @@ Labelbox Python SDK Documentation
     labeling-frontend-options
     labeling-parameter-override
     labeling-service
+    labeling-service-dashboard
     model
     model-config
     model-run
@@ -42,6 +43,7 @@ Labelbox Python SDK Documentation
     quality-mode
     resource-tag
     review
+    search-filters
     send-to-annotate-params
     slice
     task

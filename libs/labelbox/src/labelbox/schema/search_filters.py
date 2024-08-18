@@ -7,6 +7,9 @@ from labelbox.utils import format_iso_datetime
 
 
 class BaseSearchFilter(BaseModel):
+    """
+    Shared code for all search filters
+    """
 
     class Config:
         use_enum_values = True
@@ -24,6 +27,9 @@ class BaseSearchFilter(BaseModel):
 
 
 class OperationType(Enum):
+    """
+    Supported search entity types
+    """
     Organization = 'organization'
     Workspace = 'workspace'
     Tag = 'tag'
@@ -33,74 +39,121 @@ class OperationType(Enum):
 
 
 class IdOperator(Enum):
+    """
+    Supported operators for ids
+    """
     Is = 'is'
 
 
 class DateOperator(Enum):
+    """
+    Supported operators for dates
+    """
     Equals = 'EQUALS'
     GreaterThanOrEqual = 'GREATER_THAN_OR_EQUAL'
     LessThanOrEqual = 'LESS_THAN_OR_EQUAL'
 
 
 class DateRangeOperator(Enum):
+    """
+    Supported operators for date ranges
+    """
     Between = 'BETWEEN'
 
 
 class OrganizationFilter(BaseSearchFilter):
+    """
+    Filter for organization
+    """
     operation: Literal[OperationType.Organization]
     operator: IdOperator
     values: List[str]
 
 
 class WorkspaceFilter(BaseSearchFilter):
+    """
+    Filter for workspace
+    """
     operation: Literal[OperationType.Workspace]
     operator: IdOperator
     values: List[str]
 
 
 class TagFilter(BaseSearchFilter):
+    """
+    Filter for project tags
+    """
     operation: Literal[OperationType.Tag]
     operator: IdOperator
     values: List[str]
 
 
 class ProjectStageFilter(BaseSearchFilter):
+    """
+    Filter labelbox service / aka project stages
+    """
     operation: Literal[OperationType.Stage]
     operator: IdOperator
     values: List[str]
 
 
 class DateValue(BaseSearchFilter):
+    """
+    Date value for a search filter
+
+    Date formats:
+        datetime: an existing datetime object
+        str the following formats are accepted: YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]
+        default timezone is UTC
+    """
     operator: DateOperator
     value: datetime.datetime
 
 
 class WorkforceStageUpdatedFilter(BaseSearchFilter):
+    """
+    Filter for workforce stage updated date
+    """
     operation: Literal[OperationType.WorkforceStageUpdatedDate]
     value: DateValue
 
 
 class WorkforceRequestedDateFilter(BaseSearchFilter):
+    """
+    Filter for workforce requested date
+    """
     operation: Literal[OperationType.WorforceRequestedDate]
     value: DateValue
 
 
 class DateRange(BaseSearchFilter):
+    """
+    Date range for a search filter
+    """
     min: datetime.datetime
     max: datetime.datetime
 
 
 class DateRangeValue(BaseSearchFilter):
+    """
+    Date range value for a search filter 
+    """
     operator: DateRangeOperator
     value: DateRange
 
 
 class WorkforceRequestedDateRangeFilter(BaseSearchFilter):
+    """
+    Filter for workforce requested date range
+    """
     operation: Literal[OperationType.WorforceRequestedDate]
     value: DateRangeValue
 
 
 class WorkforceStageUpdatedRangeFilter(BaseSearchFilter):
+    """
+    Filter for workforce stage updated date range
+    """
     operation: Literal[OperationType.WorkforceStageUpdatedDate]
     value: DateRangeValue
 
@@ -124,5 +177,8 @@ def _dict_to_graphql_string(d: Union[dict, list]) -> str:
 
 
 def build_search_filter(filter: List[SearchFilter]):
+    """
+    Converts a list of search filters to a graphql string
+    """
     filters = [_dict_to_graphql_string(f.dict()) for f in filter]
     return "[" + ", ".join(filters) + "]"
