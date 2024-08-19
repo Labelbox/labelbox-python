@@ -23,17 +23,17 @@ class MediaType(Enum):
     LLM = "LLM"
 
     @classmethod
-    def _missing_(cls, name):
+    def _missing_(cls, value: str):
         """Handle missing null data types for projects
             created without setting allowedMediaType
             Handle upper case names for compatibility with
             the GraphQL"""
 
-        if name is None:
+        if value is None:
             return cls.Unknown
 
-        for member in cls.__members__:
-            if member.name == name.upper():
+        for name, member in cls.__members__.items():
+            if name.upper() == value.upper():
                 return member
 
     @classmethod

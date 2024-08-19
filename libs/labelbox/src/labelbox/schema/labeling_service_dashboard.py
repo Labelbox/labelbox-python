@@ -15,10 +15,9 @@ from labelbox.utils import _CamelCaseMixin, sentence_case
 GRAPHQL_QUERY_SELECTIONS = """
                 id
                 name
-                # serviceType
-                # createdAt
-                # updatedAt
-                # createdById
+                boostRequestedAt
+                boostUpdatedAt
+                boostRequestedBy
                 boostStatus
                 dataRowsCount
                 dataRowsInReviewCount
@@ -46,15 +45,13 @@ class LabelingServiceDashboard(BaseModel):
     created_at: Optional[datetime] = Field(frozen=True, default=None)
     updated_at: Optional[datetime] = Field(frozen=True, default=None)
     created_by_id: Optional[str] = Field(frozen=True, default=None)
-    status: LabelingServiceStatus = Field(frozen=True,
-                                          default=LabelingServiceStatus.Missing)
+    status: LabelingServiceStatus = Field(frozen=True, default=None)
     data_rows_count: int = Field(frozen=True)
     data_rows_in_review_count: int = Field(frozen=True)
     data_rows_in_rework_count: int = Field(frozen=True)
     data_rows_done_count: int = Field(frozen=True)
-    media_type: MediaType = Field(frozen=True, default=MediaType.Unknown)
-    editor_task_type: EditorTaskType = Field(frozen=True,
-                                             default=EditorTaskType.Missing)
+    media_type: Optional[MediaType] = Field(frozen=True, default=None)
+    editor_task_type: EditorTaskType = Field(frozen=True, default=None)
 
     client: Any  # type Any to avoid circular import from client
 
@@ -74,6 +71,9 @@ class LabelingServiceDashboard(BaseModel):
 
     @property
     def service_type(self):
+        if self.media_type is None:
+            return None
+
         if self.editor_task_type is None:
             return sentence_case(self.media_type.value)
 
@@ -86,7 +86,7 @@ class LabelingServiceDashboard(BaseModel):
         if self.editor_task_type == EditorTaskType.ResponseCreation and self.media_type == MediaType.Text:
             return "Response creation"
 
-        if media_type == MediaType.LLMPromptCreation or media_type == MediaType.LLMPromptResponseCreation:
+        if self.media_type == MediaType.LLMPromptCreation or self.media_type == MediaType.LLMPromptResponseCreation:
             return "Prompt response creation"
 
         return sentence_case(self.media_type.value)
@@ -167,8 +167,17 @@ class LabelingServiceDashboard(BaseModel):
         )
 
     @root_validator(pre=True)
-    def convert_boost_status_to_enum(cls, data):
+    def convert_boost_data(cls, data):
         if 'boostStatus' in data:
             data['status'] = LabelingServiceStatus(data.pop('boostStatus'))
+
+        if 'boostRequestedAt' in data:
+            data['created_at'] = data.pop('boostRequestedAt')
+
+        if 'boostUpdatedAt' in data:
+            data['updated_at'] = data.pop('boostUpdatedAt')
+
+        if 'boostRequestedBy' in data:
+            data['created_by_id'] = data.pop('boostRequestedBy')
 
         return data
