@@ -7,7 +7,10 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.pydantic_compat import BaseModel, root_validator, Field
 from labelbox.schema.search_filters import SearchFilter, build_search_filter
 from labelbox.utils import _CamelCaseMixin
+from .ontology_kind import EditorTaskType
+from labelbox.schema.media_type import MediaType
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
+from labelbox.utils import _CamelCaseMixin, sentence_case
 
 GRAPHQL_QUERY_SELECTIONS = """
                 id
@@ -21,6 +24,8 @@ GRAPHQL_QUERY_SELECTIONS = """
                 dataRowsInReviewCount
                 dataRowsInReworkCount
                 dataRowsDoneCount
+                mediaType
+                editorTaskType
             """
 
 
@@ -38,7 +43,6 @@ class LabelingServiceDashboard(BaseModel):
     """
     id: str = Field(frozen=True)
     name: str = Field(frozen=True)
-    service_type: Optional[str] = Field(frozen=True, default=None)
     created_at: Optional[datetime] = Field(frozen=True, default=None)
     updated_at: Optional[datetime] = Field(frozen=True, default=None)
     created_by_id: Optional[str] = Field(frozen=True, default=None)
@@ -48,6 +52,9 @@ class LabelingServiceDashboard(BaseModel):
     data_rows_in_review_count: int = Field(frozen=True)
     data_rows_in_rework_count: int = Field(frozen=True)
     data_rows_done_count: int = Field(frozen=True)
+    media_type: MediaType = Field(frozen=True, default=MediaType.Unknown)
+    editor_task_type: EditorTaskType = Field(frozen=True,
+                                             default=EditorTaskType.Missing)
 
     client: Any  # type Any to avoid circular import from client
 
@@ -64,6 +71,25 @@ class LabelingServiceDashboard(BaseModel):
     @property
     def tasks_remaining(self):
         return self.data_rows_count - self.data_rows_done_count
+
+    @property
+    def service_type(self):
+        if self.editor_task_type is None:
+            return sentence_case(self.media_type.value)
+
+        if self.editor_task_type == EditorTaskType.OfflineModelChatEvaluation and self.media_type == MediaType.Conversational:
+            return "Offline chat evaluation"
+
+        if self.editor_task_type == EditorTaskType.ModelChatEvaluation and self.media_type == MediaType.Conversational:
+            return "Live chat evaluation"
+
+        if self.editor_task_type == EditorTaskType.ResponseCreation and self.media_type == MediaType.Text:
+            return "Response creation"
+
+        if media_type == MediaType.LLMPromptCreation or media_type == MediaType.LLMPromptResponseCreation:
+            return "Prompt response creation"
+
+        return sentence_case(self.media_type.value)
 
     class Config(_CamelCaseMixin.Config):
         ...
