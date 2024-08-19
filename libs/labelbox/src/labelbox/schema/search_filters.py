@@ -104,7 +104,10 @@ class DateValue(BaseSearchFilter):
     Date formats:
         datetime: an existing datetime object
         str the following formats are accepted: YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]
-        default timezone is UTC
+        NOTE
+            if a date / datetime string is passed without a timezone, we will assume the time is UTC and convert it to a local timezone
+            so for a string '2024-01-01' that is run on a computer in PST, we would convert it to '2024-01-01T08:00:00Z'
+            while the same string in EST will get converted to '2024-01-01T05:00:00Z'
     """
     operator: DateOperator
     value: datetime.datetime
@@ -165,7 +168,7 @@ SearchFilter = Union[OrganizationFilter, WorkspaceFilter, TagFilter,
                      WorkforceStageUpdatedRangeFilter]
 
 
-def _dict_to_graphql_string(d: Union[dict, list]) -> str:
+def _dict_to_graphql_string(d: Union[dict, list, str, int]) -> str:
     if isinstance(d, dict):
         return "{" + ", ".join(
             f'{k}: {_dict_to_graphql_string(v)}' for k, v in d.items()) + "}"

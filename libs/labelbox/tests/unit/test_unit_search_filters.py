@@ -1,5 +1,6 @@
-from datetime import date, datetime
+from datetime import datetime
 from labelbox.schema.search_filters import DateOperator, DateRange, DateRangeOperator, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, ProjectStageFilter, TagFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkforceStageUpdatedFilter, WorkforceStageUpdatedRangeFilter, WorkspaceFilter, build_search_filter
+from labelbox.utils import format_iso_datetime
 
 
 def test_id_filters():
@@ -24,35 +25,46 @@ def test_id_filters():
 
 
 def test_date_filters():
+    local_time_start = datetime.strptime("2024-01-01", "%Y-%m-%d")
+    local_time_end = datetime.strptime("2025-01-01", "%Y-%m-%d")
+
     filters = [
         WorkforceRequestedDateFilter(
             operation=OperationType.WorforceRequestedDate,
             value=DateValue(operator=DateOperator.GreaterThanOrEqual,
-                            value=datetime.strptime("2024-01-01", "%Y-%m-%d"))),
+                            value=local_time_start)),
         WorkforceStageUpdatedFilter(
             operation=OperationType.WorkforceStageUpdatedDate,
             value=DateValue(operator=DateOperator.LessThanOrEqual,
-                            value=datetime.strptime("2025-01-01", "%Y-%m-%d"))),
+                            value=local_time_end)),
     ]
-    assert build_search_filter(
-        filters
-    ) == '[{value: {operator: "GREATER_THAN_OR_EQUAL", value: "2024-01-01T08:00:00Z"}, type: "workforce_requested_at"}, {value: {operator: "LESS_THAN_OR_EQUAL", value: "2025-01-01T08:00:00Z"}, type: "workforce_stage_updated_at"}]'
+    expected_start = format_iso_datetime(local_time_start)
+    expected_end = format_iso_datetime(local_time_end)
+
+    expected = '[{value: {operator: "GREATER_THAN_OR_EQUAL", value: "' + expected_start + '"}, type: "workforce_requested_at"}, {value: {operator: "LESS_THAN_OR_EQUAL", value: "' + expected_end + '"}, type: "workforce_stage_updated_at"}]'
+    assert build_search_filter(filters) == expected
 
 
 def test_date_range_filters():
     filters = [
         WorkforceRequestedDateRangeFilter(
             operation=OperationType.WorforceRequestedDate,
-            value=DateRangeValue(
-                operator=DateRangeOperator.Between,
-                value=DateRange(min=datetime.strptime("2024-01-01", "%Y-%m-%d"),
-                                max=datetime.strptime("2025-01-01",
-                                                      "%Y-%m-%d")))),
+            value=DateRangeValue(operator=DateRangeOperator.Between,
+                                 value=DateRange(min=datetime.strptime(
+                                     "2024-01-01T00:00:00-0800",
+                                     "%Y-%m-%dT%H:%M:%S%z"),
+                                                 max=datetime.strptime(
+                                                     "2025-01-01T00:00:00-0800",
+                                                     "%Y-%m-%dT%H:%M:%S%z")))),
         WorkforceStageUpdatedRangeFilter(
             operation=OperationType.WorkforceStageUpdatedDate,
             value=DateRangeValue(operator=DateRangeOperator.Between,
-                                 value=DateRange(min="2024-01-01T08:00:00Z",
-                                                 max="2025-01-01T08:00:00Z")))
+                                 value=DateRange(min=datetime.strptime(
+                                     "2024-01-01T00:00:00-0800",
+                                     "%Y-%m-%dT%H:%M:%S%z"),
+                                                 max=datetime.strptime(
+                                                     "2025-01-01T00:00:00-0800",
+                                                     "%Y-%m-%dT%H:%M:%S%z")))),
     ]
     assert build_search_filter(
         filters

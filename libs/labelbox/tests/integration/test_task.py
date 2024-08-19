@@ -1,6 +1,4 @@
 import json
-from labelbox.schema.disconnected_task import DisconnectedTask
-import pytest
 import collections.abc
 from labelbox import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataField
