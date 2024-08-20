@@ -35,6 +35,12 @@ class MediaType(Enum):
             return cls.Unknown
 
         def matches(value, name):
+            """
+            This will convert string values (from api) to match enum values
+              Some string values come as snake case (i.e. llm-prompt-creation)
+              Some string values come as camel case (i.e. llmPromptCreation)
+                etc depending on which api returns the value
+            """
             value_upper = value.upper()
             name_upper = name.upper()
             value_underscore = value.replace("-", "_")

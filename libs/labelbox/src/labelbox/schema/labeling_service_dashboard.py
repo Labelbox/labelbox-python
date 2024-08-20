@@ -63,14 +63,23 @@ class LabelingServiceDashboard(BaseModel):
 
     @property
     def tasks_completed(self):
+        """
+        Count how many data rows have been completed (i.e. in the Done queue)
+        """
         return self.data_rows_done_count
 
     @property
     def tasks_remaining(self):
+        """
+        Count how many data rows have not been completed
+        """
         return self.data_rows_count - self.data_rows_done_count
 
     @property
     def service_type(self):
+        """
+        Descriptive labeling service definition by media type and editor task type
+        """
         if self.media_type is None:
             return None
 
