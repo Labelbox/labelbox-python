@@ -1,5 +1,5 @@
 from datetime import datetime
-from labelbox.schema.search_filters import DateOperator, DateRange, DateRangeOperator, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, ProjectStageFilter, TagFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkforceStageUpdatedFilter, WorkforceStageUpdatedRangeFilter, WorkspaceFilter, build_search_filter
+from labelbox.schema.search_filters import IntegerValue, RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, ProjectStageFilter, TagFilter, TaskCompletedCountFilter, TaskRemainingCountFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkforceStageUpdatedFilter, WorkforceStageUpdatedRangeFilter, WorkspaceFilter, build_search_filter
 from labelbox.utils import format_iso_datetime
 
 
@@ -31,12 +31,14 @@ def test_date_filters():
     filters = [
         WorkforceRequestedDateFilter(
             operation=OperationType.WorforceRequestedDate,
-            value=DateValue(operator=DateOperator.GreaterThanOrEqual,
-                            value=local_time_start)),
+            value=DateValue(
+                operator=RangeOperatorWithSingleValue.GreaterThanOrEqual,
+                value=local_time_start)),
         WorkforceStageUpdatedFilter(
             operation=OperationType.WorkforceStageUpdatedDate,
-            value=DateValue(operator=DateOperator.LessThanOrEqual,
-                            value=local_time_end)),
+            value=DateValue(
+                operator=RangeOperatorWithSingleValue.LessThanOrEqual,
+                value=local_time_end)),
     ]
     expected_start = format_iso_datetime(local_time_start)
     expected_end = format_iso_datetime(local_time_end)
@@ -49,7 +51,7 @@ def test_date_range_filters():
     filters = [
         WorkforceRequestedDateRangeFilter(
             operation=OperationType.WorforceRequestedDate,
-            value=DateRangeValue(operator=DateRangeOperator.Between,
+            value=DateRangeValue(operator=RangeOperatorWithValue.Between,
                                  value=DateRange(min=datetime.strptime(
                                      "2024-01-01T00:00:00-0800",
                                      "%Y-%m-%dT%H:%M:%S%z"),
@@ -58,7 +60,7 @@ def test_date_range_filters():
                                                      "%Y-%m-%dT%H:%M:%S%z")))),
         WorkforceStageUpdatedRangeFilter(
             operation=OperationType.WorkforceStageUpdatedDate,
-            value=DateRangeValue(operator=DateRangeOperator.Between,
+            value=DateRangeValue(operator=RangeOperatorWithValue.Between,
                                  value=DateRange(min=datetime.strptime(
                                      "2024-01-01T00:00:00-0800",
                                      "%Y-%m-%dT%H:%M:%S%z"),
@@ -69,3 +71,21 @@ def test_date_range_filters():
     assert build_search_filter(
         filters
     ) == '[{value: {operator: "BETWEEN", value: {min: "2024-01-01T08:00:00Z", max: "2025-01-01T08:00:00Z"}}, type: "workforce_requested_at"}, {value: {operator: "BETWEEN", value: {min: "2024-01-01T08:00:00Z", max: "2025-01-01T08:00:00Z"}}, type: "workforce_stage_updated_at"}]'
+
+
+def test_task_count_filters():
+    filters = [
+        TaskCompletedCountFilter(
+            operation=OperationType.TaskCompletedCount,
+            value=IntegerValue(
+                operator=RangeOperatorWithSingleValue.GreaterThanOrEqual,
+                value=1)),
+        TaskRemainingCountFilter(
+            operation=OperationType.TaskRemainingCount,
+            value=IntegerValue(
+                operator=RangeOperatorWithSingleValue.LessThanOrEqual,
+                value=10)),
+    ]
+
+    expected = '[{value: {operator: "GREATER_THAN_OR_EQUAL", value: 1}, type: "task_completed_count"}, {value: {operator: "LESS_THAN_OR_EQUAL", value: 10}, type: "task_remaining_count"}]'
+    assert build_search_filter(filters) == expected

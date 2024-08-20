@@ -36,6 +36,8 @@ class OperationType(Enum):
     Stage = 'stage'
     WorforceRequestedDate = 'workforce_requested_at'
     WorkforceStageUpdatedDate = 'workforce_stage_updated_at'
+    TaskCompletedCount = 'task_completed_count'
+    TaskRemainingCount = 'task_remaining_count'
 
 
 class IdOperator(Enum):
@@ -45,7 +47,7 @@ class IdOperator(Enum):
     Is = 'is'
 
 
-class DateOperator(Enum):
+class RangeOperatorWithSingleValue(Enum):
     """
     Supported operators for dates
     """
@@ -54,7 +56,7 @@ class DateOperator(Enum):
     LessThanOrEqual = 'LESS_THAN_OR_EQUAL'
 
 
-class DateRangeOperator(Enum):
+class RangeOperatorWithValue(Enum):
     """
     Supported operators for date ranges
     """
@@ -109,8 +111,13 @@ class DateValue(BaseSearchFilter):
             so for a string '2024-01-01' that is run on a computer in PST, we would convert it to '2024-01-01T08:00:00Z'
             while the same string in EST will get converted to '2024-01-01T05:00:00Z'
     """
-    operator: DateOperator
+    operator: RangeOperatorWithSingleValue
     value: datetime.datetime
+
+
+class IntegerValue(BaseSearchFilter):
+    operator: RangeOperatorWithSingleValue
+    value: int
 
 
 class WorkforceStageUpdatedFilter(BaseSearchFilter):
@@ -141,7 +148,7 @@ class DateRangeValue(BaseSearchFilter):
     """
     Date range value for a search filter 
     """
-    operator: DateRangeOperator
+    operator: RangeOperatorWithValue
     value: DateRange
 
 
@@ -161,11 +168,28 @@ class WorkforceStageUpdatedRangeFilter(BaseSearchFilter):
     value: DateRangeValue
 
 
+class TaskCompletedCountFilter(BaseSearchFilter):
+    """
+    Filter for workforce stage updated date
+    """
+    operation: Literal[OperationType.TaskCompletedCount]
+    value: IntegerValue
+
+
+class TaskRemainingCountFilter(BaseSearchFilter):
+    """
+    Filter for workforce stage updated date
+    """
+    operation: Literal[OperationType.TaskRemainingCount]
+    value: IntegerValue
+
+
 SearchFilter = Union[OrganizationFilter, WorkspaceFilter, TagFilter,
                      ProjectStageFilter, WorkforceRequestedDateFilter,
                      WorkforceStageUpdatedFilter,
                      WorkforceRequestedDateRangeFilter,
-                     WorkforceStageUpdatedRangeFilter]
+                     WorkforceStageUpdatedRangeFilter, TaskCompletedCountFilter,
+                     TaskRemainingCountFilter]
 
 
 def _dict_to_graphql_string(d: Union[dict, list, str, int]) -> str:
