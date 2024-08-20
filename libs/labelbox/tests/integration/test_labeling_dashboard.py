@@ -82,3 +82,6 @@ def test_request_labeling_service_dashboard_filters(requested_labeling_service):
     ]
     assert len(labeling_service_dashboard) == 0
     assert labeling_service_dashboard == []
+    labeling_service_dashboard = project.client.get_labeling_service_dashboards(
+    ).get_one()
+    assert labeling_service_dashboard

@@ -1,5 +1,7 @@
 from enum import Enum
 
+from labelbox.utils import camel_case
+
 
 class MediaType(Enum):
     Audio = "AUDIO"
@@ -23,7 +25,7 @@ class MediaType(Enum):
     LLM = "LLM"
 
     @classmethod
-    def _missing_(cls, value: str):
+    def _missing_(cls, value):
         """Handle missing null data types for projects
             created without setting allowedMediaType
             Handle upper case names for compatibility with
@@ -32,8 +34,18 @@ class MediaType(Enum):
         if value is None:
             return cls.Unknown
 
+        def matches(value, name):
+            value_upper = value.upper()
+            name_upper = name.upper()
+            value_underscore = value.replace("-", "_")
+            camel_case_value = camel_case(value_underscore)
+
+            return (value_upper == name_upper or
+                    value_underscore.upper() == name_upper or
+                    camel_case_value.upper() == name_upper)
+
         for name, member in cls.__members__.items():
-            if name.upper() == value.upper():
+            if matches(value, name):
                 return member
 
     @classmethod
