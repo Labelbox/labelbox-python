@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from labelbox.schema.labeling_service import LabelingServiceStatus
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.media_type import MediaType
-from labelbox.schema.search_filters import RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkspaceFilter
+from labelbox.schema.search_filters import IntegerValue, RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, TaskCompletedCountFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkspaceFilter, TaskRemainingCountFilter
 
 
 def test_request_labeling_service_dashboard(rand_gen,
@@ -91,3 +91,18 @@ def test_request_labeling_service_dashboard_filters(requested_labeling_service):
     labeling_service_dashboard = project.client.get_labeling_service_dashboards(
     ).get_one()
     assert labeling_service_dashboard
+
+    task_done_count_filter = TaskCompletedCountFilter(
+        operation=OperationType.TaskCompletedCount,
+        value=IntegerValue(
+            operator=RangeOperatorWithSingleValue.GreaterThanOrEqual, value=0))
+    task_remaining_count_filter = TaskRemainingCountFilter(
+        operation=OperationType.TaskRemainingCount,
+        value=IntegerValue(
+            operator=RangeOperatorWithSingleValue.GreaterThanOrEqual, value=0))
+
+    labeling_service_dashboard = [
+        ld for ld in project.client.get_labeling_service_dashboards(
+            search_query=[task_done_count_filter, task_remaining_count_filter])
+    ][0]
+    assert labeling_service_dashboard is not None
