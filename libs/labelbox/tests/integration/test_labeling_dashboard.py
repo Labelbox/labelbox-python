@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from labelbox.schema.labeling_service import LabelingServiceStatus
 from labelbox.schema.search_filters import DateOperator, DateRange, DateRangeOperator, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkspaceFilter
+from labelbox.schema.ontology_kind import EditorTaskType
+from labelbox.schema.media_type import MediaType
 
 
 def test_request_labeling_service_dashboard(rand_gen,
@@ -18,6 +20,9 @@ def test_request_labeling_service_dashboard(rand_gen,
     assert labeling_service_dashboard.status == LabelingServiceStatus.Missing
     assert labeling_service_dashboard.tasks_completed == 0
     assert labeling_service_dashboard.tasks_remaining == 0
+    assert labeling_service_dashboard.media_type == MediaType.Conversational
+    assert labeling_service_dashboard.editor_task_type == EditorTaskType.OfflineModelChatEvaluation
+    assert labeling_service_dashboard.service_type == "Offline chat evaluation"
 
     labeling_service_dashboard = [
         ld for ld in project.client.get_labeling_service_dashboards()
