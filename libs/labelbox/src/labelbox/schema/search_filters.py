@@ -67,7 +67,7 @@ class OrganizationFilter(BaseSearchFilter):
     """
     Filter for organization
     """
-    operation: Literal[OperationType.Organization]
+    operation: Literal[OperationType.Organization] = OperationType.Organization
     operator: IdOperator
     values: List[str]
 
@@ -76,7 +76,7 @@ class WorkspaceFilter(BaseSearchFilter):
     """
     Filter for workspace
     """
-    operation: Literal[OperationType.Workspace]
+    operation: Literal[OperationType.Workspace] = OperationType.Workspace
     operator: IdOperator
     values: List[str]
 
@@ -85,7 +85,7 @@ class TagFilter(BaseSearchFilter):
     """
     Filter for project tags
     """
-    operation: Literal[OperationType.Tag]
+    operation: Literal[OperationType.Tag] = OperationType.Tag
     operator: IdOperator
     values: List[str]
 
@@ -94,7 +94,7 @@ class ProjectStageFilter(BaseSearchFilter):
     """
     Filter labelbox service / aka project stages
     """
-    operation: Literal[OperationType.Stage]
+    operation: Literal[OperationType.Stage] = OperationType.Stage
     operator: IdOperator
     values: List[str]
 
@@ -124,7 +124,9 @@ class WorkforceStageUpdatedFilter(BaseSearchFilter):
     """
     Filter for workforce stage updated date
     """
-    operation: Literal[OperationType.WorkforceStageUpdatedDate]
+    operation: Literal[
+        OperationType.
+        WorkforceStageUpdatedDate] = OperationType.WorkforceStageUpdatedDate
     value: DateValue
 
 
@@ -132,7 +134,9 @@ class WorkforceRequestedDateFilter(BaseSearchFilter):
     """
     Filter for workforce requested date
     """
-    operation: Literal[OperationType.WorforceRequestedDate]
+    operation: Literal[
+        OperationType.
+        WorforceRequestedDate] = OperationType.WorforceRequestedDate
     value: DateValue
 
 
@@ -156,7 +160,9 @@ class WorkforceRequestedDateRangeFilter(BaseSearchFilter):
     """
     Filter for workforce requested date range
     """
-    operation: Literal[OperationType.WorforceRequestedDate]
+    operation: Literal[
+        OperationType.
+        WorforceRequestedDate] = OperationType.WorforceRequestedDate
     value: DateRangeValue
 
 
@@ -164,23 +170,27 @@ class WorkforceStageUpdatedRangeFilter(BaseSearchFilter):
     """
     Filter for workforce stage updated date range
     """
-    operation: Literal[OperationType.WorkforceStageUpdatedDate]
+    operation: Literal[
+        OperationType.
+        WorkforceStageUpdatedDate] = OperationType.WorkforceStageUpdatedDate
     value: DateRangeValue
 
 
 class TaskCompletedCountFilter(BaseSearchFilter):
     """
-    Filter for workforce stage updated date
+    Filter for completed tasks count
     """
-    operation: Literal[OperationType.TaskCompletedCount]
+    operation: Literal[
+        OperationType.TaskCompletedCount] = OperationType.TaskCompletedCount
     value: IntegerValue
 
 
 class TaskRemainingCountFilter(BaseSearchFilter):
     """
-    Filter for workforce stage updated date
+    Filter for remaining tasks count
     """
-    operation: Literal[OperationType.TaskRemainingCount]
+    operation: Literal[
+        OperationType.TaskRemainingCount] = OperationType.TaskRemainingCount
     value: IntegerValue
 
 
