@@ -11,6 +11,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, List, Dict, Union, Optional, overload, Callable
 
+from labelbox.schema.search_filters import SearchFilter
 import requests
 import requests.exceptions
 from google.api_core import retry
@@ -2409,21 +2410,38 @@ class Client:
 
     def get_labeling_service_dashboards(
         self,
-        after: Optional[str] = None,
-        search_query: Optional[List[Dict]] = None,
+        search_query: Optional[List[SearchFilter]] = None,
     ) -> PaginatedCollection:
         """
         Get all labeling service dashboards for a given org.
 
         Optional parameters:
-            after: The cursor to use for pagination.
-            where: A filter to apply to the query.
+        search_query: A list of search filters representing the search
+        
+        NOTE:
+            - Retrieves all projects for the organization or as filtered by the search query.
+            - Sorted by project created date in ascending order.
+        
+        Examples:
+            Retrieves all labeling service dashboards for a given workspace id:
+            >>> workspace_filter = WorkspaceFilter(
+            >>>     operation=OperationType.Workspace,
+            >>>     operator=IdOperator.Is,
+            >>>     values=[workspace_id])
+            >>> labeling_service_dashboard = [
+            >>>     ld for ld in project.client.get_labeling_service_dashboards(search_query=[workspace_filter])]
 
-        NOTE: support for after and search_query are not yet implemented.
+            Retrieves all labeling service dashboards requested less than 7 days ago:
+            >>> seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+            >>> workforce_requested_filter_before = WorkforceRequestedDateFilter(
+            >>>     operation=OperationType.WorforceRequestedDate,
+            >>>     value=DateValue(operator=DateOperator.GreaterThanOrEqual,
+            >>>                     value=seven_days_ago))
+            >>> labeling_service_dashboard = [ld for ld in project.client.get_labeling_service_dashboards(search_query=[workforce_requested_filter_before])]
+
+            See libs/labelbox/src/labelbox/schema/search_filters.py and libs/labelbox/tests/unit/test_unit_search_filters.py for more examples.
         """
-        return LabelingServiceDashboard.get_all(self,
-                                                after,
-                                                search_query=search_query)
+        return LabelingServiceDashboard.get_all(self, search_query=search_query)
 
     def get_task_by_id(self, task_id: str) -> Union[Task, DataUpsertTask]:
         """

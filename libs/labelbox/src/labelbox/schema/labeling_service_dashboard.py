@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.pagination import PaginatedCollection
 from labelbox.pydantic_compat import BaseModel, root_validator, Field
+from labelbox.schema.search_filters import SearchFilter, build_search_filter
 from labelbox.utils import _CamelCaseMixin
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
 
@@ -94,28 +95,36 @@ class LabelingServiceDashboard(BaseModel):
     def get_all(
         cls,
         client,
-        after: Optional[str] = None,
-        search_query: Optional[List[Dict]] = None,
+        search_query: Optional[List[SearchFilter]] = None,
     ) -> PaginatedCollection:
-        template = Template(
-            """query SearchProjectsPyApi($$first: Int, $$from: String) {
-                        searchProjects(input: {after: $$from, searchQuery: $search_query, size: $$first})
-                            {
-                                nodes { $labeling_dashboard_selections }
-                                pageInfo { endCursor }
+
+        if search_query is not None:
+            template = Template(
+                """query SearchProjectsPyApi($$first: Int, $$from: String) {
+                            searchProjects(input: {after: $$from, searchQuery: $search_query, size: $$first})
+                                {
+                                    nodes { $labeling_dashboard_selections }
+                                    pageInfo { endCursor }
+                                }
                             }
-                        }
-                    """)
-        organization_id = client.get_organization().uid
+                        """)
+        else:
+            template = Template(
+                """query SearchProjectsPyApi($$first: Int, $$from: String) {
+                            searchProjects(input: {after: $$from, size: $$first})
+                                {
+                                    nodes { $labeling_dashboard_selections }
+                                    pageInfo { endCursor }
+                                }
+                            }
+                        """)
         query_str = template.substitute(
             labeling_dashboard_selections=GRAPHQL_QUERY_SELECTIONS,
-            search_query=
-            f"[{{type: \"organization\", operator: \"is\",  values: [\"{organization_id}\"]}}]"
+            search_query=build_search_filter(search_query)
+            if search_query else None,
         )
 
         params: Dict[str, Union[str, int]] = {}
-        if after:
-            params = {"from": after}
 
         def convert_to_labeling_service_dashboard(client, data):
             data['client'] = client
