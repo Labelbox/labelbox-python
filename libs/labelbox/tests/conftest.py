@@ -1099,9 +1099,9 @@ def valid_model_id():
 
 
 @pytest.fixture
-def requested_labeling_service(
-        rand_gen, live_chat_evaluation_project_with_new_dataset,
-        chat_evaluation_ontology, model_config):
+def requested_labeling_service(rand_gen,
+                               live_chat_evaluation_project_with_new_dataset,
+                               chat_evaluation_ontology, model_config):
     project = live_chat_evaluation_project_with_new_dataset
     project.connect_ontology(chat_evaluation_ontology)
 
@@ -1113,4 +1113,4 @@ def requested_labeling_service(
 
     labeling_service.request()
 
-    yield project, labeling_service
+    yield project, project.get_labeling_service()

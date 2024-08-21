@@ -1,21 +1,15 @@
 from datetime import datetime, timedelta
+from labelbox.exceptions import ResourceNotFoundError
 from labelbox.schema.labeling_service import LabelingServiceStatus
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.search_filters import IntegerValue, RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, TaskCompletedCountFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkspaceFilter, TaskRemainingCountFilter
+import pytest
 
 
-def test_request_labeling_service_dashboard(rand_gen,
-                                            offline_chat_evaluation_project,
-                                            chat_evaluation_ontology,
-                                            offline_conversational_data_row):
-    project = offline_chat_evaluation_project
-    project.connect_ontology(chat_evaluation_ontology)
+def test_request_labeling_service_dashboard(requested_labeling_service):
+    project, _ = requested_labeling_service
 
-    project.create_batch(
-        rand_gen(str),
-        [offline_conversational_data_row.uid],  # sample of data row objects
-    )
     labeling_service_dashboard = project.labeling_service_dashboard()
     assert labeling_service_dashboard.status == LabelingServiceStatus.Missing
     assert labeling_service_dashboard.tasks_completed == 0
@@ -30,6 +24,17 @@ def test_request_labeling_service_dashboard(rand_gen,
     assert labeling_service_dashboard.status == LabelingServiceStatus.Missing
     assert labeling_service_dashboard.tasks_completed == 0
     assert labeling_service_dashboard.tasks_remaining == 0
+
+
+def test_request_labeling_service_dashboard_not_started(
+        offline_chat_evaluation_project):
+    project = offline_chat_evaluation_project
+
+    with pytest.raises(ResourceNotFoundError) as e:
+        project.labeling_service_dashboard()
+
+    with pytest.raises(ResourceNotFoundError) as e:
+        [ld for ld in project.client.get_labeling_service_dashboards()][0]
 
 
 def test_request_labeling_service_dashboard_filters(requested_labeling_service):
