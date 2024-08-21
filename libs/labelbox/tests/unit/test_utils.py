@@ -1,5 +1,5 @@
 import pytest
-from labelbox.utils import format_iso_datetime, format_iso_from_string
+from labelbox.utils import format_iso_datetime, format_iso_from_string, sentence_case
 
 
 @pytest.mark.parametrize('datetime_str, expected_datetime_str',
@@ -11,3 +11,11 @@ def test_datetime_parsing(datetime_str, expected_datetime_str):
     # NOTE I would normally not take 'expected' using another function from sdk code, but in this case this is exactly the usage in _validate_parse_datetime
     assert format_iso_datetime(
         format_iso_from_string(datetime_str)) == expected_datetime_str
+
+
+@pytest.mark.parametrize(
+    'str, expected_str',
+    [('AUDIO', 'Audio'),
+     ('LLM_PROMPT_RESPONSE_CREATION', 'Llm prompt response creation')])
+def test_sentence_case(str, expected_str):
+    assert sentence_case(str) == expected_str
