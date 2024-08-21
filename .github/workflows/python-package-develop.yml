@@ -61,7 +61,7 @@ jobs:
   test-pypi:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
-    needs: ['build']
+    needs: ['path-filter']
     continue-on-error: true
     environment: 
       name: Test-PyPI
