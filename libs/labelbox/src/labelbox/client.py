@@ -2435,7 +2435,7 @@ class Client:
             >>> seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
             >>> workforce_requested_filter_before = WorkforceRequestedDateFilter(
             >>>     operation=OperationType.WorforceRequestedDate,
-            >>>     value=DateValue(operator=DateOperator.GreaterThanOrEqual,
+            >>>     value=DateValue(operator=RangeOperatorWithSingleValue.GreaterThanOrEqual,
             >>>                     value=seven_days_ago))
             >>> labeling_service_dashboard = [ld for ld in project.client.get_labeling_service_dashboards(search_query=[workforce_requested_filter_before])]
 

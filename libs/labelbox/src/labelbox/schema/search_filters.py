@@ -36,6 +36,8 @@ class OperationType(Enum):
     Stage = 'stage'
     WorforceRequestedDate = 'workforce_requested_at'
     WorkforceStageUpdatedDate = 'workforce_stage_updated_at'
+    TaskCompletedCount = 'task_completed_count'
+    TaskRemainingCount = 'task_remaining_count'
 
 
 class IdOperator(Enum):
@@ -45,7 +47,7 @@ class IdOperator(Enum):
     Is = 'is'
 
 
-class DateOperator(Enum):
+class RangeOperatorWithSingleValue(Enum):
     """
     Supported operators for dates
     """
@@ -54,7 +56,7 @@ class DateOperator(Enum):
     LessThanOrEqual = 'LESS_THAN_OR_EQUAL'
 
 
-class DateRangeOperator(Enum):
+class RangeOperatorWithValue(Enum):
     """
     Supported operators for date ranges
     """
@@ -65,7 +67,7 @@ class OrganizationFilter(BaseSearchFilter):
     """
     Filter for organization
     """
-    operation: Literal[OperationType.Organization]
+    operation: Literal[OperationType.Organization] = OperationType.Organization
     operator: IdOperator
     values: List[str]
 
@@ -74,7 +76,7 @@ class WorkspaceFilter(BaseSearchFilter):
     """
     Filter for workspace
     """
-    operation: Literal[OperationType.Workspace]
+    operation: Literal[OperationType.Workspace] = OperationType.Workspace
     operator: IdOperator
     values: List[str]
 
@@ -83,7 +85,7 @@ class TagFilter(BaseSearchFilter):
     """
     Filter for project tags
     """
-    operation: Literal[OperationType.Tag]
+    operation: Literal[OperationType.Tag] = OperationType.Tag
     operator: IdOperator
     values: List[str]
 
@@ -92,7 +94,7 @@ class ProjectStageFilter(BaseSearchFilter):
     """
     Filter labelbox service / aka project stages
     """
-    operation: Literal[OperationType.Stage]
+    operation: Literal[OperationType.Stage] = OperationType.Stage
     operator: IdOperator
     values: List[str]
 
@@ -109,15 +111,22 @@ class DateValue(BaseSearchFilter):
             so for a string '2024-01-01' that is run on a computer in PST, we would convert it to '2024-01-01T08:00:00Z'
             while the same string in EST will get converted to '2024-01-01T05:00:00Z'
     """
-    operator: DateOperator
+    operator: RangeOperatorWithSingleValue
     value: datetime.datetime
+
+
+class IntegerValue(BaseSearchFilter):
+    operator: RangeOperatorWithSingleValue
+    value: int
 
 
 class WorkforceStageUpdatedFilter(BaseSearchFilter):
     """
     Filter for workforce stage updated date
     """
-    operation: Literal[OperationType.WorkforceStageUpdatedDate]
+    operation: Literal[
+        OperationType.
+        WorkforceStageUpdatedDate] = OperationType.WorkforceStageUpdatedDate
     value: DateValue
 
 
@@ -125,7 +134,9 @@ class WorkforceRequestedDateFilter(BaseSearchFilter):
     """
     Filter for workforce requested date
     """
-    operation: Literal[OperationType.WorforceRequestedDate]
+    operation: Literal[
+        OperationType.
+        WorforceRequestedDate] = OperationType.WorforceRequestedDate
     value: DateValue
 
 
@@ -141,7 +152,7 @@ class DateRangeValue(BaseSearchFilter):
     """
     Date range value for a search filter 
     """
-    operator: DateRangeOperator
+    operator: RangeOperatorWithValue
     value: DateRange
 
 
@@ -149,7 +160,9 @@ class WorkforceRequestedDateRangeFilter(BaseSearchFilter):
     """
     Filter for workforce requested date range
     """
-    operation: Literal[OperationType.WorforceRequestedDate]
+    operation: Literal[
+        OperationType.
+        WorforceRequestedDate] = OperationType.WorforceRequestedDate
     value: DateRangeValue
 
 
@@ -157,15 +170,36 @@ class WorkforceStageUpdatedRangeFilter(BaseSearchFilter):
     """
     Filter for workforce stage updated date range
     """
-    operation: Literal[OperationType.WorkforceStageUpdatedDate]
+    operation: Literal[
+        OperationType.
+        WorkforceStageUpdatedDate] = OperationType.WorkforceStageUpdatedDate
     value: DateRangeValue
+
+
+class TaskCompletedCountFilter(BaseSearchFilter):
+    """
+    Filter for completed tasks count
+    """
+    operation: Literal[
+        OperationType.TaskCompletedCount] = OperationType.TaskCompletedCount
+    value: IntegerValue
+
+
+class TaskRemainingCountFilter(BaseSearchFilter):
+    """
+    Filter for remaining tasks count
+    """
+    operation: Literal[
+        OperationType.TaskRemainingCount] = OperationType.TaskRemainingCount
+    value: IntegerValue
 
 
 SearchFilter = Union[OrganizationFilter, WorkspaceFilter, TagFilter,
                      ProjectStageFilter, WorkforceRequestedDateFilter,
                      WorkforceStageUpdatedFilter,
                      WorkforceRequestedDateRangeFilter,
-                     WorkforceStageUpdatedRangeFilter]
+                     WorkforceStageUpdatedRangeFilter, TaskCompletedCountFilter,
+                     TaskRemainingCountFilter]
 
 
 def _dict_to_graphql_string(d: Union[dict, list, str, int]) -> str:
