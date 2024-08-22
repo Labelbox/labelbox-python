@@ -191,3 +191,11 @@ class LabelingServiceDashboard(BaseModel):
             data['created_by_id'] = data.pop('boostRequestedBy')
 
         return data
+
+    def __repr__(self):
+        row = self.dict()
+        row.pop('client')
+        row['tasks_completed'] = self.tasks_completed
+        row['tasks_remaining'] = self.tasks_remaining
+        row['service_type'] = self.service_type
+        return row
