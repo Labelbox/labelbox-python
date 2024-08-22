@@ -121,7 +121,8 @@ class LabelingServiceDashboard(BaseModel):
         result = client.execute(query, {"id": project_id}, experimental=True)
         if result["getProjectById"] is None:
             raise ResourceNotFoundError(
-                message="The project does not have a labeling service.")
+                message="The project does not have a labeling service data yet."
+            )
         data = result["getProjectById"]
         data["client"] = client
         return cls(**data)
