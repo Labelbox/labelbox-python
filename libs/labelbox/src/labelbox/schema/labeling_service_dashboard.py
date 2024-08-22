@@ -25,7 +25,14 @@ GRAPHQL_QUERY_SELECTIONS = """
                 dataRowsDoneCount
                 mediaType
                 editorTaskType
+                tags
             """
+
+
+class LabelingServiceDashboardTags(BaseModel):
+    name: str
+    color: str
+    type: str
 
 
 class LabelingServiceDashboard(BaseModel):
@@ -52,6 +59,7 @@ class LabelingServiceDashboard(BaseModel):
     data_rows_done_count: int = Field(frozen=True)
     media_type: Optional[MediaType] = Field(frozen=True, default=None)
     editor_task_type: EditorTaskType = Field(frozen=True, default=None)
+    tags: List[LabelingServiceDashboardTags] = Field(frozen=True, default=None)
 
     client: Any  # type Any to avoid circular import from client
 
