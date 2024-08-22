@@ -60,7 +60,8 @@ jobs:
     secrets: inherit
   test-pypi:
     runs-on: ubuntu-latest
-    needs: ['build']
+    needs: ['path-filter']
+    continue-on-error: true
     environment: 
       name: Test-PyPI
       url: 'https://test.pypi.org/p/labelbox-test'
