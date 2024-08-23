@@ -9,8 +9,9 @@ import time
 import urllib.parse
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, List, Dict, Union, Optional, overload
+from typing import Any, List, Dict, Union, Optional, overload, Callable
 
+from labelbox.schema.search_filters import SearchFilter
 import requests
 import requests.exceptions
 from google.api_core import retry
@@ -51,11 +52,12 @@ from labelbox.schema.role import Role
 from labelbox.schema.send_to_annotate_params import SendToAnnotateFromCatalogParams, build_destination_task_queue_input, \
     build_predictions_input, build_annotations_input
 from labelbox.schema.slice import CatalogSlice, ModelSlice
-from labelbox.schema.task import Task
+from labelbox.schema.task import Task, DataUpsertTask
 from labelbox.schema.user import User
 from labelbox.schema.label_score import LabelScore
 from labelbox.schema.ontology_kind import (OntologyKind, EditorTaskTypeMapper,
                                            EditorTaskType)
+from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 
 logger = logging.getLogger(__name__)
 
@@ -138,14 +140,19 @@ class Client:
     @retry.Retry(predicate=retry.if_exception_type(
         labelbox.exceptions.InternalServerError,
         labelbox.exceptions.TimeoutError))
-    def execute(self,
-                query=None,
-                params=None,
-                data=None,
-                files=None,
-                timeout=60.0,
-                experimental=False,
-                error_log_key="message"):
+    def execute(
+        self,
+        query=None,
+        params=None,
+        data=None,
+        files=None,
+        timeout=60.0,
+        experimental=False,
+        error_log_key="message",
+        raise_return_resource_not_found=False,
+        error_handlers: Optional[Dict[str, Callable[[requests.models.Response],
+                                                    None]]] = None
+    ) -> Dict[str, Any]:
         """ Sends a request to the server for the execution of the
         given query.
 
@@ -159,6 +166,13 @@ class Client:
             files (dict): file arguments for request
             timeout (float): Max allowed time for query execution,
                 in seconds.
+            raise_return_resource_not_found: By default the client relies on the caller to raise the correct exception when a resource is not found.
+                If this is set to True, the client will raise a ResourceNotFoundError exception automatically.
+                This simplifies processing.
+                We recommend to use it only of api returns a clear and well-formed error when a resource not found for a given query.
+            error_handlers (dict): A dictionary mapping graphql error code to handler functions.
+                Allows a caller to handle specific errors reporting in a custom way or produce more user-friendly readable messages.
+
         Returns:
             dict, parsed JSON response.
         Raises:
@@ -297,9 +311,13 @@ class Client:
         resource_not_found_error = check_errors(["RESOURCE_NOT_FOUND"],
                                                 "extensions", "code")
         if resource_not_found_error is not None:
-            # Return None and let the caller methods raise an exception
-            # as they already know which resource type and ID was requested
-            return None
+            if raise_return_resource_not_found:
+                raise labelbox.exceptions.ResourceNotFoundError(
+                    message=resource_not_found_error["message"])
+            else:
+                # Return None and let the caller methods raise an exception
+                # as they already know which resource type and ID was requested
+                return None
 
         resource_conflict_error = check_errors(["RESOURCE_CONFLICT"],
                                                "extensions", "code")
@@ -318,7 +336,12 @@ class Client:
         # TODO: fix this in the server API
         internal_server_error = check_errors(["INTERNAL_SERVER_ERROR"],
                                              "extensions", "code")
+        error_code = "INTERNAL_SERVER_ERROR"
+
         if internal_server_error is not None:
+            if error_handlers and error_code in error_handlers:
+                handler = error_handlers[error_code]
+                handler(response)
             message = internal_server_error.get("message")
             error_status_code = get_error_status_code(internal_server_error)
             if error_status_code == 400:
@@ -875,12 +898,12 @@ class Client:
 
         return self._create_project(**kwargs)
 
-
-    def create_prompt_response_generation_project(self,
-                                                  dataset_id: Optional[str] = None,
-                                                  dataset_name: Optional[str] = None,
-                                                  data_row_count: int = 100,
-                                                  **kwargs) -> Project:
+    def create_prompt_response_generation_project(
+            self,
+            dataset_id: Optional[str] = None,
+            dataset_name: Optional[str] = None,
+            data_row_count: int = 100,
+            **kwargs) -> Project:
         """
         Use this method exclusively to create a prompt and response generation project.
 
@@ -915,8 +938,7 @@ class Client:
 
         if dataset_id and dataset_name:
             raise ValueError(
-                "Only provide a dataset_name or dataset_id, not both."
-            )
+                "Only provide a dataset_name or dataset_id, not both.")
 
         if data_row_count <= 0:
             raise ValueError("data_row_count must be a positive integer.")
@@ -928,7 +950,9 @@ class Client:
             append_to_existing_dataset = False
             dataset_name_or_id = dataset_name
 
-        if "media_type" in kwargs and kwargs.get("media_type") not in [MediaType.LLMPromptCreation, MediaType.LLMPromptResponseCreation]:
+        if "media_type" in kwargs and kwargs.get("media_type") not in [
+                MediaType.LLMPromptCreation, MediaType.LLMPromptResponseCreation
+        ]:
             raise ValueError(
                 "media_type must be either LLMPromptCreation or LLMPromptResponseCreation"
             )
@@ -949,8 +973,7 @@ class Client:
         Returns:
             Project: The created project
         """
-        kwargs[
-            "media_type"] = MediaType.Text  # Only Text is supported
+        kwargs["media_type"] = MediaType.Text  # Only Text is supported
         kwargs[
             "editor_task_type"] = EditorTaskType.ResponseCreation.value  # Special editor task type for response creation projects
 
@@ -1005,7 +1028,8 @@ class Client:
 
         if quality_modes and quality_mode:
             raise ValueError(
-                "Cannot use both quality_modes and quality_mode at the same time. Use one or the other.")
+                "Cannot use both quality_modes and quality_mode at the same time. Use one or the other."
+            )
 
         if not quality_modes and not quality_mode:
             logger.info("Defaulting quality modes to Benchmark and Consensus.")
@@ -1021,12 +1045,11 @@ class Client:
         if quality_mode:
             quality_modes_set = {quality_mode}
 
-        if (
-            quality_modes_set is None
-            or len(quality_modes_set) == 0
-            or quality_modes_set == {QualityMode.Benchmark, QualityMode.Consensus}
-        ):
-            data["auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+        if (quality_modes_set is None or len(quality_modes_set) == 0 or
+                quality_modes_set
+                == {QualityMode.Benchmark, QualityMode.Consensus}):
+            data[
+                "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
             data["is_consensus_enabled"] = True
@@ -1297,10 +1320,12 @@ class Client:
                         f"Tool `{tool}` not in list of supported tools.")
             elif 'type' in feature_schema.normalized:
                 classification = feature_schema.normalized['type']
-                if classification in Classification.Type._value2member_map_.keys():
+                if classification in Classification.Type._value2member_map_.keys(
+                ):
                     Classification.Type(classification)
                     classifications.append(feature_schema.normalized)
-                elif classification in PromptResponseClassification.Type._value2member_map_.keys():
+                elif classification in PromptResponseClassification.Type._value2member_map_.keys(
+                ):
                     PromptResponseClassification.Type(classification)
                     classifications.append(feature_schema.normalized)
                 else:
@@ -1518,7 +1543,8 @@ class Client:
                 raise get_media_type_validation_error(media_type)
 
         if ontology_kind and OntologyKind.is_supported(ontology_kind):
-            media_type = OntologyKind.evaluate_ontology_kind_with_media_type(ontology_kind, media_type)
+            media_type = OntologyKind.evaluate_ontology_kind_with_media_type(
+                ontology_kind, media_type)
             editor_task_type_value = EditorTaskTypeMapper.to_editor_task_type(
                 ontology_kind, media_type).value
         elif ontology_kind:
@@ -2381,3 +2407,86 @@ class Client:
             labelbox.LabelScore(name=x['name'], score=x['score'])
             for x in scores_raw
         ]
+
+    def get_labeling_service_dashboards(
+        self,
+        search_query: Optional[List[SearchFilter]] = None,
+    ) -> PaginatedCollection:
+        """
+        Get all labeling service dashboards for a given org.
+
+        Optional parameters:
+        search_query: A list of search filters representing the search
+        
+        NOTE:
+            - Retrieves all projects for the organization or as filtered by the search query.
+            - Sorted by project created date in ascending order.
+        
+        Examples:
+            Retrieves all labeling service dashboards for a given workspace id:
+            >>> workspace_filter = WorkspaceFilter(
+            >>>     operation=OperationType.Workspace,
+            >>>     operator=IdOperator.Is,
+            >>>     values=[workspace_id])
+            >>> labeling_service_dashboard = [
+            >>>     ld for ld in project.client.get_labeling_service_dashboards(search_query=[workspace_filter])]
+
+            Retrieves all labeling service dashboards requested less than 7 days ago:
+            >>> seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+            >>> workforce_requested_filter_before = WorkforceRequestedDateFilter(
+            >>>     operation=OperationType.WorforceRequestedDate,
+            >>>     value=DateValue(operator=RangeOperatorWithSingleValue.GreaterThanOrEqual,
+            >>>                     value=seven_days_ago))
+            >>> labeling_service_dashboard = [ld for ld in project.client.get_labeling_service_dashboards(search_query=[workforce_requested_filter_before])]
+
+            See libs/labelbox/src/labelbox/schema/search_filters.py and libs/labelbox/tests/unit/test_unit_search_filters.py for more examples.
+        """
+        return LabelingServiceDashboard.get_all(self, search_query=search_query)
+
+    def get_task_by_id(self, task_id: str) -> Union[Task, DataUpsertTask]:
+        """
+        Fetches a task by ID.
+
+        Args:
+            task_id (str): The ID of the task.
+
+        Returns:
+            Task or DataUpsertTask
+        
+        Throws:
+            ResourceNotFoundError: If the task does not exist.
+
+        NOTE: Export task is not supported yet
+        """
+        user = self.get_user()
+        query = """
+            query GetUserCreatedTasksPyApi($userId: ID!, $taskId: ID!) {
+            user(where: {id: $userId}) {
+                createdTasks(where: {id: $taskId} skip: 0 first: 1) {
+                    completionPercentage
+                    createdAt
+                    errors
+                    metadata
+                    name
+                    result
+                    status
+                    type
+                    id
+                    updatedAt
+                }
+            }
+        }
+        """
+        result = self.execute(query, {"userId": user.uid, "taskId": task_id})
+        data = result.get("user", {}).get("createdTasks", [])
+        if not data:
+            raise labelbox.exceptions.ResourceNotFoundError(
+                message=f"The task {task_id} does not exist.")
+        task_data = data[0]
+        if task_data["type"].lower() == 'adv-upsert-data-rows':
+            task = DataUpsertTask(self, task_data)
+        else:
+            task = Task(self, task_data)
+
+        task._user = user
+        return task

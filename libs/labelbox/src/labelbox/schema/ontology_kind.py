@@ -21,24 +21,30 @@ class OntologyKind(Enum):
         return TypeError(f"{ontology_kind}: is not a valid ontology kind. Use"
                          f" any of {OntologyKind.__members__.items()}"
                          " from OntologyKind.")
-    
+
     @staticmethod
-    def evaluate_ontology_kind_with_media_type(ontology_kind,
-                                               media_type: Optional[MediaType]) -> Union[MediaType, None]:
-        
+    def evaluate_ontology_kind_with_media_type(
+            ontology_kind,
+            media_type: Optional[MediaType]) -> Union[MediaType, None]:
+
         ontology_to_media = {
-            OntologyKind.ModelEvaluation: (MediaType.Conversational, "For chat evaluation, media_type must be Conversational."),
-            OntologyKind.ResponseCreation: (MediaType.Text, "For response creation, media_type must be Text.")
+            OntologyKind.ModelEvaluation:
+                (MediaType.Conversational,
+                 "For chat evaluation, media_type must be Conversational."),
+            OntologyKind.ResponseCreation:
+                (MediaType.Text,
+                 "For response creation, media_type must be Text.")
         }
 
         if ontology_kind in ontology_to_media:
-            expected_media_type, error_message = ontology_to_media[ontology_kind]
+            expected_media_type, error_message = ontology_to_media[
+                ontology_kind]
 
             if media_type is None or media_type == expected_media_type:
                 media_type = expected_media_type
             else:
                 raise ValueError(error_message)
-                    
+
         return media_type
 
 

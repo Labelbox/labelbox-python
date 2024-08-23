@@ -1,5 +1,4 @@
 import json
-import pytest
 import collections.abc
 from labelbox import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataField
@@ -31,6 +30,13 @@ def test_task_errors(dataset, image_url, snapshot):
         0]['message']
     assert len(task.failed_data_rows[0]['failedDataRows'][0]['metadata']) == 2
 
+    dt = client.get_task_by_id(task.uid)
+    assert dt.status == "COMPLETE"
+    assert len(dt.errors) == 1
+    assert dt.errors[0]['message'].startswith(
+        "A schemaId can only be specified once per DataRow")
+    assert dt.result is None
+
 
 def test_task_success_json(dataset, image_url, snapshot):
     client = dataset.client
@@ -57,3 +63,8 @@ def test_task_success_json(dataset, image_url, snapshot):
     snapshot.assert_match(json.dumps(task_result),
                           'test_task.test_task_success_json.json')
     assert len(task.result)
+
+    dt = client.get_task_by_id(task.uid)
+    assert dt.status == "COMPLETE"
+    assert len(dt.result) == 1
+    assert dt.errors is None

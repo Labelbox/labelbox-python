@@ -7,6 +7,7 @@ import labelbox.schema.dataset
 import labelbox.schema.invite
 import labelbox.schema.label
 import labelbox.schema.labeling_frontend
+import labelbox.schema.labeling_service
 import labelbox.schema.model
 import labelbox.schema.model_run
 import labelbox.schema.ontology

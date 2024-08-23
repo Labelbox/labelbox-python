@@ -1,5 +1,7 @@
-from labelbox import LabelingFrontend
 import pytest
+
+from labelbox import LabelingFrontend
+from labelbox.exceptions import OperationNotSupportedException
 
 
 def test_get_labeling_frontends(client):
@@ -18,5 +20,5 @@ def test_labeling_frontend_connecting_to_project(project):
     project.labeling_frontend.connect(default_labeling_frontend)
     assert project.labeling_frontend() == default_labeling_frontend
 
-    project.labeling_frontend.disconnect(default_labeling_frontend)
-    assert project.labeling_frontend() == None
+    with pytest.raises(OperationNotSupportedException):
+        project.labeling_frontend.disconnect(default_labeling_frontend)

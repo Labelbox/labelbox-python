@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, Ty
 from urllib.parse import urlparse
 
 from labelbox.schema.labeling_service import LabelingService, LabelingServiceStatus
+from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 import requests
 
 from labelbox import parser
@@ -132,7 +133,9 @@ class Project(DbObject, Updateable, Deletable):
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
-    labeling_frontend = Relationship.ToOne("LabelingFrontend")
+    labeling_frontend = Relationship.ToOne(
+        "LabelingFrontend",
+        config=Relationship.Config(disconnect_supported=False))
     labeling_frontend_options = Relationship.ToMany(
         "LabelingFrontendOptions", False, "labeling_frontend_options")
     labeling_parameter_overrides = Relationship.ToMany(
@@ -1920,13 +1923,12 @@ class Project(DbObject, Updateable, Deletable):
     def get_labeling_service(self) -> LabelingService:
         """Get the labeling service for this project.
 
-        Raises:
-            ResourceNotFoundError if the project does not have a labeling service.
+        Will automatically create a labeling service if one does not exist.
 
         Returns:
             LabelingService: The labeling service for this project.
         """
-        return LabelingService.get(self.client, self.uid)
+        return LabelingService.getOrCreate(self.client, self.uid)
 
     @experimental
     def get_labeling_service_status(self) -> LabelingServiceStatus:
@@ -1941,13 +1943,13 @@ class Project(DbObject, Updateable, Deletable):
         return self.get_labeling_service().status
 
     @experimental
-    def request_labeling_service(self) -> LabelingService:
+    def labeling_service_dashboard(self) -> LabelingServiceDashboard:
         """Get the labeling service for this project.
 
         Returns:
             LabelingService: The labeling service for this project.
         """
-        return LabelingService.start(self.client, self.uid)  # type: ignore
+        return LabelingServiceDashboard.get(self.client, self.uid)
 
 
 class ProjectMember(DbObject):

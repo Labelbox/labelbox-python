@@ -1,6 +1,6 @@
 name = "labelbox"
 
-__version__ = "3.76.0"
+__version__ = "3.77.0"
 
 from labelbox.client import Client
 from labelbox.schema.project import Project
@@ -43,4 +43,6 @@ from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.project_overview import ProjectOverview, ProjectOverviewDetailed
-from labelbox.schema.labeling_service import LabelingService, LabelingServiceStatus
+from labelbox.schema.labeling_service import LabelingService
+from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
+from labelbox.schema.labeling_service_status import LabelingServiceStatus

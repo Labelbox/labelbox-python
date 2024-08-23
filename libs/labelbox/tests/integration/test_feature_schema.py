@@ -86,22 +86,12 @@ def test_throws_an_error_when_updating_not_existing_feature_schema(client):
         client.update_feature_schema_title("doesntexist", "new title")
 
 
-def test_creates_a_new_feature_schema(client):
-    created_feature_schema = client.upsert_feature_schema(point.asdict())
-
-    assert created_feature_schema.uid is not None
-
-    client.delete_unused_feature_schema(
-        created_feature_schema.normalized['featureSchemaId'])
+def test_creates_a_new_feature_schema(feature_schema):
+    assert feature_schema.uid is not None
 
 
-def test_updates_a_feature_schema(client):
-    tool = Tool(
-        tool=Tool.Type.POINT,
-        name="name",
-        color="#ff0000",
-    )
-    created_feature_schema = client.upsert_feature_schema(tool.asdict())
+def test_updates_a_feature_schema(client, feature_schema):
+    created_feature_schema = feature_schema
     tool_to_update = Tool(
         tool=Tool.Type.POINT,
         name="new name",

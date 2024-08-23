@@ -39,6 +39,15 @@ def snake_case(s):
     return _convert(s, "_", lambda i: False)
 
 
+def sentence_case(s: str) -> str:
+    """ Converts a string in [snake|camel|title]case to Sentence case. """
+    # Replace underscores with spaces and convert to lower case
+    sentence_str = s.replace("_", " ").lower()
+    # Capitalize the first letter of each word
+    sentence_str = sentence_str.capitalize()
+    return sentence_str
+
+
 def is_exactly_one_set(*args):
     return sum([bool(arg) for arg in args]) == 1
 

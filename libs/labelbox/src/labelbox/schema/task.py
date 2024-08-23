@@ -2,7 +2,7 @@ import json
 import logging
 import requests
 import time
-from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List, Union, Final
+from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List, Union
 from labelbox import parser
 
 from labelbox.exceptions import ResourceNotFoundError
