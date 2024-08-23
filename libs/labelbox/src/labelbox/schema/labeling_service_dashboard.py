@@ -200,8 +200,8 @@ class LabelingServiceDashboard(BaseModel):
 
         return data
 
-    def __repr__(self):
-        row = self.dict()
+    def dict(self, *args, **kwargs):
+        row = super().dict(*args, **kwargs)
         row.pop('client')
         row['tasks_completed'] = self.tasks_completed
         row['tasks_remaining'] = self.tasks_remaining
