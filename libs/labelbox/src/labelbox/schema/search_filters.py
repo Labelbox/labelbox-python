@@ -31,6 +31,7 @@ class OperationType(Enum):
     Supported search entity types
     """
     Organization = 'organization_id'
+    SharedWithOrganization = 'shared_with_organizations'
     Workspace = 'workspace'
     Tag = 'tag'
     Stage = 'stage'
@@ -68,6 +69,17 @@ class OrganizationFilter(BaseSearchFilter):
     Filter for organization
     """
     operation: Literal[OperationType.Organization] = OperationType.Organization
+    operator: IdOperator
+    values: List[str]
+
+
+class SharedWithOrganizationFilter(BaseSearchFilter):
+    """
+    Find project shared with organization (i.e. not belonging to any of organization's workspace)
+    """
+    operation: Literal[
+        OperationType.
+        SharedWithOrganization] = OperationType.SharedWithOrganization
     operator: IdOperator
     values: List[str]
 
@@ -194,7 +206,8 @@ class TaskRemainingCountFilter(BaseSearchFilter):
     value: IntegerValue
 
 
-SearchFilter = Union[OrganizationFilter, WorkspaceFilter, TagFilter,
+SearchFilter = Union[OrganizationFilter, WorkspaceFilter,
+                     SharedWithOrganizationFilter, TagFilter,
                      ProjectStageFilter, WorkforceRequestedDateFilter,
                      WorkforceStageUpdatedFilter,
                      WorkforceRequestedDateRangeFilter,

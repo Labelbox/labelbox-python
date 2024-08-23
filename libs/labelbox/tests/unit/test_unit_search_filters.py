@@ -1,5 +1,5 @@
 from datetime import datetime
-from labelbox.schema.search_filters import IntegerValue, RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, ProjectStageFilter, TagFilter, TaskCompletedCountFilter, TaskRemainingCountFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkforceStageUpdatedFilter, WorkforceStageUpdatedRangeFilter, WorkspaceFilter, build_search_filter
+from labelbox.schema.search_filters import IntegerValue, RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, ProjectStageFilter, SharedWithOrganizationFilter, TagFilter, TaskCompletedCountFilter, TaskRemainingCountFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkforceStageUpdatedFilter, WorkforceStageUpdatedRangeFilter, WorkspaceFilter, build_search_filter
 from labelbox.utils import format_iso_datetime
 
 
@@ -7,6 +7,8 @@ def test_id_filters():
     filters = [
         OrganizationFilter(operator=IdOperator.Is,
                            values=["clphb4vd7000cd2wv1ktu5cwa"]),
+        SharedWithOrganizationFilter(operator=IdOperator.Is,
+                                     values=["clphb4vd7000cd2wv1ktu5cwa"]),
         WorkspaceFilter(operator=IdOperator.Is,
                         values=["clphb4vd7000cd2wv1ktu5cwa"]),
         TagFilter(operator=IdOperator.Is, values=["tag"]),
@@ -15,7 +17,7 @@ def test_id_filters():
 
     assert build_search_filter(
         filters
-    ) == '[{operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "organization_id"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "workspace"}, {operator: "is", values: ["tag"], type: "tag"}, {operator: "is", values: ["requested"], type: "stage"}]'
+    ) == '[{operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "organization_id"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "shared_with_organizations"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "workspace"}, {operator: "is", values: ["tag"], type: "tag"}, {operator: "is", values: ["requested"], type: "stage"}]'
 
 
 def test_date_filters():
