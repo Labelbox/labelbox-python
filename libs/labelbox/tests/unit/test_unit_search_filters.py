@@ -1,4 +1,5 @@
 from datetime import datetime
+from labelbox.schema.labeling_service import LabelingServiceStatus
 from labelbox.schema.search_filters import IntegerValue, RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, ProjectStageFilter, SharedWithOrganizationFilter, TagFilter, TaskCompletedCountFilter, TaskRemainingCountFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkforceStageUpdatedFilter, WorkforceStageUpdatedRangeFilter, WorkspaceFilter, build_search_filter
 from labelbox.utils import format_iso_datetime
 
@@ -12,12 +13,13 @@ def test_id_filters():
         WorkspaceFilter(operator=IdOperator.Is,
                         values=["clphb4vd7000cd2wv1ktu5cwa"]),
         TagFilter(operator=IdOperator.Is, values=["tag"]),
-        ProjectStageFilter(operator=IdOperator.Is, values=["requested"]),
+        ProjectStageFilter(operator=IdOperator.Is,
+                           values=[LabelingServiceStatus.Requested]),
     ]
 
     assert build_search_filter(
         filters
-    ) == '[{operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "organization_id"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "shared_with_organizations"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "workspace"}, {operator: "is", values: ["tag"], type: "tag"}, {operator: "is", values: ["requested"], type: "stage"}]'
+    ) == '[{operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "organization_id"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "shared_with_organizations"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "workspace"}, {operator: "is", values: ["tag"], type: "tag"}, {operator: "is", values: ["REQUESTED"], type: "stage"}]'
 
 
 def test_date_filters():
