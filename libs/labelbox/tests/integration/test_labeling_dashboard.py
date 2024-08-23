@@ -1,35 +1,25 @@
 from datetime import datetime, timedelta
+from labelbox.exceptions import ResourceNotFoundError
 from labelbox.schema.labeling_service import LabelingServiceStatus
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.search_filters import IntegerValue, RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, TaskCompletedCountFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkspaceFilter, TaskRemainingCountFilter
 
 
-def test_request_labeling_service_dashboard(rand_gen,
-                                            offline_chat_evaluation_project,
-                                            chat_evaluation_ontology,
-                                            offline_conversational_data_row):
-    project = offline_chat_evaluation_project
-    project.connect_ontology(chat_evaluation_ontology)
+def test_request_labeling_service_dashboard(requested_labeling_service):
+    project, _ = requested_labeling_service
 
-    project.create_batch(
-        rand_gen(str),
-        [offline_conversational_data_row.uid],  # sample of data row objects
-    )
     labeling_service_dashboard = project.labeling_service_dashboard()
-    assert labeling_service_dashboard.status == LabelingServiceStatus.Missing
+    assert labeling_service_dashboard.status == LabelingServiceStatus.Requested
     assert labeling_service_dashboard.tasks_completed == 0
     assert labeling_service_dashboard.tasks_remaining == 0
     assert labeling_service_dashboard.media_type == MediaType.Conversational
-    assert labeling_service_dashboard.editor_task_type == EditorTaskType.OfflineModelChatEvaluation
-    assert labeling_service_dashboard.service_type == "Offline chat evaluation"
+    assert labeling_service_dashboard.editor_task_type == EditorTaskType.ModelChatEvaluation
+    assert labeling_service_dashboard.service_type == "Live chat evaluation"
 
-    labeling_service_dashboard = [
-        ld for ld in project.client.get_labeling_service_dashboards()
-    ][0]
-    assert labeling_service_dashboard.status == LabelingServiceStatus.Missing
-    assert labeling_service_dashboard.tasks_completed == 0
-    assert labeling_service_dashboard.tasks_remaining == 0
+    labeling_service_dashboard = project.client.get_labeling_service_dashboards(
+    ).get_one()
+    assert labeling_service_dashboard
 
 
 def test_request_labeling_service_dashboard_filters(requested_labeling_service):
@@ -40,10 +30,8 @@ def test_request_labeling_service_dashboard_filters(requested_labeling_service):
                                     operator=IdOperator.Is,
                                     values=[organization.uid])
 
-    labeling_service_dashboard = [
-        ld for ld in project.client.get_labeling_service_dashboards(
-            search_query=[org_filter])
-    ][0]
+    labeling_service_dashboard = project.client.get_labeling_service_dashboards(
+        search_query=[org_filter]).get_one()
     assert labeling_service_dashboard is not None
 
     workforce_requested_filter_before = WorkforceRequestedDateFilter(
@@ -57,12 +45,10 @@ def test_request_labeling_service_dashboard_filters(requested_labeling_service):
         value=DateValue(operator=RangeOperatorWithSingleValue.LessThanOrEqual,
                         value=year_from_now))
 
-    labeling_service_dashboard = [
-        ld
-        for ld in project.client.get_labeling_service_dashboards(search_query=[
+    labeling_service_dashboard = project.client.get_labeling_service_dashboards(
+        search_query=[
             workforce_requested_filter_after, workforce_requested_filter_before
-        ])
-    ][0]
+        ]).get_one()
     assert labeling_service_dashboard is not None
 
     workforce_date_range_filter = WorkforceRequestedDateRangeFilter(
@@ -71,10 +57,8 @@ def test_request_labeling_service_dashboard_filters(requested_labeling_service):
                              value=DateRange(min="2024-01-01T00:00:00-0800",
                                              max=year_from_now)))
 
-    labeling_service_dashboard = [
-        ld for ld in project.client.get_labeling_service_dashboards(
-            search_query=[workforce_date_range_filter])
-    ][0]
+    labeling_service_dashboard = project.client.get_labeling_service_dashboards(
+        search_query=[workforce_date_range_filter]).get_one()
     assert labeling_service_dashboard is not None
 
     # with non existing data
@@ -88,9 +72,6 @@ def test_request_labeling_service_dashboard_filters(requested_labeling_service):
     ]
     assert len(labeling_service_dashboard) == 0
     assert labeling_service_dashboard == []
-    labeling_service_dashboard = project.client.get_labeling_service_dashboards(
-    ).get_one()
-    assert labeling_service_dashboard
 
     task_done_count_filter = TaskCompletedCountFilter(
         operation=OperationType.TaskCompletedCount,
@@ -101,8 +82,7 @@ def test_request_labeling_service_dashboard_filters(requested_labeling_service):
         value=IntegerValue(
             operator=RangeOperatorWithSingleValue.GreaterThanOrEqual, value=0))
 
-    labeling_service_dashboard = [
-        ld for ld in project.client.get_labeling_service_dashboards(
-            search_query=[task_done_count_filter, task_remaining_count_filter])
-    ][0]
+    labeling_service_dashboard = project.client.get_labeling_service_dashboards(
+        search_query=[task_done_count_filter, task_remaining_count_filter
+                     ]).get_one()
     assert labeling_service_dashboard is not None

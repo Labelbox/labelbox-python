@@ -25,7 +25,14 @@ GRAPHQL_QUERY_SELECTIONS = """
                 dataRowsDoneCount
                 mediaType
                 editorTaskType
+                tags
             """
+
+
+class LabelingServiceDashboardTags(BaseModel):
+    name: str
+    color: str
+    type: str
 
 
 class LabelingServiceDashboard(BaseModel):
@@ -52,6 +59,7 @@ class LabelingServiceDashboard(BaseModel):
     data_rows_done_count: int = Field(frozen=True)
     media_type: Optional[MediaType] = Field(frozen=True, default=None)
     editor_task_type: EditorTaskType = Field(frozen=True, default=None)
+    tags: List[LabelingServiceDashboardTags] = Field(frozen=True, default=None)
 
     client: Any  # type Any to avoid circular import from client
 
@@ -121,7 +129,8 @@ class LabelingServiceDashboard(BaseModel):
         result = client.execute(query, {"id": project_id}, experimental=True)
         if result["getProjectById"] is None:
             raise ResourceNotFoundError(
-                message="The project does not have a labeling service.")
+                message="The project does not have a labeling service data yet."
+            )
         data = result["getProjectById"]
         data["client"] = client
         return cls(**data)
@@ -190,3 +199,11 @@ class LabelingServiceDashboard(BaseModel):
             data['created_by_id'] = data.pop('boostRequestedBy')
 
         return data
+
+    def dict(self, *args, **kwargs):
+        row = super().dict(*args, **kwargs)
+        row.pop('client')
+        row['tasks_completed'] = self.tasks_completed
+        row['tasks_remaining'] = self.tasks_remaining
+        row['service_type'] = self.service_type
+        return row

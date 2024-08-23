@@ -30,7 +30,7 @@ class OperationType(Enum):
     """
     Supported search entity types
     """
-    Organization = 'organization'
+    Organization = 'organization_id'
     Workspace = 'workspace'
     Tag = 'tag'
     Stage = 'stage'

@@ -54,6 +54,8 @@ class MediaType(Enum):
             if matches(value, name):
                 return member
 
+        return cls.Unsupported
+
     @classmethod
     def is_supported(cls, value):
         return isinstance(value,
