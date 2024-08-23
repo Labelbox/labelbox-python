@@ -3,6 +3,7 @@ from enum import Enum
 from typing import List, Literal, Union
 
 from labelbox.pydantic_compat import BaseModel
+from labelbox.schema.labeling_service_status import LabelingServiceStatus
 from labelbox.utils import format_iso_datetime
 
 
@@ -108,7 +109,7 @@ class ProjectStageFilter(BaseSearchFilter):
     """
     operation: Literal[OperationType.Stage] = OperationType.Stage
     operator: IdOperator
-    values: List[str]
+    values: List[LabelingServiceStatus]
 
 
 class DateValue(BaseSearchFilter):
