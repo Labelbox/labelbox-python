@@ -3,6 +3,7 @@ from enum import Enum
 from typing import List, Literal, Union
 
 from labelbox.pydantic_compat import BaseModel
+from labelbox.schema.labeling_service_status import LabelingServiceStatus
 from labelbox.utils import format_iso_datetime
 
 
@@ -31,6 +32,7 @@ class OperationType(Enum):
     Supported search entity types
     """
     Organization = 'organization_id'
+    SharedWithOrganization = 'shared_with_organizations'
     Workspace = 'workspace'
     Tag = 'tag'
     Stage = 'stage'
@@ -72,6 +74,17 @@ class OrganizationFilter(BaseSearchFilter):
     values: List[str]
 
 
+class SharedWithOrganizationFilter(BaseSearchFilter):
+    """
+    Find project shared with organization (i.e. not belonging to any of organization's workspace)
+    """
+    operation: Literal[
+        OperationType.
+        SharedWithOrganization] = OperationType.SharedWithOrganization
+    operator: IdOperator
+    values: List[str]
+
+
 class WorkspaceFilter(BaseSearchFilter):
     """
     Filter for workspace
@@ -96,7 +109,7 @@ class ProjectStageFilter(BaseSearchFilter):
     """
     operation: Literal[OperationType.Stage] = OperationType.Stage
     operator: IdOperator
-    values: List[str]
+    values: List[LabelingServiceStatus]
 
 
 class DateValue(BaseSearchFilter):
@@ -194,7 +207,8 @@ class TaskRemainingCountFilter(BaseSearchFilter):
     value: IntegerValue
 
 
-SearchFilter = Union[OrganizationFilter, WorkspaceFilter, TagFilter,
+SearchFilter = Union[OrganizationFilter, WorkspaceFilter,
+                     SharedWithOrganizationFilter, TagFilter,
                      ProjectStageFilter, WorkforceRequestedDateFilter,
                      WorkforceStageUpdatedFilter,
                      WorkforceRequestedDateRangeFilter,

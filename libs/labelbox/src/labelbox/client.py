@@ -2419,7 +2419,8 @@ class Client:
         search_query: A list of search filters representing the search
         
         NOTE:
-            - Retrieves all projects for the organization or as filtered by the search query.
+            - Retrieves all projects for the organization or as filtered by the search query
+              - INCLUDING those not requesting labeling services
             - Sorted by project created date in ascending order.
         
         Examples:

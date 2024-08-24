@@ -30,7 +30,7 @@ GRAPHQL_QUERY_SELECTIONS = """
 
 
 class LabelingServiceDashboardTags(BaseModel):
-    name: str
+    text: str
     color: str
     type: str
 
@@ -167,7 +167,6 @@ class LabelingServiceDashboard(BaseModel):
             search_query=build_search_filter(search_query)
             if search_query else None,
         )
-
         params: Dict[str, Union[str, int]] = {}
 
         def convert_to_labeling_service_dashboard(client, data):
