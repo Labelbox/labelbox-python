@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.pagination import PaginatedCollection
-from labelbox.pydantic_compat import BaseModel, root_validator, Field
+from pydantic import BaseModel, root_validator, Field
 from labelbox.schema.search_filters import SearchFilter, build_search_filter
 from labelbox.utils import _CamelCaseMixin
 from .ontology_kind import EditorTaskType
@@ -39,7 +39,7 @@ class LabelingServiceDashboardTags(BaseModel):
     type: str
 
 
-class LabelingServiceDashboard(BaseModel):
+class LabelingServiceDashboard(_CamelCaseMixin):
     """
     Represent labeling service data for a project
 
@@ -104,9 +104,6 @@ class LabelingServiceDashboard(BaseModel):
             return "Prompt response creation"
 
         return sentence_case(self.media_type.value)
-
-    class Config(_CamelCaseMixin.Config):
-        ...
 
     @classmethod
     def get(cls, client, project_id: str) -> 'LabelingServiceDashboard':

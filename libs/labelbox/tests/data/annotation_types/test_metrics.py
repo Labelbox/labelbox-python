@@ -24,6 +24,7 @@ def test_legacy_scalar_metric():
             'extra': {},
         }],
         'extra': {},
+        'is_benchmark_reference': False
     }
     assert label.model_dump(exclude_none=True) == expected
 
@@ -76,6 +77,7 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
             'extra': {}
         }],
         'extra': {},
+        'is_benchmark_reference': False
     }
     assert label.model_dump(exclude_none=True) == expected
 
@@ -123,6 +125,7 @@ def test_custom_confusison_matrix_metric(feature_name, subclass_name,
             'extra': {}
         }],
         'extra': {},
+        'is_benchmark_reference': False
     }
     assert label.model_dump(exclude_none=True) == expected
 

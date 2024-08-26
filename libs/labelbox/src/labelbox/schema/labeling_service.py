@@ -5,7 +5,7 @@ from typing_extensions import Annotated
 
 from labelbox.exceptions import LabelboxError, ResourceNotFoundError
 
-from labelbox.pydantic_compat import BaseModel, Field
+from pydantic import BaseModel, Field
 from labelbox.utils import _CamelCaseMixin
 from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
@@ -13,7 +13,7 @@ from labelbox.schema.labeling_service_status import LabelingServiceStatus
 Cuid = Annotated[str, Field(min_length=25, max_length=25)]
 
 
-class LabelingService(BaseModel):
+class LabelingService(_CamelCaseMixin):
     """
     Labeling service for a project. This is a service that can be requested to label data for a project.
     """
@@ -30,9 +30,6 @@ class LabelingService(BaseModel):
         if not self.client.enable_experimental:
             raise RuntimeError(
                 "Please enable experimental in client to use LabelingService")
-
-    class Config(_CamelCaseMixin.Config):
-        ...
 
     @classmethod
     def start(cls, client, project_id: Cuid) -> 'LabelingService':
