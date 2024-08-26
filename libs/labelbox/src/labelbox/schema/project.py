@@ -1947,7 +1947,25 @@ class Project(DbObject, Updateable, Deletable):
         """Get the labeling service for this project.
 
         Returns:
-            LabelingService: The labeling service for this project.
+            LabelingServiceDashboard: The labeling service for this project. 
+
+        Attributes of the dashboard include:
+            id (str): The project id.
+            name (str): The project name.
+            created_at, updated_at (datetime): The creation and last update times of the labeling service. None if labeling service is not requested.
+            created_by_id (str): The user id of the creator of the labeling service. None if labeling service is not requested.
+            status (LabelingServiceStatus): The status of the labeling service. Returns LabelingServiceStatus.Missing if labeling service is not requested.
+            data_rows_count (int): The number of data rows in the project. 0 if labeling service is not requested.
+            data_rows_in_review_count (int): The number of data rows in review queue. 0 if labeling service is not requested.
+            data_rows_in_rework_count (int): The number of data rows in rework. 0 if labeling service is not requested.
+            data_rows_done_count (int): The number of data rows in done queue. 0 if labeling service is not requested.
+            tags (List[str]): Project tags.
+            tasks_completed (int): The number of tasks completed, the same as data_rows_done_count. 0 if labeling service is not requested.
+            tasks_remaining (int): The number of tasks remaining, the same as data_rows_count - data_rows_done_count. 0 if labeling service is not requested.
+            service_type (str): Descriptive type for labeling service.
+
+            NOTE can call dict() to get all attributes as dictionary.
+
         """
         return LabelingServiceDashboard.get(self.client, self.uid)
 
