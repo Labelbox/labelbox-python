@@ -1943,7 +1943,7 @@ class Project(DbObject, Updateable, Deletable):
         return self.get_labeling_service().status
 
     @experimental
-    def labeling_service_dashboard(self) -> LabelingServiceDashboard:
+    def get_labeling_service_dashboard(self) -> LabelingServiceDashboard:
         """Get the labeling service for this project.
 
         Returns:

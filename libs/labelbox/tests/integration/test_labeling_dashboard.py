@@ -9,7 +9,7 @@ from labelbox.schema.search_filters import IntegerValue, RangeOperatorWithSingle
 def test_request_labeling_service_dashboard(requested_labeling_service):
     project, _ = requested_labeling_service
 
-    labeling_service_dashboard = project.labeling_service_dashboard()
+    labeling_service_dashboard = project.get_labeling_service_dashboard()
     assert labeling_service_dashboard.status == LabelingServiceStatus.Requested
     assert labeling_service_dashboard.tasks_completed == 0
     assert labeling_service_dashboard.tasks_remaining == 0
