@@ -30,6 +30,7 @@ class BaseSearchFilter(BaseModel):
 class OperationType(Enum):
     """
     Supported search entity types
+    Each type corresponds to a different filter class
     """
     Organization = 'organization_id'
     SharedWithOrganization = 'shared_with_organizations'
@@ -44,7 +45,7 @@ class OperationType(Enum):
 
 class IdOperator(Enum):
     """
-    Supported operators for ids
+    Supported operators for ids like org ids, workspace ids, etc
     """
     Is = 'is'
 
@@ -67,7 +68,7 @@ class RangeOperatorWithValue(Enum):
 
 class OrganizationFilter(BaseSearchFilter):
     """
-    Filter for organization
+    Filter for organization to which projects belong
     """
     operation: Literal[OperationType.Organization] = OperationType.Organization
     operator: IdOperator
@@ -76,7 +77,7 @@ class OrganizationFilter(BaseSearchFilter):
 
 class SharedWithOrganizationFilter(BaseSearchFilter):
     """
-    Find project shared with organization (i.e. not belonging to any of organization's workspace)
+    Find project shared with the organization (i.e. not having this organization as a tenantId)
     """
     operation: Literal[
         OperationType.
@@ -106,6 +107,7 @@ class TagFilter(BaseSearchFilter):
 class ProjectStageFilter(BaseSearchFilter):
     """
     Filter labelbox service / aka project stages
+        Stages are: requested, in_progress, completed etc. as described by LabelingServiceStatus
     """
     operation: Literal[OperationType.Stage] = OperationType.Stage
     operator: IdOperator
@@ -192,6 +194,7 @@ class WorkforceStageUpdatedRangeFilter(BaseSearchFilter):
 class TaskCompletedCountFilter(BaseSearchFilter):
     """
     Filter for completed tasks count
+        A task maps to a data row. Task completed should map to a data row in a labeling queue DONE
     """
     operation: Literal[
         OperationType.TaskCompletedCount] = OperationType.TaskCompletedCount
@@ -200,7 +203,7 @@ class TaskCompletedCountFilter(BaseSearchFilter):
 
 class TaskRemainingCountFilter(BaseSearchFilter):
     """
-    Filter for remaining tasks count
+    Filter for remaining tasks count. Reverse of TaskCompletedCountFilter
     """
     operation: Literal[
         OperationType.TaskRemainingCount] = OperationType.TaskRemainingCount
