@@ -2,9 +2,10 @@ import datetime
 from enum import Enum
 from typing import List, Literal, Union
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
 from labelbox.utils import format_iso_datetime
+from pydantic.config import ConfigDict
 
 
 class BaseSearchFilter(BaseModel):
@@ -12,14 +13,10 @@ class BaseSearchFilter(BaseModel):
     Shared code for all search filters
     """
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
     def dict(self, *args, **kwargs):
         res = super().dict(*args, **kwargs)
-        if 'operation' in res:
-            res['type'] = res.pop('operation')
-
         # go through all the keys and convert date to string
         for key in res:
             if isinstance(res[key], datetime.datetime):
@@ -216,8 +213,11 @@ class TaskCompletedCountFilter(BaseSearchFilter):
         A task maps to a data row. Task completed should map to a data row in a labeling queue DONE
     """
     operation: Literal[
-        OperationType.TaskCompletedCount] = OperationType.TaskCompletedCount
+        OperationType.TaskCompletedCount] = Field(default=OperationType.TaskCompletedCount, serialization_alias='type')
     value: IntegerValue
+
+
+
 
 
 class TaskRemainingCountFilter(BaseSearchFilter):
@@ -225,7 +225,7 @@ class TaskRemainingCountFilter(BaseSearchFilter):
     Filter for remaining tasks count. Reverse of TaskCompletedCountFilter
     """
     operation: Literal[
-        OperationType.TaskRemainingCount] = OperationType.TaskRemainingCount
+        OperationType.TaskRemainingCount] = Field(OperationType.TaskRemainingCount, serialization_alias='type')
     value: IntegerValue
 
 
@@ -253,5 +253,5 @@ def build_search_filter(filter: List[SearchFilter]):
     """
     Converts a list of search filters to a graphql string
     """
-    filters = [_dict_to_graphql_string(f.dict()) for f in filter]
+    filters = [_dict_to_graphql_string(f.model_dump(by_alias=True)) for f in filter]
     return "[" + ", ".join(filters) + "]"

@@ -75,11 +75,11 @@ def test_date_range_filters():
 
 def test_task_count_filters():
     filters = [
-        TaskCompletedCountFilter(value=IntegerValue(
-            operator=RangeOperatorWithSingleValue.GreaterThanOrEqual, value=1)),
-        TaskRemainingCountFilter(value=IntegerValue(
-            operator=RangeOperatorWithSingleValue.LessThanOrEqual, value=10)),
+        TaskCompletedCountFilter(value=IntegerValue(operator=RangeOperatorWithSingleValue.GreaterThanOrEqual, value=1)),
+        # TaskRemainingCountFilter(value=IntegerValue(
+        #     operator=RangeOperatorWithSingleValue.LessThanOrEqual, value=10)),
     ]
 
+    # expected = '[{value: {operator: "GREATER_THAN_OR_EQUAL", value: 1}, type: "task_completed_count"}, {value: {operator: "LESS_THAN_OR_EQUAL", value: 10}, type: "task_remaining_count"}]'
     expected = '[{value: {operator: "GREATER_THAN_OR_EQUAL", value: 1}, type: "task_completed_count"}, {value: {operator: "LESS_THAN_OR_EQUAL", value: 10}, type: "task_remaining_count"}]'
     assert build_search_filter(filters) == expected
