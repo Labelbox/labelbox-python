@@ -20,7 +20,7 @@ def test_id_filters():
 
     assert build_search_filter(
         filters
-    ) == '[{operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "organization_id"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "shared_with_organizations"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "workspace"}, {operator: "is", values: ["cls1vkrw401ab072vg2pq3t5d"], type: "tag"}, {operator: "is", values: ["REQUESTED"], type: "stage"}]'
+    ) == '[{type: "organization_id", operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"]}, {type: "shared_with_organizations", operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"]}, {type: "workspace", operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"]}, {type: "tag", operator: "is", values: ["cls1vkrw401ab072vg2pq3t5d"]}, {type: "stage", operator: "is", values: ["REQUESTED"]}]'
 
 
 def test_stage_filter_with_invalid_values():
@@ -49,7 +49,7 @@ def test_date_filters():
     expected_start = format_iso_datetime(local_time_start)
     expected_end = format_iso_datetime(local_time_end)
 
-    expected = '[{value: {operator: "GREATER_THAN_OR_EQUAL", value: "' + expected_start + '"}, type: "workforce_requested_at"}, {value: {operator: "LESS_THAN_OR_EQUAL", value: "' + expected_end + '"}, type: "workforce_stage_updated_at"}]'
+    expected = '[{type: "workforce_requested_at", value: {operator: "GREATER_THAN_OR_EQUAL", value: "' + expected_start + '"}}, {type: "workforce_stage_updated_at", value: {operator: "LESS_THAN_OR_EQUAL", value: "' + expected_end + '"}}]'
     assert build_search_filter(filters) == expected
 
 
@@ -70,16 +70,16 @@ def test_date_range_filters():
     ]
     assert build_search_filter(
         filters
-    ) == '[{value: {operator: "BETWEEN", value: {min: "2024-01-01T08:00:00Z", max: "2025-01-01T08:00:00Z"}}, type: "workforce_requested_at"}, {value: {operator: "BETWEEN", value: {min: "2024-01-01T08:00:00Z", max: "2025-01-01T08:00:00Z"}}, type: "workforce_stage_updated_at"}]'
+    ) == '[{type: "workforce_requested_at", value: {operator: "BETWEEN", value: {min: "2024-01-01T08:00:00Z", max: "2025-01-01T08:00:00Z"}}}, {type: "workforce_stage_updated_at", value: {operator: "BETWEEN", value: {min: "2024-01-01T08:00:00Z", max: "2025-01-01T08:00:00Z"}}}]'
 
 
 def test_task_count_filters():
     filters = [
-        TaskCompletedCountFilter(value=IntegerValue(operator=RangeOperatorWithSingleValue.GreaterThanOrEqual, value=1)),
-        # TaskRemainingCountFilter(value=IntegerValue(
-        #     operator=RangeOperatorWithSingleValue.LessThanOrEqual, value=10)),
+        TaskCompletedCountFilter(value=IntegerValue(
+            operator=RangeOperatorWithSingleValue.GreaterThanOrEqual, value=1)),
+        TaskRemainingCountFilter(value=IntegerValue(
+            operator=RangeOperatorWithSingleValue.LessThanOrEqual, value=10)),
     ]
 
-    # expected = '[{value: {operator: "GREATER_THAN_OR_EQUAL", value: 1}, type: "task_completed_count"}, {value: {operator: "LESS_THAN_OR_EQUAL", value: 10}, type: "task_remaining_count"}]'
-    expected = '[{value: {operator: "GREATER_THAN_OR_EQUAL", value: 1}, type: "task_completed_count"}, {value: {operator: "LESS_THAN_OR_EQUAL", value: 10}, type: "task_remaining_count"}]'
+    expected = '[{type: "task_completed_count", value: {operator: "GREATER_THAN_OR_EQUAL", value: 1}}, {type: "task_remaining_count", value: {operator: "LESS_THAN_OR_EQUAL", value: 10}}]'
     assert build_search_filter(filters) == expected
