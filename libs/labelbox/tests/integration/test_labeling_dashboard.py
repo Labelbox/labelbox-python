@@ -1,8 +1,11 @@
 from datetime import datetime, timedelta
+from time import sleep
 from labelbox.schema.labeling_service import LabelingServiceStatus
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.search_filters import IntegerValue, RangeDateTimeOperatorWithSingleValue, RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, TaskCompletedCountFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkspaceFilter, TaskRemainingCountFilter
+
+ALLOW_TIME_TO_CREATE_DASHBOARD = 5  ## seconds
 
 
 def test_request_labeling_service_dashboard(requested_labeling_service):
@@ -10,12 +13,13 @@ def test_request_labeling_service_dashboard(requested_labeling_service):
 
     labeling_service_dashboard = project.get_labeling_service_dashboard()
     assert labeling_service_dashboard.status == LabelingServiceStatus.Requested
-    assert labeling_service_dashboard.tasks_completed == 0
-    assert labeling_service_dashboard.tasks_remaining == 0
+    assert labeling_service_dashboard.tasks_completed_count == 0
+    assert labeling_service_dashboard.tasks_remaining_count == 0
     assert labeling_service_dashboard.media_type == MediaType.Conversational
     assert labeling_service_dashboard.editor_task_type == EditorTaskType.ModelChatEvaluation
     assert labeling_service_dashboard.service_type == "Live chat evaluation"
 
+    sleep(ALLOW_TIME_TO_CREATE_DASHBOARD)
     labeling_service_dashboard = project.client.get_labeling_service_dashboards(
     ).get_one()
     assert labeling_service_dashboard
@@ -29,6 +33,7 @@ def test_request_labeling_service_dashboard_filters(requested_labeling_service):
                                     operator=IdOperator.Is,
                                     values=[organization.uid])
 
+    sleep(ALLOW_TIME_TO_CREATE_DASHBOARD)
     labeling_service_dashboard = project.client.get_labeling_service_dashboards(
         search_query=[org_filter]).get_one()
     assert labeling_service_dashboard is not None
