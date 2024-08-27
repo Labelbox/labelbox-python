@@ -10,6 +10,7 @@ import urllib.parse
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, List, Dict, Union, Optional, overload, Callable
+from types import MappingProxyType
 
 from labelbox.schema.search_filters import SearchFilter
 import requests
@@ -127,6 +128,10 @@ class Client:
         connection.headers.update(self._default_headers())
 
         return connection
+
+    @property
+    def headers(self) -> MappingProxyType:
+        return self._connection.headers
 
     def _default_headers(self):
         return {
