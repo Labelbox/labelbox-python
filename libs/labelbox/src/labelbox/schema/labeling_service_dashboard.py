@@ -19,10 +19,10 @@ GRAPHQL_QUERY_SELECTIONS = """
                 boostUpdatedAt
                 boostRequestedBy
                 boostStatus
-                dataRowsCount
-                dataRowsInReviewCount
-                dataRowsInReworkCount
-                dataRowsDoneCount
+                tasksCompletedCount
+                tasksPercentCompleted
+                tasksRemainingCount
+                tasksTotalCount
                 mediaType
                 editorTaskType
                 tags
@@ -43,8 +43,12 @@ class LabelingServiceDashboard(BaseModel):
         id (str): project id
         name (str): project name
         status (LabelingServiceStatus): status of the labeling service
-        tasks_completed (int): number of data rows completed
-        tasks_remaining (int): number of data rows that have not started
+        tasks_completed_count (int): number of data rows completed
+        tasks_remaining_count (int): number of data rows that have not started
+        tasks_total_count (int): total number of data rows in the project
+        tags (List[LabelingServiceDashboardTags]): tags associated with the project
+        media_type (MediaType): media type of the project
+        editor_task_type (EditorTaskType): editor task type of the project
         client (Any): labelbox client
     """
     id: str = Field(frozen=True)
@@ -53,10 +57,9 @@ class LabelingServiceDashboard(BaseModel):
     updated_at: Optional[datetime] = Field(frozen=True, default=None)
     created_by_id: Optional[str] = Field(frozen=True, default=None)
     status: LabelingServiceStatus = Field(frozen=True, default=None)
-    data_rows_count: int = Field(frozen=True)
-    data_rows_in_review_count: int = Field(frozen=True)
-    data_rows_in_rework_count: int = Field(frozen=True)
-    data_rows_done_count: int = Field(frozen=True)
+    tasks_completed_count: int = Field(frozen=True)
+    tasks_remaining_count: int = Field(frozen=True)
+    tasks_total_count: int = Field(frozen=True)
     media_type: Optional[MediaType] = Field(frozen=True, default=None)
     editor_task_type: EditorTaskType = Field(frozen=True, default=None)
     tags: List[LabelingServiceDashboardTags] = Field(frozen=True, default=None)
@@ -68,20 +71,6 @@ class LabelingServiceDashboard(BaseModel):
         if not self.client.enable_experimental:
             raise RuntimeError(
                 "Please enable experimental in client to use LabelingService")
-
-    @property
-    def tasks_completed(self):
-        """
-        Count how many data rows have been completed (i.e. in the Done queue)
-        """
-        return self.data_rows_done_count
-
-    @property
-    def tasks_remaining(self):
-        """
-        Count how many data rows have not been completed
-        """
-        return self.data_rows_count - self.data_rows_done_count
 
     @property
     def service_type(self):
@@ -202,7 +191,5 @@ class LabelingServiceDashboard(BaseModel):
     def dict(self, *args, **kwargs):
         row = super().dict(*args, **kwargs)
         row.pop('client')
-        row['tasks_completed'] = self.tasks_completed
-        row['tasks_remaining'] = self.tasks_remaining
         row['service_type'] = self.service_type
         return row

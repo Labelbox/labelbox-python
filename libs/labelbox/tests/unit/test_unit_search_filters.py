@@ -1,6 +1,6 @@
 from datetime import datetime
 from labelbox.schema.labeling_service import LabelingServiceStatus
-from labelbox.schema.search_filters import IntegerValue, RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, ProjectStageFilter, SharedWithOrganizationFilter, TagFilter, TaskCompletedCountFilter, TaskRemainingCountFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkforceStageUpdatedFilter, WorkforceStageUpdatedRangeFilter, WorkspaceFilter, build_search_filter
+from labelbox.schema.search_filters import IntegerValue, RangeDateTimeOperatorWithSingleValue, RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, ProjectStageFilter, SharedWithOrganizationFilter, TagFilter, TaskCompletedCountFilter, TaskRemainingCountFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkforceStageUpdatedFilter, WorkforceStageUpdatedRangeFilter, WorkspaceFilter, build_search_filter
 from labelbox.utils import format_iso_datetime
 
 
@@ -28,10 +28,10 @@ def test_date_filters():
 
     filters = [
         WorkforceRequestedDateFilter(value=DateValue(
-            operator=RangeOperatorWithSingleValue.GreaterThanOrEqual,
+            operator=RangeDateTimeOperatorWithSingleValue.GreaterThanOrEqual,
             value=local_time_start)),
         WorkforceStageUpdatedFilter(value=DateValue(
-            operator=RangeOperatorWithSingleValue.LessThanOrEqual,
+            operator=RangeDateTimeOperatorWithSingleValue.LessThanOrEqual,
             value=local_time_end)),
     ]
     expected_start = format_iso_datetime(local_time_start)

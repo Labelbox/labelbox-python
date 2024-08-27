@@ -59,6 +59,14 @@ class RangeOperatorWithSingleValue(Enum):
     LessThanOrEqual = 'LESS_THAN_OR_EQUAL'
 
 
+class RangeDateTimeOperatorWithSingleValue(Enum):
+    """
+    Supported operators for dates
+    """
+    GreaterThanOrEqual = 'GREATER_THAN_OR_EQUAL'
+    LessThanOrEqual = 'LESS_THAN_OR_EQUAL'
+
+
 class RangeOperatorWithValue(Enum):
     """
     Supported operators for date ranges
@@ -126,7 +134,7 @@ class DateValue(BaseSearchFilter):
             so for a string '2024-01-01' that is run on a computer in PST, we would convert it to '2024-01-01T08:00:00Z'
             while the same string in EST will get converted to '2024-01-01T05:00:00Z'
     """
-    operator: RangeOperatorWithSingleValue
+    operator: RangeDateTimeOperatorWithSingleValue
     value: datetime.datetime
 
 

@@ -1,9 +1,8 @@
 from datetime import datetime, timedelta
-from labelbox.exceptions import ResourceNotFoundError
 from labelbox.schema.labeling_service import LabelingServiceStatus
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.media_type import MediaType
-from labelbox.schema.search_filters import IntegerValue, RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, TaskCompletedCountFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkspaceFilter, TaskRemainingCountFilter
+from labelbox.schema.search_filters import IntegerValue, RangeDateTimeOperatorWithSingleValue, RangeOperatorWithSingleValue, DateRange, RangeOperatorWithValue, DateRangeValue, DateValue, IdOperator, OperationType, OrganizationFilter, TaskCompletedCountFilter, WorkforceRequestedDateFilter, WorkforceRequestedDateRangeFilter, WorkspaceFilter, TaskRemainingCountFilter
 
 
 def test_request_labeling_service_dashboard(requested_labeling_service):
@@ -37,13 +36,14 @@ def test_request_labeling_service_dashboard_filters(requested_labeling_service):
     workforce_requested_filter_before = WorkforceRequestedDateFilter(
         operation=OperationType.WorforceRequestedDate,
         value=DateValue(
-            operator=RangeOperatorWithSingleValue.GreaterThanOrEqual,
+            operator=RangeDateTimeOperatorWithSingleValue.GreaterThanOrEqual,
             value=datetime.strptime("2024-01-01", "%Y-%m-%d")))
     year_from_now = (datetime.now() + timedelta(days=365))
     workforce_requested_filter_after = WorkforceRequestedDateFilter(
         operation=OperationType.WorforceRequestedDate,
-        value=DateValue(operator=RangeOperatorWithSingleValue.LessThanOrEqual,
-                        value=year_from_now))
+        value=DateValue(
+            operator=RangeDateTimeOperatorWithSingleValue.LessThanOrEqual,
+            value=year_from_now))
 
     labeling_service_dashboard = project.client.get_labeling_service_dashboards(
         search_query=[
