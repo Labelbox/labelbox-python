@@ -1,4 +1,8 @@
 # Changelog
+#  Version 3.77.1 (2024-08-28)
+## Fixed
+* Restore client.headers([#1781](https://github.com/Labelbox/labelbox-python/pull/1781))
+
 #  Version 3.77.0 (2024-08-09)
 ## Added
 * LabelingService request()([#1761](https://github.com/Labelbox/labelbox-python/pull/1761))
