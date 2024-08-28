@@ -27,13 +27,11 @@ def test_stage_filter_with_invalid_values():
     with pytest.raises(
             ValueError,
             match="is not a valid value for ProjectStageFilter") as e:
-        _ = [
-            ProjectStageFilter(operator=IdOperator.Is,
+        _ = ProjectStageFilter(operator=IdOperator.Is,
                                values=[
                                    LabelingServiceStatus.Requested,
                                    LabelingServiceStatus.Missing
                                ]),
-        ]
 
 
 def test_date_filters():
