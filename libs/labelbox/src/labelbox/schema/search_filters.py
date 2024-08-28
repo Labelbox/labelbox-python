@@ -106,6 +106,8 @@ class WorkspaceFilter(BaseSearchFilter):
 class TagFilter(BaseSearchFilter):
     """
     Filter for project tags
+    
+    values are tag ids
     """
     operation: Literal[OperationType.Tag] = OperationType.Tag
     operator: IdOperator

@@ -13,14 +13,14 @@ def test_id_filters():
                                      values=["clphb4vd7000cd2wv1ktu5cwa"]),
         WorkspaceFilter(operator=IdOperator.Is,
                         values=["clphb4vd7000cd2wv1ktu5cwa"]),
-        TagFilter(operator=IdOperator.Is, values=["tag"]),
+        TagFilter(operator=IdOperator.Is, values=["cls1vkrw401ab072vg2pq3t5d"]),
         ProjectStageFilter(operator=IdOperator.Is,
                            values=[LabelingServiceStatus.Requested]),
     ]
 
     assert build_search_filter(
         filters
-    ) == '[{operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "organization_id"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "shared_with_organizations"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "workspace"}, {operator: "is", values: ["tag"], type: "tag"}, {operator: "is", values: ["REQUESTED"], type: "stage"}]'
+    ) == '[{operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "organization_id"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "shared_with_organizations"}, {operator: "is", values: ["clphb4vd7000cd2wv1ktu5cwa"], type: "workspace"}, {operator: "is", values: ["cls1vkrw401ab072vg2pq3t5d"], type: "tag"}, {operator: "is", values: ["REQUESTED"], type: "stage"}]'
 
 
 def test_stage_filter_with_invalid_values():

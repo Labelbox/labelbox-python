@@ -30,6 +30,7 @@ GRAPHQL_QUERY_SELECTIONS = """
 
 
 class LabelingServiceDashboardTags(BaseModel):
+    id: str
     text: str
     color: str
     type: str
