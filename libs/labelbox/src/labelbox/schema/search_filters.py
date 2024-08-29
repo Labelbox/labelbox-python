@@ -2,7 +2,7 @@ import datetime
 from enum import Enum
 from typing import List, Literal, Union
 
-from labelbox.pydantic_compat import BaseModel
+from labelbox.pydantic_compat import BaseModel, validator
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
 from labelbox.utils import format_iso_datetime
 
@@ -106,6 +106,8 @@ class WorkspaceFilter(BaseSearchFilter):
 class TagFilter(BaseSearchFilter):
     """
     Filter for project tags
+    
+    values are tag ids
     """
     operation: Literal[OperationType.Tag] = OperationType.Tag
     operator: IdOperator
@@ -120,6 +122,16 @@ class ProjectStageFilter(BaseSearchFilter):
     operation: Literal[OperationType.Stage] = OperationType.Stage
     operator: IdOperator
     values: List[LabelingServiceStatus]
+
+    @validator('values', pre=True)
+    def validate_values(cls, values):
+        disallowed_values = [LabelingServiceStatus.Missing]
+        for value in values:
+            if value in disallowed_values:
+                raise ValueError(
+                    f"{value} is not a valid value for ProjectStageFilter")
+
+        return values
 
 
 class DateValue(BaseSearchFilter):
