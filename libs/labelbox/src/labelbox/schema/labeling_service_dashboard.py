@@ -23,6 +23,9 @@ GRAPHQL_QUERY_SELECTIONS = """
                 dataRowsDoneCount
                 dataRowsInReviewCount
                 dataRowsInReworkCount
+                tasksTotalCount
+                tasksCompletedCount
+                tasksRemainingCount
                 mediaType
                 editorTaskType
                 tags
@@ -40,12 +43,17 @@ class LabelingServiceDashboard(BaseModel):
     """
     Represent labeling service data for a project
 
+    NOTE on tasks vs data rows. A task is a unit of work that is assigned to a user. A data row is a unit of data that needs to be labeled.
+        In the current implementation a task reprsents a single data row. However tasks only exists when a labeler start labeling a data row.
+        So if a data row is not labeled, it will not have a task associated with it. Therefore the number of tasks can be less than the number of data rows.
+
     Attributes:
         id (str): project id
         name (str): project name
         status (LabelingServiceStatus): status of the labeling service
-        data_rows_count (int): total number of data rows in the project
-        data_rows_done_count (int): number of data rows completed
+        data_rows_count (int): total number of data rows batched in the project
+        tasks_completed_count (int): number of tasks completed (in the Done queue)
+        tasks_remaining_count (int): number of tasks remaining (in a queue other then Done)
         tags (List[LabelingServiceDashboardTags]): tags associated with the project
         media_type (MediaType): media type of the project
         editor_task_type (EditorTaskType): editor task type of the project
@@ -58,9 +66,8 @@ class LabelingServiceDashboard(BaseModel):
     created_by_id: Optional[str] = Field(frozen=True, default=None)
     status: LabelingServiceStatus = Field(frozen=True, default=None)
     data_rows_count: int = Field(frozen=True)
-    data_rows_done_count: int = Field(frozen=True)
-    data_rows_in_review_count: int = Field(frozen=True)
-    data_rows_in_rework_count: int = Field(frozen=True)
+    tasks_completed_count: int = Field(frozen=True)
+    tasks_remaining_count: int = Field(frozen=True)
     media_type: Optional[MediaType] = Field(frozen=True, default=None)
     editor_task_type: EditorTaskType = Field(frozen=True, default=None)
     tags: List[LabelingServiceDashboardTags] = Field(frozen=True, default=None)
