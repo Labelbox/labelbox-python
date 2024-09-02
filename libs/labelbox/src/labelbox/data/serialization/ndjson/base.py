@@ -3,19 +3,21 @@ from uuid import uuid4
 
 from labelbox.utils import _CamelCaseMixin, is_exactly_one_set
 from ...annotation_types.types import Cuid
-from pydantic import field_validator, model_validator, model_serializer, ConfigDict, BaseModel, Field
-from uuid import UUID, uuid4
+from pydantic import model_validator, ConfigDict, BaseModel, Field
+from uuid import uuid4
+import threading
 
 subclass_registry = {}
 
-class SubclassRegistryBase(BaseModel):
+class _SubclassRegistryBase(BaseModel):
     
     model_config = ConfigDict(extra="allow")
     
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         if cls.__name__ != "NDAnnotation":
-            subclass_registry[cls.__name__] = cls  
+            with threading.Lock():
+                subclass_registry[cls.__name__] = cls  
 
 class DataRow(_CamelCaseMixin):
     id: Optional[str] = None

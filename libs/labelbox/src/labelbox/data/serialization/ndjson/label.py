@@ -2,9 +2,6 @@ from itertools import groupby
 from operator import itemgetter
 from typing import Dict, Generator, List, Tuple, Union
 from collections import defaultdict
-from typing_extensions import Unpack
-import warnings
-
 
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.relationship import RelationshipAnnotation
@@ -25,10 +22,9 @@ from .objects import NDObject, NDObjectType, NDSegments, NDDicomSegments, NDVide
 from .mmc import NDMessageTask
 from .relationship import NDRelationship
 from .base import DataRow
-from pydantic import BaseModel, ConfigDict, model_serializer, ValidationError
-from .base import subclass_registry, SubclassRegistryBase, NDAnnotation
+from pydantic import BaseModel, ValidationError
+from .base import subclass_registry, _SubclassRegistryBase
 from pydantic_core import PydanticUndefined
-from pydantic.alias_generators import to_camel
 from contextlib import suppress
 
 AnnotationType = Union[NDObjectType, NDClassificationType, NDPromptClassificationType,
@@ -38,47 +34,50 @@ AnnotationType = Union[NDObjectType, NDClassificationType, NDPromptClassificatio
 
 
 class NDLabel(BaseModel):
-    annotations: List[SubclassRegistryBase]
+    annotations: List[_SubclassRegistryBase]
     
     def __init__(self, **kwargs):
         # NOTE: Deserialization of subclasses in pydantic is difficult, see here https://blog.devgenius.io/deserialize-child-classes-with-pydantic-that-gonna-work-784230e1cf83
         # Below implements the subclass registry as mentioned in the article. The python dicts we pass in can be missing certain fields
-        # we essentially have to infer the type against all sub classes that have the SubclasssRegistryBase inheritance. 
+        # we essentially have to infer the type against all sub classes that have the _SubclasssRegistryBase inheritance. 
         # It works by checking if the keys of our annotations we are missing in matches any required subclass.
         # More keys are prioritized over less keys (closer match). This is used when importing json to our base models not a lot of customer workflows
         # depend on this method but this works for all our existing tests with the bonus of added validation. (no subclass found it throws an error)
-        # Previous strategies hacked but dont work for pydantic V2
-        for index in range(len(kwargs["annotations"])):
-            annotation = kwargs["annotations"][index]
+
+        for index, annotation in enumerate(kwargs["annotations"]):
             if isinstance(annotation, dict):
                 item_annotation_keys = annotation.keys()
                 key_subclass_combos = defaultdict(list)
-                for name, subclass in subclass_registry.items():
-                    subclass: BaseModel = subclass
+                for subclass in subclass_registry.values():
                     
                     # Get all required keys from subclass
                     annotation_keys = []
                     for k, field in subclass.model_fields.items():
-                        # must account for alias
-                        if hasattr(field, "validation_alias") and field.validation_alias == "answers" and "answers" in item_annotation_keys:
-                            annotation_keys.append("answers")
-                        elif field.default == PydanticUndefined and k != "uuid":
-                            annotation_keys.append(to_camel(k))
+                        if field.default == PydanticUndefined and k != "uuid":
+                            if hasattr(field, "alias") and field.alias in item_annotation_keys:
+                                annotation_keys.append(field.alias)
+                            else:
+                                annotation_keys.append(k)
+                        
                     key_subclass_combos[subclass].extend(annotation_keys)
-
-                # Sort by subclass that has the most keys
+                    
+                # Sort by subclass that has the most keys i.e. the one with the most keys that matches is most likely our subclass
                 key_subclass_combos = dict(sorted(key_subclass_combos.items(), key = lambda x : len(x[1]), reverse=True))
-                
-                # Choose the key that our dict we are passing in has all the keys to match
+
                 for subclass, key_subclass_combo in key_subclass_combos.items():
+                    # Choose the keys from our dict we supplied that matches the required keys of a subclass
                     check_required_keys = all(key in list(item_annotation_keys) for key in key_subclass_combo)
                     if check_required_keys:
-                        # Keep trying subclasses until we find one that has valid values
+                        # Keep trying subclasses until we find one that has valid values (does not throw an validation error)
                         with suppress(ValidationError):
                             annotation = subclass(**annotation)
                             break
-                kwargs["annotations"][index] = annotation
+                if isinstance(annotation, dict):
+                    raise ValueError(f"Could not find subclass for fields: {item_annotation_keys}")
+                
+            kwargs["annotations"][index] = annotation
         super().__init__(**kwargs)
+
 
     class _Relationship(BaseModel):
         """This object holds information about the relationship"""
