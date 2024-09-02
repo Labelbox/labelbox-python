@@ -54,6 +54,8 @@ class NDLabel(BaseModel):
                         if field.default == PydanticUndefined and k != "uuid":
                             if hasattr(field, "alias") and field.alias in item_annotation_keys:
                                 annotation_keys.append(field.alias)
+                            elif hasattr(field, "validation_alias") and field.validation_alias in item_annotation_keys:
+                                annotation_keys.append(field.validation_alias)
                             else:
                                 annotation_keys.append(k)
                         
