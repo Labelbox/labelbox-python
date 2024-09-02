@@ -11,7 +11,7 @@ from ...annotation_types.types import Cuid
 from ...annotation_types.data import TextData, VideoData, ImageData
 from pydantic import model_validator, Field, BaseModel, ConfigDict, model_serializer
 from pydantic.alias_generators import to_camel
-from .base import SubclassRegistryBase
+from .base import _SubclassRegistryBase
 
 
 class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
@@ -170,7 +170,7 @@ class NDPromptTextSubclass(NDAnswer):
 # ====== End of subclasses
 
 
-class NDText(NDAnnotation, NDTextSubclass, SubclassRegistryBase):
+class NDText(NDAnnotation, NDTextSubclass, _SubclassRegistryBase):
 
     @classmethod
     def from_common(cls,
@@ -194,7 +194,7 @@ class NDText(NDAnnotation, NDTextSubclass, SubclassRegistryBase):
         )
 
 
-class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported, SubclassRegistryBase):
+class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported, _SubclassRegistryBase):
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
@@ -237,7 +237,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported, SubclassReg
                    confidence=confidence)
 
 
-class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported, SubclassRegistryBase):
+class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported, _SubclassRegistryBase):
 
     @classmethod
     def from_common(
@@ -275,7 +275,7 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported, SubclassRegistryBas
         return res
         
         
-class NDPromptText(NDAnnotation, NDPromptTextSubclass, SubclassRegistryBase):
+class NDPromptText(NDAnnotation, NDPromptTextSubclass, _SubclassRegistryBase):
     
     @classmethod
     def from_common(

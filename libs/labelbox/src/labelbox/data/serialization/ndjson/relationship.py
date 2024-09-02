@@ -5,7 +5,7 @@ from ...annotation_types.data import ImageData, TextData
 from ...annotation_types.relationship import RelationshipAnnotation
 from ...annotation_types.relationship import Relationship
 from .objects import NDObjectType
-from .base import DataRow, SubclassRegistryBase
+from .base import DataRow, _SubclassRegistryBase
 
 SUPPORTED_ANNOTATIONS = NDObjectType
 
@@ -16,7 +16,7 @@ class _Relationship(BaseModel):
     type: str
 
 
-class NDRelationship(NDAnnotation, SubclassRegistryBase):
+class NDRelationship(NDAnnotation, _SubclassRegistryBase):
     relationship: _Relationship
 
     @staticmethod

@@ -34,8 +34,7 @@ class NDJsonConverter:
         Returns:
             LabelGenerator containing the ndjson data.
         """
-        data = copy.copy(json_data)
-        data = NDLabel(**{"annotations": data})
+        data = NDLabel(**{"annotations": copy.copy(json_data)})
         res = data.to_common()
         return res
 

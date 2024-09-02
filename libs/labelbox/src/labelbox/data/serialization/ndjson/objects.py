@@ -19,7 +19,7 @@ from ...annotation_types.geometry import DocumentRectangle, Rectangle, Polygon, 
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.video import VideoMaskAnnotation, DICOMMaskAnnotation, MaskFrame, MaskInstance
 from .classification import NDClassification, NDSubclassification, NDSubclassificationType
-from .base import DataRow, NDAnnotation, NDJsonBase, SubclassRegistryBase
+from .base import DataRow, NDAnnotation, NDJsonBase, _SubclassRegistryBase
 from pydantic import BaseModel
 
 
@@ -48,7 +48,7 @@ class Bbox(BaseModel):
     width: float
 
 
-class NDPoint(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, SubclassRegistryBase):
+class NDPoint(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     point: _Point
 
     def to_common(self) -> Point:
@@ -79,7 +79,7 @@ class NDPoint(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, SubclassRegistr
                    custom_metrics=custom_metrics)
 
 
-class NDFramePoint(VideoSupported, SubclassRegistryBase):
+class NDFramePoint(VideoSupported, _SubclassRegistryBase):
     point: _Point
     classifications: List[NDSubclassificationType] = []
 
@@ -109,7 +109,7 @@ class NDFramePoint(VideoSupported, SubclassRegistryBase):
                    classifications=classifications)
 
 
-class NDLine(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, SubclassRegistryBase):
+class NDLine(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     line: List[_Point]
 
     def to_common(self) -> Line:
@@ -140,7 +140,7 @@ class NDLine(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, SubclassRegistry
                    custom_metrics=custom_metrics)
 
 
-class NDFrameLine(VideoSupported, SubclassRegistryBase):
+class NDFrameLine(VideoSupported, _SubclassRegistryBase):
     line: List[_Point]
     classifications: List[NDSubclassificationType] = []
 
@@ -173,7 +173,7 @@ class NDFrameLine(VideoSupported, SubclassRegistryBase):
                    classifications=classifications)
 
 
-class NDDicomLine(NDFrameLine, SubclassRegistryBase):
+class NDDicomLine(NDFrameLine, _SubclassRegistryBase):
 
     def to_common(self, name: str, feature_schema_id: Cuid, segment_index: int,
                   group_key: str) -> DICOMObjectAnnotation:
@@ -187,7 +187,7 @@ class NDDicomLine(NDFrameLine, SubclassRegistryBase):
             group_key=group_key)
 
 
-class NDPolygon(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, SubclassRegistryBase):
+class NDPolygon(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     polygon: List[_Point]
 
     def to_common(self) -> Polygon:
@@ -218,7 +218,7 @@ class NDPolygon(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, SubclassRegis
                    custom_metrics=custom_metrics)
 
 
-class NDRectangle(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, SubclassRegistryBase):
+class NDRectangle(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     bbox: Bbox
 
     def to_common(self) -> Rectangle:
@@ -254,7 +254,7 @@ class NDRectangle(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, SubclassReg
                    custom_metrics=custom_metrics)
 
 
-class NDDocumentRectangle(NDRectangle, SubclassRegistryBase):
+class NDDocumentRectangle(NDRectangle, _SubclassRegistryBase):
     page: int
     unit: str
 
@@ -293,7 +293,7 @@ class NDDocumentRectangle(NDRectangle, SubclassRegistryBase):
                    custom_metrics=custom_metrics)
 
 
-class NDFrameRectangle(VideoSupported, SubclassRegistryBase):
+class NDFrameRectangle(VideoSupported, _SubclassRegistryBase):
     bbox: Bbox
     classifications: List[NDSubclassificationType] = []
 
@@ -398,7 +398,7 @@ class NDDicomSegment(NDSegment):
         ]
 
 
-class NDSegments(NDBaseObject, SubclassRegistryBase):
+class NDSegments(NDBaseObject, _SubclassRegistryBase):
     segments: List[NDSegment]
 
     def to_common(self, name: str, feature_schema_id: Cuid):
@@ -425,7 +425,7 @@ class NDSegments(NDBaseObject, SubclassRegistryBase):
                    uuid=extra.get('uuid'))
 
 
-class NDDicomSegments(NDBaseObject, DicomSupported, SubclassRegistryBase):
+class NDDicomSegments(NDBaseObject, DicomSupported, _SubclassRegistryBase):
     segments: List[NDDicomSegment]
 
     def to_common(self, name: str, feature_schema_id: Cuid):
@@ -463,7 +463,7 @@ class _PNGMask(BaseModel):
     png: str
 
 
-class NDMask(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, SubclassRegistryBase):
+class NDMask(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     mask: Union[_URIMask, _PNGMask]
 
     def to_common(self) -> Mask:
@@ -517,7 +517,7 @@ class NDVideoMasksFramesInstances(BaseModel):
     instances: List[MaskInstance]
 
 
-class NDVideoMasks(NDJsonBase, ConfidenceMixin, CustomMetricsNotSupportedMixin, SubclassRegistryBase):
+class NDVideoMasks(NDJsonBase, ConfidenceMixin, CustomMetricsNotSupportedMixin, _SubclassRegistryBase):
     masks: NDVideoMasksFramesInstances
 
     def to_common(self) -> VideoMaskAnnotation:
@@ -545,7 +545,7 @@ class NDVideoMasks(NDJsonBase, ConfidenceMixin, CustomMetricsNotSupportedMixin, 
         )
 
 
-class NDDicomMasks(NDVideoMasks, DicomSupported, SubclassRegistryBase):
+class NDDicomMasks(NDVideoMasks, DicomSupported, _SubclassRegistryBase):
 
     def to_common(self) -> DICOMMaskAnnotation:
         return DICOMMaskAnnotation(
@@ -569,7 +569,7 @@ class Location(BaseModel):
     end: int
 
 
-class NDTextEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, SubclassRegistryBase):
+class NDTextEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     location: Location
 
     def to_common(self) -> TextEntity:
@@ -601,7 +601,7 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, SubclassRe
                    custom_metrics=custom_metrics)
 
 
-class NDDocumentEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, SubclassRegistryBase):
+class NDDocumentEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     name: str
     text_selections: List[DocumentTextSelection]
 
@@ -633,7 +633,7 @@ class NDDocumentEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, Subcla
                    custom_metrics=custom_metrics)
 
 
-class NDConversationEntity(NDTextEntity, SubclassRegistryBase):
+class NDConversationEntity(NDTextEntity, _SubclassRegistryBase):
     message_id: str
 
     def to_common(self) -> ConversationEntity:
