@@ -19,7 +19,7 @@ class BaseSearchFilter(BaseModel):
         use_enum_values = True
 
 
-class OperationTypeEnum(Enum):
+class OperationType(Enum):
     """
     Supported search entity types
     Each type corresponds to a different filter class
@@ -35,8 +35,14 @@ class OperationTypeEnum(Enum):
     TaskRemainingCount = 'task_remaining_count'
 
 
-OperationType = Annotated[OperationTypeEnum,
-                          PlainSerializer(lambda x: x.value, return_type=str)]
+def convert_enum_to_str(enum_or_str: Union[Enum, str]) -> str:
+    if isinstance(enum_or_str, Enum):
+        return enum_or_str.value
+    return enum_or_str
+
+
+OperationType = Annotated[OperationType,
+                          PlainSerializer(convert_enum_to_str, return_type=str)]
 
 IsoDatetimeType = Annotated[datetime.datetime,
                             PlainSerializer(format_iso_datetime)]
@@ -77,7 +83,7 @@ class OrganizationFilter(BaseSearchFilter):
     """
     Filter for organization to which projects belong
     """
-    operation: OperationType = Field(default=OperationTypeEnum.Organization,
+    operation: OperationType = Field(default=OperationType.Organization,
                                      serialization_alias='type')
     operator: IdOperator
     values: List[str]
@@ -89,7 +95,7 @@ class SharedWithOrganizationFilter(BaseSearchFilter):
     """
 
     operation: OperationType = Field(
-        default=OperationTypeEnum.SharedWithOrganization,
+        default=OperationType.SharedWithOrganization,
         serialization_alias='type')
     operator: IdOperator
     values: List[str]
@@ -99,7 +105,7 @@ class WorkspaceFilter(BaseSearchFilter):
     """
     Filter for workspace
     """
-    operation: OperationType = Field(default=OperationTypeEnum.Workspace,
+    operation: OperationType = Field(default=OperationType.Workspace,
                                      serialization_alias='type')
     operator: IdOperator
     values: List[str]
@@ -110,7 +116,7 @@ class TagFilter(BaseSearchFilter):
     Filter for project tags
     values are tag ids
     """
-    operation: OperationType = Field(default=OperationTypeEnum.Tag,
+    operation: OperationType = Field(default=OperationType.Tag,
                                      serialization_alias='type')
     operator: IdOperator
     values: List[str]
@@ -121,7 +127,7 @@ class ProjectStageFilter(BaseSearchFilter):
     Filter labelbox service / aka project stages
         Stages are: requested, in_progress, completed etc. as described by LabelingServiceStatus
     """
-    operation: OperationType = Field(default=OperationTypeEnum.Stage,
+    operation: OperationType = Field(default=OperationType.Stage,
                                      serialization_alias='type')
     operator: IdOperator
     values: List[LabelingServiceStatus]
@@ -163,7 +169,7 @@ class WorkforceStageUpdatedFilter(BaseSearchFilter):
     Filter for workforce stage updated date
     """
     operation: OperationType = Field(
-        default=OperationTypeEnum.WorkforceStageUpdatedDate,
+        default=OperationType.WorkforceStageUpdatedDate,
         serialization_alias='type')
     value: DateValue
 
@@ -173,8 +179,7 @@ class WorkforceRequestedDateFilter(BaseSearchFilter):
     Filter for workforce requested date
     """
     operation: OperationType = Field(
-        default=OperationTypeEnum.WorforceRequestedDate,
-        serialization_alias='type')
+        default=OperationType.WorforceRequestedDate, serialization_alias='type')
     value: DateValue
 
 
@@ -199,8 +204,7 @@ class WorkforceRequestedDateRangeFilter(BaseSearchFilter):
     Filter for workforce requested date range
     """
     operation: OperationType = Field(
-        default=OperationTypeEnum.WorforceRequestedDate,
-        serialization_alias='type')
+        default=OperationType.WorforceRequestedDate, serialization_alias='type')
     value: DateRangeValue
 
 
@@ -209,7 +213,7 @@ class WorkforceStageUpdatedRangeFilter(BaseSearchFilter):
     Filter for workforce stage updated date range
     """
     operation: OperationType = Field(
-        default=OperationTypeEnum.WorkforceStageUpdatedDate,
+        default=OperationType.WorkforceStageUpdatedDate,
         serialization_alias='type')
     value: DateRangeValue
 
@@ -219,9 +223,8 @@ class TaskCompletedCountFilter(BaseSearchFilter):
     Filter for completed tasks count
         A task maps to a data row. Task completed should map to a data row in a labeling queue DONE
     """
-    operation: OperationType = Field(
-        default=OperationTypeEnum.TaskCompletedCount,
-        serialization_alias='type')
+    operation: OperationType = Field(default=OperationType.TaskCompletedCount,
+                                     serialization_alias='type')
     value: IntegerValue
 
 
@@ -229,9 +232,8 @@ class TaskRemainingCountFilter(BaseSearchFilter):
     """
     Filter for remaining tasks count. Reverse of TaskCompletedCountFilter
     """
-    operation: OperationType = Field(
-        default=OperationTypeEnum.TaskRemainingCount,
-        serialization_alias='type')
+    operation: OperationType = Field(default=OperationType.TaskRemainingCount,
+                                     serialization_alias='type')
     value: IntegerValue
 
 
