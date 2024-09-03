@@ -5,9 +5,13 @@ from faker import Faker
 
 faker = Faker()
 
-def test_org_invite(client, organization, environ, queries):
+
+@pytest.fixture
+def org_invite(client, organization, environ, queries):
     role = client.get_roles()['LABELER']
-    dummy_email = "none+{}@labelbox.com".format("".join(faker.random_letters(26)))
+
+    dummy_email = "none+{}@labelbox.com".format("".join(
+        faker.random_letters(26)))
     invite_limit = organization.invite_limit()
 
     if environ.value == "prod":
@@ -17,6 +21,45 @@ def test_org_invite(client, organization, environ, queries):
         return
 
     invite = organization.invite_user(dummy_email, role)
+
+    yield invite, invite_limit
+
+    queries.cancel_invite(client, invite.uid)
+
+
+@pytest.fixture
+def project_role_1(client, project_pack):
+    project_1, _ = project_pack
+    roles = client.get_roles()
+    return ProjectRole(project=project_1, role=roles['LABELER'])
+
+
+@pytest.fixture
+def project_role_2(client, project_pack):
+    _, project_2 = project_pack
+    roles = client.get_roles()
+    return ProjectRole(project=project_2, role=roles['REVIEWER'])
+
+
+@pytest.fixture
+def create_project_invite(client, organization, project_pack, queries,
+                          project_role_1, project_role_2):
+    roles = client.get_roles()
+    dummy_email = "none+{}@labelbox.com".format("".join(
+        faker.random_letters(26)))
+    invite = organization.invite_user(
+        dummy_email,
+        roles['NONE'],
+        project_roles=[project_role_1, project_role_2])
+
+    yield invite
+
+    queries.cancel_invite(client, invite.uid)
+
+
+def test_org_invite(client, organization, environ, queries, org_invite):
+    invite, invite_limit = org_invite
+    role = client.get_roles()['LABELER']
 
     if environ.value == "prod":
 
@@ -28,30 +71,36 @@ def test_org_invite(client, organization, environ, queries):
     outstanding_invites = queries.get_invites(client)
     in_list = False
 
-    for invite in outstanding_invites:
-        if invite.uid == invite.uid:
+    for outstanding_invite in outstanding_invites:
+        if outstanding_invite.uid == invite.uid:
             in_list = True
-            org_role = invite.organization_role_name.lower()
+            org_role = outstanding_invite.organization_role_name.lower()
             assert org_role == role.name.lower(
             ), "Role should be labeler. Found {org_role} "
     assert in_list, "Invite not found"
+
+
+def test_cancel_invite(
+    client,
+    organization,
+    queries,
+):
+    role = client.get_roles()['LABELER']
+    dummy_email = "none+{}@labelbox.com".format("".join(
+        faker.random_letters(26)))
+    invite = organization.invite_user(dummy_email, role)
     queries.cancel_invite(client, invite.uid)
-    assert invite_limit.remaining - organization.invite_limit().remaining == 0
+    outstanding_invites = [i.uid for i in queries.get_invites(client)]
+    assert invite.uid not in outstanding_invites
 
 
-def test_project_invite(client, organization, project_pack, queries):
-    project_1, project_2 = project_pack
+def test_project_invite(client, organization, project_pack, queries,
+                        create_project_invite, project_role_1, project_role_2):
+    create_project_invite
+    project_1, _ = project_pack
     roles = client.get_roles()
-    dummy_email = "none+{}@labelbox.com".format("".join(faker.random_letters(26)))
-    project_role_1 = ProjectRole(project=project_1, role=roles['LABELER'])
-    project_role_2 = ProjectRole(project=project_2, role=roles['REVIEWER'])
-    invite = organization.invite_user(
-        dummy_email,
-        roles['NONE'],
-        project_roles=[project_role_1, project_role_2])
 
     project_invite = next(queries.get_project_invites(client, project_1.uid))
-
     assert set([(proj_invite.project.uid, proj_invite.role.uid)
                 for proj_invite in project_invite.project_roles
                ]) == set([(proj_role.project.uid, proj_role.role.uid)
@@ -74,7 +123,6 @@ def test_project_invite(client, organization, project_pack, queries):
 
     assert project_member.access_from == 'ORGANIZATION'
     assert project_member.role().name.upper() == roles['ADMIN'].name.upper()
-    queries.cancel_invite(client, invite.uid)
 
 
 @pytest.mark.skip(
