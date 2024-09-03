@@ -14,6 +14,7 @@ from labelbox.data.annotation_types.video import VideoMaskAnnotation
 
 from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.relationship import RelationshipAnnotation
+from ...annotation_types.mmc import MessageEvaluationTaskAnnotation
 from .label import NDLabel
 
 logger = logging.getLogger(__name__)
@@ -71,8 +72,9 @@ class NDJsonConverter:
                 ScalarMetric,
                 ConfusionMatrixMetric,
                 RelationshipAnnotation,
+                MessageEvaluationTaskAnnotation,
             ]] = []
-            # First pass to get all RelatiohnshipAnnotaitons
+            # First pass to get all RelationshipAnnotaitons
             # and update the UUIDs of the source and target annotations
             for annotation in label.annotations:
                 if isinstance(annotation, RelationshipAnnotation):

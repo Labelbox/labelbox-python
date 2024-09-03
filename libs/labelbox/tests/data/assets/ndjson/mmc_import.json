@@ -1,0 +1,61 @@
+[
+    {
+        "dataRow": {
+            "id": "cnjencjencjfencvj"
+        },
+        "uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72",
+        "name": "single-selection",
+        "messageEvaluationTask": {
+            "format": "message-single-selection",
+            "data": {
+                "messageId": "clxfzocbm00083b6v8vczsept",
+                "parentMessageId": "clxfznjb800073b6v43ppx9ca",
+                "modelConfigName": "GPT 5"
+            }
+        }
+    },
+    {
+        "dataRow": {
+            "id": "cfcerfvergerfefj"
+        },
+        "uuid": "gferf3a57-597e-48cb-8d8d-a8526fefe72",
+        "name": "multi-selection",
+        "messageEvaluationTask": {
+            "format": "message-multi-selection",
+            "data": {
+                "parentMessageId": "clxfznjb800073b6v43ppx9ca",
+                "selectedMessages": [
+                    {
+                        "messageId": "clxfzocbm00083b6v8vczsept",
+                        "modelConfigName": "GPT 5"
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "dataRow": {
+            "id": "cwefgtrgrthveferfferffr"
+        },
+        "uuid": "hybe3a57-5gt7e-48tgrb-8d8d-a852dswqde72",
+        "name": "ranking",
+        "messageEvaluationTask": {
+            "format": "message-ranking",
+            "data": {
+                "parentMessageId": "clxfznjb800073b6v43ppx9ca",
+                "rankedMessages": [
+                    {
+                        "messageId": "clxfzocbm00083b6v8vczsept",
+                        "modelConfigName": "GPT 4 with temperature 0.7",
+                        "order": 1
+                    },
+                    {
+                        "messageId": "clxfzocbm00093b6vx4ndisub",
+                        "modelConfigName": "GPT 5",
+                        "order": 2
+                    }
+                ]
+            }
+        }
+    }
+]
