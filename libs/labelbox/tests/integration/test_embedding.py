@@ -15,20 +15,16 @@ def test_get_embedding_by_id(client: Client, embedding: Embedding):
     e = client.get_embedding_by_id(embedding.id)
     assert e.id == embedding.id
 
-
-def test_get_embedding_by_name(client: Client, embedding: Embedding):
     e = client.get_embedding_by_name(embedding.name)
     assert e.name == embedding.name
+
+    embeddings = client.get_embeddings()
+    assert len(embeddings) > 0
 
 
 def test_get_embedding_by_name_not_found(client: Client):
     with pytest.raises(labelbox.exceptions.ResourceNotFoundError):
         client.get_embedding_by_name("does-not-exist")
-
-
-def test_get_embeddings(client: Client, embedding: Embedding):
-    embeddings = client.get_embeddings()
-    assert len(embeddings) > 0
 
 
 @pytest.mark.parametrize('data_rows', [10], indirect=True)
