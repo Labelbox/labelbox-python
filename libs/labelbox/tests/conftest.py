@@ -594,14 +594,8 @@ def sample_bulk_conversation() -> list:
 def organization(client):
     # Must have at least one seat open in your org to run these tests
     org = client.get_organization()
-    # Clean up before and after incase this wasn't run for some reason.
-    for invite in get_invites(client):
-        if "@labelbox.com" in invite.email:
-            cancel_invite(client, invite.uid)
+
     yield org
-    for invite in get_invites(client):
-        if "@labelbox.com" in invite.email:
-            cancel_invite(client, invite.uid)
 
 
 @pytest.fixture
