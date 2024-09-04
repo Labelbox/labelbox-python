@@ -18,17 +18,19 @@ from ...annotation_types.ner import TextEntity, ConversationEntity
 from ...annotation_types.classification import Dropdown
 from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
 from ...annotation_types.llm_prompt_response.prompt import PromptClassificationAnnotation
+from ...annotation_types.mmc import MessageEvaluationTaskAnnotation
 
 from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
 from .classification import NDChecklistSubclass, NDClassification, NDClassificationType, NDRadioSubclass, NDPromptClassification, NDPromptClassificationType, NDPromptText
 from .objects import NDObject, NDObjectType, NDSegments, NDDicomSegments, NDVideoMasks, NDDicomMasks
+from .mmc import NDMessageTask
 from .relationship import NDRelationship
 from .base import DataRow
 
 AnnotationType = Union[NDObjectType, NDClassificationType, NDPromptClassificationType,
                        NDConfusionMatrixMetric, NDScalarMetric, NDDicomSegments,
                        NDSegments, NDDicomMasks, NDVideoMasks, NDRelationship,
-                       NDPromptText]
+                       NDPromptText, NDMessageTask]
 
 
 class NDLabel(pydantic_compat.BaseModel):
@@ -126,6 +128,8 @@ class NDLabel(pydantic_compat.BaseModel):
                 elif isinstance(ndjson_annotation, NDPromptClassificationType):
                     annotation = NDPromptClassification.to_common(ndjson_annotation)
                     annotations.append(annotation)
+                elif isinstance(ndjson_annotation, NDMessageTask):
+                    annotations.append(ndjson_annotation.to_common())
                 else:
                     raise TypeError(
                         f"Unsupported annotation. {type(ndjson_annotation)}")
@@ -277,6 +281,8 @@ class NDLabel(pydantic_compat.BaseModel):
                 yield NDRelationship.from_common(annotation, label.data)
             elif isinstance(annotation, PromptClassificationAnnotation):
                 yield NDPromptClassification.from_common(annotation, label.data)
+            elif isinstance(annotation, MessageEvaluationTaskAnnotation):
+                yield NDMessageTask.from_common(annotation, label.data)
             else:
                 raise TypeError(
                     f"Unable to convert object to MAL format. `{type(getattr(annotation, 'value',annotation))}`"

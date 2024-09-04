@@ -18,6 +18,7 @@ from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .types import Cuid
 from .video import VideoClassificationAnnotation
 from .video import VideoObjectAnnotation, VideoMaskAnnotation
+from .mmc import MessageEvaluationTaskAnnotation
 from ..ontology import get_feature_schema_lookup
 
 DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
@@ -51,7 +52,7 @@ class Label(pydantic_compat.BaseModel):
     annotations: List[Union[ClassificationAnnotation, ObjectAnnotation,
                             VideoMaskAnnotation, ScalarMetric,
                             ConfusionMatrixMetric, RelationshipAnnotation,
-                            PromptClassificationAnnotation]] = []
+                            PromptClassificationAnnotation, MessageEvaluationTaskAnnotation]] = []
     extra: Dict[str, Any] = {}
     is_benchmark_reference: Optional[bool] = False
 
