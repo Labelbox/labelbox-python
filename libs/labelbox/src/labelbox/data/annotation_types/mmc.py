@@ -1,7 +1,8 @@
 from abc import ABC
 from typing import ClassVar, List, Union
 
-from labelbox import pydantic_compat
+from pydantic import field_validator
+
 from labelbox.utils import _CamelCaseMixin
 from labelbox.data.annotation_types.annotation import BaseAnnotation
 
@@ -33,12 +34,15 @@ class MessageRankingTask(_BaseMessageEvaluationTask):
     format: ClassVar[str] = "message-ranking"
     ranked_messages: List[OrderedMessageInfo]
 
-    @pydantic_compat.validator("ranked_messages")
+    @field_validator("ranked_messages")
     def _validate_ranked_messages(cls, v: List[OrderedMessageInfo]):
         if not {msg.order for msg in v} == set(range(1, len(v) + 1)):
-            raise ValueError("Messages must be ordered by unique and consecutive natural numbers starting from 1")
+            raise ValueError(
+                "Messages must be ordered by unique and consecutive natural numbers starting from 1"
+            )
         return v
 
 
 class MessageEvaluationTaskAnnotation(BaseAnnotation):
-    value: Union[MessageSingleSelectionTask, MessageMultiSelectionTask, MessageRankingTask]
+    value: Union[MessageSingleSelectionTask, MessageMultiSelectionTask,
+                 MessageRankingTask]
