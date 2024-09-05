@@ -9,12 +9,8 @@ import time
 import urllib.parse
 from collections import defaultdict
 from datetime import datetime, timezone
-<<<<<<< HEAD
 from typing import Any, List, Dict, Union, Optional, overload, Callable
 from types import MappingProxyType
-=======
-from typing import Any, List, Dict, Union, Optional, overload
->>>>>>> parent of 6252ea92 ([PLT-1359] Vb/labeling service improve message reporting plt 1359 (#1769))
 
 from labelbox.schema.search_filters import SearchFilter
 import requests
