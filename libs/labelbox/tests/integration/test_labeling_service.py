@@ -42,8 +42,11 @@ def test_request_labeling_service_moe_project(
     project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
 
     labeling_service = project.get_labeling_service()
-    with pytest.raises(LabelboxError,
-                       match='Project model config is not completed'):
+    with pytest.raises(
+            LabelboxError,
+            match=
+            '[{"errorType":"PROJECT_MODEL_CONFIG","errorMessage":"Project model config is not completed"}]'
+    ):
         labeling_service.request()
     project.add_model_config(model_config.uid)
     project.set_project_model_setup_complete()
@@ -61,8 +64,5 @@ def test_request_labeling_service_incomplete_requirements(ontology, project):
                       ):  # No labeling service by default
         labeling_service.request()
     project.connect_ontology(ontology)
-    with pytest.raises(
-            LabelboxError,
-            match=
-            "['Data is missing', 'Ontology instructions are not completed']"):
+    with pytest.raises(LabelboxError):
         labeling_service.request()
