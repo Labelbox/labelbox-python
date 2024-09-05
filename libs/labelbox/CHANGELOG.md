@@ -4,6 +4,7 @@
 * Project get_labeling_service_dashboard() aka project detail (Miltiple PRs)
 * Client get_labeling_service_dashboards() aka project list (Miltiple PRs)
 * Client get_task_by_id()([#1767](https://github.com/Labelbox/labelbox-python/pull/1767))
+* Support for MMC tasks annotations([#1787](https://github.com/Labelbox/labelbox-python/pull/1787))
 ## Updated
 * Labeling service improve error reporting([#1769](https://github.com/Labelbox/labelbox-python/pull/1769))
 ## Fixed
