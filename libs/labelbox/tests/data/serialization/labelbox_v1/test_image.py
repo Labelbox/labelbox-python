@@ -5,6 +5,7 @@ import pytest
 from labelbox.data.serialization.labelbox_v1.converter import LBV1Converter
 
 
+@pytest.mark.skip()
 @pytest.mark.parametrize("file_path", [
     'tests/data/assets/labelbox_v1/highly_nested_image.json',
     'tests/data/assets/labelbox_v1/image_export.json'

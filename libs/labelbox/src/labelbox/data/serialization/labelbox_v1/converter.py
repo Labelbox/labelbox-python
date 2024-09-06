@@ -75,7 +75,7 @@ class LBV1Converter:
         """
         for label in labels:
             res = LBV1Label.from_common(label)
-            yield res.dict(by_alias=True)
+            yield res.model_dump(by_alias=True)
 
 
 class LBV1VideoIterator(PrefetchGenerator):

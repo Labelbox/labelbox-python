@@ -3,12 +3,12 @@ from abc import ABC, abstractmethod
 
 import geojson
 import numpy as np
-from labelbox import pydantic_compat
 
 from shapely import geometry as geom
+from pydantic import BaseModel
 
 
-class Geometry(pydantic_compat.BaseModel, ABC):
+class Geometry(BaseModel, ABC):
     """Abstract base class for geometry objects
     """
     extra: Dict[str, Any] = {}

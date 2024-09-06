@@ -1,11 +1,13 @@
 from typing import Dict, Optional, Union
+from typing_extensions import Annotated
 from enum import Enum
+
+from pydantic import field_validator
+from pydantic.types import confloat
 
 from .base import ConfidenceValue, BaseMetric
 
-from labelbox import pydantic_compat
-
-ScalarMetricValue = pydantic_compat.confloat(ge=0, le=100_000_000)
+ScalarMetricValue = Annotated[float, confloat(ge=0, le=100_000_000)]
 ScalarMetricConfidenceValue = Dict[ConfidenceValue, ScalarMetricValue]
 
 
@@ -27,13 +29,14 @@ class ScalarMetric(BaseMetric):
     For backwards compatibility, metric_name is optional.
     The metric_name will be set to a default name in the editor if it is not set.
     This is not recommended and support for empty metric_name fields will be removed.
-    aggregation will be ignored wihtout providing a metric name.
+    aggregation will be ignored without providing a metric name.
     """
     metric_name: Optional[str] = None
     value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
-    aggregation: ScalarMetricAggregation = ScalarMetricAggregation.ARITHMETIC_MEAN
+    aggregation: Optional[
+        ScalarMetricAggregation] = ScalarMetricAggregation.ARITHMETIC_MEAN
 
-    @pydantic_compat.validator('metric_name')
+    @field_validator('metric_name')
     def validate_metric_name(cls, name: Union[str, None]):
         if name is None:
             return None
@@ -42,9 +45,3 @@ class ScalarMetric(BaseMetric):
             raise ValueError(f"`{clean_name}` is a reserved metric name. "
                              "Please provide another value for `metric_name`.")
         return name
-
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
-        if res.get('metric_name') is None:
-            res.pop('aggregation')
-        return res

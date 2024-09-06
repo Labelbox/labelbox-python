@@ -6,13 +6,14 @@ from itertools import chain
 import warnings
 
 from typing import List, Optional, Dict, Union, Callable, Type, Any, Generator, overload
+from typing_extensions import Annotated
 
-from labelbox import pydantic_compat
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.identifiable import UniqueId, GlobalKey
+from pydantic import BaseModel, Field, StringConstraints, conlist, ConfigDict, model_serializer
 
 from labelbox.schema.ontology import SchemaId
-from labelbox.utils import _CamelCaseMixin, camel_case, format_iso_datetime, format_iso_from_string
+from labelbox.utils import _CamelCaseMixin, format_iso_datetime, format_iso_from_string
 
 
 class DataRowMetadataKind(Enum):
@@ -25,32 +26,33 @@ class DataRowMetadataKind(Enum):
 
 
 # Metadata schema
-class DataRowMetadataSchema(pydantic_compat.BaseModel):
+class DataRowMetadataSchema(BaseModel):
     uid: SchemaId
-    name: pydantic_compat.constr(strip_whitespace=True,
-                                 min_length=1,
-                                 max_length=100)
+    name: str = Field(strip_whitespace=True,
+                    min_length=1,
+                    max_length=100)
     reserved: bool
     kind: DataRowMetadataKind
-    options: Optional[List["DataRowMetadataSchema"]]
-    parent: Optional[SchemaId]
+    options: Optional[List["DataRowMetadataSchema"]] = None
+    parent: Optional[SchemaId] = None
 
 
-DataRowMetadataSchema.update_forward_refs()
+DataRowMetadataSchema.model_rebuild()
 
-Embedding: Type[List[float]] = pydantic_compat.conlist(float,
-                                                       min_items=128,
-                                                       max_items=128)
-String: Type[str] = pydantic_compat.constr(max_length=4096)
+Embedding: Type[List[float]] = conlist(float,
+                                    min_length=128,
+                                    max_length=128)
+String: Type[str] = Field(max_length=4096)
 
 
 # Metadata base class
 class DataRowMetadataField(_CamelCaseMixin):
     # One of `schema_id` or `name` must be provided. If `schema_id` is not provided, it is
     # inferred from `name`
+    # schema id alias to json key name for pydantic v2 support
     schema_id: Optional[SchemaId] = None
     name: Optional[str] = None
-    # value is of type `Any` so that we do not improperly coerce the value to the wrong tpye
+    # value is of type `Any` so that we do not improperly coerce the value to the wrong type
     # Additional validation is performed before upload using the schema information
     value: Any
 
@@ -62,11 +64,8 @@ class DataRowMetadata(_CamelCaseMixin):
 
 
 class DeleteDataRowMetadata(_CamelCaseMixin):
-    data_row_id: Union[str, UniqueId, GlobalKey]
+    data_row_id: Union[str, UniqueId, GlobalKey] = None
     fields: List[SchemaId]
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 class DataRowMetadataBatchResponse(_CamelCaseMixin):
@@ -96,13 +95,12 @@ class _UpsertBatchDataRowMetadata(_CamelCaseMixin):
 class _DeleteBatchDataRowMetadata(_CamelCaseMixin):
     data_row_identifier: Union[UniqueId, GlobalKey]
     schema_ids: List[SchemaId]
-
-    class Config:
-        arbitrary_types_allowed = True
-        alias_generator = camel_case
-
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
+    
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    @model_serializer(mode="wrap")
+    def model_serializer(self, handler):
+        res = handler(self)
         if 'data_row_identifier' in res.keys():
             key = 'data_row_identifier'
             id_type_key = 'id_type'
@@ -123,20 +121,19 @@ _BatchFunction = Callable[[_BatchInputs], List[DataRowMetadataBatchResponse]]
 
 
 class _UpsertCustomMetadataSchemaEnumOptionInput(_CamelCaseMixin):
-    id: Optional[SchemaId]
-    name: pydantic_compat.constr(strip_whitespace=True,
-                                 min_length=1,
-                                 max_length=100)
+    id: Optional[SchemaId] = None
+    name: Annotated[str, StringConstraints(strip_whitespace=True,
+                                        min_length=1,
+                                        max_length=100)]
     kind: str
-
 
 class _UpsertCustomMetadataSchemaInput(_CamelCaseMixin):
-    id: Optional[SchemaId]
-    name: pydantic_compat.constr(strip_whitespace=True,
-                                 min_length=1,
-                                 max_length=100)
+    id: Optional[SchemaId] = None
+    name: Annotated[str, StringConstraints(strip_whitespace=True,
+                                        min_length=1,
+                                        max_length=100)]
     kind: str
-    options: Optional[List[_UpsertCustomMetadataSchemaEnumOptionInput]]
+    options: Optional[List[_UpsertCustomMetadataSchemaEnumOptionInput]] = None
 
 
 class DataRowMetadataOntology:
@@ -577,7 +574,7 @@ class DataRowMetadataOntology:
                     fields=list(
                         chain.from_iterable(
                             self._parse_upsert(f, m.data_row_id)
-                            for f in m.fields))).dict(by_alias=True))
+                            for f in m.fields))).model_dump(by_alias=True))
         res = _batch_operations(_batch_upsert, items, self._batch_size)
         return res
 
@@ -778,7 +775,7 @@ class DataRowMetadataOntology:
         metadata_fields = [_convert_metadata_field(m) for m in metadata_fields]
         parsed_metadata = list(
             chain.from_iterable(self._parse_upsert(m) for m in metadata_fields))
-        return [m.dict(by_alias=True) for m in parsed_metadata]
+        return [m.model_dump(by_alias=True) for m in parsed_metadata]
 
     def _upsert_schema(
         self, upsert_schema: _UpsertCustomMetadataSchemaInput
@@ -796,7 +793,7 @@ class DataRowMetadataOntology:
                 }
             }"""
         res = self._client.execute(
-            query, {"data": upsert_schema.dict(exclude_none=True)
+            query, {"data": upsert_schema.model_dump(exclude_none=True)
                    })['upsertCustomMetadataSchema']
         self.refresh_ontology()
         return _parse_metadata_schema(res)
@@ -862,7 +859,6 @@ class DataRowMetadataOntology:
             if data_row_id:
                 error_str += f", data_row_id='{data_row_id}'"
             raise ValueError(f"{error_str}. Reason: {e}")
-
         return [_UpsertDataRowMetadataInput(**p) for p in parsed]
 
     def _validate_delete(self, delete: DeleteDataRowMetadata):
@@ -887,7 +883,7 @@ class DataRowMetadataOntology:
 
         return _DeleteBatchDataRowMetadata(
             data_row_identifier=delete.data_row_id,
-            schema_ids=list(delete.fields)).dict(by_alias=True)
+            schema_ids=list(delete.fields)).model_dump(by_alias=True)
 
     def _validate_custom_schema_by_name(self,
                                         name: str) -> DataRowMetadataSchema:
@@ -933,14 +929,14 @@ def _validate_parse_embedding(
     else:
         raise ValueError(
             f"Expected a list for embedding. Found {type(field.value)}")
-    return [field.dict(by_alias=True)]
+    return [field.model_dump(by_alias=True)]
 
 
 def _validate_parse_number(
     field: DataRowMetadataField
 ) -> List[Dict[str, Union[SchemaId, str, float, int]]]:
     field.value = float(field.value)
-    return [field.dict(by_alias=True)]
+    return [field.model_dump(by_alias=True)]
 
 
 def _validate_parse_datetime(
@@ -964,12 +960,10 @@ def _validate_parse_text(
         raise ValueError(
             f"Expected a string type for the text field. Found {type(field.value)}"
         )
-
-    if len(field.value) > String.max_length:
+    if len(field.value) > String.metadata[0].max_length:
         raise ValueError(
-            f"String fields cannot exceed {String.max_length} characters.")
-
-    return [field.dict(by_alias=True)]
+            f"String fields cannot exceed {String.metadata.max_length} characters.")
+    return [field.model_dump(by_alias=True)]
 
 
 def _validate_enum_parse(

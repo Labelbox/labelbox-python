@@ -1,8 +1,8 @@
 from typing import Callable, Literal, Optional
 
-from labelbox import pydantic_compat
 from labelbox.data.annotation_types.data.base_data import BaseData
 from labelbox.utils import _NoCoercionMixin
+from pydantic import model_validator
 
 
 class GenericDataRowData(BaseData, _NoCoercionMixin):
@@ -14,7 +14,8 @@ class GenericDataRowData(BaseData, _NoCoercionMixin):
     def create_url(self, signer: Callable[[bytes], str]) -> Optional[str]:
         return self.url
 
-    @pydantic_compat.root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def validate_one_datarow_key_present(cls, data):
         keys = ['external_id', 'global_key', 'uid']
         count = sum([key in data for key in keys])

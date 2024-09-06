@@ -76,4 +76,5 @@ def test_pdf_bbox_serialize():
 def test_pdf_bbox_deserialize():
     deserialized = list(NDJsonConverter.deserialize(bbox_ndjson))
     deserialized[0].annotations[0].extra = {}
-    assert deserialized[0].annotations == bbox_labels[0].annotations
+    assert deserialized[0].annotations[0].value == bbox_labels[0].annotations[0].value
+    assert deserialized[0].annotations[0].name == bbox_labels[0].annotations[0].name

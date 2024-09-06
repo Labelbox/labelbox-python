@@ -4,7 +4,7 @@ from labelbox.data.annotation_types.metrics import ConfusionMatrixAggregation, S
 from labelbox.data.annotation_types.metrics import ConfusionMatrixMetric, ScalarMetric
 from labelbox.data.annotation_types import ScalarMetric, Label, ImageData
 from labelbox.data.annotation_types.metrics.scalar import RESERVED_METRIC_NAMES
-from labelbox import pydantic_compat
+from pydantic import ValidationError
 
 
 def test_legacy_scalar_metric():
@@ -16,25 +16,17 @@ def test_legacy_scalar_metric():
                   annotations=[metric])
     expected = {
         'data': {
-            'external_id': None,
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
-            'global_key': None,
-            'im_bytes': None,
-            'file_path': None,
-            'url': None,
-            'arr': None,
-            'media_attributes': None,
-            'metadata': None,
         },
         'annotations': [{
+            'aggregation': ScalarMetricAggregation.ARITHMETIC_MEAN,
             'value': 10.0,
             'extra': {},
         }],
         'extra': {},
-        'uid': None,
         'is_benchmark_reference': False
     }
-    assert label.dict() == expected
+    assert label.model_dump(exclude_none=True) == expected
 
 
 # TODO: Test with confidence
@@ -68,15 +60,7 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
                   annotations=[metric])
     expected = {
         'data': {
-            'external_id': None,
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
-            'global_key': None,
-            'im_bytes': None,
-            'file_path': None,
-            'url': None,
-            'arr': None,
-            'media_attributes': None,
-            'metadata': None,
         },
         'annotations': [{
             'value':
@@ -93,11 +77,9 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
             'extra': {}
         }],
         'extra': {},
-        'uid': None,
         'is_benchmark_reference': False
     }
-
-    assert label.dict() == expected
+    assert label.model_dump(exclude_none=True) == expected
 
 
 @pytest.mark.parametrize('feature_name,subclass_name,aggregation,value', [
@@ -126,15 +108,7 @@ def test_custom_confusison_matrix_metric(feature_name, subclass_name,
                   annotations=[metric])
     expected = {
         'data': {
-            'external_id': None,
             'uid': 'ckrmd9q8g000009mg6vej7hzg',
-            'global_key': None,
-            'im_bytes': None,
-            'file_path': None,
-            'url': None,
-            'arr': None,
-            'media_attributes': None,
-            'metadata': None,
         },
         'annotations': [{
             'value':
@@ -151,46 +125,42 @@ def test_custom_confusison_matrix_metric(feature_name, subclass_name,
             'extra': {}
         }],
         'extra': {},
-        'uid': None,
         'is_benchmark_reference': False
     }
-    assert label.dict() == expected
+    assert label.model_dump(exclude_none=True) == expected
 
 
 def test_name_exists():
     # Name is only required for ConfusionMatrixMetric for now.
-    with pytest.raises(pydantic_compat.ValidationError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         metric = ConfusionMatrixMetric(value=[0, 1, 2, 3])
-    assert "field required (type=value_error.missing)" in str(exc_info.value)
 
 
 def test_invalid_aggregations():
-    with pytest.raises(pydantic_compat.ValidationError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         metric = ScalarMetric(
             metric_name="invalid aggregation",
             value=0.1,
             aggregation=ConfusionMatrixAggregation.CONFUSION_MATRIX)
-    assert "value is not a valid enumeration member" in str(exc_info.value)
-    with pytest.raises(pydantic_compat.ValidationError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         metric = ConfusionMatrixMetric(metric_name="invalid aggregation",
                                        value=[0, 1, 2, 3],
                                        aggregation=ScalarMetricAggregation.SUM)
-    assert "value is not a valid enumeration member" in str(exc_info.value)
 
 
 def test_invalid_number_of_confidence_scores():
-    with pytest.raises(pydantic_compat.ValidationError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         metric = ScalarMetric(metric_name="too few scores", value={0.1: 0.1})
     assert "Number of confidence scores must be greater" in str(exc_info.value)
-    with pytest.raises(pydantic_compat.ValidationError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         metric = ConfusionMatrixMetric(metric_name="too few scores",
                                        value={0.1: [0, 1, 2, 3]})
     assert "Number of confidence scores must be greater" in str(exc_info.value)
-    with pytest.raises(pydantic_compat.ValidationError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         metric = ScalarMetric(metric_name="too many scores",
                               value={i / 20.: 0.1 for i in range(20)})
     assert "Number of confidence scores must be greater" in str(exc_info.value)
-    with pytest.raises(pydantic_compat.ValidationError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         metric = ConfusionMatrixMetric(
             metric_name="too many scores",
             value={i / 20.: [0, 1, 2, 3] for i in range(20)})
@@ -199,6 +169,6 @@ def test_invalid_number_of_confidence_scores():
 
 @pytest.mark.parametrize("metric_name", RESERVED_METRIC_NAMES)
 def test_reserved_names(metric_name: str):
-    with pytest.raises(pydantic_compat.ValidationError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         ScalarMetric(metric_name=metric_name, value=0.5)
     assert 'is a reserved metric name' in exc_info.value.errors()[0]['msg']

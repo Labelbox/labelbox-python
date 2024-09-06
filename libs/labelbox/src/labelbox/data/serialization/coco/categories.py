@@ -1,10 +1,10 @@
 import sys
 from hashlib import md5
 
-from .... import pydantic_compat
+from pydantic import BaseModel
 
 
-class Categories(pydantic_compat.BaseModel):
+class Categories(BaseModel):
     id: int
     name: str
     supercategory: str

@@ -9,19 +9,22 @@ from requests.exceptions import ConnectTimeout
 import requests
 import numpy as np
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, model_validator, ConfigDict
 from labelbox.exceptions import InternalServerError
 from .base_data import BaseData
 from ..types import TypedArray
 
 
-class RasterData(pydantic_compat.BaseModel, ABC):
+class RasterData(BaseModel, ABC):
     """Represents an image or segmentation mask.
     """
     im_bytes: Optional[bytes] = None
     file_path: Optional[str] = None
     url: Optional[str] = None
+    uid: Optional[str] = None
+    global_key: Optional[str] = None
     arr: Optional[TypedArray[Literal['uint8']]] = None
+    model_config = ConfigDict(extra="forbid", copy_on_model_validation="none")
 
     @classmethod
     def from_2D_arr(cls, arr: Union[TypedArray[Literal['uint8']],
@@ -155,14 +158,14 @@ class RasterData(pydantic_compat.BaseModel, ABC):
                 "One of url, im_bytes, file_path, arr must not be None.")
         return self.url
 
-    @pydantic_compat.root_validator()
-    def validate_args(cls, values):
-        file_path = values.get("file_path")
-        im_bytes = values.get("im_bytes")
-        url = values.get("url")
-        arr = values.get("arr")
-        uid = values.get('uid')
-        global_key = values.get('global_key')
+    @model_validator(mode="after")
+    def validate_args(self, values):
+        file_path = self.file_path
+        im_bytes = self.im_bytes
+        url = self.url
+        arr = self.arr
+        uid = self.uid
+        global_key = self.global_key
         if uid == file_path == im_bytes == url == global_key == None and arr is None:
             raise ValueError(
                 "One of `file_path`, `im_bytes`, `url`, `uid`, `global_key` or `arr` required."
@@ -175,8 +178,8 @@ class RasterData(pydantic_compat.BaseModel, ABC):
             elif len(arr.shape) != 3:
                 raise ValueError(
                     "unsupported image format. Must be 3D ([H,W,C])."
-                    f"Use {cls.__name__}.from_2D_arr to construct from 2D")
-        return values
+                    f"Use {self.__name__}.from_2D_arr to construct from 2D")
+        return self
 
     def __repr__(self) -> str:
         symbol_or_none = lambda data: '...' if data is not None else None
@@ -184,12 +187,6 @@ class RasterData(pydantic_compat.BaseModel, ABC):
                f"file_path={self.file_path}," \
                f"url={self.url}," \
                f"arr={symbol_or_none(self.arr)})"
-
-    class Config:
-        # Required for sharing references
-        copy_on_model_validation = 'none'
-        # Required for discriminating between data types
-        extra = 'forbid'
 
 
 class MaskData(RasterData):

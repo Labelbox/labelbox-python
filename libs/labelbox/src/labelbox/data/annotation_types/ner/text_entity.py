@@ -1,19 +1,19 @@
 from typing import Dict, Any
 
-from labelbox import pydantic_compat
+from pydantic import BaseModel, model_validator
 
 
-class TextEntity(pydantic_compat.BaseModel):
+class TextEntity(BaseModel):
     """ Represents a text entity """
     start: int
     end: int
     extra: Dict[str, Any] = {}
 
-    @pydantic_compat.root_validator
-    def validate_start_end(cls, values):
-        if 'start' in values and 'end' in values:
-            if (isinstance(values['start'], int) and
-                    values['start'] > values['end']):
+    @model_validator(mode="after")
+    def validate_start_end(self, values):
+        if hasattr(self, 'start') and hasattr(self, 'end'):
+            if (isinstance(self.start, int) and
+                    self.start > self.end):
                 raise ValueError(
                     "Location end must be greater or equal to start")
-        return values
+        return self

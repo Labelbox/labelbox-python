@@ -22,7 +22,6 @@ from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm import query
 from labelbox.exceptions import MalformedQueryException
 from labelbox.pagination import PaginatedCollection
-from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.embedding import EmbeddingVector
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
@@ -595,7 +594,7 @@ class Dataset(DbObject, Updateable, Deletable):
             file_upload_thread_count=file_upload_thread_count,
             max_chunk_size_bytes=UPSERT_CHUNK_SIZE_BYTES)
 
-        data = json.dumps(manifest.dict()).encode("utf-8")
+        data = json.dumps(manifest.model_dump()).encode("utf-8")
         manifest_uri = self.client.upload_data(data,
                                                content_type="application/json",
                                                filename="manifest.json")

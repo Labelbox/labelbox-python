@@ -4,13 +4,13 @@ from collections import defaultdict
 
 from labelbox import Client
 from labelbox.exceptions import ResourceCreationError
-from labelbox.pydantic_compat import BaseModel
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
 from labelbox.exceptions import UnprocessableEntityError, MalformedQueryException, ResourceNotFoundError
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.media_type import MediaType
+from pydantic import BaseModel, ConfigDict
 
 
 class UserGroupColor(Enum):
@@ -65,10 +65,8 @@ class UserGroup(BaseModel):
     users: Set[User]
     projects: Set[Project]
     client: Client
-
-    class Config:
-        # fix for pydnatic 2
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed = True)
+    
 
     def __init__(
         self,

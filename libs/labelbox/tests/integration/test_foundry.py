@@ -75,15 +75,15 @@ def app(foundry_client, unsaved_app):
 
 def test_create_app(foundry_client, unsaved_app):
     app = foundry_client._create_app(unsaved_app)
-    retrieved_dict = app.dict(exclude={'id', 'created_by'})
-    expected_dict = app.dict(exclude={'id', 'created_by'})
+    retrieved_dict = app.model_dump(exclude={'id', 'created_by'})
+    expected_dict = app.model_dump(exclude={'id', 'created_by'})
     assert retrieved_dict == expected_dict
 
 
 def test_get_app(foundry_client, app):
     retrieved_app = foundry_client._get_app(app.id)
-    retrieved_dict = retrieved_app.dict(exclude={'created_by'})
-    expected_dict = app.dict(exclude={'created_by'})
+    retrieved_dict = retrieved_app.model_dump(exclude={'created_by'})
+    expected_dict = app.model_dump(exclude={'created_by'})
     assert retrieved_dict == expected_dict
 
 

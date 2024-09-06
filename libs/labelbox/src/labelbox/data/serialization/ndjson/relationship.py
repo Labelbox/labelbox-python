@@ -1,22 +1,22 @@
 from typing import Union
-from labelbox import pydantic_compat
+from pydantic import BaseModel
 from .base import NDAnnotation, DataRow
 from ...annotation_types.data import ImageData, TextData
 from ...annotation_types.relationship import RelationshipAnnotation
 from ...annotation_types.relationship import Relationship
 from .objects import NDObjectType
-from .base import DataRow
+from .base import DataRow, _SubclassRegistryBase
 
 SUPPORTED_ANNOTATIONS = NDObjectType
 
 
-class _Relationship(pydantic_compat.BaseModel):
+class _Relationship(BaseModel):
     source: str
     target: str
     type: str
 
 
-class NDRelationship(NDAnnotation):
+class NDRelationship(NDAnnotation, _SubclassRegistryBase):
     relationship: _Relationship
 
     @staticmethod

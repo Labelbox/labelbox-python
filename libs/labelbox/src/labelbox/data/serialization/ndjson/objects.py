@@ -7,7 +7,6 @@ from labelbox.data.annotation_types.video import VideoObjectAnnotation, DICOMObj
 from labelbox.data.mixins import ConfidenceMixin, CustomMetricsMixin, CustomMetric, CustomMetricsNotSupportedMixin
 import numpy as np
 
-from labelbox import pydantic_compat
 from PIL import Image
 from labelbox.data.annotation_types import feature
 
@@ -20,35 +19,36 @@ from ...annotation_types.geometry import DocumentRectangle, Rectangle, Polygon, 
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.video import VideoMaskAnnotation, DICOMMaskAnnotation, MaskFrame, MaskInstance
 from .classification import NDClassification, NDSubclassification, NDSubclassificationType
-from .base import DataRow, NDAnnotation, NDJsonBase
+from .base import DataRow, NDAnnotation, NDJsonBase, _SubclassRegistryBase
+from pydantic import BaseModel
 
 
 class NDBaseObject(NDAnnotation):
     classifications: List[NDSubclassificationType] = []
 
 
-class VideoSupported(pydantic_compat.BaseModel):
+class VideoSupported(BaseModel):
     # support for video for objects are per-frame basis
     frame: int
 
 
-class DicomSupported(pydantic_compat.BaseModel):
+class DicomSupported(BaseModel):
     group_key: str
 
 
-class _Point(pydantic_compat.BaseModel):
+class _Point(BaseModel):
     x: float
     y: float
 
 
-class Bbox(pydantic_compat.BaseModel):
+class Bbox(BaseModel):
     top: float
     left: float
     height: float
     width: float
 
 
-class NDPoint(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
+class NDPoint(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     point: _Point
 
     def to_common(self) -> Point:
@@ -79,7 +79,7 @@ class NDPoint(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
                    custom_metrics=custom_metrics)
 
 
-class NDFramePoint(VideoSupported):
+class NDFramePoint(VideoSupported, _SubclassRegistryBase):
     point: _Point
     classifications: List[NDSubclassificationType] = []
 
@@ -109,7 +109,7 @@ class NDFramePoint(VideoSupported):
                    classifications=classifications)
 
 
-class NDLine(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
+class NDLine(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     line: List[_Point]
 
     def to_common(self) -> Line:
@@ -140,7 +140,7 @@ class NDLine(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
                    custom_metrics=custom_metrics)
 
 
-class NDFrameLine(VideoSupported):
+class NDFrameLine(VideoSupported, _SubclassRegistryBase):
     line: List[_Point]
     classifications: List[NDSubclassificationType] = []
 
@@ -173,7 +173,7 @@ class NDFrameLine(VideoSupported):
                    classifications=classifications)
 
 
-class NDDicomLine(NDFrameLine):
+class NDDicomLine(NDFrameLine, _SubclassRegistryBase):
 
     def to_common(self, name: str, feature_schema_id: Cuid, segment_index: int,
                   group_key: str) -> DICOMObjectAnnotation:
@@ -187,7 +187,7 @@ class NDDicomLine(NDFrameLine):
             group_key=group_key)
 
 
-class NDPolygon(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
+class NDPolygon(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     polygon: List[_Point]
 
     def to_common(self) -> Polygon:
@@ -218,7 +218,7 @@ class NDPolygon(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
                    custom_metrics=custom_metrics)
 
 
-class NDRectangle(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
+class NDRectangle(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     bbox: Bbox
 
     def to_common(self) -> Rectangle:
@@ -254,7 +254,7 @@ class NDRectangle(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
                    custom_metrics=custom_metrics)
 
 
-class NDDocumentRectangle(NDRectangle):
+class NDDocumentRectangle(NDRectangle, _SubclassRegistryBase):
     page: int
     unit: str
 
@@ -293,7 +293,7 @@ class NDDocumentRectangle(NDRectangle):
                    custom_metrics=custom_metrics)
 
 
-class NDFrameRectangle(VideoSupported):
+class NDFrameRectangle(VideoSupported, _SubclassRegistryBase):
     bbox: Bbox
     classifications: List[NDSubclassificationType] = []
 
@@ -328,7 +328,7 @@ class NDFrameRectangle(VideoSupported):
                    classifications=classifications)
 
 
-class NDSegment(pydantic_compat.BaseModel):
+class NDSegment(BaseModel):
     keyframes: List[Union[NDFrameRectangle, NDFramePoint, NDFrameLine]]
 
     @staticmethod
@@ -398,7 +398,7 @@ class NDDicomSegment(NDSegment):
         ]
 
 
-class NDSegments(NDBaseObject):
+class NDSegments(NDBaseObject, _SubclassRegistryBase):
     segments: List[NDSegment]
 
     def to_common(self, name: str, feature_schema_id: Cuid):
@@ -425,7 +425,7 @@ class NDSegments(NDBaseObject):
                    uuid=extra.get('uuid'))
 
 
-class NDDicomSegments(NDBaseObject, DicomSupported):
+class NDDicomSegments(NDBaseObject, DicomSupported, _SubclassRegistryBase):
     segments: List[NDDicomSegment]
 
     def to_common(self, name: str, feature_schema_id: Cuid):
@@ -454,16 +454,16 @@ class NDDicomSegments(NDBaseObject, DicomSupported):
                    group_key=group_key)
 
 
-class _URIMask(pydantic_compat.BaseModel):
+class _URIMask(BaseModel):
     instanceURI: str
     colorRGB: Tuple[int, int, int]
 
 
-class _PNGMask(pydantic_compat.BaseModel):
+class _PNGMask(BaseModel):
     png: str
 
 
-class NDMask(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
+class NDMask(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     mask: Union[_URIMask, _PNGMask]
 
     def to_common(self) -> Mask:
@@ -512,12 +512,12 @@ class NDMask(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
                    custom_metrics=custom_metrics)
 
 
-class NDVideoMasksFramesInstances(pydantic_compat.BaseModel):
+class NDVideoMasksFramesInstances(BaseModel):
     frames: List[MaskFrame]
     instances: List[MaskInstance]
 
 
-class NDVideoMasks(NDJsonBase, ConfidenceMixin, CustomMetricsNotSupportedMixin):
+class NDVideoMasks(NDJsonBase, ConfidenceMixin, CustomMetricsNotSupportedMixin, _SubclassRegistryBase):
     masks: NDVideoMasksFramesInstances
 
     def to_common(self) -> VideoMaskAnnotation:
@@ -545,7 +545,7 @@ class NDVideoMasks(NDJsonBase, ConfidenceMixin, CustomMetricsNotSupportedMixin):
         )
 
 
-class NDDicomMasks(NDVideoMasks, DicomSupported):
+class NDDicomMasks(NDVideoMasks, DicomSupported, _SubclassRegistryBase):
 
     def to_common(self) -> DICOMMaskAnnotation:
         return DICOMMaskAnnotation(
@@ -564,12 +564,12 @@ class NDDicomMasks(NDVideoMasks, DicomSupported):
         )
 
 
-class Location(pydantic_compat.BaseModel):
+class Location(BaseModel):
     start: int
     end: int
 
 
-class NDTextEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
+class NDTextEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     location: Location
 
     def to_common(self) -> TextEntity:
@@ -601,7 +601,7 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
                    custom_metrics=custom_metrics)
 
 
-class NDDocumentEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
+class NDDocumentEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase):
     name: str
     text_selections: List[DocumentTextSelection]
 
@@ -633,7 +633,7 @@ class NDDocumentEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
                    custom_metrics=custom_metrics)
 
 
-class NDConversationEntity(NDTextEntity):
+class NDConversationEntity(NDTextEntity, _SubclassRegistryBase):
     message_id: str
 
     def to_common(self) -> ConversationEntity:
@@ -772,10 +772,6 @@ class NDObject:
             )
         return result
 
-
-# NOTE: Deserialization of subclasses in pydantic is a known PIA, see here https://blog.devgenius.io/deserialize-child-classes-with-pydantic-that-gonna-work-784230e1cf83
-# I could implement the registry approach suggested there, but I found that if I list subclass (that has more attributes) before the parent class, it works
-# This is a bit of a hack, but it works for now
 NDEntityType = Union[NDConversationEntity, NDTextEntity]
 NDObjectType = Union[NDLine, NDPolygon, NDPoint, NDDocumentRectangle,
                      NDRectangle, NDMask, NDEntityType, NDDocumentEntity]

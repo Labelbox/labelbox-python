@@ -1,13 +1,13 @@
 from enum import Enum
 from typing import List, Optional, Tuple
 
-from labelbox import pydantic_compat
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from labelbox.data.annotation_types.feature import FeatureSchema
 from labelbox.data.mixins import ConfidenceNotSupportedMixin, CustomMetricsNotSupportedMixin
 from labelbox.utils import _CamelCaseMixin, is_valid_uri
+from pydantic import model_validator, BaseModel, field_validator, model_serializer, Field, ConfigDict, AliasChoices
 
 
 class VideoClassificationAnnotation(ClassificationAnnotation):
@@ -15,7 +15,7 @@ class VideoClassificationAnnotation(ClassificationAnnotation):
     Args:
         name (Optional[str])
         feature_schema_id (Optional[Cuid])
-        value (Union[Text, Checklist, Radio, Dropdown])
+        value (Union[Text, Checklist, Radio])
         frame (int): The frame index that this annotation corresponds to
         segment_id (Optional[Int]): Index of video segment this annotation belongs to
         extra (Dict[str, Any])
@@ -87,21 +87,22 @@ class DICOMObjectAnnotation(VideoObjectAnnotation):
     group_key: GroupKey
 
 
-class MaskFrame(_CamelCaseMixin, pydantic_compat.BaseModel):
+class MaskFrame(_CamelCaseMixin, BaseModel):
     index: int
-    instance_uri: Optional[str] = None
+    instance_uri: Optional[str] = Field(default=None, validation_alias=AliasChoices("instanceURI", "instanceUri"), serialization_alias="instanceURI")
     im_bytes: Optional[bytes] = None
+    
+    model_config = ConfigDict(populate_by_name=True)
 
-    @pydantic_compat.root_validator()
-    def validate_args(cls, values):
-        im_bytes = values.get("im_bytes")
-        instance_uri = values.get("instance_uri")
-
+    @model_validator(mode="after")
+    def validate_args(self, values):
+        im_bytes = self.im_bytes
+        instance_uri = self.instance_uri
         if im_bytes == instance_uri == None:
             raise ValueError("One of `instance_uri`, `im_bytes` required.")
-        return values
+        return self
 
-    @pydantic_compat.validator("instance_uri")
+    @field_validator("instance_uri")
     def validate_uri(cls, v):
         if not is_valid_uri(v):
             raise ValueError(f"{v} is not a valid uri")
@@ -109,11 +110,12 @@ class MaskFrame(_CamelCaseMixin, pydantic_compat.BaseModel):
 
 
 class MaskInstance(_CamelCaseMixin, FeatureSchema):
-    color_rgb: Tuple[int, int, int]
+    color_rgb: Tuple[int, int, int] = Field(validation_alias=AliasChoices("colorRGB", "colorRgb"), serialization_alias="colorRGB")
     name: str
 
+    model_config = ConfigDict(populate_by_name=True)
 
-class VideoMaskAnnotation(pydantic_compat.BaseModel):
+class VideoMaskAnnotation(BaseModel):
     """Video mask annotation
        >>> VideoMaskAnnotation(
        >>>     frames=[

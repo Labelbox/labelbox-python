@@ -1,7 +1,7 @@
 from typing import Optional, Callable, Dict, Any, List
 
 from labelbox.adv_client import AdvClient
-from labelbox.pydantic_compat import BaseModel, PrivateAttr
+from pydantic import BaseModel, PrivateAttr
 
 
 class EmbeddingVector(BaseModel):
@@ -15,7 +15,7 @@ class EmbeddingVector(BaseModel):
     """
     embedding_id: str
     vector: List[float]
-    clusters: Optional[List[int]]
+    clusters: Optional[List[int]] = None
 
     def to_gql(self) -> Dict[str, Any]:
         result = {"embeddingId": self.embedding_id, "vector": self.vector}

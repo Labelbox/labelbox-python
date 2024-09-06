@@ -1,12 +1,11 @@
+from typing import Any, Dict, Optional
+from pydantic import BaseModel, ConfigDict, AliasGenerator
+from pydantic.alias_generators import to_camel, to_snake
 from labelbox.utils import _CamelCaseMixin
 
-from labelbox import pydantic_compat
 
-from typing import Any, Dict, Optional
-
-
-class App(_CamelCaseMixin, pydantic_compat.BaseModel):
-    id: Optional[str]
+class App(_CamelCaseMixin):
+    id: Optional[str] = None
     model_id: str
     name: str
     description: Optional[str] = None
@@ -20,4 +19,4 @@ class App(_CamelCaseMixin, pydantic_compat.BaseModel):
         return "App"
 
 
-APP_FIELD_NAMES = list(App.schema()['properties'].keys())
+APP_FIELD_NAMES = list(App.model_json_schema()['properties'].keys())

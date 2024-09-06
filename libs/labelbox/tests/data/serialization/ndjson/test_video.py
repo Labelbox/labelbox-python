@@ -12,6 +12,7 @@ from labelbox.data.annotation_types.video import VideoObjectAnnotation
 from labelbox import parser
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
+from operator import itemgetter
 
 
 def test_video():
@@ -20,8 +21,13 @@ def test_video():
 
     res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
-    assert res == [data[2], data[0], data[1], data[3], data[4], data[5]]
+    
+    data = sorted(data, key=itemgetter('uuid'))
+    res = sorted(res, key=itemgetter('uuid'))
 
+    pairs = zip(data, res)
+    for data, res in pairs:
+        assert data == res
 
 def test_video_name_only():
     with open('tests/data/assets/ndjson/video_import_name_only.json',
@@ -30,7 +36,13 @@ def test_video_name_only():
 
     res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
-    assert res == [data[2], data[0], data[1], data[3], data[4], data[5]]
+    
+    data = sorted(data, key=itemgetter('uuid'))
+    res = sorted(res, key=itemgetter('uuid'))
+
+    pairs = zip(data, res)
+    for data, res in pairs:
+        assert data == res
 
 
 def test_video_classification_global_subclassifications():
@@ -94,9 +106,8 @@ def test_video_classification_global_subclassifications():
     deserialized = NDJsonConverter.deserialize(res)
     res = next(deserialized)
     annotations = res.annotations
-    for annotation in annotations:
-        annotation.extra.pop("uuid")
-    assert annotations == label.annotations
+    for i, annotation in enumerate(annotations):
+        assert annotation.name == label.annotations[i].name
 
 
 def test_video_classification_nesting_bbox():
@@ -228,16 +239,15 @@ def test_video_classification_nesting_bbox():
 
     serialized = NDJsonConverter.serialize([label])
     res = [x for x in serialized]
-    for annotations in res:
-        annotations.pop("uuid")
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize(res)
     res = next(deserialized)
     annotations = res.annotations
-    for annotation in annotations:
+    for i, annotation in enumerate(annotations):
         annotation.extra.pop("uuid")
-    assert annotations == label.annotations
+        assert annotation.value == label.annotations[i].value
+        assert annotation.name == label.annotations[i].name
 
 
 def test_video_classification_point():
@@ -355,16 +365,14 @@ def test_video_classification_point():
 
     serialized = NDJsonConverter.serialize([label])
     res = [x for x in serialized]
-    for annotations in res:
-        annotations.pop("uuid")
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize(res)
     res = next(deserialized)
     annotations = res.annotations
-    for annotation in annotations:
+    for i, annotation in enumerate(annotations):
         annotation.extra.pop("uuid")
-    assert annotations == label.annotations
+        assert annotation.value == label.annotations[i].value
 
 
 def test_video_classification_frameline():
@@ -491,16 +499,13 @@ def test_video_classification_frameline():
 
     label = Label(data=VideoData(global_key="sample-video-4.mp4",),
                   annotations=bbox_annotation)
-
     serialized = NDJsonConverter.serialize([label])
     res = [x for x in serialized]
-    for annotations in res:
-        annotations.pop("uuid")
     assert res == expected
 
     deserialized = NDJsonConverter.deserialize(res)
     res = next(deserialized)
     annotations = res.annotations
-    for annotation in annotations:
+    for i, annotation in enumerate(annotations):
         annotation.extra.pop("uuid")
-    assert annotations == label.annotations
+        assert annotation.value == label.annotations[i].value

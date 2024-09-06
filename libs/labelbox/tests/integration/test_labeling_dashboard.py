@@ -20,8 +20,7 @@ def test_request_labeling_service_dashboard_filters(requested_labeling_service):
     project, _ = requested_labeling_service
 
     organization = project.client.get_organization()
-    org_filter = OrganizationFilter(operation=OperationType.Organization,
-                                    operator=IdOperator.Is,
+    org_filter = OrganizationFilter(operator=IdOperator.Is,
                                     values=[organization.uid])
 
     try:

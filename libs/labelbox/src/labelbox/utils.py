@@ -6,7 +6,8 @@ from dateutil.parser import isoparse as dateutil_parse
 from dateutil.utils import default_tzinfo
 
 from urllib.parse import urlparse
-from labelbox import pydantic_compat
+from pydantic import BaseModel, ConfigDict, model_serializer, AliasGenerator, AliasChoices
+from pydantic.alias_generators import to_camel, to_pascal
 
 UPPERCASE_COMPONENTS = ['uri', 'rgb']
 ISO_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
@@ -60,11 +61,8 @@ def is_valid_uri(uri):
         return False
 
 
-class _CamelCaseMixin(pydantic_compat.BaseModel):
-
-    class Config:
-        allow_population_by_field_name = True
-        alias_generator = camel_case
+class _CamelCaseMixin(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed = True, alias_generator = to_camel, populate_by_name = True)
 
 
 class _NoCoercionMixin:
@@ -83,9 +81,9 @@ class _NoCoercionMixin:
             class_name: Literal["ConversationData"] = "ConversationData"
 
     """
-
-    def dict(self, *args, **kwargs):
-        res = super().dict(*args, **kwargs)
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
         res.pop('class_name')
         return res
 

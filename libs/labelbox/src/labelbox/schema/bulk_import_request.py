@@ -8,19 +8,19 @@ from pathlib import Path
 from google.api_core import retry
 from labelbox import parser
 import requests
-from labelbox import pydantic_compat
-from typing_extensions import Literal
+from pydantic import ValidationError, BaseModel, Field, field_validator, model_validator, ConfigDict, StringConstraints
+from typing_extensions import Literal, Annotated
 from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
                     Type, Set, TYPE_CHECKING)
 
 from labelbox import exceptions as lb_exceptions
-from labelbox.orm.model import Entity
 from labelbox import utils
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field, Relationship
+from labelbox.orm.model import Relationship
 from labelbox.schema.enums import BulkImportRequestState
 from labelbox.schema.serialization import serialize_labels
+from labelbox.orm.model import Field as lb_Field
 
 if TYPE_CHECKING:
     from labelbox import Project
@@ -28,6 +28,14 @@ if TYPE_CHECKING:
 
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
+
+#TODO: Deprecate this library in place of labelimport and malprediction import library.
+
+def _determinants(parent_cls: Any) -> List[str]:
+    return [
+        k for k, v in parent_cls.model_fields.items()
+        if v.json_schema_extra and "determinant" in v.json_schema_extra
+    ]
 
 
 def _make_file_name(project_id: str, name: str) -> str:
@@ -93,12 +101,12 @@ class BulkImportRequest(DbObject):
         project (Relationship): `ToOne` relationship to Project
         created_by (Relationship): `ToOne` relationship to User
     """
-    name = Field.String("name")
-    state = Field.Enum(BulkImportRequestState, "state")
-    input_file_url = Field.String("input_file_url")
-    error_file_url = Field.String("error_file_url")
-    status_file_url = Field.String("status_file_url")
-    created_at = Field.DateTime("created_at")
+    name = lb_Field.String("name")
+    state = lb_Field.Enum(BulkImportRequestState, "state")
+    input_file_url = lb_Field.String("input_file_url")
+    error_file_url = lb_Field.String("error_file_url")
+    status_file_url = lb_Field.String("status_file_url")
+    created_at = lb_Field.DateTime("created_at")
 
     project = Relationship.ToOne("Project")
     created_by = Relationship.ToOne("User", False, "created_by")
@@ -431,7 +439,7 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]],
                     f'{uuid} already used in this import job, '
                     'must be unique for the project.')
             uids.add(uuid)
-        except (pydantic_compat.ValidationError, ValueError, TypeError,
+        except (ValidationError, ValueError, TypeError,
                 KeyError) as e:
             raise lb_exceptions.MALValidationError(
                 f"Invalid NDJson on line {idx}") from e
@@ -505,33 +513,29 @@ def get_mal_schemas(ontology):
     return valid_feature_schemas_by_schema_id, valid_feature_schemas_by_name
 
 
-LabelboxID: str = pydantic_compat.Field(..., min_length=25, max_length=25)
-
-
-class Bbox(pydantic_compat.BaseModel):
+class Bbox(BaseModel):
     top: float
     left: float
     height: float
     width: float
 
 
-class Point(pydantic_compat.BaseModel):
+class Point(BaseModel):
     x: float
     y: float
 
 
-class FrameLocation(pydantic_compat.BaseModel):
+class FrameLocation(BaseModel):
     end: int
     start: int
 
 
-class VideoSupported(pydantic_compat.BaseModel):
+class VideoSupported(BaseModel):
     #Note that frames are only allowed as top level inferences for video
-    frames: Optional[List[FrameLocation]]
+    frames: Optional[List[FrameLocation]] = None
 
 
-#Base class for a special kind of union.
-# Compatible with pydantic_compat. Improves error messages over a traditional union
+# Base class for a special kind of union.
 class SpecialUnion:
 
     def __new__(cls, **kwargs):
@@ -558,25 +562,25 @@ class SpecialUnion:
 
     @classmethod
     def build(cls: Any, data: Union[dict,
-                                    pydantic_compat.BaseModel]) -> "NDBase":
+                                    BaseModel]) -> "NDBase":
         """
             Checks through all objects in the union to see which matches the input data.
             Args:
-                data  (Union[dict, pydantic_compat.BaseModel]) : The data for constructing one of the objects in the union
+                data  (Union[dict, BaseModel]) : The data for constructing one of the objects in the union
             raises:
                 KeyError: data does not contain the determinant fields for any of the types supported by this SpecialUnion
-                pydantic_compat.ValidationError: Error while trying to construct a specific object in the union
+                ValidationError: Error while trying to construct a specific object in the union
 
         """
-        if isinstance(data, pydantic_compat.BaseModel):
-            data = data.dict()
+        if isinstance(data, BaseModel):
+            data = data.model_dump()
 
         top_level_fields = []
         max_match = 0
         matched = None
 
         for type_ in cls.get_union_types():
-            determinate_fields = type_.Config.determinants(type_)
+            determinate_fields = _determinants(type_)
             top_level_fields.append(determinate_fields)
             matches = sum([val in determinate_fields for val in data])
             if matches == len(determinate_fields) and matches > max_match:
@@ -610,26 +614,27 @@ class SpecialUnion:
         return results
 
 
-class DataRow(pydantic_compat.BaseModel):
+class DataRow(BaseModel):
     id: str
 
 
-class NDFeatureSchema(pydantic_compat.BaseModel):
+class NDFeatureSchema(BaseModel):
     schemaId: Optional[str] = None
     name: Optional[str] = None
 
-    @pydantic_compat.root_validator
-    def must_set_one(cls, values):
-        if values['schemaId'] is None and values['name'] is None:
+    @model_validator(mode="after")
+    def most_set_one(self):
+        if self.schemaId is None and self.name is None:
             raise ValueError(
                 "Must set either schemaId or name for all feature schemas")
-        return values
+        return self
 
 
 class NDBase(NDFeatureSchema):
     ontology_type: str
     uuid: UUID
     dataRow: DataRow
+    model_config = ConfigDict(extra="forbid")
 
     def validate_feature_schemas(self, valid_feature_schemas_by_id,
                                  valid_feature_schemas_by_name):
@@ -662,33 +667,21 @@ class NDBase(NDFeatureSchema):
         self.validate_feature_schemas(valid_feature_schemas_by_id,
                                       valid_feature_schemas_by_name)
 
-    class Config:
-        #Users shouldn't to add extra data to the payload
-        extra = 'forbid'
-
-        @staticmethod
-        def determinants(parent_cls) -> List[str]:
-            #This is a hack for better error messages
-            return [
-                k for k, v in parent_cls.__fields__.items()
-                if 'determinant' in v.field_info.extra
-            ]
-
 
 ###### Classifications ######
 
 
 class NDText(NDBase):
     ontology_type: Literal["text"] = "text"
-    answer: str = pydantic_compat.Field(determinant=True)
+    answer: str = Field(json_schema_extra={"determinant": True})
     #No feature schema to check
 
 
 class NDChecklist(VideoSupported, NDBase):
     ontology_type: Literal["checklist"] = "checklist"
-    answers: List[NDFeatureSchema] = pydantic_compat.Field(determinant=True)
+    answers: List[NDFeatureSchema] = Field(json_schema_extra={"determinant": True})
 
-    @pydantic_compat.validator('answers', pre=True)
+    @field_validator('answers', mode="before")
     def validate_answers(cls, value, field):
         #constr not working with mypy.
         if not len(value):
@@ -719,7 +712,7 @@ class NDChecklist(VideoSupported, NDBase):
 
 class NDRadio(VideoSupported, NDBase):
     ontology_type: Literal["radio"] = "radio"
-    answer: NDFeatureSchema = pydantic_compat.Field(determinant=True)
+    answer: NDFeatureSchema = Field(json_schema_extra={"determinant": True})
 
     def validate_feature_schemas(self, valid_feature_schemas_by_id,
                                  valid_feature_schemas_by_name):
@@ -765,7 +758,7 @@ class NDBaseTool(NDBase):
                 if self.name else valid_feature_schemas_by_id[
                     self.schemaId]['classificationsByName'])
 
-    @pydantic_compat.validator('classifications', pre=True)
+    @field_validator('classifications', mode="before")
     def validate_subclasses(cls, value, field):
         #Create uuid and datarow id so we don't have to define classification objects twice
         #This is caused by the fact that we require these ids for top level classifications but not for subclasses
@@ -783,9 +776,9 @@ class NDBaseTool(NDBase):
 
 class NDPolygon(NDBaseTool):
     ontology_type: Literal["polygon"] = "polygon"
-    polygon: List[Point] = pydantic_compat.Field(determinant=True)
+    polygon: List[Point] = Field(json_schema_extra={"determinant": True})
 
-    @pydantic_compat.validator('polygon')
+    @field_validator('polygon')
     def is_geom_valid(cls, v):
         if len(v) < 3:
             raise ValueError(
@@ -795,9 +788,9 @@ class NDPolygon(NDBaseTool):
 
 class NDPolyline(NDBaseTool):
     ontology_type: Literal["line"] = "line"
-    line: List[Point] = pydantic_compat.Field(determinant=True)
+    line: List[Point] = Field(json_schema_extra={"determinant": True})
 
-    @pydantic_compat.validator('line')
+    @field_validator('line')
     def is_geom_valid(cls, v):
         if len(v) < 2:
             raise ValueError(
@@ -807,29 +800,29 @@ class NDPolyline(NDBaseTool):
 
 class NDRectangle(NDBaseTool):
     ontology_type: Literal["rectangle"] = "rectangle"
-    bbox: Bbox = pydantic_compat.Field(determinant=True)
+    bbox: Bbox = Field(json_schema_extra={"determinant": True})
     #Could check if points are positive
 
 
 class NDPoint(NDBaseTool):
     ontology_type: Literal["point"] = "point"
-    point: Point = pydantic_compat.Field(determinant=True)
+    point: Point = Field(json_schema_extra={"determinant": True})
     #Could check if points are positive
 
 
-class EntityLocation(pydantic_compat.BaseModel):
+class EntityLocation(BaseModel):
     start: int
     end: int
 
 
 class NDTextEntity(NDBaseTool):
     ontology_type: Literal["named-entity"] = "named-entity"
-    location: EntityLocation = pydantic_compat.Field(determinant=True)
+    location: EntityLocation = Field(json_schema_extra={"determinant": True})
 
-    @pydantic_compat.validator('location')
+    @field_validator('location')
     def is_valid_location(cls, v):
-        if isinstance(v, pydantic_compat.BaseModel):
-            v = v.dict()
+        if isinstance(v, BaseModel):
+            v = v.model_dump()
 
         if len(v) < 2:
             raise ValueError(
@@ -843,11 +836,11 @@ class NDTextEntity(NDBaseTool):
         return v
 
 
-class RLEMaskFeatures(pydantic_compat.BaseModel):
+class RLEMaskFeatures(BaseModel):
     counts: List[int]
     size: List[int]
 
-    @pydantic_compat.validator('counts')
+    @field_validator('counts')
     def validate_counts(cls, counts):
         if not all([count >= 0 for count in counts]):
             raise ValueError(
@@ -855,7 +848,7 @@ class RLEMaskFeatures(pydantic_compat.BaseModel):
             )
         return counts
 
-    @pydantic_compat.validator('size')
+    @field_validator('size')
     def validate_size(cls, size):
         if len(size) != 2:
             raise ValueError(
@@ -867,16 +860,16 @@ class RLEMaskFeatures(pydantic_compat.BaseModel):
         return size
 
 
-class PNGMaskFeatures(pydantic_compat.BaseModel):
+class PNGMaskFeatures(BaseModel):
     # base64 encoded png bytes
     png: str
 
 
-class URIMaskFeatures(pydantic_compat.BaseModel):
+class URIMaskFeatures(BaseModel):
     instanceURI: str
     colorRGB: Union[List[int], Tuple[int, int, int]]
 
-    @pydantic_compat.validator('colorRGB')
+    @field_validator('colorRGB')
     def validate_color(cls, colorRGB):
         #Does the dtype matter? Can it be a float?
         if not isinstance(colorRGB, (tuple, list)):
@@ -896,7 +889,7 @@ class URIMaskFeatures(pydantic_compat.BaseModel):
 class NDMask(NDBaseTool):
     ontology_type: Literal["superpixel"] = "superpixel"
     mask: Union[URIMaskFeatures, PNGMaskFeatures,
-                RLEMaskFeatures] = pydantic_compat.Field(determinant=True)
+                RLEMaskFeatures] = Field(json_schema_extra={"determinant": True})
 
 
 #A union with custom construction logic to improve error messages

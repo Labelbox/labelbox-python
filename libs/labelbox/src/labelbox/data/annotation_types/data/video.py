@@ -12,7 +12,7 @@ from google.api_core import retry
 from .base_data import BaseData
 from ..types import TypedArray
 
-from labelbox import pydantic_compat
+from pydantic import ConfigDict, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,8 @@ class VideoData(BaseData):
     file_path: Optional[str] = None
     url: Optional[str] = None
     frames: Optional[Dict[int, TypedArray[Literal['uint8']]]] = None
+    # Required for discriminating between data types
+    model_config = ConfigDict(extra = "forbid")
 
     def load_frames(self, overwrite: bool = False) -> None:
         """
@@ -148,25 +150,21 @@ class VideoData(BaseData):
         out.release()
         return file_path
 
-    @pydantic_compat.root_validator
-    def validate_data(cls, values):
-        file_path = values.get("file_path")
-        url = values.get("url")
-        frames = values.get("frames")
-        uid = values.get("uid")
-        global_key = values.get("global_key")
+    @model_validator(mode="after")
+    def validate_data(self):
+        file_path = self.file_path
+        url = self.url
+        frames = self.frames
+        uid = self.uid
+        global_key = self.global_key
 
         if uid == file_path == frames == url == global_key == None:
             raise ValueError(
                 "One of `file_path`, `frames`, `uid`, `global_key` or `url` required."
             )
-        return values
+        return self
 
     def __repr__(self) -> str:
         return  f"VideoData(file_path={self.file_path}," \
                 f"frames={'...' if self.frames is not None else None}," \
                 f"url={self.url})"
-
-    class Config:
-        # Required for discriminating between data types
-        extra = 'forbid'

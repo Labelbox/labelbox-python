@@ -2,8 +2,6 @@ from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.utils import camel_case
 from typing import List, Optional, Union, Dict, Any
 
-from labelbox import pydantic_compat
-
 from ...annotation_types.annotation import (ClassificationAnnotation,
                                             ObjectAnnotation)
 from ...annotation_types.video import VideoClassificationAnnotation, VideoObjectAnnotation
@@ -11,6 +9,8 @@ from ...annotation_types.data import ImageData, TextData, VideoData
 from ...annotation_types.label import Label
 from .classification import LBV1Classifications
 from .objects import LBV1Objects, LBV1TextEntity
+from pydantic import Field, BaseModel, ConfigDict, model_serializer
+from pydantic.alias_generators import to_camel
 
 
 class LBV1LabelAnnotations(LBV1Classifications, LBV1Objects):
@@ -31,11 +31,12 @@ class LBV1LabelAnnotations(LBV1Classifications, LBV1Objects):
             [x for x in annotations if isinstance(x, ObjectAnnotation)])
         classifications = LBV1Classifications.from_common(
             [x for x in annotations if isinstance(x, ClassificationAnnotation)])
-        return cls(**objects.dict(), **classifications.dict())
+        return cls(**objects.model_dump(), **classifications.model_dump())
 
 
 class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
-    frame_number: int = pydantic_compat.Field(..., alias='frameNumber')
+    frame_number: int = Field(..., alias='frameNumber')
+    model_config = ConfigDict(populate_by_name = True)
 
     def to_common(
         self
@@ -100,36 +101,30 @@ class LBV1LabelAnnotationsVideo(LBV1LabelAnnotations):
 
         return result
 
-    class Config:
-        allow_population_by_field_name = True
 
-
-class Review(pydantic_compat.BaseModel):
+class Review(BaseModel):
     score: int
     id: str
     created_at: str
     created_by: str
     label_id: Optional[str] = None
-
-    class Config:
-        alias_generator = camel_case
+    model_config = ConfigDict(alias_generator = to_camel)
 
 
-Extra = lambda name: pydantic_compat.Field(None, alias=name, extra_field=True)
+Extra = lambda name: Field(None, alias=name, extra_field=True)
 
 
-class LBV1Label(pydantic_compat.BaseModel):
+class LBV1Label(BaseModel):
     label: Union[LBV1LabelAnnotations,
-                 List[LBV1LabelAnnotationsVideo]] = pydantic_compat.Field(
+                 List[LBV1LabelAnnotationsVideo]] = Field(
                      ..., alias='Label')
-    data_row_id: str = pydantic_compat.Field(..., alias="DataRow ID")
-    row_data: str = pydantic_compat.Field(None, alias="Labeled Data")
-    id: Optional[str] = pydantic_compat.Field(None, alias='ID')
-    external_id: Optional[str] = pydantic_compat.Field(None,
-                                                       alias="External ID")
-    data_row_media_attributes: Optional[Dict[str, Any]] = pydantic_compat.Field(
+    data_row_id: str = Field(..., alias="DataRow ID")
+    row_data: Optional[str] = Field(None, alias="Labeled Data")
+    id: Optional[str] = Field(None, alias='ID')
+    external_id: Optional[str] = Field(None, alias="External ID")
+    data_row_media_attributes: Optional[Dict[str, Any]] = Field(
         {}, alias="Media Attributes")
-    data_row_metadata: Optional[List[Dict[str, Any]]] = pydantic_compat.Field(
+    data_row_metadata: Optional[List[Dict[str, Any]]] = Field(
         [], alias="DataRow Metadata")
 
     created_by: Optional[str] = Extra('Created By')
@@ -148,6 +143,7 @@ class LBV1Label(pydantic_compat.BaseModel):
     media_type: Optional[str] = Extra('media_type')
     data_split: Optional[str] = Extra('Data Split')
     global_key: Optional[str] = Extra('Global Key')
+    model_config = ConfigDict(populate_by_name = True)
 
     def to_common(self) -> Label:
         if isinstance(self.label, list):
@@ -156,14 +152,14 @@ class LBV1Label(pydantic_compat.BaseModel):
                 annotations.extend(lbl.to_common())
         else:
             annotations = self.label.to_common()
-
+            
         return Label(data=self._data_row_to_common(),
                      uid=self.id,
                      annotations=annotations,
                      extra={
                          field.alias: getattr(self, field_name)
-                         for field_name, field in self.__fields__.items()
-                         if field.field_info.extra.get('extra_field')
+                         for field_name, field in self.model_fields.items()
+                         if isinstance(field.json_schema_extra, Dict) and field.json_schema_extra["extra_field"]
                      })
 
     @classmethod
@@ -246,6 +242,3 @@ class LBV1Label(pydantic_compat.BaseModel):
         return self.row_data.startswith(
             ("http://", "https://", "gs://",
              "s3://")) or "tileLayerUrl" in self.row_data
-
-    class Config:
-        allow_population_by_field_name = True

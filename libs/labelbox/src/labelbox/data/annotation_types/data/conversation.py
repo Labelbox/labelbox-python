@@ -3,5 +3,5 @@ from labelbox.utils import _NoCoercionMixin
 from .base_data import BaseData
 
 
-class ConversationData(BaseData):
+class ConversationData(BaseData, _NoCoercionMixin):
     class_name: Literal["ConversationData"] = "ConversationData"

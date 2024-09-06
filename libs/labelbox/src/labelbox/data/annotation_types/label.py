@@ -1,8 +1,6 @@
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Union, Optional
+from typing import Any, Callable, Dict, List, Union, Optional, get_args
 import warnings
-
-from labelbox import pydantic_compat
 
 import labelbox
 from labelbox.data.annotation_types.data.generic_data_row_data import GenericDataRowData
@@ -20,6 +18,7 @@ from .video import VideoClassificationAnnotation
 from .video import VideoObjectAnnotation, VideoMaskAnnotation
 from .mmc import MessageEvaluationTaskAnnotation
 from ..ontology import get_feature_schema_lookup
+from pydantic import BaseModel, field_validator, model_serializer
 
 DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
                  ConversationData, DicomData, DocumentData, HTMLData,
@@ -27,7 +26,7 @@ DataType = Union[VideoData, ImageData, TextData, TiledImageData, AudioData,
                  LlmResponseCreationData, GenericDataRowData]
 
 
-class Label(pydantic_compat.BaseModel):
+class Label(BaseModel):
     """Container for holding data and annotations
 
     >>> Label(
@@ -56,15 +55,17 @@ class Label(pydantic_compat.BaseModel):
     extra: Dict[str, Any] = {}
     is_benchmark_reference: Optional[bool] = False
 
-    @pydantic_compat.root_validator(pre=True)
-    def validate_data(cls, label):
-        if isinstance(label.get("data"), Dict):
-            label["data"]["class_name"] = "GenericDataRowData"
+    @field_validator("data", mode="before")
+    def validate_data(cls, data):
+        if isinstance(data, Dict):
+            return GenericDataRowData(**data)
+        elif isinstance(data, GenericDataRowData):
+            return data
         else:
             warnings.warn(
-                f"Using {type(label['data']).__name__} class for label.data is deprecated. "
+                f"Using {type(data).__name__} class for label.data is deprecated. "
                 "Use a dict or an instance of GenericDataRowData instead.")
-        return label
+        return data
 
     def object_annotations(self) -> List[ObjectAnnotation]:
         return self._get_annotations_by_type(ObjectAnnotation)
@@ -204,11 +205,11 @@ class Label(pydantic_compat.BaseModel):
                 f"Unexpected type for answer found. {type(classification.value.answer)}"
             )
 
-    @pydantic_compat.validator("annotations", pre=True)
+    @field_validator("annotations", mode="before")
     def validate_union(cls, value):
         supported = tuple([
-            field.type_
-            for field in cls.__fields__['annotations'].sub_fields[0].sub_fields
+            field
+            for field in get_args(get_args(cls.model_fields['annotations'].annotation)[0])
         ])
         if not isinstance(value, list):
             raise TypeError(f"Annotations must be a list. Found {type(value)}")

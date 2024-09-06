@@ -879,7 +879,7 @@ class Project(DbObject, Updateable, Deletable):
         name: str,
         data_rows: Optional[List[Union[str, DataRow]]] = None,
         priority: int = 5,
-        consensus_settings: Optional[Dict[str, float]] = None,
+        consensus_settings: Optional[Dict[str, Any]] = None,
         global_keys: Optional[List[str]] = None,
     ):
         """
@@ -935,7 +935,7 @@ class Project(DbObject, Updateable, Deletable):
             dr_ids, global_keys, self._wait_processing_max_seconds)
 
         if consensus_settings:
-            consensus_settings = ConsensusSettings(**consensus_settings).dict(
+            consensus_settings = ConsensusSettings(**consensus_settings).model_dump(
                 by_alias=True)
 
         if row_count >= MAX_SYNC_BATCH_ROW_COUNT:
@@ -951,7 +951,7 @@ class Project(DbObject, Updateable, Deletable):
         data_rows: Optional[List[Union[str, DataRow]]] = None,
         global_keys: Optional[List[str]] = None,
         priority: int = 5,
-        consensus_settings: Optional[Dict[str, float]] = None,
+        consensus_settings: Optional[Dict[str, Any]] = None,
     ) -> CreateBatchesTask:
         """
         Creates batches for a project from a list of data rows. One of `global_keys` or `data_rows` must be provided,
@@ -992,7 +992,7 @@ class Project(DbObject, Updateable, Deletable):
             dr_ids, global_keys, self._wait_processing_max_seconds)
 
         if consensus_settings:
-            consensus_settings = ConsensusSettings(**consensus_settings).dict(
+            consensus_settings = ConsensusSettings(**consensus_settings).model_dump(
                 by_alias=True)
 
         method = 'createBatches'
@@ -1032,7 +1032,7 @@ class Project(DbObject, Updateable, Deletable):
         dataset_id: str,
         priority: int = 5,
         consensus_settings: Optional[Dict[str,
-                                          float]] = None) -> CreateBatchesTask:
+                                          Any]] = None) -> CreateBatchesTask:
         """
         Creates batches for a project from a dataset, selecting only the data rows that are not already added to the
         project. When the dataset contains more than 100k data rows and multiple batches are needed, the specific batch
@@ -1059,7 +1059,7 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError("Project must be in batch mode")
 
         if consensus_settings:
-            consensus_settings = ConsensusSettings(**consensus_settings).dict(
+            consensus_settings = ConsensusSettings(**consensus_settings).model_dump(
                 by_alias=True)
 
         method = 'createBatchesFromDataset'
