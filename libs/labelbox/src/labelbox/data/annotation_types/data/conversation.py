@@ -4,4 +4,4 @@ from .base_data import BaseData
 
 
 class ConversationData(BaseData, _NoCoercionMixin):
-    class_name: Literal["DicomData"] = "ConversationData"
+    class_name: Literal["ConversationData"] = "ConversationData"
