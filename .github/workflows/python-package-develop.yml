@@ -33,24 +33,24 @@ jobs:
     outputs:
       sdk_versions: ${{ steps.get_sdk_versions.outputs.sdk_versions }}
     steps:
-          - name: Checkout repository
-            uses: actions/checkout@v2
-            with:
-              ref: ${{ github.event.repository.default_branch }}
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.repository.default_branch }}
               
-          - name: Fetch tags
-            run: git fetch --tags
+      - name: Fetch tags
+        run: git fetch --tags
     
-          - name: Get Latest SDK versions
-            id: get_sdk_versions
-            run: |
-              sdk_versions=$(git tag --list --sort=-version:refname "v.*" | head -n 4 | jq -R -s -c 'split("\n")[:-1]')
-              if [ -z "$sdk_versions" ]; then
-                echo "No tags found"
-                exit 1
-              fi
-              echo "sdk_versions=$sdk_versions"
-              echo "sdk_versions=$sdk_versions" >> $GITHUB_OUTPUT          
+      - name: Get Latest SDK versions
+        id: get_sdk_versions
+        run: |
+          sdk_versions=$(git tag --list --sort=-version:refname "v.*" | head -n 4 | jq -R -s -c 'split("\n")[:-1]')
+          if [ -z "$sdk_versions" ]; then
+            echo "No tags found"
+            exit 1
+          fi
+          echo "sdk_versions=$sdk_versions"
+          echo "sdk_versions=$sdk_versions" >> $GITHUB_OUTPUT          
   build:
     needs: ['path-filter', 'get_sdk_versions']
     if: ${{ needs.path-filter.outputs.labelbox == 'true' }}
