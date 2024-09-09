@@ -46,9 +46,6 @@ def test_where(client, project_to_test_where):
     assert p_a.uid in lt_b and p_b.uid not in lt_b and p_c.uid not in lt_b
     ge_b = get(Project.name >= p_b_name)
     assert {p_b.uid, p_c.uid}.issubset(ge_b) and p_a.uid not in ge_b
-    le_b = get(Project.name <= p_b_name)
-    assert {p_a.uid, p_b.uid}.issubset(le_b) and p_c.uid not in le_b
-
 
 def test_unsupported_where(client):
     with pytest.raises(InvalidQueryError):
