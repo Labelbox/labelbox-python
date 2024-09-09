@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import ClassVar, List, Union
 
-from pydantic import field_validator
+from pydantic import ConfigDict, field_validator
 
 from labelbox.utils import _CamelCaseMixin
 from labelbox.data.annotation_types.annotation import BaseAnnotation
@@ -10,6 +10,8 @@ from labelbox.data.annotation_types.annotation import BaseAnnotation
 class MessageInfo(_CamelCaseMixin):
     message_id: str
     model_config_name: str
+    
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class OrderedMessageInfo(MessageInfo):
@@ -19,6 +21,8 @@ class OrderedMessageInfo(MessageInfo):
 class _BaseMessageEvaluationTask(_CamelCaseMixin, ABC):
     format: ClassVar[str]
     parent_message_id: str
+    
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class MessageSingleSelectionTask(_BaseMessageEvaluationTask, MessageInfo):
