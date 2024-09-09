@@ -700,14 +700,14 @@ def _create_prompt_response_project(
     data_row_ids = []
     global_keys = []
     timeout = 0
-    while len(data_row_ids) < 1 and timeout < 3:
+    while len(data_row_ids) < 1 and timeout < 5:
         result = export_v2_test_helpers.run_project_export_v2_task(
             prompt_response_project)
 
         data_row_ids.extend([dr["data_row"]["id"] for dr in result])
         global_keys.extend([dr["data_row"]["global_key"] for dr in result])
 
-        time.sleep(1)
+        time.sleep(5)
         timeout += 1
 
     if len(data_row_ids) < 1:
