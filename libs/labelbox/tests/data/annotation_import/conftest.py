@@ -686,14 +686,21 @@ def _create_prompt_response_project(client: Client, rand_gen, media_type, normal
     prompt_response_project.connect_ontology(ontology)
     
     # We have to export to get data row ids
-    result = export_v2_test_helpers.run_project_export_v2_task(prompt_response_project)
-    
-    data_row_ids = [dr["data_row"]["id"] for dr in result]
-    global_keys = [dr["data_row"]["global_key"] for dr in result]
-    
+    data_row_ids = []
+    global_keys = []
+    timeout = 0
+    while len(data_row_ids) < 1 and timeout < 3:
+        result = export_v2_test_helpers.run_project_export_v2_task(prompt_response_project)
+
+        data_row_ids.extend([dr["data_row"]["id"] for dr in result])
+        global_keys.extend([dr["data_row"]["global_key"] for dr in result])
+
+        time.sleep(1)
+        timeout += 1
+
     prompt_response_project.data_row_ids = data_row_ids
     prompt_response_project.global_keys = global_keys
-    
+
     return prompt_response_project, ontology
 
 def _create_project(client: Client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type) -> Tuple[Project, Ontology, Dataset]:
