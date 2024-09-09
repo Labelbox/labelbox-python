@@ -170,6 +170,9 @@ class AnnotationImport(DbObject):
 
         data_str = parser.dumps(objects)
         if not data_str:
+
+            print("Objects:", objects)
+            print("Serialized objects:", data_str)
             raise ValueError(f"{object_name} cannot be empty")
 
         return data_str.encode(

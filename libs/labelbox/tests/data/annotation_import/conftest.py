@@ -710,6 +710,9 @@ def _create_prompt_response_project(
         time.sleep(1)
         timeout += 1
 
+    if len(data_row_ids) < 1:
+        raise Exception("Failed to get data row ids")
+
     prompt_response_project.data_row_ids = data_row_ids
     prompt_response_project.global_keys = global_keys
 
