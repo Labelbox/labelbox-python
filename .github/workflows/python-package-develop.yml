@@ -28,8 +28,31 @@ jobs:
           filters: |
             labelbox:
               - 'libs/labelbox/**'
+  get_sdk_versions:
+    runs-on: ubuntu-latest
+    outputs:
+      sdk_versions: ${{ steps.get_sdk_versions.outputs.sdk_versions }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+              
+      - name: Fetch tags
+        run: git fetch --tags
+    
+      - name: Get Latest SDK versions
+        id: get_sdk_versions
+        run: |
+          sdk_versions=$(git tag --list --sort=-version:refname "v.*" | head -n 4 | jq -R -s -c 'split("\n")[:-1]')
+          if [ -z "$sdk_versions" ]; then
+            echo "No tags found"
+            exit 1
+          fi
+          echo "sdk_versions=$sdk_versions"
+          echo "sdk_versions=$sdk_versions" >> $GITHUB_OUTPUT          
   build:
-    needs: ['path-filter']
+    needs: ['path-filter', 'get_sdk_versions']
     if: ${{ needs.path-filter.outputs.labelbox == 'true' }}
     strategy:
       fail-fast: false
@@ -38,15 +61,19 @@ jobs:
           - python-version: 3.8
             api-key: STAGING_LABELBOX_API_KEY_2
             da-test-key: DA_GCP_LABELBOX_API_KEY
+            sdk-version: ${{ fromJson(needs.get_sdk_versions.outputs.sdk_versions)[3] }}
           - python-version: 3.9
             api-key: STAGING_LABELBOX_API_KEY_3
             da-test-key: DA_GCP_LABELBOX_API_KEY
+            sdk-version: ${{ fromJson(needs.get_sdk_versions.outputs.sdk_versions)[2] }}
           - python-version: "3.10"
             api-key: STAGING_LABELBOX_API_KEY_4
             da-test-key: DA_GCP_LABELBOX_API_KEY
+            sdk-version: ${{ fromJson(needs.get_sdk_versions.outputs.sdk_versions)[1] }}
           - python-version: 3.11
             api-key: STAGING_LABELBOX_API_KEY
             da-test-key: DA_GCP_LABELBOX_API_KEY
+            sdk-version: ${{ fromJson(needs.get_sdk_versions.outputs.sdk_versions)[0] }}
           - python-version: 3.12
             api-key: STAGING_LABELBOX_API_KEY_5
             da-test-key: DA_GCP_LABELBOX_API_KEY
@@ -55,6 +82,7 @@ jobs:
       python-version: ${{ matrix.python-version }}
       api-key: ${{ matrix.api-key }}
       da-test-key: ${{ matrix.da-test-key }}
+      sdk-version: ${{ matrix.sdk-version }}
       fixture-profile: true
       test-env: 'staging'
     secrets: inherit

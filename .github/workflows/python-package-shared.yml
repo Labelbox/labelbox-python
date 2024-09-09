@@ -12,6 +12,9 @@ on:
       da-test-key:
         required: true
         type: string
+      sdk-version:
+        required: false
+        type: string
       test-env:
         required: true
         type: string
@@ -41,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ inputs.sdk-version || github.head_ref }}
       - uses: ./.github/actions/python-package-shared-setup
         with:
           rye-version: ${{ vars.RYE_VERSION }}
@@ -61,7 +64,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ inputs.sdk-version || github.head_ref }}
       - uses: ./.github/actions/python-package-shared-setup
         with:
           rye-version: ${{ vars.RYE_VERSION }}
