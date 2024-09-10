@@ -46,10 +46,6 @@ from labelbox.schema.project_overview import ProjectOverview, ProjectOverviewDet
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
 
-try:
-    from labelbox.data.serialization import LBV1Converter
-except ImportError:
-    pass
 
 DataRowPriority = int
 LabelingParameterOverrideInput = Tuple[Union[DataRow, DataRowIdentifier],
@@ -365,52 +361,6 @@ class Project(DbObject, Updateable, Deletable):
                 "Project '%s' queued data row export, waiting for server...",
                 self.uid)
             time.sleep(sleep_time)
-
-    def label_generator(self, timeout_seconds=600, **kwargs):
-        """
-        Download text and image annotations, or video annotations.
-
-        For a mixture of text/image and video, use project.export_labels()
-
-        Returns:
-            LabelGenerator for accessing labels
-        """
-        _check_converter_import()
-        json_data = self.export_labels(download=True,
-                                       timeout_seconds=timeout_seconds,
-                                       **kwargs)
-
-        # assert that the instance this would fail is only if timeout runs out
-        assert isinstance(
-            json_data,
-            List), "Unable to successfully get labels. Please try again"
-
-        if json_data is None:
-            raise TimeoutError(
-                f"Unable to download labels in {timeout_seconds} seconds."
-                "Please try again or contact support if the issue persists.")
-
-        is_video = [
-            "frames" in row["Label"]
-            for row in json_data
-            if row["Label"] and not row["Skipped"]
-        ]
-
-        if len(is_video) and not all(is_video) and any(is_video):
-            raise ValueError(
-                "Found mixed data types of video and text/image. "
-                "Use project.export_labels() to export projects with mixed data types. "
-            )
-        if len(is_video) and all(is_video):
-            # Filter skipped labels to avoid inference errors
-            json_data = [
-                label for label in self.export_labels(download=True)
-                if not label["Skipped"]
-            ]
-
-            return LBV1Converter.deserialize_video(json_data, self.client)
-
-        return LBV1Converter.deserialize(json_data)
 
     def export_labels(self,
                       download=False,
@@ -1995,10 +1945,3 @@ LabelerPerformance = namedtuple(
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
 
-
-def _check_converter_import():
-    if 'LBV1Converter' not in globals():
-        raise ImportError(
-            "Missing dependencies to import converter. "
-            "Use `pip install labelbox[data] --upgrade` to add missing dependencies. "
-            "or download raw json with project.export_labels()")
