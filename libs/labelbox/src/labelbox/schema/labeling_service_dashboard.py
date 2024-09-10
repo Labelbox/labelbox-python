@@ -28,7 +28,12 @@ GRAPHQL_QUERY_SELECTIONS = """
                 tasksRemainingCount
                 mediaType
                 editorTaskType
-                tags
+                tags {
+                    id
+                    text
+                    color
+                    type
+                }
             """
 
 
