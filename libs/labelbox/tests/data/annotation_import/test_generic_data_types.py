@@ -100,8 +100,8 @@ def test_generic_data_row_type_by_global_key(
         (MediaType.Conversational, MediaType.Conversational),
         (MediaType.Document, MediaType.Document),
         (MediaType.Dicom, MediaType.Dicom),
-        # (MediaType.LLMPromptResponseCreation, MediaType.LLMPromptResponseCreation),
-        # (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
+        (MediaType.LLMPromptResponseCreation, MediaType.LLMPromptResponseCreation),
+        (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
         (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation)
     ],
     indirect=["configured_project"]

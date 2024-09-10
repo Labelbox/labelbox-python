@@ -673,12 +673,30 @@ def _create_response_creation_project(client: Client, rand_gen, data_row_json_by
     
     return project, ontology, dataset
 
-def _create_prompt_response_project(client: Client, rand_gen, media_type, normalized_ontology_by_media_type, export_v2_test_helpers) -> Tuple[Project, Ontology]:
+
+@pytest.fixture
+def llm_prompt_response_creation_dataset_with_data_row(client: Client, rand_gen):
+    dataset = client.create_dataset(name=rand_gen(str))
+    global_key = str(uuid.uuid4())
+
+    convo_data = {
+        "row_data": "https://storage.googleapis.com/labelbox-datasets/conversational-sample-data/pairwise_shopping_2.json",
+        "global_key": global_key
+    }
+
+    task = dataset.create_data_rows([convo_data])
+    task.wait_till_done()
+    assert task.status == "COMPLETE"
+    yield dataset
+
+    dataset.delete()
+
+
+def _create_prompt_response_project(client: Client, rand_gen, media_type, normalized_ontology_by_media_type, export_v2_test_helpers, llm_prompt_response_creation_dataset_with_data_row) -> Tuple[Project, Ontology]:
     """For prompt response data row auto gen projects"""
-    
+    dataset = llm_prompt_response_creation_dataset_with_data_row
     prompt_response_project = client.create_prompt_response_generation_project(name=f"{media_type.value}-{rand_gen(str)}",
-                                                                               dataset_name=rand_gen(str),
-                                                                               data_row_count=1,
+                                                                               dataset_id=dataset.uid,
                                                                                media_type=media_type)
     
     ontology = client.create_ontology(name=f"{media_type}-{rand_gen(str)}", normalized=normalized_ontology_by_media_type[media_type], media_type=media_type)
@@ -730,14 +748,14 @@ def _create_project(client: Client, rand_gen, data_row_json_by_media_type, media
 
 
 @pytest.fixture
-def configured_project(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type, export_v2_test_helpers):
+def configured_project(client: Client, rand_gen, data_row_json_by_media_type, request: FixtureRequest, normalized_ontology_by_media_type, export_v2_test_helpers, llm_prompt_response_creation_dataset_with_data_row):
     """Configure project for test. Request.param will contain the media type if not present will use Image MediaType. The project will have 10 data rows."""
     
     media_type = getattr(request, "param", MediaType.Image)
     dataset = None
     
     if media_type == MediaType.LLMPromptCreation or media_type == MediaType.LLMPromptResponseCreation:
-        project, ontology = _create_prompt_response_project(client, rand_gen, media_type, normalized_ontology_by_media_type, export_v2_test_helpers)
+        project, ontology = _create_prompt_response_project(client, rand_gen, media_type, normalized_ontology_by_media_type, export_v2_test_helpers, llm_prompt_response_creation_dataset_with_data_row)
     elif media_type == OntologyKind.ResponseCreation:
         project, ontology, dataset = _create_response_creation_project(client, rand_gen, data_row_json_by_media_type, media_type, normalized_ontology_by_media_type)
     else:    
