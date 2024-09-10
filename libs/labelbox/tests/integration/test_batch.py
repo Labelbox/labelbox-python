@@ -201,27 +201,6 @@ def test_batch_creation_with_processing_timeout(
     project._wait_processing_max_seconds = stashed_wait_timeout
 
 
-@pytest.mark.export_v1("export_v1 test remove later")
-def test_export_data_rows(project: Project, dataset: Dataset, image_url: str,
-                          external_id: str):
-    n_data_rows = 2
-    task = dataset.create_data_rows([
-        {
-            "row_data": image_url,
-            "external_id": external_id
-        },
-    ] * n_data_rows)
-    task.wait_till_done()
-
-    data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
-    batch = project.create_batch("batch test", data_rows)
-    result = list(batch.export_data_rows())
-    exported_data_rows = [dr.uid for dr in result]
-
-    assert len(result) == n_data_rows
-    assert set(data_rows) == set(exported_data_rows)
-
-
 def test_list_all_batches(project: Project, client, image_url: str):
     """
     Test to verify that we can retrieve all available batches in the project.

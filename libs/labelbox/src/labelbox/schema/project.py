@@ -1793,7 +1793,3 @@ LabelerPerformance = namedtuple(
     "consensus average_benchmark_agreement last_activity_time")
 LabelerPerformance.__doc__ = (
     "Named tuple containing info about a labeler's performance.")
-<<<<<<< HEAD
-
-=======
->>>>>>> 804340e8 (* refactor: further cleanup)
