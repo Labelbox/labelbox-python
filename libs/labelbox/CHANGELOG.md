@@ -1,4 +1,8 @@
 # Changelog
+# Version 3.78.1 (2024-09-10)
+## Fixed
+* Labeling dashboard query for tags
+
 # Version 3.78.0 (2024-09-03)
 ## Added
 * Project get_labeling_service_dashboard() aka project detail (Miltiple PRs)
