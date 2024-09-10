@@ -13,6 +13,8 @@ class App(_CamelCaseMixin):
     class_to_schema_id: Dict[str, str]
     ontology_id: str
     created_by: Optional[str] = None
+    
+    model_config = ConfigDict(protected_namespaces=())
 
     @classmethod
     def type_name(cls):

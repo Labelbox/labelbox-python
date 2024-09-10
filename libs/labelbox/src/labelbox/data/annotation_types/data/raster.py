@@ -24,7 +24,8 @@ class RasterData(BaseModel, ABC):
     uid: Optional[str] = None
     global_key: Optional[str] = None
     arr: Optional[TypedArray[Literal['uint8']]] = None
-    model_config = ConfigDict(extra="forbid", copy_on_model_validation="none")
+    
+    model_config = ConfigDict(extra="forbid")
 
     @classmethod
     def from_2D_arr(cls, arr: Union[TypedArray[Literal['uint8']],
