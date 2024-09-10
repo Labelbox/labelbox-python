@@ -1,4 +1,12 @@
 # Changelog
+# Version 4.0.0 (2024-09-10)
+## Added
+* BREAKING CHANGE for pydantic V1 users: Converted SDK to use pydantic V2([#1738](https://github.com/Labelbox/labelbox-python/pull/1738))
+* Automation test support for multiple sdk versions([#1792](https://github.com/Labelbox/labelbox-python/pull/1792))
+## Fixed
+* Flaky tests([#1793](https://github.com/Labelbox/labelbox-python/pull/1793
+))
+
 # Version 3.78.0 (2024-09-03)
 ## Added
 * Project get_labeling_service_dashboard() aka project detail (Miltiple PRs)
