@@ -461,57 +461,6 @@ class ModelRun(DbObject):
                                   experimental=True)
         return res["modelRun"]["trainingMetadata"]
 
-    @experimental
-    def export_labels(
-        self,
-        download: bool = False,
-        timeout_seconds: int = 600
-    ) -> Optional[Union[str, List[Dict[Any, Any]]]]:
-        """
-        Experimental. To use, make sure client has enable_experimental=True.
-
-        Fetches Labels from the ModelRun
-
-        Args:
-            download (bool): Returns the url if False
-        Returns:
-            URL of the data file with this ModelRun's labels.
-            If download=True, this instead returns the contents as NDJSON format.
-            If the server didn't generate during the `timeout_seconds` period,
-            None is returned.
-        """
-        warnings.warn(
-            "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
-            DeprecationWarning)
-        sleep_time = 2
-        query_str = """mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
-                exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
-                    downloadUrl createdAt status
-                }
-            }
-            """
-
-        while True:
-            url = self.client.execute(
-                query_str, {'modelRunId': self.uid},
-                experimental=True)['exportModelRunAnnotations']['downloadUrl']
-
-            if url:
-                if not download:
-                    return url
-                else:
-                    response = requests.get(url)
-                    response.raise_for_status()
-                    return parser.loads(response.content)
-
-            timeout_seconds -= sleep_time
-            if timeout_seconds <= 0:
-                return None
-
-            logger.debug("ModelRun '%s' label export, waiting for server...",
-                         self.uid)
-            time.sleep(sleep_time)
-
     def export(self,
                task_name: Optional[str] = None,
                params: Optional[ModelRunExportParams] = None) -> ExportTask:
