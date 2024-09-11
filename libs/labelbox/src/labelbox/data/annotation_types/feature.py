@@ -1,6 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, model_validator, model_serializer
-from .types import Cuid
+
+from ...annotated_types import Cuid
 
 
 class FeatureSchema(BaseModel):

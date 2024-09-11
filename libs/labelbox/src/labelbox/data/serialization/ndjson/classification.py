@@ -1,11 +1,14 @@
 from typing import Any, Dict, List, Union, Optional
 
+from labelbox.data.annotation_types import ImageData, TextData, VideoData
 from labelbox.data.mixins import (
     ConfidenceMixin,
     CustomMetric,
     CustomMetricsMixin,
 )
 from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
+
+from ....annotated_types import Cuid
 
 from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.video import VideoClassificationAnnotation
@@ -19,8 +22,6 @@ from ...annotation_types.classification.classification import (
     Checklist,
     Radio,
 )
-from ...annotation_types.types import Cuid
-from ...annotation_types.data import TextData, VideoData, ImageData
 from pydantic import (
     model_validator,
     Field,

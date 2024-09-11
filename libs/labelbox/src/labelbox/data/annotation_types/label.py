@@ -8,6 +8,8 @@ from labelbox.data.annotation_types.data.generic_data_row_data import (
 )
 from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.schema import ontology
+
+from ...annotated_types import Cuid
 from .annotation import ClassificationAnnotation, ObjectAnnotation
 from .relationship import RelationshipAnnotation
 from .llm_prompt_response.prompt import PromptClassificationAnnotation
@@ -27,7 +29,6 @@ from .data import (
 )
 from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
-from .types import Cuid
 from .video import VideoClassificationAnnotation
 from .video import VideoObjectAnnotation, VideoMaskAnnotation
 from .mmc import MessageEvaluationTaskAnnotation

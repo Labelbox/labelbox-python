@@ -15,6 +15,7 @@ from labelbox.data.mixins import (
     CustomMetric,
     CustomMetricsNotSupportedMixin,
 )
+from ....annotated_types import Cuid
 import numpy as np
 
 from PIL import Image
@@ -28,7 +29,6 @@ from ...annotation_types.ner import (
     DocumentTextSelection,
     TextEntity,
 )
-from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import (
     DocumentRectangle,
     Rectangle,

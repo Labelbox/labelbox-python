@@ -54,10 +54,6 @@ class FakeDataset:
     def wait_till_done(self):
         pass
 
-    def export_data_rows(self):
-        for export in self.exports:
-            yield export
-
 
 def test_generator(list_of_labels):
     generator = LabelGenerator([list_of_labels[0]])
