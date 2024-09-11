@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Union, Optional
 
+from labelbox.data.annotation_types import ImageData, TextData, VideoData
 from labelbox.data.mixins import ConfidenceMixin, CustomMetric, CustomMetricsMixin
 from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 
