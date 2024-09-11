@@ -5,6 +5,7 @@ import base64
 from labelbox.data.annotation_types.ner.conversation_entity import ConversationEntity
 from labelbox.data.annotation_types.video import VideoObjectAnnotation, DICOMObjectAnnotation
 from labelbox.data.mixins import ConfidenceMixin, CustomMetricsMixin, CustomMetric, CustomMetricsNotSupportedMixin
+from ....annotated_types import Cuid
 import numpy as np
 
 from PIL import Image
@@ -14,7 +15,6 @@ from labelbox.data.annotation_types.data.video import VideoData
 
 from ...annotation_types.data import ImageData, TextData, MaskData
 from ...annotation_types.ner import DocumentEntity, DocumentTextSelection, TextEntity
-from ...annotation_types.types import Cuid
 from ...annotation_types.geometry import DocumentRectangle, Rectangle, Polygon, Line, Point, Mask
 from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
 from ...annotation_types.video import VideoMaskAnnotation, DICOMMaskAnnotation, MaskFrame, MaskInstance

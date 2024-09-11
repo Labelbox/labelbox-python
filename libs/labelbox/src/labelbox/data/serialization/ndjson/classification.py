@@ -3,12 +3,12 @@ from typing import Any, Dict, List, Union, Optional
 from labelbox.data.mixins import ConfidenceMixin, CustomMetric, CustomMetricsMixin
 from labelbox.data.serialization.ndjson.base import DataRow, NDAnnotation
 
+from ....annotated_types import Cuid
+
 from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.video import VideoClassificationAnnotation
 from ...annotation_types.llm_prompt_response.prompt import PromptClassificationAnnotation, PromptText
 from ...annotation_types.classification.classification import ClassificationAnswer, Text, Checklist, Radio
-from ...annotation_types.types import Cuid
-from ...annotation_types.data import TextData, VideoData, ImageData
 from pydantic import model_validator, Field, BaseModel, ConfigDict, model_serializer
 from pydantic.alias_generators import to_camel
 from .base import _SubclassRegistryBase

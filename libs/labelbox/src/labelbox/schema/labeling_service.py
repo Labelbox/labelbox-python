@@ -2,14 +2,14 @@ from datetime import datetime
 from typing import Any
 from typing_extensions import Annotated
 
-from labelbox.exceptions import ResourceNotFoundError
-
 from pydantic import BaseModel, Field
+
+from labelbox.exceptions import ResourceNotFoundError
 from labelbox.utils import _CamelCaseMixin
 from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
 
-Cuid = Annotated[str, Field(min_length=25, max_length=25)]
+from ..annotated_types import Cuid
 
 
 class LabelingService(_CamelCaseMixin):
