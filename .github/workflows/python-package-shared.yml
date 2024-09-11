@@ -18,7 +18,7 @@ on:
       test-env:
         required: true
         type: string
-      fixture-profile: 
+      fixture-profile:
         required: true
         type: boolean
 
@@ -36,6 +36,9 @@ jobs:
       - name: Linting
         working-directory: libs/labelbox
         run: rye run lint
+      - name: Format
+        working-directory: libs/labelbox
+        run: rye fmt --check
   integration:
     runs-on: ubuntu-latest
     concurrency:
