@@ -64,13 +64,15 @@ build-backend = "hatchling.build"
 [tool.rye]
 managed = true
 dev-dependencies = [
-    "yapf>=0.40.2",
     "mypy>=1.9.0",
     "types-pillow>=10.2.0.20240311",
     "types-python-dateutil>=2.9.0.20240316",
     "types-requests>=2.31.0.20240311",
     "types-tqdm>=4.66.0.20240106",
 ]
+
+[tool.ruff]
+line-length = 80
 
 [tool.rye.scripts]
 unit = "pytest tests/unit"
@@ -87,9 +89,8 @@ unit = "pytest tests/unit"
 # LABELBOX_TEST_BASE_URL="http://host.docker.internal:8080" \
 integration = { cmd = "pytest tests/integration" }
 data = { cmd = "pytest tests/data" }
-yapf-lint = "yapf tests src -i --verbose --recursive --parallel --style \"google\""
 mypy-lint = "mypy src --pretty --show-error-codes --non-interactive --install-types"
-lint = { chain = ["yapf-lint", "mypy-lint"] }
+lint = { chain = ["mypy-lint"] }
 test = { chain = ["lint", "unit", "integration"] }
 
 [tool.hatch.metadata]
