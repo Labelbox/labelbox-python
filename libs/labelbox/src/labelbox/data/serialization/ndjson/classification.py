@@ -19,11 +19,12 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
     name: Optional[str] = None
     schema_id: Optional[Cuid] = None
     classifications: Optional[List['NDSubclassificationType']] = None
-    model_config = ConfigDict(populate_by_name = True, alias_generator = to_camel)
+    model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
     @model_validator(mode="after")
     def must_set_one(self):
-        if (not hasattr(self, "schema_id") or self.schema_id is None) and (not hasattr(self, "name") or self.name is None):
+        if (not hasattr(self, "schema_id") or self.schema_id
+                is None) and (not hasattr(self, "name") or self.name is None):
             raise ValueError("Schema id or name are not set. Set either one.")
         return self
 
@@ -103,7 +104,10 @@ class NDChecklistSubclass(NDAnswer):
             NDAnswer(name=answer.name,
                      schema_id=answer.feature_schema_id,
                      confidence=answer.confidence,
-                     classifications=[NDSubclassification.from_common(annot) for annot in answer.classifications] if answer.classifications else None,
+                     classifications=[
+                         NDSubclassification.from_common(annot)
+                         for annot in answer.classifications
+                     ] if answer.classifications else None,
                      custom_metrics=answer.custom_metrics)
             for answer in checklist.answer
         ],
@@ -153,8 +157,8 @@ class NDPromptTextSubclass(NDAnswer):
 
     def to_common(self) -> PromptText:
         return PromptText(answer=self.answer,
-                    confidence=self.confidence,
-                    custom_metrics=self.custom_metrics)
+                          confidence=self.confidence,
+                          custom_metrics=self.custom_metrics)
 
     @classmethod
     def from_common(cls, prompt_text: PromptText, name: str,
@@ -195,7 +199,8 @@ class NDText(NDAnnotation, NDTextSubclass, _SubclassRegistryBase):
         )
 
 
-class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported, _SubclassRegistryBase):
+class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported,
+                  _SubclassRegistryBase):
 
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
@@ -238,7 +243,8 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported, _SubclassRe
                    confidence=confidence)
 
 
-class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported, _SubclassRegistryBase):
+class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported,
+              _SubclassRegistryBase):
 
     @classmethod
     def from_common(
@@ -267,35 +273,32 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported, _SubclassRegistryBa
                    frames=extra.get('frames'),
                    message_id=message_id,
                    confidence=confidence)
-        
+
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         res = handler(self)
         if "classifications" in res and res["classifications"] == []:
             del res["classifications"]
         return res
-        
-        
+
+
 class NDPromptText(NDAnnotation, NDPromptTextSubclass, _SubclassRegistryBase):
-    
+
     @classmethod
-    def from_common(
-        cls,
-        uuid: str,
-        text: PromptText,
-        name,
-        data: Dict,
-        feature_schema_id: Cuid,
-        confidence: Optional[float] = None
-    ) -> "NDPromptText":
-        return cls(
-            answer=text.answer,
-            data_row=DataRow(id=data.uid, global_key=data.global_key),
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=uuid,
-            confidence=text.confidence,
-            custom_metrics=text.custom_metrics)
+    def from_common(cls,
+                    uuid: str,
+                    text: PromptText,
+                    name,
+                    data: Dict,
+                    feature_schema_id: Cuid,
+                    confidence: Optional[float] = None) -> "NDPromptText":
+        return cls(answer=text.answer,
+                   data_row=DataRow(id=data.uid, global_key=data.global_key),
+                   name=name,
+                   schema_id=feature_schema_id,
+                   uuid=uuid,
+                   confidence=text.confidence,
+                   custom_metrics=text.custom_metrics)
 
 
 class NDSubclassification:
@@ -351,7 +354,8 @@ class NDClassification:
         for frame in annotation.frames:
             for idx in range(frame.start, frame.end + 1, 1):
                 results.append(
-                    VideoClassificationAnnotation(frame=idx, **common.model_dump(exclude_none=True)))
+                    VideoClassificationAnnotation(
+                        frame=idx, **common.model_dump(exclude_none=True)))
         return results
 
     @classmethod
@@ -383,6 +387,7 @@ class NDClassification:
             Radio: NDRadio
         }.get(type(annotation.value))
 
+
 class NDPromptClassification:
 
     @staticmethod
@@ -405,8 +410,7 @@ class NDPromptClassification:
         data: Union[VideoData, TextData, ImageData]
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
         return NDPromptText.from_common(str(annotation._uuid), annotation.value,
-                                        annotation.name,
-                                        data,
+                                        annotation.name, data,
                                         annotation.feature_schema_id,
                                         annotation.confidence)
 
