@@ -5,7 +5,16 @@ import time
 import warnings
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Iterable, Union, Tuple, List, Optional, Any
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Iterable,
+    Union,
+    Tuple,
+    List,
+    Optional,
+    Any,
+)
 
 import requests
 
@@ -14,12 +23,17 @@ from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.orm.query import results_query_part
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
+from labelbox.schema.conflict_resolution_strategy import (
+    ConflictResolutionStrategy,
+)
 from labelbox.schema.export_params import ModelRunExportParams
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds
-from labelbox.schema.send_to_annotate_params import SendToAnnotateFromModelParams, build_destination_task_queue_input, \
-    build_predictions_input
+from labelbox.schema.send_to_annotate_params import (
+    SendToAnnotateFromModelParams,
+    build_destination_task_queue_input,
+    build_predictions_input,
+)
 from labelbox.schema.task import Task
 
 if TYPE_CHECKING:
@@ -53,10 +67,12 @@ class ModelRun(DbObject):
         COMPLETE = "COMPLETE"
         FAILED = "FAILED"
 
-    def upsert_labels(self,
-                      label_ids: Optional[List[str]] = None,
-                      project_id: Optional[str] = None,
-                      timeout_seconds=3600):
+    def upsert_labels(
+        self,
+        label_ids: Optional[List[str]] = None,
+        project_id: Optional[str] = None,
+        timeout_seconds=3600,
+    ):
         """
         Adds data rows and labels to a Model Run
 
@@ -75,7 +91,8 @@ class ModelRun(DbObject):
 
         if not use_label_ids and not use_project_id:
             raise ValueError(
-                "Must provide at least one label id or a project id")
+                "Must provide at least one label id or a project id"
+            )
 
         if use_label_ids and use_project_id:
             raise ValueError("Must only one of label ids, project id")
@@ -83,60 +100,64 @@ class ModelRun(DbObject):
         if use_label_ids:
             return self._upsert_labels_by_label_ids(label_ids, timeout_seconds)
         else:  # use_project_id
-            return self._upsert_labels_by_project_id(project_id,
-                                                     timeout_seconds)
+            return self._upsert_labels_by_project_id(
+                project_id, timeout_seconds
+            )
 
-    def _upsert_labels_by_label_ids(self, label_ids: List[str],
-                                    timeout_seconds: int):
-        mutation_name = 'createMEAModelRunLabelRegistrationTask'
+    def _upsert_labels_by_label_ids(
+        self, label_ids: List[str], timeout_seconds: int
+    ):
+        mutation_name = "createMEAModelRunLabelRegistrationTask"
         create_task_query_str = """mutation createMEAModelRunLabelRegistrationTaskPyApi($modelRunId: ID!, $labelIds : [ID!]!) {
         %s(where : { id : $modelRunId}, data : {labelIds: $labelIds})}
         """ % (mutation_name)
 
-        res = self.client.execute(create_task_query_str, {
-            'modelRunId': self.uid,
-            'labelIds': label_ids
-        })
+        res = self.client.execute(
+            create_task_query_str,
+            {"modelRunId": self.uid, "labelIds": label_ids},
+        )
         task_id = res[mutation_name]
 
         status_query_str = """query MEALabelRegistrationTaskStatusPyApi($where: WhereUniqueIdInput!){
             MEALabelRegistrationTaskStatus(where: $where) {status errorMessage}
         }
         """
-        return self._wait_until_done(lambda: self.client.execute(
-            status_query_str, {'where': {
-                'id': task_id
-            }})['MEALabelRegistrationTaskStatus'],
-                                     timeout_seconds=timeout_seconds)
+        return self._wait_until_done(
+            lambda: self.client.execute(
+                status_query_str, {"where": {"id": task_id}}
+            )["MEALabelRegistrationTaskStatus"],
+            timeout_seconds=timeout_seconds,
+        )
 
-    def _upsert_labels_by_project_id(self, project_id: str,
-                                     timeout_seconds: int):
-        mutation_name = 'createMEAModelRunProjectLabelRegistrationTask'
+    def _upsert_labels_by_project_id(
+        self, project_id: str, timeout_seconds: int
+    ):
+        mutation_name = "createMEAModelRunProjectLabelRegistrationTask"
         create_task_query_str = """mutation createMEAModelRunProjectLabelRegistrationTaskPyApi($modelRunId: ID!, $projectId : ID!) {
         %s(where : { modelRunId : $modelRunId, projectId: $projectId})}
         """ % (mutation_name)
 
-        res = self.client.execute(create_task_query_str, {
-            'modelRunId': self.uid,
-            'projectId': project_id
-        })
+        res = self.client.execute(
+            create_task_query_str,
+            {"modelRunId": self.uid, "projectId": project_id},
+        )
         task_id = res[mutation_name]
 
         status_query_str = """query MEALabelRegistrationTaskStatusPyApi($where: WhereUniqueIdInput!){
             MEALabelRegistrationTaskStatus(where: $where) {status errorMessage}
         }
         """
-        return self._wait_until_done(lambda: self.client.execute(
-            status_query_str, {'where': {
-                'id': task_id
-            }})['MEALabelRegistrationTaskStatus'],
-                                     timeout_seconds=timeout_seconds)
+        return self._wait_until_done(
+            lambda: self.client.execute(
+                status_query_str, {"where": {"id": task_id}}
+            )["MEALabelRegistrationTaskStatus"],
+            timeout_seconds=timeout_seconds,
+        )
 
-    def upsert_data_rows(self,
-                         data_row_ids=None,
-                         global_keys=None,
-                         timeout_seconds=3600):
-        """ Adds data rows to a Model Run without any associated labels
+    def upsert_data_rows(
+        self, data_row_ids=None, global_keys=None, timeout_seconds=3600
+    ):
+        """Adds data rows to a Model Run without any associated labels
         Args:
             data_row_ids (list): data row ids to add to model run
             global_keys (list): global keys for data rows to add to model run
@@ -145,37 +166,40 @@ class ModelRun(DbObject):
             ID of newly generated async task
         """
 
-        mutation_name = 'createMEAModelRunDataRowRegistrationTask'
+        mutation_name = "createMEAModelRunDataRowRegistrationTask"
         create_task_query_str = """mutation createMEAModelRunDataRowRegistrationTaskPyApi($modelRunId: ID!, $dataRowIds: [ID!], $globalKeys: [ID!]) {
           %s(where : { id : $modelRunId}, data : {dataRowIds: $dataRowIds, globalKeys: $globalKeys})}
           """ % (mutation_name)
 
         res = self.client.execute(
-            create_task_query_str, {
-                'modelRunId': self.uid,
-                'dataRowIds': data_row_ids,
-                'globalKeys': global_keys
-            })
+            create_task_query_str,
+            {
+                "modelRunId": self.uid,
+                "dataRowIds": data_row_ids,
+                "globalKeys": global_keys,
+            },
+        )
         task_id = res[mutation_name]
 
         status_query_str = """query MEADataRowRegistrationTaskStatusPyApi($where: WhereUniqueIdInput!){
             MEADataRowRegistrationTaskStatus(where: $where) {status errorMessage}
         }
         """
-        return self._wait_until_done(lambda: self.client.execute(
-            status_query_str, {'where': {
-                'id': task_id
-            }})['MEADataRowRegistrationTaskStatus'],
-                                     timeout_seconds=timeout_seconds)
+        return self._wait_until_done(
+            lambda: self.client.execute(
+                status_query_str, {"where": {"id": task_id}}
+            )["MEADataRowRegistrationTaskStatus"],
+            timeout_seconds=timeout_seconds,
+        )
 
     def _wait_until_done(self, status_fn, timeout_seconds=120, sleep_time=5):
         # Do not use this function outside of the scope of upsert_data_rows or upsert_labels. It could change.
         original_timeout = timeout_seconds
         while True:
             res = status_fn()
-            if res['status'] == 'COMPLETE':
+            if res["status"] == "COMPLETE":
                 return True
-            elif res['status'] == 'FAILED':
+            elif res["status"] == "FAILED":
                 raise Exception(f"Job failed.")
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
@@ -190,7 +214,7 @@ class ModelRun(DbObject):
         predictions: Union[str, Path, Iterable[Dict]],
         project_id: str,
         priority: Optional[int] = 5,
-    ) -> 'MEAPredictionImport':  # type: ignore
+    ) -> "MEAPredictionImport":  # type: ignore
         """
         Provides a convenient way to execute the following steps in a single function call:
             1. Upload predictions to a Model
@@ -230,11 +254,14 @@ class ModelRun(DbObject):
         import_job = self.add_predictions(name, predictions)
         prediction_statuses = import_job.statuses
         mea_to_mal_data_rows = list(
-            set([
-                row['dataRow']['id']
-                for row in prediction_statuses
-                if row['status'] == 'SUCCESS'
-            ]))
+            set(
+                [
+                    row["dataRow"]["id"]
+                    for row in prediction_statuses
+                    if row["status"] == "SUCCESS"
+                ]
+            )
+        )
 
         if not mea_to_mal_data_rows:
             # 0 successful model predictions imported
@@ -254,10 +281,13 @@ class ModelRun(DbObject):
             return import_job, None, None
 
         try:
-            mal_prediction_import = Entity.MEAToMALPredictionImport.create_for_model_run_data_rows(
-                data_row_ids=mea_to_mal_data_rows,
-                project_id=project_id,
-                **kwargs)
+            mal_prediction_import = (
+                Entity.MEAToMALPredictionImport.create_for_model_run_data_rows(
+                    data_row_ids=mea_to_mal_data_rows,
+                    project_id=project_id,
+                    **kwargs,
+                )
+            )
             mal_prediction_import.wait_until_done()
         except Exception as e:
             logger.warning(
@@ -272,7 +302,7 @@ class ModelRun(DbObject):
         self,
         name: str,
         predictions: Union[str, Path, Iterable[Dict], Iterable["Label"]],
-    ) -> 'MEAPredictionImport':  # type: ignore
+    ) -> "MEAPredictionImport":  # type: ignore
         """
         Uploads predictions to a new Editor project.
 
@@ -289,17 +319,21 @@ class ModelRun(DbObject):
         kwargs = dict(client=self.client, id=self.uid, name=name)
         if isinstance(predictions, str) or isinstance(predictions, Path):
             if os.path.exists(predictions):
-                return Entity.MEAPredictionImport.create(path=str(predictions),
-                                                         **kwargs)
+                return Entity.MEAPredictionImport.create(
+                    path=str(predictions), **kwargs
+                )
             else:
-                return Entity.MEAPredictionImport.create(url=str(predictions),
-                                                         **kwargs)
+                return Entity.MEAPredictionImport.create(
+                    url=str(predictions), **kwargs
+                )
         elif isinstance(predictions, Iterable):
-            return Entity.MEAPredictionImport.create(labels=predictions,
-                                                     **kwargs)
+            return Entity.MEAPredictionImport.create(
+                labels=predictions, **kwargs
+            )
         else:
             raise ValueError(
-                f'Invalid predictions given of type: {type(predictions)}')
+                f"Invalid predictions given of type: {type(predictions)}"
+            )
 
     def model_run_data_rows(self):
         query_str = """query modelRunPyApi($modelRunId: ID!, $from : String, $first: Int){
@@ -308,13 +342,16 @@ class ModelRun(DbObject):
             }
         """ % (results_query_part(ModelRunDataRow))
         return PaginatedCollection(
-            self.client, query_str, {'modelRunId': self.uid},
-            ['annotationGroups', 'nodes'],
+            self.client,
+            query_str,
+            {"modelRunId": self.uid},
+            ["annotationGroups", "nodes"],
             lambda client, res: ModelRunDataRow(client, self.model_id, res),
-            ['annotationGroups', 'pageInfo', 'endCursor'])
+            ["annotationGroups", "pageInfo", "endCursor"],
+        )
 
     def delete(self):
-        """ Deletes specified Model Run.
+        """Deletes specified Model Run.
 
         Returns:
             Query execution success.
@@ -325,7 +362,7 @@ class ModelRun(DbObject):
         self.client.execute(query_str, {ids_param: str(self.uid)})
 
     def delete_model_run_data_rows(self, data_row_ids: List[str]):
-        """ Deletes data rows from Model Runs.
+        """Deletes data rows from Model Runs.
 
         Args:
             data_row_ids (list): List of data row ids to delete from the Model Run.
@@ -336,136 +373,150 @@ class ModelRun(DbObject):
         data_row_ids_param = "dataRowIds"
         query_str = """mutation DeleteModelRunDataRowsPyApi($%s: ID!, $%s: [ID!]!) {
             deleteModelRunDataRows(where: {modelRunId: $%s, dataRowIds: $%s})}""" % (
-            model_run_id_param, data_row_ids_param, model_run_id_param,
-            data_row_ids_param)
-        self.client.execute(query_str, {
-            model_run_id_param: self.uid,
-            data_row_ids_param: data_row_ids
-        })
+            model_run_id_param,
+            data_row_ids_param,
+            model_run_id_param,
+            data_row_ids_param,
+        )
+        self.client.execute(
+            query_str,
+            {model_run_id_param: self.uid, data_row_ids_param: data_row_ids},
+        )
 
     @experimental
-    def assign_data_rows_to_split(self,
-                                  data_row_ids: List[str] = None,
-                                  split: Union[DataSplit, str] = None,
-                                  global_keys: List[str] = None,
-                                  timeout_seconds=120):
-
+    def assign_data_rows_to_split(
+        self,
+        data_row_ids: List[str] = None,
+        split: Union[DataSplit, str] = None,
+        global_keys: List[str] = None,
+        timeout_seconds=120,
+    ):
         split_value = split.value if isinstance(split, DataSplit) else split
         valid_splits = DataSplit._member_names_
 
         if split_value is None or split_value not in valid_splits:
             raise ValueError(
-                f"`split` must be one of : `{valid_splits}`. Found : `{split}`")
+                f"`split` must be one of : `{valid_splits}`. Found : `{split}`"
+            )
 
         task_id = self.client.execute(
             """mutation assignDataSplitPyApi($modelRunId: ID!, $data: CreateAssignDataRowsToDataSplitTaskInput!){
                   createAssignDataRowsToDataSplitTask(modelRun : {id: $modelRunId}, data: $data)}
-            """, {
-                'modelRunId': self.uid,
-                'data': {
-                    'assignments': [{
-                        'split': split_value,
-                        'dataRowIds': data_row_ids,
-                        'globalKeys': global_keys,
-                    }]
-                }
+            """,
+            {
+                "modelRunId": self.uid,
+                "data": {
+                    "assignments": [
+                        {
+                            "split": split_value,
+                            "dataRowIds": data_row_ids,
+                            "globalKeys": global_keys,
+                        }
+                    ]
+                },
             },
-            experimental=True)['createAssignDataRowsToDataSplitTask']
+            experimental=True,
+        )["createAssignDataRowsToDataSplitTask"]
 
         status_query_str = """query assignDataRowsToDataSplitTaskStatusPyApi($id: ID!){
             assignDataRowsToDataSplitTaskStatus(where: {id : $id}){status errorMessage}}
             """
 
-        return self._wait_until_done(lambda: self.client.execute(
-            status_query_str, {'id': task_id}, experimental=True)[
-                'assignDataRowsToDataSplitTaskStatus'],
-                                     timeout_seconds=timeout_seconds)
+        return self._wait_until_done(
+            lambda: self.client.execute(
+                status_query_str, {"id": task_id}, experimental=True
+            )["assignDataRowsToDataSplitTaskStatus"],
+            timeout_seconds=timeout_seconds,
+        )
 
     @experimental
-    def update_status(self,
-                      status: Union[str, "ModelRun.Status"],
-                      metadata: Optional[Dict[str, str]] = None,
-                      error_message: Optional[str] = None):
-
-        status_value = status.value if isinstance(status,
-                                                  ModelRun.Status) else status
+    def update_status(
+        self,
+        status: Union[str, "ModelRun.Status"],
+        metadata: Optional[Dict[str, str]] = None,
+        error_message: Optional[str] = None,
+    ):
+        status_value = (
+            status.value if isinstance(status, ModelRun.Status) else status
+        )
         if status_value not in ModelRun.Status._member_names_:
             raise ValueError(
                 f"Status must be one of : `{ModelRun.Status._member_names_}`. Found : `{status_value}`"
             )
 
-        data: Dict[str, Any] = {'status': status_value}
+        data: Dict[str, Any] = {"status": status_value}
         if error_message:
-            data['errorMessage'] = error_message
+            data["errorMessage"] = error_message
 
         if metadata:
-            data['metadata'] = metadata
+            data["metadata"] = metadata
 
         self.client.execute(
             """mutation setPipelineStatusPyApi($modelRunId: ID!, $data: UpdateTrainingPipelineInput!){
                 updateTrainingPipeline(modelRun: {id : $modelRunId}, data: $data){status}
             }
-        """, {
-                'modelRunId': self.uid,
-                'data': data
-            },
-            experimental=True)
+        """,
+            {"modelRunId": self.uid, "data": data},
+            experimental=True,
+        )
 
     @experimental
     def update_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """
-         Updates the Model Run's training metadata config
-         Args:
-             config (dict): A dictionary of keys and values
-         Returns:
-             Model Run id and updated training metadata
-         """
-        data: Dict[str, Any] = {'config': config}
+        Updates the Model Run's training metadata config
+        Args:
+            config (dict): A dictionary of keys and values
+        Returns:
+            Model Run id and updated training metadata
+        """
+        data: Dict[str, Any] = {"config": config}
         res = self.client.execute(
             """mutation updateModelRunConfigPyApi($modelRunId: ID!, $data: UpdateModelRunConfigInput!){
                 updateModelRunConfig(modelRun: {id : $modelRunId}, data: $data){trainingMetadata}
             }
-        """, {
-                'modelRunId': self.uid,
-                'data': data
-            },
-            experimental=True)
+        """,
+            {"modelRunId": self.uid, "data": data},
+            experimental=True,
+        )
         return res["updateModelRunConfig"]
 
     @experimental
     def reset_config(self) -> Dict[str, Any]:
         """
-         Resets Model Run's training metadata config
-         Returns:
-             Model Run id and reset training metadata
-         """
+        Resets Model Run's training metadata config
+        Returns:
+            Model Run id and reset training metadata
+        """
         res = self.client.execute(
             """mutation resetModelRunConfigPyApi($modelRunId: ID!){
                 resetModelRunConfig(modelRun: {id : $modelRunId}){trainingMetadata}
             }
-        """, {'modelRunId': self.uid},
-            experimental=True)
+        """,
+            {"modelRunId": self.uid},
+            experimental=True,
+        )
         return res["resetModelRunConfig"]
 
     @experimental
     def get_config(self) -> Dict[str, Any]:
         """
-         Gets Model Run's training metadata
-         Returns:
-             training metadata as a dictionary
-         """
-        res = self.client.execute("""query ModelRunPyApi($modelRunId: ID!){
+        Gets Model Run's training metadata
+        Returns:
+            training metadata as a dictionary
+        """
+        res = self.client.execute(
+            """query ModelRunPyApi($modelRunId: ID!){
                 modelRun(where: {id : $modelRunId}){trainingMetadata}
             }
-        """, {'modelRunId': self.uid},
-                                  experimental=True)
+        """,
+            {"modelRunId": self.uid},
+            experimental=True,
+        )
         return res["modelRun"]["trainingMetadata"]
 
     @experimental
     def export_labels(
-        self,
-        download: bool = False,
-        timeout_seconds: int = 600
+        self, download: bool = False, timeout_seconds: int = 600
     ) -> Optional[Union[str, List[Dict[Any, Any]]]]:
         """
         Experimental. To use, make sure client has enable_experimental=True.
@@ -482,7 +533,8 @@ class ModelRun(DbObject):
         """
         warnings.warn(
             "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
-            DeprecationWarning)
+            DeprecationWarning,
+        )
         sleep_time = 2
         query_str = """mutation exportModelRunAnnotationsPyApi($modelRunId: ID!) {
                 exportModelRunAnnotations(data: {modelRunId: $modelRunId}) {
@@ -493,8 +545,8 @@ class ModelRun(DbObject):
 
         while True:
             url = self.client.execute(
-                query_str, {'modelRunId': self.uid},
-                experimental=True)['exportModelRunAnnotations']['downloadUrl']
+                query_str, {"modelRunId": self.uid}, experimental=True
+            )["exportModelRunAnnotations"]["downloadUrl"]
 
             if url:
                 if not download:
@@ -508,13 +560,16 @@ class ModelRun(DbObject):
             if timeout_seconds <= 0:
                 return None
 
-            logger.debug("ModelRun '%s' label export, waiting for server...",
-                         self.uid)
+            logger.debug(
+                "ModelRun '%s' label export, waiting for server...", self.uid
+            )
             time.sleep(sleep_time)
 
-    def export(self,
-               task_name: Optional[str] = None,
-               params: Optional[ModelRunExportParams] = None) -> ExportTask:
+    def export(
+        self,
+        task_name: Optional[str] = None,
+        params: Optional[ModelRunExportParams] = None,
+    ) -> ExportTask:
         """
         Creates a model run export task with the given params and returns the task.
 
@@ -536,7 +591,7 @@ class ModelRun(DbObject):
 
         """
         task, is_streamable = self._export(task_name, params)
-        if (is_streamable):
+        if is_streamable:
             return ExportTask(task, True)
         return task
 
@@ -550,48 +605,50 @@ class ModelRun(DbObject):
         create_task_query_str = (
             f"mutation {mutation_name}PyApi"
             f"($input: ExportDataRowsInModelRunInput!)"
-            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}")
+            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}"
+        )
 
         _params = params or ModelRunExportParams()
 
         query_params = {
             "input": {
                 "taskName": task_name,
-                "filters": {
-                    "modelRunId": self.uid
-                },
+                "filters": {"modelRunId": self.uid},
                 "isStreamableReady": True,
                 "params": {
-                    "mediaTypeOverride":
-                        _params.get('media_type_override', None),
-                    "includeAttachments":
-                        _params.get('attachments', False),
-                    "includeEmbeddings":
-                        _params.get('embeddings', False),
-                    "includeMetadata":
-                        _params.get('metadata_fields', False),
-                    "includeDataRowDetails":
-                        _params.get('data_row_details', False),
-                    "includePredictions":
-                        _params.get('predictions', False),
-                    "includeModelRunDetails":
-                        _params.get('model_run_details', False),
+                    "mediaTypeOverride": _params.get(
+                        "media_type_override", None
+                    ),
+                    "includeAttachments": _params.get("attachments", False),
+                    "includeEmbeddings": _params.get("embeddings", False),
+                    "includeMetadata": _params.get("metadata_fields", False),
+                    "includeDataRowDetails": _params.get(
+                        "data_row_details", False
+                    ),
+                    "includePredictions": _params.get("predictions", False),
+                    "includeModelRunDetails": _params.get(
+                        "model_run_details", False
+                    ),
                 },
-                "streamable": streamable
+                "streamable": streamable,
             }
         }
-        res = self.client.execute(create_task_query_str,
-                                  query_params,
-                                  error_log_key="errors")
+        res = self.client.execute(
+            create_task_query_str, query_params, error_log_key="errors"
+        )
         res = res[mutation_name]
         task_id = res["taskId"]
         is_streamable = res["isStreamable"]
         return Task.get_task(self.client, task_id), is_streamable
 
     def send_to_annotate_from_model(
-            self, destination_project_id: str, task_queue_id: Optional[str],
-            batch_name: str, data_rows: Union[DataRowIds, GlobalKeys],
-            params: SendToAnnotateFromModelParams) -> Task:
+        self,
+        destination_project_id: str,
+        task_queue_id: Optional[str],
+        batch_name: str,
+        data_rows: Union[DataRowIds, GlobalKeys],
+        params: SendToAnnotateFromModelParams,
+    ) -> Task:
         """
         Sends data rows from a model run to a project for annotation.
 
@@ -625,46 +682,46 @@ class ModelRun(DbObject):
         """
 
         destination_task_queue = build_destination_task_queue_input(
-            task_queue_id)
+            task_queue_id
+        )
         data_rows_query = self.client.build_catalog_query(data_rows)
 
         predictions_ontology_mapping = params.get(
-            "predictions_ontology_mapping", None)
+            "predictions_ontology_mapping", None
+        )
         predictions_input = build_predictions_input(
-            predictions_ontology_mapping, self.uid)
+            predictions_ontology_mapping, self.uid
+        )
 
         batch_priority = params.get("batch_priority", 5)
         exclude_data_rows_in_project = params.get(
-            "exclude_data_rows_in_project", False)
+            "exclude_data_rows_in_project", False
+        )
         override_existing_annotations_rule = params.get(
             "override_existing_annotations_rule",
-            ConflictResolutionStrategy.KeepExisting)
+            ConflictResolutionStrategy.KeepExisting,
+        )
         res = self.client.execute(
-            mutation_str, {
+            mutation_str,
+            {
                 "input": {
-                    "destinationProjectId":
-                        destination_project_id,
+                    "destinationProjectId": destination_project_id,
                     "batchInput": {
                         "batchName": batch_name,
-                        "batchPriority": batch_priority
+                        "batchPriority": batch_priority,
                     },
-                    "destinationTaskQueue":
-                        destination_task_queue,
-                    "excludeDataRowsInProject":
-                        exclude_data_rows_in_project,
-                    "annotationsInput":
-                        None,
-                    "predictionsInput":
-                        predictions_input,
-                    "conflictLabelsResolutionStrategy":
-                        override_existing_annotations_rule,
+                    "destinationTaskQueue": destination_task_queue,
+                    "excludeDataRowsInProject": exclude_data_rows_in_project,
+                    "annotationsInput": None,
+                    "predictionsInput": predictions_input,
+                    "conflictLabelsResolutionStrategy": override_existing_annotations_rule,
                     "searchQuery": [data_rows_query],
-                    "sourceModelRunId":
-                        self.uid
+                    "sourceModelRunId": self.uid,
                 }
-            })['sendToAnnotateFromMea']
+            },
+        )["sendToAnnotateFromMea"]
 
-        return Entity.Task.get_task(self.client, res['taskId'])
+        return Entity.Task.get_task(self.client, res["taskId"])
 
 
 class ModelRunDataRow(DbObject):

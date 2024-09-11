@@ -47,6 +47,6 @@ def id_to_rgb(id: int) -> Tuple[int, int, int]:
 
 def rgb_to_id(red: int, green: int, blue: int) -> int:
     id = blue * 256 * 256
-    id += (green * 256)
+    id += green * 256
     id += red
     return id

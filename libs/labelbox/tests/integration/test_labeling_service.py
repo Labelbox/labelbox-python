@@ -15,8 +15,12 @@ def test_start_labeling_service(project):
 
 
 def test_request_labeling_service_moe_offline_project(
-        rand_gen, offline_chat_evaluation_project, chat_evaluation_ontology,
-        offline_conversational_data_row, model_config):
+    rand_gen,
+    offline_chat_evaluation_project,
+    chat_evaluation_ontology,
+    offline_conversational_data_row,
+    model_config,
+):
     project = offline_chat_evaluation_project
     project.connect_ontology(chat_evaluation_ontology)
 
@@ -25,43 +29,48 @@ def test_request_labeling_service_moe_offline_project(
         [offline_conversational_data_row.uid],  # sample of data row objects
     )
 
-    project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
+    project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
 
     labeling_service = project.get_labeling_service()
     labeling_service.request()
-    assert project.get_labeling_service_status(
-    ) == LabelingServiceStatus.Requested
+    assert (
+        project.get_labeling_service_status() == LabelingServiceStatus.Requested
+    )
 
 
 def test_request_labeling_service_moe_project(
-        rand_gen, live_chat_evaluation_project_with_new_dataset,
-        chat_evaluation_ontology, model_config):
+    rand_gen,
+    live_chat_evaluation_project_with_new_dataset,
+    chat_evaluation_ontology,
+    model_config,
+):
     project = live_chat_evaluation_project_with_new_dataset
     project.connect_ontology(chat_evaluation_ontology)
 
-    project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
+    project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
 
     labeling_service = project.get_labeling_service()
     with pytest.raises(
-            LabelboxError,
-            match=
-            '[{"errorType":"PROJECT_MODEL_CONFIG","errorMessage":"Project model config is not completed"}]'
+        LabelboxError,
+        match='[{"errorType":"PROJECT_MODEL_CONFIG","errorMessage":"Project model config is not completed"}]',
     ):
         labeling_service.request()
     project.add_model_config(model_config.uid)
     project.set_project_model_setup_complete()
 
     labeling_service.request()
-    assert project.get_labeling_service_status(
-    ) == LabelingServiceStatus.Requested
+    assert (
+        project.get_labeling_service_status() == LabelingServiceStatus.Requested
+    )
 
 
 def test_request_labeling_service_incomplete_requirements(ontology, project):
-    labeling_service = project.get_labeling_service(
+    labeling_service = (
+        project.get_labeling_service()
     )  # project fixture is an Image type project
-    with pytest.raises(ResourceNotFoundError,
-                       match="Associated ontology id could not be found"
-                      ):  # No labeling service by default
+    with pytest.raises(
+        ResourceNotFoundError, match="Associated ontology id could not be found"
+    ):  # No labeling service by default
         labeling_service.request()
     project.connect_ontology(ontology)
     with pytest.raises(LabelboxError):

@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from labelbox import Client
     from labelbox.orm.db_object import DbObject
@@ -11,7 +12,7 @@ _PAGE_SIZE = 100
 
 
 class PaginatedCollection:
-    """ An iterable collection of database objects (Projects, Labels, etc...).
+    """An iterable collection of database objects (Projects, Labels, etc...).
 
     Implements automatic (transparent to the user) paginated fetching during
     iteration. Intended for use by library internals and not by the end user.
@@ -19,15 +20,17 @@ class PaginatedCollection:
     __init__ map exactly to object attributes.
     """
 
-    def __init__(self,
-                 client: "Client",
-                 query: str,
-                 params: Dict[str, Union[str, int]],
-                 dereferencing: Union[List[str], Dict[str, Any]],
-                 obj_class: Union[Type["DbObject"], Callable[[Any, Any], Any]],
-                 cursor_path: Optional[List[str]] = None,
-                 experimental: bool = False):
-        """ Creates a PaginatedCollection.
+    def __init__(
+        self,
+        client: "Client",
+        query: str,
+        params: Dict[str, Union[str, int]],
+        dereferencing: Union[List[str], Dict[str, Any]],
+        obj_class: Union[Type["DbObject"], Callable[[Any, Any], Any]],
+        cursor_path: Optional[List[str]] = None,
+        experimental: bool = False,
+    ):
+        """Creates a PaginatedCollection.
 
         Args:
             client (labelbox.Client): the client used for fetching data from DB.
@@ -48,18 +51,19 @@ class PaginatedCollection:
         self._data_ind = 0
 
         pagination_kwargs = {
-            'client': client,
-            'obj_class': obj_class,
-            'dereferencing': dereferencing,
-            'experimental': experimental,
-            'query': query,
-            'params': params
+            "client": client,
+            "obj_class": obj_class,
+            "dereferencing": dereferencing,
+            "experimental": experimental,
+            "query": query,
+            "params": params,
         }
 
-        self.paginator = _CursorPagination(
-            cursor_path, **
-            pagination_kwargs) if cursor_path else _OffsetPagination(
-                **pagination_kwargs)
+        self.paginator = (
+            _CursorPagination(cursor_path, **pagination_kwargs)
+            if cursor_path
+            else _OffsetPagination(**pagination_kwargs)
+        )
 
     def __iter__(self):
         self._data_ind = 0
@@ -107,10 +111,15 @@ class PaginatedCollection:
 
 
 class _Pagination(ABC):
-
-    def __init__(self, client: "Client", obj_class: Type["DbObject"],
-                 dereferencing: Dict[str, Any], query: str,
-                 params: Dict[str, Any], experimental: bool):
+    def __init__(
+        self,
+        client: "Client",
+        obj_class: Type["DbObject"],
+        dereferencing: Dict[str, Any],
+        query: str,
+        params: Dict[str, Any],
+        experimental: bool,
+    ):
         self.client = client
         self.obj_class = obj_class
         self.dereferencing = dereferencing
@@ -125,16 +134,14 @@ class _Pagination(ABC):
         return [self.obj_class(self.client, result) for result in results]
 
     @abstractmethod
-    def get_next_page(self) -> Tuple[Dict[str, Any], bool]:
-        ...
+    def get_next_page(self) -> Tuple[Dict[str, Any], bool]: ...
 
 
 class _CursorPagination(_Pagination):
-
     def __init__(self, cursor_path: List[str], *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cursor_path = cursor_path
-        self.next_cursor: Optional[Any] = kwargs.get('params', {}).get('from')
+        self.next_cursor: Optional[Any] = kwargs.get("params", {}).get("from")
 
     def increment_page(self, results: Dict[str, Any]):
         for path in self.cursor_path:
@@ -145,11 +152,11 @@ class _CursorPagination(_Pagination):
         return not self.next_cursor
 
     def fetch_results(self) -> Dict[str, Any]:
-        page_size = self.params.get('first', _PAGE_SIZE)
-        self.params.update({'from': self.next_cursor, 'first': page_size})
-        return self.client.execute(self.query,
-                                   self.params,
-                                   experimental=self.experimental)
+        page_size = self.params.get("first", _PAGE_SIZE)
+        self.params.update({"from": self.next_cursor, "first": page_size})
+        return self.client.execute(
+            self.query, self.params, experimental=self.experimental
+        )
 
     def get_next_page(self):
         results = self.fetch_results()
@@ -160,7 +167,6 @@ class _CursorPagination(_Pagination):
 
 
 class _OffsetPagination(_Pagination):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._fetched_pages = 0
@@ -173,9 +179,9 @@ class _OffsetPagination(_Pagination):
 
     def fetch_results(self) -> Dict[str, Any]:
         query = self.query % (self._fetched_pages * _PAGE_SIZE, _PAGE_SIZE)
-        return self.client.execute(query,
-                                   self.params,
-                                   experimental=self.experimental)
+        return self.client.execute(
+            query, self.params, experimental=self.experimental
+        )
 
     def get_next_page(self):
         results = self.fetch_results()

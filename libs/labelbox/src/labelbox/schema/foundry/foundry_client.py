@@ -6,7 +6,6 @@ from labelbox.schema.task import Task
 
 
 class FoundryClient:
-
     def __init__(self, client):
         self.client = client
 
@@ -35,7 +34,7 @@ class FoundryClient:
         try:
             response = self.client.execute(query_str, params)
         except exceptions.LabelboxError as e:
-            raise exceptions.LabelboxError('Unable to create app', e)
+            raise exceptions.LabelboxError("Unable to create app", e)
         return App(**response["createModelFoundryApp"])
 
     def _get_app(self, id: str) -> App:
@@ -55,7 +54,7 @@ class FoundryClient:
         except exceptions.InvalidQueryError as e:
             raise exceptions.ResourceNotFoundError(App, params)
         except Exception as e:
-            raise exceptions.LabelboxError(f'Unable to get app with id {id}', e)
+            raise exceptions.LabelboxError(f"Unable to get app with id {id}", e)
         return App(**response["findModelFoundryApp"])
 
     def _delete_app(self, id: str) -> None:
@@ -70,11 +69,16 @@ class FoundryClient:
         try:
             self.client.execute(query_str, params)
         except Exception as e:
-            raise exceptions.LabelboxError(f'Unable to delete app with id {id}',
-                                           e)
+            raise exceptions.LabelboxError(
+                f"Unable to delete app with id {id}", e
+            )
 
-    def run_app(self, model_run_name: str,
-                data_rows: Union[DataRowIds, GlobalKeys], app_id: str) -> Task:
+    def run_app(
+        self,
+        model_run_name: str,
+        data_rows: Union[DataRowIds, GlobalKeys],
+        app_id: str,
+    ) -> Task:
         app = self._get_app(app_id)
 
         params = {
@@ -82,10 +86,14 @@ class FoundryClient:
             "name": model_run_name,
             "classToSchemaId": app.class_to_schema_id,
             "inferenceParams": app.inference_params,
-            "ontologyId": app.ontology_id
+            "ontologyId": app.ontology_id,
         }
 
-        data_rows_key = "dataRowIds" if data_rows.id_type == IdType.DataRowId else "globalKeys"
+        data_rows_key = (
+            "dataRowIds"
+            if data_rows.id_type == IdType.DataRowId
+            else "globalKeys"
+        )
         params[data_rows_key] = list(data_rows)
 
         query = """
@@ -99,6 +107,6 @@ class FoundryClient:
         try:
             response = self.client.execute(query, {"input": params})
         except Exception as e:
-            raise exceptions.LabelboxError('Unable to run foundry app', e)
+            raise exceptions.LabelboxError("Unable to run foundry app", e)
         task_id = response["createModelJobForDataRows"]["taskId"]
         return Task.get_task(self.client, task_id)

@@ -20,25 +20,36 @@ class NDRelationship(NDAnnotation, _SubclassRegistryBase):
     relationship: _Relationship
 
     @staticmethod
-    def to_common(annotation: "NDRelationship", source: SUPPORTED_ANNOTATIONS,
-                  target: SUPPORTED_ANNOTATIONS) -> RelationshipAnnotation:
-        return RelationshipAnnotation(name=annotation.name,
-                                      value=Relationship(
-                                          source=source,
-                                          target=target,
-                                          type=Relationship.Type(
-                                              annotation.relationship.type)),
-                                      extra={'uuid': annotation.uuid},
-                                      feature_schema_id=annotation.schema_id)
+    def to_common(
+        annotation: "NDRelationship",
+        source: SUPPORTED_ANNOTATIONS,
+        target: SUPPORTED_ANNOTATIONS,
+    ) -> RelationshipAnnotation:
+        return RelationshipAnnotation(
+            name=annotation.name,
+            value=Relationship(
+                source=source,
+                target=target,
+                type=Relationship.Type(annotation.relationship.type),
+            ),
+            extra={"uuid": annotation.uuid},
+            feature_schema_id=annotation.schema_id,
+        )
 
     @classmethod
-    def from_common(cls, annotation: RelationshipAnnotation,
-                    data: Union[ImageData, TextData]) -> "NDRelationship":
+    def from_common(
+        cls,
+        annotation: RelationshipAnnotation,
+        data: Union[ImageData, TextData],
+    ) -> "NDRelationship":
         relationship = annotation.value
-        return cls(uuid=str(annotation._uuid),
-                   name=annotation.name,
-                   dataRow=DataRow(id=data.uid, global_key=data.global_key),
-                   relationship=_Relationship(
-                       source=str(relationship.source._uuid),
-                       target=str(relationship.target._uuid),
-                       type=relationship.type.value))
+        return cls(
+            uuid=str(annotation._uuid),
+            name=annotation.name,
+            dataRow=DataRow(id=data.uid, global_key=data.global_key),
+            relationship=_Relationship(
+                source=str(relationship.source._uuid),
+                target=str(relationship.target._uuid),
+                type=relationship.type.value,
+            ),
+        )

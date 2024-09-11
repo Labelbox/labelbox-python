@@ -4,7 +4,7 @@ from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 
 
 def test_metric():
-    with open('tests/data/assets/ndjson/metric_import.json', 'r') as file:
+    with open("tests/data/assets/ndjson/metric_import.json", "r") as file:
         data = json.load(file)
 
     label_list = list(NDJsonConverter.deserialize(data))
@@ -13,22 +13,26 @@ def test_metric():
 
 
 def test_custom_scalar_metric():
-    with open('tests/data/assets/ndjson/custom_scalar_import.json',
-              'r') as file:
+    with open(
+        "tests/data/assets/ndjson/custom_scalar_import.json", "r"
+    ) as file:
         data = json.load(file)
 
     label_list = list(NDJsonConverter.deserialize(data))
     reserialized = list(NDJsonConverter.serialize(label_list))
-    assert json.dumps(reserialized,
-                      sort_keys=True) == json.dumps(data, sort_keys=True)
+    assert json.dumps(reserialized, sort_keys=True) == json.dumps(
+        data, sort_keys=True
+    )
 
 
 def test_custom_confusion_matrix_metric():
-    with open('tests/data/assets/ndjson/custom_confusion_matrix_import.json',
-              'r') as file:
+    with open(
+        "tests/data/assets/ndjson/custom_confusion_matrix_import.json", "r"
+    ) as file:
         data = json.load(file)
 
     label_list = list(NDJsonConverter.deserialize(data))
     reserialized = list(NDJsonConverter.serialize(label_list))
-    assert json.dumps(reserialized,
-                      sort_keys=True) == json.dumps(data, sort_keys=True)
+    assert json.dumps(reserialized, sort_keys=True) == json.dumps(
+        data, sort_keys=True
+    )

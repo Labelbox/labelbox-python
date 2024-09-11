@@ -20,43 +20,52 @@ class Rectangle(Geometry):
         start (Point): Top left coordinate of the rectangle
         end (Point): Bottom right coordinate of the rectangle
     """
+
     start: Point
     end: Point
 
     @property
     def geometry(self) -> geojson.geometry.Geometry:
-        return geojson.Polygon([[
-            [self.start.x, self.start.y],
-            [self.start.x, self.end.y],
-            [self.end.x, self.end.y],
-            [self.end.x, self.start.y],
-            [self.start.x, self.start.y],
-        ]])
+        return geojson.Polygon(
+            [
+                [
+                    [self.start.x, self.start.y],
+                    [self.start.x, self.end.y],
+                    [self.end.x, self.end.y],
+                    [self.end.x, self.start.y],
+                    [self.start.x, self.start.y],
+                ]
+            ]
+        )
 
     @classmethod
     def from_shapely(cls, shapely_obj: SPolygon) -> "Rectangle":
         """Transforms a shapely object.
-        
+
         If the provided shape is a non-rectangular polygon, a rectangle will be
         returned based on the min and max x,y values."""
         if not isinstance(shapely_obj, SPolygon):
             raise TypeError(
-                f"Expected Shapely Polygon. Got {shapely_obj.geom_type}")
+                f"Expected Shapely Polygon. Got {shapely_obj.geom_type}"
+            )
 
         min_x, min_y, max_x, max_y = shapely_obj.bounds
 
         start = [min_x, min_y]
         end = [max_x, max_y]
 
-        return Rectangle(start=Point(x=start[0], y=start[1]),
-                         end=Point(x=end[0], y=end[1]))
+        return Rectangle(
+            start=Point(x=start[0], y=start[1]), end=Point(x=end[0], y=end[1])
+        )
 
-    def draw(self,
-             height: Optional[int] = None,
-             width: Optional[int] = None,
-             canvas: Optional[np.ndarray] = None,
-             color: Union[int, Tuple[int, int, int]] = (255, 255, 255),
-             thickness: int = -1) -> np.ndarray:
+    def draw(
+        self,
+        height: Optional[int] = None,
+        width: Optional[int] = None,
+        canvas: Optional[np.ndarray] = None,
+        color: Union[int, Tuple[int, int, int]] = (255, 255, 255),
+        thickness: int = -1,
+    ) -> np.ndarray:
         """
         Draw the rectangle onto a 3d mask
         Args:
@@ -70,7 +79,7 @@ class Rectangle(Geometry):
             numpy array representing the mask with the rectangle drawn on it.
         """
         canvas = self.get_or_create_canvas(height, width, canvas)
-        pts = np.array(self.geometry['coordinates']).astype(np.int32)
+        pts = np.array(self.geometry["coordinates"]).astype(np.int32)
         if thickness == -1:
             return cv2.fillPoly(canvas, pts, color)
         return cv2.polylines(canvas, pts, True, color, thickness)
@@ -82,9 +91,9 @@ class Rectangle(Geometry):
 
 
 class RectangleUnit(Enum):
-    INCHES = 'INCHES'
-    PIXELS = 'PIXELS'
-    POINTS = 'POINTS'
+    INCHES = "INCHES"
+    PIXELS = "PIXELS"
+    POINTS = "POINTS"
 
 
 class DocumentRectangle(Rectangle):
@@ -103,5 +112,6 @@ class DocumentRectangle(Rectangle):
         page (int): Page number of the document
         unit (RectangleUnits): Units of the rectangle
     """
+
     page: int
     unit: RectangleUnit

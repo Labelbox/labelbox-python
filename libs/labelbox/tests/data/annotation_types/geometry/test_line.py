@@ -16,7 +16,7 @@ def test_line():
     expected = {"coordinates": [points], "type": "MultiLineString"}
     line = Line(points=[Point(x=x, y=y) for x, y in points])
     assert line.geometry == expected
-    expected['coordinates'] = tuple([tuple([tuple(x) for x in points])])
+    expected["coordinates"] = tuple([tuple([tuple(x) for x in points])])
     assert line.shapely.__geo_interface__ == expected
 
     raster = line.draw(height=32, width=32, thickness=1)

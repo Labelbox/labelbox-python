@@ -8,10 +8,29 @@ from pathlib import Path
 from google.api_core import retry
 from labelbox import parser
 import requests
-from pydantic import ValidationError, BaseModel, Field, field_validator, model_validator, ConfigDict, StringConstraints
+from pydantic import (
+    ValidationError,
+    BaseModel,
+    Field,
+    field_validator,
+    model_validator,
+    ConfigDict,
+    StringConstraints,
+)
 from typing_extensions import Literal, Annotated
-from typing import (Any, List, Optional, BinaryIO, Dict, Iterable, Tuple, Union,
-                    Type, Set, TYPE_CHECKING)
+from typing import (
+    Any,
+    List,
+    Optional,
+    BinaryIO,
+    Dict,
+    Iterable,
+    Tuple,
+    Union,
+    Type,
+    Set,
+    TYPE_CHECKING,
+)
 
 from labelbox import exceptions as lb_exceptions
 from labelbox import utils
@@ -29,11 +48,13 @@ if TYPE_CHECKING:
 NDJSON_MIME_TYPE = "application/x-ndjson"
 logger = logging.getLogger(__name__)
 
-#TODO: Deprecate this library in place of labelimport and malprediction import library.
+# TODO: Deprecate this library in place of labelimport and malprediction import library.
+
 
 def _determinants(parent_cls: Any) -> List[str]:
     return [
-        k for k, v in parent_cls.model_fields.items()
+        k
+        for k, v in parent_cls.model_fields.items()
         if v.json_schema_extra and "determinant" in v.json_schema_extra
     ]
 
@@ -43,8 +64,9 @@ def _make_file_name(project_id: str, name: str) -> str:
 
 
 # TODO(gszpak): move it to client.py
-def _make_request_data(project_id: str, name: str, content_length: int,
-                       file_name: str) -> dict:
+def _make_request_data(
+    project_id: str, name: str, content_length: int, file_name: str
+) -> dict:
     query_str = """mutation createBulkImportRequestFromFilePyApi(
             $projectId: ID!, $name: String!, $file: Upload!, $contentLength: Int!) {
         createBulkImportRequest(data: {
@@ -63,26 +85,30 @@ def _make_request_data(project_id: str, name: str, content_length: int,
         "projectId": project_id,
         "name": name,
         "file": None,
-        "contentLength": content_length
+        "contentLength": content_length,
     }
     operations = json.dumps({"variables": variables, "query": query_str})
 
     return {
         "operations": operations,
-        "map": (None, json.dumps({file_name: ["variables.file"]}))
+        "map": (None, json.dumps({file_name: ["variables.file"]})),
     }
 
 
 def _send_create_file_command(
-        client, request_data: dict, file_name: str,
-        file_data: Tuple[str, Union[bytes, BinaryIO], str]) -> dict:
-
+    client,
+    request_data: dict,
+    file_name: str,
+    file_data: Tuple[str, Union[bytes, BinaryIO], str],
+) -> dict:
     response = client.execute(data=request_data, files={file_name: file_data})
 
     if not response.get("createBulkImportRequest", None):
         raise lb_exceptions.LabelboxError(
-            "Failed to create BulkImportRequest, message: %s" %
-            response.get("errors", None) or response.get("error", None))
+            "Failed to create BulkImportRequest, message: %s"
+            % response.get("errors", None)
+            or response.get("error", None)
+        )
 
     return response
 
@@ -101,6 +127,7 @@ class BulkImportRequest(DbObject):
         project (Relationship): `ToOne` relationship to Project
         created_by (Relationship): `ToOne` relationship to User
     """
+
     name = lb_Field.String("name")
     state = lb_Field.Enum(BulkImportRequestState, "state")
     input_file_url = lb_Field.String("input_file_url")
@@ -182,8 +209,7 @@ class BulkImportRequest(DbObject):
         return parser.loads(response.text)
 
     def refresh(self) -> None:
-        """Synchronizes values of all fields with the database.
-        """
+        """Synchronizes values of all fields with the database."""
         query_str, params = query.get_single(BulkImportRequest, self.uid)
         res = self.client.execute(query_str, params)
         res = res[utils.camel_case(BulkImportRequest.type_name())]
@@ -207,16 +233,21 @@ class BulkImportRequest(DbObject):
             time.sleep(sleep_time_seconds)
             self.__exponential_backoff_refresh()
 
-    @retry.Retry(predicate=retry.if_exception_type(lb_exceptions.ApiLimitError,
-                                                   lb_exceptions.TimeoutError,
-                                                   lb_exceptions.NetworkError))
+    @retry.Retry(
+        predicate=retry.if_exception_type(
+            lb_exceptions.ApiLimitError,
+            lb_exceptions.TimeoutError,
+            lb_exceptions.NetworkError,
+        )
+    )
     def __exponential_backoff_refresh(self) -> None:
         self.refresh()
 
     @classmethod
-    def from_name(cls, client, project_id: str,
-                  name: str) -> 'BulkImportRequest':
-        """ Fetches existing BulkImportRequest.
+    def from_name(
+        cls, client, project_id: str, name: str
+    ) -> "BulkImportRequest":
+        """Fetches existing BulkImportRequest.
 
         Args:
             client (Client): a Labelbox client
@@ -238,15 +269,12 @@ class BulkImportRequest(DbObject):
         """ % query.results_query_part(cls)
         params = {"projectId": project_id, "name": name}
         response = client.execute(query_str, params=params)
-        return cls(client, response['bulkImportRequest'])
+        return cls(client, response["bulkImportRequest"])
 
     @classmethod
-    def create_from_url(cls,
-                        client,
-                        project_id: str,
-                        name: str,
-                        url: str,
-                        validate=True) -> 'BulkImportRequest':
+    def create_from_url(
+        cls, client, project_id: str, name: str, url: str, validate=True
+    ) -> "BulkImportRequest":
         """
         Creates a BulkImportRequest from a publicly accessible URL
         to an ndjson file with predictions.
@@ -282,17 +310,19 @@ class BulkImportRequest(DbObject):
         """ % query.results_query_part(cls)
         params = {"projectId": project_id, "name": name, "fileUrl": url}
         bulk_import_request_response = client.execute(query_str, params=params)
-        return cls(client,
-                   bulk_import_request_response["createBulkImportRequest"])
+        return cls(
+            client, bulk_import_request_response["createBulkImportRequest"]
+        )
 
     @classmethod
-    def create_from_objects(cls,
-                            client,
-                            project_id: str,
-                            name: str,
-                            predictions: Union[Iterable[Dict],
-                                               Iterable["Label"]],
-                            validate=True) -> 'BulkImportRequest':
+    def create_from_objects(
+        cls,
+        client,
+        project_id: str,
+        name: str,
+        predictions: Union[Iterable[Dict], Iterable["Label"]],
+        validate=True,
+    ) -> "BulkImportRequest":
         """
         Creates a `BulkImportRequest` from an iterable of dictionaries.
 
@@ -332,27 +362,27 @@ class BulkImportRequest(DbObject):
 
         data_str = parser.dumps(ndjson_predictions)
         if not data_str:
-            raise ValueError('annotations cannot be empty')
+            raise ValueError("annotations cannot be empty")
 
-        data = data_str.encode('utf-8')
+        data = data_str.encode("utf-8")
         file_name = _make_file_name(project_id, name)
-        request_data = _make_request_data(project_id, name, len(data_str),
-                                          file_name)
+        request_data = _make_request_data(
+            project_id, name, len(data_str), file_name
+        )
         file_data = (file_name, data, NDJSON_MIME_TYPE)
-        response_data = _send_create_file_command(client,
-                                                  request_data=request_data,
-                                                  file_name=file_name,
-                                                  file_data=file_data)
+        response_data = _send_create_file_command(
+            client,
+            request_data=request_data,
+            file_name=file_name,
+            file_data=file_data,
+        )
 
         return cls(client, response_data["createBulkImportRequest"])
 
     @classmethod
-    def create_from_local_file(cls,
-                               client,
-                               project_id: str,
-                               name: str,
-                               file: Path,
-                               validate_file=True) -> 'BulkImportRequest':
+    def create_from_local_file(
+        cls, client, project_id: str, name: str, file: Path, validate_file=True
+    ) -> "BulkImportRequest":
         """
         Creates a BulkImportRequest from a local ndjson file with predictions.
 
@@ -369,10 +399,11 @@ class BulkImportRequest(DbObject):
         """
         file_name = _make_file_name(project_id, name)
         content_length = file.stat().st_size
-        request_data = _make_request_data(project_id, name, content_length,
-                                          file_name)
+        request_data = _make_request_data(
+            project_id, name, content_length, file_name
+        )
 
-        with file.open('rb') as f:
+        with file.open("rb") as f:
             if validate_file:
                 reader = parser.reader(f)
                 # ensure that the underlying json load call is valid
@@ -386,12 +417,13 @@ class BulkImportRequest(DbObject):
                 else:
                     f.seek(0)
             file_data = (file.name, f, NDJSON_MIME_TYPE)
-            response_data = _send_create_file_command(client, request_data,
-                                                      file_name, file_data)
+            response_data = _send_create_file_command(
+                client, request_data, file_name, file_data
+            )
         return cls(client, response_data["createBulkImportRequest"])
 
     def delete(self) -> None:
-        """ Deletes the import job and also any annotations created by this import.
+        """Deletes the import job and also any annotations created by this import.
 
         Returns:
             None
@@ -406,8 +438,9 @@ class BulkImportRequest(DbObject):
         self.client.execute(query_str, {id_param: self.uid})
 
 
-def _validate_ndjson(lines: Iterable[Dict[str, Any]],
-                     project: "Project") -> None:
+def _validate_ndjson(
+    lines: Iterable[Dict[str, Any]], project: "Project"
+) -> None:
     """
     Client side validation of an ndjson object.
 
@@ -426,26 +459,29 @@ def _validate_ndjson(lines: Iterable[Dict[str, Any]],
         UuidError: Duplicate UUID in upload
     """
     feature_schemas_by_id, feature_schemas_by_name = get_mal_schemas(
-        project.ontology())
+        project.ontology()
+    )
     uids: Set[str] = set()
     for idx, line in enumerate(lines):
         try:
             annotation = NDAnnotation(**line)
-            annotation.validate_instance(feature_schemas_by_id,
-                                         feature_schemas_by_name)
+            annotation.validate_instance(
+                feature_schemas_by_id, feature_schemas_by_name
+            )
             uuid = str(annotation.uuid)
             if uuid in uids:
                 raise lb_exceptions.UuidError(
-                    f'{uuid} already used in this import job, '
-                    'must be unique for the project.')
+                    f"{uuid} already used in this import job, "
+                    "must be unique for the project."
+                )
             uids.add(uuid)
-        except (ValidationError, ValueError, TypeError,
-                KeyError) as e:
+        except (ValidationError, ValueError, TypeError, KeyError) as e:
             raise lb_exceptions.MALValidationError(
-                f"Invalid NDJson on line {idx}") from e
+                f"Invalid NDJson on line {idx}"
+            ) from e
 
 
-#The rest of this file contains objects for MAL validation
+# The rest of this file contains objects for MAL validation
 def parse_classification(tool):
     """
     Parses a classification from an ontology. Only radio, checklist, and text are supported for mal
@@ -456,20 +492,20 @@ def parse_classification(tool):
     Returns:
         dict
     """
-    if tool['type'] in ['radio', 'checklist']:
-        option_schema_ids = [r['featureSchemaId'] for r in tool['options']]
-        option_names = [r['value'] for r in tool['options']]
+    if tool["type"] in ["radio", "checklist"]:
+        option_schema_ids = [r["featureSchemaId"] for r in tool["options"]]
+        option_names = [r["value"] for r in tool["options"]]
         return {
-            'tool': tool['type'],
-            'featureSchemaId': tool['featureSchemaId'],
-            'name': tool['name'],
-            'options': [*option_schema_ids, *option_names]
+            "tool": tool["type"],
+            "featureSchemaId": tool["featureSchemaId"],
+            "name": tool["name"],
+            "options": [*option_schema_ids, *option_names],
         }
-    elif tool['type'] == 'text':
+    elif tool["type"] == "text":
         return {
-            'tool': tool['type'],
-            'name': tool['name'],
-            'featureSchemaId': tool['featureSchemaId']
+            "tool": tool["type"],
+            "name": tool["name"],
+            "featureSchemaId": tool["featureSchemaId"],
         }
 
 
@@ -485,31 +521,32 @@ def get_mal_schemas(ontology):
 
     valid_feature_schemas_by_schema_id = {}
     valid_feature_schemas_by_name = {}
-    for tool in ontology.normalized['tools']:
+    for tool in ontology.normalized["tools"]:
         classifications = [
             parse_classification(classification_tool)
-            for classification_tool in tool['classifications']
+            for classification_tool in tool["classifications"]
         ]
         classifications_by_schema_id = {
-            v['featureSchemaId']: v for v in classifications
+            v["featureSchemaId"]: v for v in classifications
         }
-        classifications_by_name = {v['name']: v for v in classifications}
-        valid_feature_schemas_by_schema_id[tool['featureSchemaId']] = {
-            'tool': tool['tool'],
-            'classificationsBySchemaId': classifications_by_schema_id,
-            'classificationsByName': classifications_by_name,
-            'name': tool['name']
+        classifications_by_name = {v["name"]: v for v in classifications}
+        valid_feature_schemas_by_schema_id[tool["featureSchemaId"]] = {
+            "tool": tool["tool"],
+            "classificationsBySchemaId": classifications_by_schema_id,
+            "classificationsByName": classifications_by_name,
+            "name": tool["name"],
         }
-        valid_feature_schemas_by_name[tool['name']] = {
-            'tool': tool['tool'],
-            'classificationsBySchemaId': classifications_by_schema_id,
-            'classificationsByName': classifications_by_name,
-            'name': tool['name']
+        valid_feature_schemas_by_name[tool["name"]] = {
+            "tool": tool["tool"],
+            "classificationsBySchemaId": classifications_by_schema_id,
+            "classificationsByName": classifications_by_name,
+            "name": tool["name"],
         }
-    for tool in ontology.normalized['classifications']:
-        valid_feature_schemas_by_schema_id[
-            tool['featureSchemaId']] = parse_classification(tool)
-        valid_feature_schemas_by_name[tool['name']] = parse_classification(tool)
+    for tool in ontology.normalized["classifications"]:
+        valid_feature_schemas_by_schema_id[tool["featureSchemaId"]] = (
+            parse_classification(tool)
+        )
+        valid_feature_schemas_by_name[tool["name"]] = parse_classification(tool)
     return valid_feature_schemas_by_schema_id, valid_feature_schemas_by_name
 
 
@@ -531,13 +568,12 @@ class FrameLocation(BaseModel):
 
 
 class VideoSupported(BaseModel):
-    #Note that frames are only allowed as top level inferences for video
+    # Note that frames are only allowed as top level inferences for video
     frames: Optional[List[FrameLocation]] = None
 
 
 # Base class for a special kind of union.
 class SpecialUnion:
-
     def __new__(cls, **kwargs):
         return cls.build(kwargs)
 
@@ -553,7 +589,8 @@ class SpecialUnion:
         union_types = [x for x in cls.__orig_bases__ if hasattr(x, "__args__")]
         if len(union_types) < 1:
             raise TypeError(
-                "Class {cls} should inherit from a union of objects to build")
+                "Class {cls} should inherit from a union of objects to build"
+            )
         if len(union_types) > 1:
             raise TypeError(
                 f"Class {cls} should inherit from exactly one union of objects to build. Found {union_types}"
@@ -561,15 +598,14 @@ class SpecialUnion:
         return union_types[0].__args__[0].__args__
 
     @classmethod
-    def build(cls: Any, data: Union[dict,
-                                    BaseModel]) -> "NDBase":
+    def build(cls: Any, data: Union[dict, BaseModel]) -> "NDBase":
         """
-            Checks through all objects in the union to see which matches the input data.
-            Args:
-                data  (Union[dict, BaseModel]) : The data for constructing one of the objects in the union
-            raises:
-                KeyError: data does not contain the determinant fields for any of the types supported by this SpecialUnion
-                ValidationError: Error while trying to construct a specific object in the union
+        Checks through all objects in the union to see which matches the input data.
+        Args:
+            data  (Union[dict, BaseModel]) : The data for constructing one of the objects in the union
+        raises:
+            KeyError: data does not contain the determinant fields for any of the types supported by this SpecialUnion
+            ValidationError: Error while trying to construct a specific object in the union
 
         """
         if isinstance(data, BaseModel):
@@ -588,11 +624,11 @@ class SpecialUnion:
                 matched = type_
 
         if matched is not None:
-            #These two have the exact same top level keys
+            # These two have the exact same top level keys
             if matched in [NDRadio, NDText]:
-                if isinstance(data['answer'], dict):
+                if isinstance(data["answer"], dict):
                     matched = NDRadio
-                elif isinstance(data['answer'], str):
+                elif isinstance(data["answer"], str):
                     matched = NDText
                 else:
                     raise TypeError(
@@ -606,10 +642,10 @@ class SpecialUnion:
 
     @classmethod
     def schema(cls):
-        results = {'definitions': {}}
+        results = {"definitions": {}}
         for cl in cls.get_union_types():
             schema = cl.schema()
-            results['definitions'].update(schema.pop('definitions'))
+            results["definitions"].update(schema.pop("definitions"))
             results[cl.__name__] = schema
         return results
 
@@ -626,7 +662,8 @@ class NDFeatureSchema(BaseModel):
     def most_set_one(self):
         if self.schemaId is None and self.name is None:
             raise ValueError(
-                "Must set either schemaId or name for all feature schemas")
+                "Must set either schemaId or name for all feature schemas"
+            )
         return self
 
 
@@ -636,16 +673,19 @@ class NDBase(NDFeatureSchema):
     dataRow: DataRow
     model_config = ConfigDict(extra="forbid")
 
-    def validate_feature_schemas(self, valid_feature_schemas_by_id,
-                                 valid_feature_schemas_by_name):
+    def validate_feature_schemas(
+        self, valid_feature_schemas_by_id, valid_feature_schemas_by_name
+    ):
         if self.name:
             if self.name not in valid_feature_schemas_by_name:
                 raise ValueError(
                     f"Name {self.name} is not valid for the provided project's ontology."
                 )
 
-            if self.ontology_type != valid_feature_schemas_by_name[
-                    self.name]['tool']:
+            if (
+                self.ontology_type
+                != valid_feature_schemas_by_name[self.name]["tool"]
+            ):
                 raise ValueError(
                     f"Name {self.name} does not map to the assigned tool {valid_feature_schemas_by_name[self.name]['tool']}"
                 )
@@ -656,16 +696,20 @@ class NDBase(NDFeatureSchema):
                     f"Schema id {self.schemaId} is not valid for the provided project's ontology."
                 )
 
-            if self.ontology_type != valid_feature_schemas_by_id[
-                    self.schemaId]['tool']:
+            if (
+                self.ontology_type
+                != valid_feature_schemas_by_id[self.schemaId]["tool"]
+            ):
                 raise ValueError(
                     f"Schema id {self.schemaId} does not map to the assigned tool {valid_feature_schemas_by_id[self.schemaId]['tool']}"
                 )
 
-    def validate_instance(self, valid_feature_schemas_by_id,
-                          valid_feature_schemas_by_name):
-        self.validate_feature_schemas(valid_feature_schemas_by_id,
-                                      valid_feature_schemas_by_name)
+    def validate_instance(
+        self, valid_feature_schemas_by_id, valid_feature_schemas_by_name
+    ):
+        self.validate_feature_schemas(
+            valid_feature_schemas_by_id, valid_feature_schemas_by_name
+        )
 
 
 ###### Classifications ######
@@ -674,36 +718,42 @@ class NDBase(NDFeatureSchema):
 class NDText(NDBase):
     ontology_type: Literal["text"] = "text"
     answer: str = Field(json_schema_extra={"determinant": True})
-    #No feature schema to check
+    # No feature schema to check
 
 
 class NDChecklist(VideoSupported, NDBase):
     ontology_type: Literal["checklist"] = "checklist"
-    answers: List[NDFeatureSchema] = Field(json_schema_extra={"determinant": True})
+    answers: List[NDFeatureSchema] = Field(
+        json_schema_extra={"determinant": True}
+    )
 
-    @field_validator('answers', mode="before")
+    @field_validator("answers", mode="before")
     def validate_answers(cls, value, field):
-        #constr not working with mypy.
+        # constr not working with mypy.
         if not len(value):
             raise ValueError("Checklist answers should not be empty")
         return value
 
-    def validate_feature_schemas(self, valid_feature_schemas_by_id,
-                                 valid_feature_schemas_by_name):
-        #Test top level feature schema for this tool
-        super(NDChecklist,
-              self).validate_feature_schemas(valid_feature_schemas_by_id,
-                                             valid_feature_schemas_by_name)
-        #Test the feature schemas provided to the answer field
-        if len(set([answer.name or answer.schemaId for answer in self.answers
-                   ])) != len(self.answers):
+    def validate_feature_schemas(
+        self, valid_feature_schemas_by_id, valid_feature_schemas_by_name
+    ):
+        # Test top level feature schema for this tool
+        super(NDChecklist, self).validate_feature_schemas(
+            valid_feature_schemas_by_id, valid_feature_schemas_by_name
+        )
+        # Test the feature schemas provided to the answer field
+        if len(
+            set([answer.name or answer.schemaId for answer in self.answers])
+        ) != len(self.answers):
             raise ValueError(
-                f"Duplicated featureSchema found for checklist {self.uuid}")
+                f"Duplicated featureSchema found for checklist {self.uuid}"
+            )
         for answer in self.answers:
-            options = valid_feature_schemas_by_name[
-                self.
-                name]['options'] if self.name else valid_feature_schemas_by_id[
-                    self.schemaId]['options']
+            options = (
+                valid_feature_schemas_by_name[self.name]["options"]
+                if self.name
+                else valid_feature_schemas_by_id[self.schemaId]["options"]
+            )
             if answer.name not in options and answer.schemaId not in options:
                 raise ValueError(
                     f"Feature schema provided to {self.ontology_type} invalid. Expected on of {options}. Found {answer}"
@@ -714,26 +764,35 @@ class NDRadio(VideoSupported, NDBase):
     ontology_type: Literal["radio"] = "radio"
     answer: NDFeatureSchema = Field(json_schema_extra={"determinant": True})
 
-    def validate_feature_schemas(self, valid_feature_schemas_by_id,
-                                 valid_feature_schemas_by_name):
-        super(NDRadio,
-              self).validate_feature_schemas(valid_feature_schemas_by_id,
-                                             valid_feature_schemas_by_name)
-        options = valid_feature_schemas_by_name[
-            self.name]['options'] if self.name else valid_feature_schemas_by_id[
-                self.schemaId]['options']
-        if self.answer.name not in options and self.answer.schemaId not in options:
+    def validate_feature_schemas(
+        self, valid_feature_schemas_by_id, valid_feature_schemas_by_name
+    ):
+        super(NDRadio, self).validate_feature_schemas(
+            valid_feature_schemas_by_id, valid_feature_schemas_by_name
+        )
+        options = (
+            valid_feature_schemas_by_name[self.name]["options"]
+            if self.name
+            else valid_feature_schemas_by_id[self.schemaId]["options"]
+        )
+        if (
+            self.answer.name not in options
+            and self.answer.schemaId not in options
+        ):
             raise ValueError(
                 f"Feature schema provided to {self.ontology_type} invalid. Expected on of {options}. Found {self.answer.name or self.answer.schemaId}"
             )
 
 
-#A union with custom construction logic to improve error messages
+# A union with custom construction logic to improve error messages
 class NDClassification(
-        SpecialUnion,
-        Type[Union[  # type: ignore
-            NDText, NDRadio, NDChecklist]]):
-    ...
+    SpecialUnion,
+    Type[
+        Union[  # type: ignore
+            NDText, NDRadio, NDChecklist
+        ]
+    ],
+): ...
 
 
 ###### Tools ######
@@ -742,35 +801,41 @@ class NDClassification(
 class NDBaseTool(NDBase):
     classifications: List[NDClassification] = []
 
-    #This is indepdent of our problem
-    def validate_feature_schemas(self, valid_feature_schemas_by_id,
-                                 valid_feature_schemas_by_name):
-        super(NDBaseTool,
-              self).validate_feature_schemas(valid_feature_schemas_by_id,
-                                             valid_feature_schemas_by_name)
+    # This is indepdent of our problem
+    def validate_feature_schemas(
+        self, valid_feature_schemas_by_id, valid_feature_schemas_by_name
+    ):
+        super(NDBaseTool, self).validate_feature_schemas(
+            valid_feature_schemas_by_id, valid_feature_schemas_by_name
+        )
         for classification in self.classifications:
             classification.validate_feature_schemas(
-                valid_feature_schemas_by_name[
-                    self.name]['classificationsBySchemaId']
-                if self.name else valid_feature_schemas_by_id[self.schemaId]
-                ['classificationsBySchemaId'], valid_feature_schemas_by_name[
-                    self.name]['classificationsByName']
-                if self.name else valid_feature_schemas_by_id[
-                    self.schemaId]['classificationsByName'])
+                valid_feature_schemas_by_name[self.name][
+                    "classificationsBySchemaId"
+                ]
+                if self.name
+                else valid_feature_schemas_by_id[self.schemaId][
+                    "classificationsBySchemaId"
+                ],
+                valid_feature_schemas_by_name[self.name][
+                    "classificationsByName"
+                ]
+                if self.name
+                else valid_feature_schemas_by_id[self.schemaId][
+                    "classificationsByName"
+                ],
+            )
 
-    @field_validator('classifications', mode="before")
+    @field_validator("classifications", mode="before")
     def validate_subclasses(cls, value, field):
-        #Create uuid and datarow id so we don't have to define classification objects twice
-        #This is caused by the fact that we require these ids for top level classifications but not for subclasses
+        # Create uuid and datarow id so we don't have to define classification objects twice
+        # This is caused by the fact that we require these ids for top level classifications but not for subclasses
         results = []
-        dummy_id = 'child'.center(25, '_')
+        dummy_id = "child".center(25, "_")
         for row in value:
-            results.append({
-                **row, 'dataRow': {
-                    'id': dummy_id
-                },
-                'uuid': str(uuid4())
-            })
+            results.append(
+                {**row, "dataRow": {"id": dummy_id}, "uuid": str(uuid4())}
+            )
         return results
 
 
@@ -778,11 +843,12 @@ class NDPolygon(NDBaseTool):
     ontology_type: Literal["polygon"] = "polygon"
     polygon: List[Point] = Field(json_schema_extra={"determinant": True})
 
-    @field_validator('polygon')
+    @field_validator("polygon")
     def is_geom_valid(cls, v):
         if len(v) < 3:
             raise ValueError(
-                f"A polygon must have at least 3 points to be valid. Found {v}")
+                f"A polygon must have at least 3 points to be valid. Found {v}"
+            )
         return v
 
 
@@ -790,24 +856,25 @@ class NDPolyline(NDBaseTool):
     ontology_type: Literal["line"] = "line"
     line: List[Point] = Field(json_schema_extra={"determinant": True})
 
-    @field_validator('line')
+    @field_validator("line")
     def is_geom_valid(cls, v):
         if len(v) < 2:
             raise ValueError(
-                f"A line must have at least 2 points to be valid. Found {v}")
+                f"A line must have at least 2 points to be valid. Found {v}"
+            )
         return v
 
 
 class NDRectangle(NDBaseTool):
     ontology_type: Literal["rectangle"] = "rectangle"
     bbox: Bbox = Field(json_schema_extra={"determinant": True})
-    #Could check if points are positive
+    # Could check if points are positive
 
 
 class NDPoint(NDBaseTool):
     ontology_type: Literal["point"] = "point"
     point: Point = Field(json_schema_extra={"determinant": True})
-    #Could check if points are positive
+    # Could check if points are positive
 
 
 class EntityLocation(BaseModel):
@@ -819,17 +886,18 @@ class NDTextEntity(NDBaseTool):
     ontology_type: Literal["named-entity"] = "named-entity"
     location: EntityLocation = Field(json_schema_extra={"determinant": True})
 
-    @field_validator('location')
+    @field_validator("location")
     def is_valid_location(cls, v):
         if isinstance(v, BaseModel):
             v = v.model_dump()
 
         if len(v) < 2:
             raise ValueError(
-                f"A line must have at least 2 points to be valid. Found {v}")
-        if v['start'] < 0:
+                f"A line must have at least 2 points to be valid. Found {v}"
+            )
+        if v["start"] < 0:
             raise ValueError(f"Text location must be positive. Found {v}")
-        if v['start'] > v['end']:
+        if v["start"] > v["end"]:
             raise ValueError(
                 f"Text start location must be less or equal than end. Found {v}"
             )
@@ -840,7 +908,7 @@ class RLEMaskFeatures(BaseModel):
     counts: List[int]
     size: List[int]
 
-    @field_validator('counts')
+    @field_validator("counts")
     def validate_counts(cls, counts):
         if not all([count >= 0 for count in counts]):
             raise ValueError(
@@ -848,7 +916,7 @@ class RLEMaskFeatures(BaseModel):
             )
         return counts
 
-    @field_validator('size')
+    @field_validator("size")
     def validate_size(cls, size):
         if len(size) != 2:
             raise ValueError(
@@ -856,7 +924,8 @@ class RLEMaskFeatures(BaseModel):
             )
         if not all([count > 0 for count in size]):
             raise ValueError(
-                f"Mask `size` should be a postitive int. Found : {size}")
+                f"Mask `size` should be a postitive int. Found : {size}"
+            )
         return size
 
 
@@ -869,9 +938,9 @@ class URIMaskFeatures(BaseModel):
     instanceURI: str
     colorRGB: Union[List[int], Tuple[int, int, int]]
 
-    @field_validator('colorRGB')
+    @field_validator("colorRGB")
     def validate_color(cls, colorRGB):
-        #Does the dtype matter? Can it be a float?
+        # Does the dtype matter? Can it be a float?
         if not isinstance(colorRGB, (tuple, list)):
             raise ValueError(
                 f"Received color that is not a list or tuple. Found : {colorRGB}"
@@ -882,39 +951,46 @@ class URIMaskFeatures(BaseModel):
             )
         elif not all([0 <= color <= 255 for color in colorRGB]):
             raise ValueError(
-                f"All rgb colors must be between 0 and 255. Found : {colorRGB}")
+                f"All rgb colors must be between 0 and 255. Found : {colorRGB}"
+            )
         return colorRGB
 
 
 class NDMask(NDBaseTool):
     ontology_type: Literal["superpixel"] = "superpixel"
-    mask: Union[URIMaskFeatures, PNGMaskFeatures,
-                RLEMaskFeatures] = Field(json_schema_extra={"determinant": True})
+    mask: Union[URIMaskFeatures, PNGMaskFeatures, RLEMaskFeatures] = Field(
+        json_schema_extra={"determinant": True}
+    )
 
 
-#A union with custom construction logic to improve error messages
+# A union with custom construction logic to improve error messages
 class NDTool(
-        SpecialUnion,
-        Type[Union[  # type: ignore
+    SpecialUnion,
+    Type[
+        Union[  # type: ignore
             NDMask,
             NDTextEntity,
             NDPoint,
             NDRectangle,
             NDPolyline,
             NDPolygon,
-        ]]):
-    ...
+        ]
+    ],
+): ...
 
 
 class NDAnnotation(
-        SpecialUnion,
-        Type[Union[  # type: ignore
-            NDTool, NDClassification]]):
-
+    SpecialUnion,
+    Type[
+        Union[  # type: ignore
+            NDTool, NDClassification
+        ]
+    ],
+):
     @classmethod
     def build(cls: Any, data) -> "NDBase":
         if not isinstance(data, dict):
-            raise ValueError('value must be dict')
+            raise ValueError("value must be dict")
         errors = []
         for cl in cls.get_union_types():
             try:
@@ -922,14 +998,15 @@ class NDAnnotation(
             except KeyError as e:
                 errors.append(f"{cl.__name__}: {e}")
 
-        raise ValueError('Unable to construct any annotation.\n{}'.format(
-            "\n".join(errors)))
+        raise ValueError(
+            "Unable to construct any annotation.\n{}".format("\n".join(errors))
+        )
 
     @classmethod
     def schema(cls):
-        data = {'definitions': {}}
+        data = {"definitions": {}}
         for type_ in cls.get_union_types():
             schema_ = type_.schema()
-            data['definitions'].update(schema_.pop('definitions'))
+            data["definitions"].update(schema_.pop("definitions"))
             data[type_.__name__] = schema_
         return data

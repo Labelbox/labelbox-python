@@ -3,7 +3,7 @@ import time
 
 def _model_run_export_v2_results(model_run, task_name, params, num_retries=5):
     """Export model run results and retry if no results are returned."""
-    while (num_retries > 0):
+    while num_retries > 0:
         task = model_run.export_v2(task_name, params=params)
         assert task.name == task_name
         task.wait_till_done()
@@ -30,15 +30,22 @@ def test_model_run_export_v2(model_run_with_data_rows):
 
     for task_result in task_results:
         # Check export param handling
-        assert 'media_attributes' in task_result and task_result[
-            'media_attributes'] is not None
-        exported_model_run = task_result['experiments'][
-            model_run.model_id]['runs'][model_run.uid]
+        assert (
+            "media_attributes" in task_result
+            and task_result["media_attributes"] is not None
+        )
+        exported_model_run = task_result["experiments"][model_run.model_id][
+            "runs"
+        ][model_run.uid]
         task_label_ids_set = set(
-            map(lambda label: label['id'], exported_model_run['labels']))
+            map(lambda label: label["id"], exported_model_run["labels"])
+        )
         task_prediction_ids_set = set(
-            map(lambda prediction: prediction['id'],
-                exported_model_run['predictions']))
+            map(
+                lambda prediction: prediction["id"],
+                exported_model_run["predictions"],
+            )
+        )
         for label_id in task_label_ids_set:
             assert label_id in label_ids
         for prediction_id in task_prediction_ids_set:

@@ -22,6 +22,7 @@ class Invite(DbObject):
     """
     An object representing a user invite
     """
+
     created_at = Field.DateTime("created_at")
     organization_role_name = Field.String("organization_role_name")
     email = Field.String("email", "inviteeEmail")
@@ -31,7 +32,9 @@ class Invite(DbObject):
         super().__init__(client, invite_response)
 
         self.project_roles = [
-            ProjectRole(project=client.get_project(r['projectId']),
-                        role=client.get_roles()[format_role(
-                            r['projectRoleName'])]) for r in project_roles
+            ProjectRole(
+                project=client.get_project(r["projectId"]),
+                role=client.get_roles()[format_role(r["projectRoleName"])],
+            )
+            for r in project_roles
         ]

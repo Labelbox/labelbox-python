@@ -16,26 +16,24 @@ def get_roles(client: "Client") -> Dict[str, "Role"]:
         query_str = """query GetAvailableUserRolesPyApi { roles { id name } }"""
         res = client.execute(query_str)
         _ROLES = {}
-        for role in res['roles']:
-            role['name'] = format_role(role['name'])
-            _ROLES[role['name']] = Role(client, role)
+        for role in res["roles"]:
+            role["name"] = format_role(role["name"])
+            _ROLES[role["name"]] = Role(client, role)
     return _ROLES
 
 
 def format_role(name: str):
-    return name.upper().replace(' ', '_')
+    return name.upper().replace(" ", "_")
 
 
 class Role(DbObject):
     name = Field.String("name")
 
 
-class OrgRole(Role):
-    ...
+class OrgRole(Role): ...
 
 
-class UserRole(Role):
-    ...
+class UserRole(Role): ...
 
 
 @dataclass

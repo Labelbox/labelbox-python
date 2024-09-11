@@ -1,5 +1,11 @@
-from labelbox.data.annotation_types import TextEntity, DocumentEntity, DocumentTextSelection
-from labelbox.data.annotation_types.ner.conversation_entity import ConversationEntity
+from labelbox.data.annotation_types import (
+    TextEntity,
+    DocumentEntity,
+    DocumentTextSelection,
+)
+from labelbox.data.annotation_types.ner.conversation_entity import (
+    ConversationEntity,
+)
 
 
 def test_ner():
@@ -11,9 +17,11 @@ def test_ner():
 
 
 def test_document_entity():
-    document_entity = DocumentEntity(text_selections=[
-        DocumentTextSelection(token_ids=["1", "2"], group_id="1", page=1)
-    ])
+    document_entity = DocumentEntity(
+        text_selections=[
+            DocumentTextSelection(token_ids=["1", "2"], group_id="1", page=1)
+        ]
+    )
 
     assert document_entity.text_selections[0].token_ids == ["1", "2"]
     assert document_entity.text_selections[0].group_id == "1"

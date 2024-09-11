@@ -4,7 +4,10 @@ import warnings
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm.model import Field
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
+from labelbox.schema.export_params import (
+    CatalogExportParams,
+    validate_catalog_export_params,
+)
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.identifiable import GlobalKey, UniqueId
 from labelbox.schema.task import Task
@@ -41,7 +44,7 @@ class Slice(DbObject):
         def to_hash(self):
             return {
                 "id": self.id.key,
-                "global_key": self.global_key.key if self.global_key else None
+                "global_key": self.global_key.key if self.global_key else None,
             }
 
 
@@ -81,10 +84,11 @@ class CatalogSlice(Slice):
         return PaginatedCollection(
             client=self.client,
             query=query_str,
-            params={'id': str(self.uid)},
-            dereferencing=['getDataRowIdsBySavedQuery', 'nodes'],
+            params={"id": str(self.uid)},
+            dereferencing=["getDataRowIdsBySavedQuery", "nodes"],
             obj_class=lambda _, data_row_id: data_row_id,
-            cursor_path=['getDataRowIdsBySavedQuery', 'pageInfo', 'endCursor'])
+            cursor_path=["getDataRowIdsBySavedQuery", "pageInfo", "endCursor"],
+        )
 
     def get_data_row_identifiers(self) -> PaginatedCollection:
         """
@@ -116,18 +120,24 @@ class CatalogSlice(Slice):
         return PaginatedCollection(
             client=self.client,
             query=query_str,
-            params={'id': str(self.uid)},
-            dereferencing=['getDataRowIdentifiersBySavedQuery', 'nodes'],
+            params={"id": str(self.uid)},
+            dereferencing=["getDataRowIdentifiersBySavedQuery", "nodes"],
             obj_class=lambda _, data_row_id_and_gk: Slice.DataRowIdAndGlobalKey(
-                data_row_id_and_gk.get('id'),
-                data_row_id_and_gk.get('globalKey', None)),
+                data_row_id_and_gk.get("id"),
+                data_row_id_and_gk.get("globalKey", None),
+            ),
             cursor_path=[
-                'getDataRowIdentifiersBySavedQuery', 'pageInfo', 'endCursor'
-            ])
+                "getDataRowIdentifiersBySavedQuery",
+                "pageInfo",
+                "endCursor",
+            ],
+        )
 
-    def export(self,
-               task_name: Optional[str] = None,
-               params: Optional[CatalogExportParams] = None) -> ExportTask:
+    def export(
+        self,
+        task_name: Optional[str] = None,
+        params: Optional[CatalogExportParams] = None,
+    ) -> ExportTask:
         """
         Creates a slice export task with the given params and returns the task.
         >>>     slice = client.get_catalog_slice("SLICE_ID")
@@ -155,7 +165,7 @@ class CatalogSlice(Slice):
         >>>     task.result
         """
         task, is_streamable = self._export(task_name, params)
-        if (is_streamable):
+        if is_streamable:
             return ExportTask(task, True)
         return task
 
@@ -165,73 +175,70 @@ class CatalogSlice(Slice):
         params: Optional[CatalogExportParams] = None,
         streamable: bool = False,
     ) -> Tuple[Task, bool]:
-        _params = params or CatalogExportParams({
-            "attachments": False,
-            "embeddings": False,
-            "metadata_fields": False,
-            "data_row_details": False,
-            "project_details": False,
-            "performance_details": False,
-            "label_details": False,
-            "media_type_override": None,
-            "model_run_ids": None,
-            "project_ids": None,
-            "interpolated_frames": False,
-            "all_projects": False,
-            "all_model_runs": False,
-        })
+        _params = params or CatalogExportParams(
+            {
+                "attachments": False,
+                "embeddings": False,
+                "metadata_fields": False,
+                "data_row_details": False,
+                "project_details": False,
+                "performance_details": False,
+                "label_details": False,
+                "media_type_override": None,
+                "model_run_ids": None,
+                "project_ids": None,
+                "interpolated_frames": False,
+                "all_projects": False,
+                "all_model_runs": False,
+            }
+        )
         validate_catalog_export_params(_params)
 
         mutation_name = "exportDataRowsInSlice"
         create_task_query_str = (
             f"mutation {mutation_name}PyApi"
             f"($input: ExportDataRowsInSliceInput!)"
-            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}")
+            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}"
+        )
 
-        media_type_override = _params.get('media_type_override', None)
+        media_type_override = _params.get("media_type_override", None)
         query_params = {
             "input": {
                 "taskName": task_name,
-                "filters": {
-                    "sliceId": self.uid
-                },
+                "filters": {"sliceId": self.uid},
                 "isStreamableReady": True,
                 "params": {
-                    "mediaTypeOverride":
-                        media_type_override.value
-                        if media_type_override is not None else None,
-                    "includeAttachments":
-                        _params.get('attachments', False),
-                    "includeEmbeddings":
-                        _params.get('embeddings', False),
-                    "includeMetadata":
-                        _params.get('metadata_fields', False),
-                    "includeDataRowDetails":
-                        _params.get('data_row_details', False),
-                    "includeProjectDetails":
-                        _params.get('project_details', False),
-                    "includePerformanceDetails":
-                        _params.get('performance_details', False),
-                    "includeLabelDetails":
-                        _params.get('label_details', False),
-                    "includeInterpolatedFrames":
-                        _params.get('interpolated_frames', False),
-                    "projectIds":
-                        _params.get('project_ids', None),
-                    "modelRunIds":
-                        _params.get('model_run_ids', None),
-                    "allProjects":
-                        _params.get('all_projects', False),
-                    "allModelRuns":
-                        _params.get('all_model_runs', False),
+                    "mediaTypeOverride": media_type_override.value
+                    if media_type_override is not None
+                    else None,
+                    "includeAttachments": _params.get("attachments", False),
+                    "includeEmbeddings": _params.get("embeddings", False),
+                    "includeMetadata": _params.get("metadata_fields", False),
+                    "includeDataRowDetails": _params.get(
+                        "data_row_details", False
+                    ),
+                    "includeProjectDetails": _params.get(
+                        "project_details", False
+                    ),
+                    "includePerformanceDetails": _params.get(
+                        "performance_details", False
+                    ),
+                    "includeLabelDetails": _params.get("label_details", False),
+                    "includeInterpolatedFrames": _params.get(
+                        "interpolated_frames", False
+                    ),
+                    "projectIds": _params.get("project_ids", None),
+                    "modelRunIds": _params.get("model_run_ids", None),
+                    "allProjects": _params.get("all_projects", False),
+                    "allModelRuns": _params.get("all_model_runs", False),
                 },
                 "streamable": streamable,
             }
         }
 
-        res = self.client.execute(create_task_query_str,
-                                  query_params,
-                                  error_log_key="errors")
+        res = self.client.execute(
+            create_task_query_str, query_params, error_log_key="errors"
+        )
         res = res[mutation_name]
         task_id = res["taskId"]
         is_streamable = res["isStreamable"]
@@ -284,20 +291,21 @@ class ModelSlice(Slice):
         return PaginatedCollection(
             client=self.client,
             query=ModelSlice.query_str(),
-            params={
-                'id': str(self.uid),
-                'modelRunId': model_run_id
-            },
-            dereferencing=['getDataRowIdentifiersBySavedModelQuery', 'nodes'],
-            obj_class=lambda _, data_row_id_and_gk: data_row_id_and_gk.get('id'
-                                                                          ),
+            params={"id": str(self.uid), "modelRunId": model_run_id},
+            dereferencing=["getDataRowIdentifiersBySavedModelQuery", "nodes"],
+            obj_class=lambda _, data_row_id_and_gk: data_row_id_and_gk.get(
+                "id"
+            ),
             cursor_path=[
-                'getDataRowIdentifiersBySavedModelQuery', 'pageInfo',
-                'endCursor'
-            ])
+                "getDataRowIdentifiersBySavedModelQuery",
+                "pageInfo",
+                "endCursor",
+            ],
+        )
 
-    def get_data_row_identifiers(self,
-                                 model_run_id: str) -> PaginatedCollection:
+    def get_data_row_identifiers(
+        self, model_run_id: str
+    ) -> PaginatedCollection:
         """
         Fetches all data row ids and global keys (where defined) that match this Slice
 
@@ -310,15 +318,15 @@ class ModelSlice(Slice):
         return PaginatedCollection(
             client=self.client,
             query=ModelSlice.query_str(),
-            params={
-                'id': str(self.uid),
-                'modelRunId': model_run_id
-            },
-            dereferencing=['getDataRowIdentifiersBySavedModelQuery', 'nodes'],
+            params={"id": str(self.uid), "modelRunId": model_run_id},
+            dereferencing=["getDataRowIdentifiersBySavedModelQuery", "nodes"],
             obj_class=lambda _, data_row_id_and_gk: Slice.DataRowIdAndGlobalKey(
-                data_row_id_and_gk.get('id'),
-                data_row_id_and_gk.get('globalKey', None)),
+                data_row_id_and_gk.get("id"),
+                data_row_id_and_gk.get("globalKey", None),
+            ),
             cursor_path=[
-                'getDataRowIdentifiersBySavedModelQuery', 'pageInfo',
-                'endCursor'
-            ])
+                "getDataRowIdentifiersBySavedModelQuery",
+                "pageInfo",
+                "endCursor",
+            ],
+        )

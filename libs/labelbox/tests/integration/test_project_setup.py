@@ -9,16 +9,17 @@ from labelbox.exceptions import InvalidQueryError, ResourceConflict
 
 
 def simple_ontology():
-    classifications = [{
-        "name": "test_ontology",
-        "instructions": "Which class is this?",
-        "type": "radio",
-        "options": [{
-            "value": c,
-            "label": c
-        } for c in ["one", "two", "three"]],
-        "required": True,
-    }]
+    classifications = [
+        {
+            "name": "test_ontology",
+            "instructions": "Which class is this?",
+            "type": "radio",
+            "options": [
+                {"value": c, "label": c} for c in ["one", "two", "three"]
+            ],
+            "required": True,
+        }
+    ]
 
     return {"tools": [], "classifications": classifications}
 
@@ -26,7 +27,8 @@ def simple_ontology():
 def test_project_setup(project) -> None:
     client = project.client
     labeling_frontends = list(
-        client.get_labeling_frontends(where=LabelingFrontend.name == 'Editor'))
+        client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
+    )
     assert len(labeling_frontends)
     labeling_frontend = labeling_frontends[0]
 
@@ -64,12 +66,14 @@ def test_project_editor_setup(client, project, rand_gen):
     assert project.ontology().name == ontology_name
     # Make sure that setup only creates one ontology
     time.sleep(3)  # Search takes a second
-    assert [ontology.name for ontology in client.get_ontologies(ontology_name)
-           ] == [ontology_name]
+    assert [
+        ontology.name for ontology in client.get_ontologies(ontology_name)
+    ] == [ontology_name]
 
 
 def test_project_connect_ontology_cant_call_multiple_times(
-        client, project, rand_gen):
+    client, project, rand_gen
+):
     ontology_name = f"test_project_editor_setup_ontology_name-{rand_gen(str)}"
     ontology = client.create_ontology(ontology_name, simple_ontology())
     project.connect_ontology(ontology)

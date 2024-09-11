@@ -3,9 +3,14 @@ import faker
 from uuid import uuid4
 from labelbox import Client
 from labelbox.schema.user_group import UserGroup, UserGroupColor
-from labelbox.exceptions import ResourceNotFoundError, ResourceCreationError, UnprocessableEntityError
+from labelbox.exceptions import (
+    ResourceNotFoundError,
+    ResourceCreationError,
+    UnprocessableEntityError,
+)
 
 data = faker.Faker()
+
 
 @pytest.fixture
 def user_group(client):
@@ -141,7 +146,7 @@ def test_cannot_update_group_id(user_group):
 
 def test_get_user_groups_with_creation_deletion(client):
     user_group = None
-    try: 
+    try:
         # Get all user groups
         user_groups = list(UserGroup(client).get_user_groups())
 
@@ -167,7 +172,9 @@ def test_get_user_groups_with_creation_deletion(client):
 
         user_groups_post_deletion = list(UserGroup(client).get_user_groups())
 
-        assert len(user_groups_post_deletion) == len(user_groups_post_creation) - 1
+        assert (
+            len(user_groups_post_deletion) == len(user_groups_post_creation) - 1
+        )
 
     finally:
         if user_group:
@@ -217,4 +224,5 @@ def test_throw_error_delete_user_group_no_id(user_group, client):
 
 if __name__ == "__main__":
     import subprocess
+
     subprocess.call(["pytest", "-v", __file__])

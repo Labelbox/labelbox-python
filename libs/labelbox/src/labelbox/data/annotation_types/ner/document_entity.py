@@ -17,5 +17,6 @@ class DocumentTextSelection(_CamelCaseMixin, BaseModel):
 
 
 class DocumentEntity(_CamelCaseMixin, BaseModel):
-    """ Represents a text entity """
+    """Represents a text entity"""
+
     text_selections: List[DocumentTextSelection]

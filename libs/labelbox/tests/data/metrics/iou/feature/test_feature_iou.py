@@ -19,7 +19,8 @@ def check_iou(pair):
         assert len(one_metrics)
         one_metric = one_metrics[0]
         assert one_metric.value == sum(list(pair.expected.values())) / len(
-            pair.expected)
+            pair.expected
+        )
 
 
 def test_different_classes(different_classes):

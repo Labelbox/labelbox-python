@@ -15,9 +15,9 @@ def test_text():
     text = "hello world"
     metadata = []
     media_attributes = {}
-    text_data = TextData(text=text,
-                         metadata=metadata,
-                         media_attributes=media_attributes)
+    text_data = TextData(
+        text=text, metadata=metadata, media_attributes=media_attributes
+    )
     assert text_data.text == text
 
 
@@ -31,7 +31,7 @@ def test_url():
 def test_file(tmpdir):
     content = "foo bar baz"
     file = "hello.txt"
-    dir = tmpdir.mkdir('data')
+    dir = tmpdir.mkdir("data")
     dir.join(file).write(content)
     text_data = TextData(file_path=os.path.join(dir.strpath, file))
     assert len(text_data.value) == len(content)
@@ -42,11 +42,13 @@ def test_ref():
     uid = "uid"
     metadata = []
     media_attributes = {}
-    data = TextData(text="hello world",
-                    external_id=external_id,
-                    uid=uid,
-                    metadata=metadata,
-                    media_attributes=media_attributes)
+    data = TextData(
+        text="hello world",
+        external_id=external_id,
+        uid=uid,
+        metadata=metadata,
+        media_attributes=media_attributes,
+    )
     assert data.external_id == external_id
     assert data.uid == uid
     assert data.media_attributes == media_attributes

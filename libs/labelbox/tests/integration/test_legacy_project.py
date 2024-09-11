@@ -5,9 +5,8 @@ from labelbox.schema.queue_mode import QueueMode
 
 def test_project_dataset(client, rand_gen):
     with pytest.raises(
-            ValueError,
-            match=
-            "Dataset queue mode is deprecated. Please prefer Batch queue mode."
+        ValueError,
+        match="Dataset queue mode is deprecated. Please prefer Batch queue mode.",
     ):
         client.create_project(
             name=rand_gen(str),
@@ -30,10 +29,12 @@ def test_project_auto_audit_parameters(client, rand_gen):
 
 
 def test_project_name_parameter(client, rand_gen):
-    with pytest.raises(ValueError,
-                       match="project name must be a valid string."):
+    with pytest.raises(
+        ValueError, match="project name must be a valid string."
+    ):
         client.create_project()
 
-    with pytest.raises(ValueError,
-                       match="project name must be a valid string."):
+    with pytest.raises(
+        ValueError, match="project name must be a valid string."
+    ):
         client.create_project(name="     ")
