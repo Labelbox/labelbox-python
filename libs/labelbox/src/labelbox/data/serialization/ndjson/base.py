@@ -2,10 +2,11 @@ from typing import Optional
 from uuid import uuid4
 
 from labelbox.utils import _CamelCaseMixin, is_exactly_one_set
-from ...annotation_types.types import Cuid
 from pydantic import model_validator, ConfigDict, BaseModel, Field
 from uuid import uuid4
 import threading
+
+from ....annotated_types import Cuid
 
 subclass_registry = {}
 

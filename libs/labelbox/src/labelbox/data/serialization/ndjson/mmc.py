@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional, Union
 from labelbox.utils import _CamelCaseMixin
 
 from .base import _SubclassRegistryBase, DataRow, NDAnnotation
-from ...annotation_types.types import Cuid
 from ...annotation_types.mmc import MessageSingleSelectionTask, MessageMultiSelectionTask, MessageRankingTask, MessageEvaluationTaskAnnotation
 
 

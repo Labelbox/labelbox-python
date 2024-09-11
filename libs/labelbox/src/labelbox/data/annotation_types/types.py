@@ -7,8 +7,6 @@ import numpy as np
 
 from pydantic import StringConstraints, Field
 
-Cuid = Annotated[str, StringConstraints(min_length=25, max_length=25)]
-
 DType = TypeVar('DType')
 DShape = TypeVar('DShape')
 
