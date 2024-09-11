@@ -89,8 +89,9 @@ unit = "pytest tests/unit"
 # LABELBOX_TEST_BASE_URL="http://host.docker.internal:8080" \
 integration = { cmd = "pytest tests/integration" }
 data = { cmd = "pytest tests/data" }
+rye-fmt-check = "rye fmt --check"
 mypy-lint = "mypy src --pretty --show-error-codes --non-interactive --install-types"
-lint = { chain = ["mypy-lint"] }
+lint = { chain = ["mypy-lint", "rye-fmt-check"] }
 test = { chain = ["lint", "unit", "integration"] }
 
 [tool.hatch.metadata]
