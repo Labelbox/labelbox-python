@@ -4,12 +4,24 @@ from typing import TYPE_CHECKING, List, Optional, Tuple, Union, Any
 import json
 
 from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable, experimental
+from labelbox.orm.db_object import (
+    DbObject,
+    Updateable,
+    BulkDeletable,
+    experimental,
+)
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.asset_attachment import AttachmentType
 from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
-from labelbox.schema.export_filters import DatarowExportFilters, build_filters, validate_at_least_one_of_data_row_ids_or_global_keys
-from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
+from labelbox.schema.export_filters import (
+    DatarowExportFilters,
+    build_filters,
+    validate_at_least_one_of_data_row_ids_or_global_keys,
+)
+from labelbox.schema.export_params import (
+    CatalogExportParams,
+    validate_catalog_export_params,
+)
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.task import Task
 
@@ -20,16 +32,16 @@ logger = logging.getLogger(__name__)
 
 
 class KeyType(str, Enum):
-    ID = 'ID'
+    ID = "ID"
     """An existing CUID"""
-    GKEY = 'GKEY'
+    GKEY = "GKEY"
     """A Global key, could be existing or non-existing"""
-    AUTO = 'AUTO'
+    AUTO = "AUTO"
     """The key will be auto-generated. Only usable for creates"""
 
 
 class DataRow(DbObject, Updateable, BulkDeletable):
-    """ Internal Labelbox representation of a single piece of data (e.g. image, video, text).
+    """Internal Labelbox representation of a single piece of data (e.g. image, video, text).
 
     Attributes:
         external_id (str): User-generated file name or identifier
@@ -49,6 +61,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         labels (Relationship): `ToMany` relationship to Label
         attachments (Relationship) `ToMany` relationship with AssetAttachment
     """
+
     external_id = Field.String("external_id")
     global_key = Field.String("global_key")
     row_data = Field.String("row_data")
@@ -59,11 +72,14 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         dict,
         graphql_type="DataRowCustomMetadataUpsertInput!",
         name="metadata_fields",
-        result_subquery="metadataFields { schemaId name value kind }")
-    metadata = Field.List(DataRowMetadataField,
-                          name="metadata",
-                          graphql_name="customMetadata",
-                          result_subquery="customMetadata { schemaId value }")
+        result_subquery="metadataFields { schemaId name value kind }",
+    )
+    metadata = Field.List(
+        DataRowMetadataField,
+        name="metadata",
+        graphql_name="customMetadata",
+        result_subquery="customMetadata { schemaId value }",
+    )
 
     # Relationships
     dataset = Relationship.ToOne("Dataset")
@@ -73,7 +89,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
     attachments = Relationship.ToMany("AssetAttachment", False, "attachments")
 
     supported_meta_types = supported_attachment_types = set(
-        AttachmentType.__members__)
+        AttachmentType.__members__
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -95,12 +112,12 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
         row_data = kwargs.get("row_data")
         if isinstance(row_data, dict):
-            kwargs['row_data'] = json.dumps(row_data)
+            kwargs["row_data"] = json.dumps(row_data)
         super().update(**kwargs)
 
     @staticmethod
     def bulk_delete(data_rows) -> None:
-        """ Deletes all the given DataRows.
+        """Deletes all the given DataRows.
 
         Args:
             data_rows (list of DataRow): The DataRows to delete.
@@ -108,7 +125,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         BulkDeletable._bulk_delete(data_rows, True)
 
     def get_winning_label_id(self, project_id: str) -> Optional[str]:
-        """ Retrieves the winning label ID, i.e. the one that was marked as the
+        """Retrieves the winning label ID, i.e. the one that was marked as the
             best for a particular data row, in a project's workflow.
 
         Args:
@@ -121,21 +138,27 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                 labelingActivity(where: { projectId: $%s }) {
                     selectedLabelId
                 }
-            }} """ % (data_row_id_param, project_id_param, data_row_id_param,
-                      project_id_param)
+            }} """ % (
+            data_row_id_param,
+            project_id_param,
+            data_row_id_param,
+            project_id_param,
+        )
 
-        res = self.client.execute(query_str, {
-            data_row_id_param: self.uid,
-            project_id_param: project_id,
-        })
+        res = self.client.execute(
+            query_str,
+            {
+                data_row_id_param: self.uid,
+                project_id_param: project_id,
+            },
+        )
 
         return res["dataRow"]["labelingActivity"]["selectedLabelId"]
 
-    def create_attachment(self,
-                          attachment_type,
-                          attachment_value,
-                          attachment_name=None) -> "AssetAttachment":
-        """ Adds an AssetAttachment to a DataRow.
+    def create_attachment(
+        self, attachment_type, attachment_value, attachment_name=None
+    ) -> "AssetAttachment":
+        """Adds an AssetAttachment to a DataRow.
             Labelers can view these attachments while labeling.
 
             >>> datarow.create_attachment("TEXT", "This is a text message")
@@ -151,10 +174,9 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             ValueError: attachment_type must be one of the supported types.
             ValueError: attachment_value must be a non-empty string.
         """
-        Entity.AssetAttachment.validate_attachment_json({
-            'type': attachment_type,
-            'value': attachment_value
-        })
+        Entity.AssetAttachment.validate_attachment_json(
+            {"type": attachment_type, "value": attachment_value}
+        )
 
         attachment_type_param = "type"
         attachment_value_param = "value"
@@ -165,20 +187,29 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             $%s: AttachmentType!, $%s: String!, $%s: String, $%s: ID!) {
             createDataRowAttachment(data: {
                 type: $%s value: $%s name: $%s dataRowId: $%s}) {%s}} """ % (
-            attachment_type_param, attachment_value_param,
-            attachment_name_param, data_row_id_param, attachment_type_param,
-            attachment_value_param, attachment_name_param, data_row_id_param,
-            query.results_query_part(Entity.AssetAttachment))
+            attachment_type_param,
+            attachment_value_param,
+            attachment_name_param,
+            data_row_id_param,
+            attachment_type_param,
+            attachment_value_param,
+            attachment_name_param,
+            data_row_id_param,
+            query.results_query_part(Entity.AssetAttachment),
+        )
 
         res = self.client.execute(
-            query_str, {
+            query_str,
+            {
                 attachment_type_param: attachment_type,
                 attachment_value_param: attachment_value,
                 attachment_name_param: attachment_name,
-                data_row_id_param: self.uid
-            })
-        return Entity.AssetAttachment(self.client,
-                                      res["createDataRowAttachment"])
+                data_row_id_param: self.uid,
+            },
+        )
+        return Entity.AssetAttachment(
+            self.client, res["createDataRowAttachment"]
+        )
 
     @staticmethod
     def export(
@@ -210,12 +241,9 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task, _ = DataRow._export(client,
-                                  data_rows,
-                                  global_keys,
-                                  task_name,
-                                  params,
-                                  streamable=True)
+        task, _ = DataRow._export(
+            client, data_rows, global_keys, task_name, params, streamable=True
+        )
         return ExportTask(task)
 
     @staticmethod
@@ -249,8 +277,9 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
-        task, is_streamable = DataRow._export(client, data_rows, global_keys,
-                                              task_name, params)
+        task, is_streamable = DataRow._export(
+            client, data_rows, global_keys, task_name, params
+        )
         if is_streamable:
             return ExportTask(task, True)
         return task
@@ -264,21 +293,23 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         params: Optional[CatalogExportParams] = None,
         streamable: bool = False,
     ) -> Tuple[Task, bool]:
-        _params = params or CatalogExportParams({
-            "attachments": False,
-            "embeddings": False,
-            "metadata_fields": False,
-            "data_row_details": False,
-            "project_details": False,
-            "performance_details": False,
-            "label_details": False,
-            "media_type_override": None,
-            "model_run_ids": None,
-            "project_ids": None,
-            "interpolated_frames": False,
-            "all_projects": False,
-            "all_model_runs": False,
-        })
+        _params = params or CatalogExportParams(
+            {
+                "attachments": False,
+                "embeddings": False,
+                "metadata_fields": False,
+                "data_row_details": False,
+                "project_details": False,
+                "performance_details": False,
+                "label_details": False,
+                "media_type_override": None,
+                "model_run_ids": None,
+                "project_ids": None,
+                "interpolated_frames": False,
+                "all_projects": False,
+                "all_model_runs": False,
+            }
+        )
 
         validate_catalog_export_params(_params)
 
@@ -286,7 +317,8 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         create_task_query_str = (
             f"mutation {mutation_name}PyApi"
             f"($input: ExportDataRowsInCatalogInput!)"
-            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}")
+            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}"
+        )
 
         data_row_ids = []
         if data_rows is not None:
@@ -296,17 +328,25 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                 elif isinstance(dr, str):
                     data_row_ids.append(dr)
 
-        filters = DatarowExportFilters({
-            "data_row_ids": data_row_ids,
-            "global_keys": None,
-        }) if data_row_ids else DatarowExportFilters({
-            "data_row_ids": None,
-            "global_keys": global_keys,
-        })
+        filters = (
+            DatarowExportFilters(
+                {
+                    "data_row_ids": data_row_ids,
+                    "global_keys": None,
+                }
+            )
+            if data_row_ids
+            else DatarowExportFilters(
+                {
+                    "data_row_ids": None,
+                    "global_keys": global_keys,
+                }
+            )
+        )
         validate_at_least_one_of_data_row_ids_or_global_keys(filters)
 
         search_query = build_filters(client, filters)
-        media_type_override = _params.get('media_type_override', None)
+        media_type_override = _params.get("media_type_override", None)
 
         if task_name is None:
             task_name = f"Export v2: data rows {len(data_row_ids)}"
@@ -314,48 +354,41 @@ class DataRow(DbObject, Updateable, BulkDeletable):
             "input": {
                 "taskName": task_name,
                 "filters": {
-                    "searchQuery": {
-                        "scope": None,
-                        "query": search_query
-                    }
+                    "searchQuery": {"scope": None, "query": search_query}
                 },
                 "isStreamableReady": True,
                 "params": {
-                    "mediaTypeOverride":
-                        media_type_override.value
-                        if media_type_override is not None else None,
-                    "includeAttachments":
-                        _params.get('attachments', False),
-                    "includeEmbeddings":
-                        _params.get('embeddings', False),
-                    "includeMetadata":
-                        _params.get('metadata_fields', False),
-                    "includeDataRowDetails":
-                        _params.get('data_row_details', False),
-                    "includeProjectDetails":
-                        _params.get('project_details', False),
-                    "includePerformanceDetails":
-                        _params.get('performance_details', False),
-                    "includeLabelDetails":
-                        _params.get('label_details', False),
-                    "includeInterpolatedFrames":
-                        _params.get('interpolated_frames', False),
-                    "projectIds":
-                        _params.get('project_ids', None),
-                    "modelRunIds":
-                        _params.get('model_run_ids', None),
-                    "allProjects":
-                        _params.get('all_projects', False),
-                    "allModelRuns":
-                        _params.get('all_model_runs', False),
+                    "mediaTypeOverride": media_type_override.value
+                    if media_type_override is not None
+                    else None,
+                    "includeAttachments": _params.get("attachments", False),
+                    "includeEmbeddings": _params.get("embeddings", False),
+                    "includeMetadata": _params.get("metadata_fields", False),
+                    "includeDataRowDetails": _params.get(
+                        "data_row_details", False
+                    ),
+                    "includeProjectDetails": _params.get(
+                        "project_details", False
+                    ),
+                    "includePerformanceDetails": _params.get(
+                        "performance_details", False
+                    ),
+                    "includeLabelDetails": _params.get("label_details", False),
+                    "includeInterpolatedFrames": _params.get(
+                        "interpolated_frames", False
+                    ),
+                    "projectIds": _params.get("project_ids", None),
+                    "modelRunIds": _params.get("model_run_ids", None),
+                    "allProjects": _params.get("all_projects", False),
+                    "allModelRuns": _params.get("all_model_runs", False),
                 },
-                "streamable": streamable
+                "streamable": streamable,
             }
         }
 
-        res = client.execute(create_task_query_str,
-                             query_params,
-                             error_log_key="errors")
+        res = client.execute(
+            create_task_query_str, query_params, error_log_key="errors"
+        )
         res = res[mutation_name]
         task_id = res["taskId"]
         is_streamable = res["isStreamable"]

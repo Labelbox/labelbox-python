@@ -15,7 +15,7 @@ def test_point():
     point = Point(x=0, y=1)
     expected = {"coordinates": [0, 1], "type": "Point"}
     assert point.geometry == expected
-    expected['coordinates'] = tuple(expected['coordinates'])
+    expected["coordinates"] = tuple(expected["coordinates"])
     assert point.shapely.__geo_interface__ == expected
 
     raster = point.draw(height=32, width=32, thickness=1)

@@ -6,6 +6,7 @@ from collections import Counter
 
 from labelbox import DataSplit, ModelRun
 
+
 @pytest.mark.order(1)
 def test_model_run(client, configured_project_with_label, data_row, rand_gen):
     project, _, _, label = configured_project_with_label
@@ -87,19 +88,19 @@ def test_model_run_data_rows_delete(model_run_with_data_rows):
     assert len(before) == len(after) + 1
 
 
-def test_model_run_upsert_data_rows(dataset, model_run,
-                                    configured_project):
+def test_model_run_upsert_data_rows(dataset, model_run, configured_project):
     n_model_run_data_rows = len(list(model_run.model_run_data_rows()))
     assert n_model_run_data_rows == 0
     data_row = dataset.create_data_row(row_data="test row data")
     configured_project._wait_until_data_rows_are_processed(
-        data_row_ids=[data_row.uid])
+        data_row_ids=[data_row.uid]
+    )
     model_run.upsert_data_rows([data_row.uid])
     n_model_run_data_rows = len(list(model_run.model_run_data_rows()))
     assert n_model_run_data_rows == 1
 
 
-@pytest.mark.parametrize('data_rows', [2], indirect=True)
+@pytest.mark.parametrize("data_rows", [2], indirect=True)
 def test_model_run_upsert_data_rows_using_global_keys(model_run, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
     assert model_run.upsert_data_rows(global_keys=global_keys)
@@ -109,68 +110,77 @@ def test_model_run_upsert_data_rows_using_global_keys(model_run, data_rows):
 
 
 def test_model_run_upsert_data_rows_with_existing_labels(
-        model_run_with_data_rows):
+    model_run_with_data_rows,
+):
     model_run_data_rows = list(model_run_with_data_rows.model_run_data_rows())
     n_data_rows = len(model_run_data_rows)
-    model_run_with_data_rows.upsert_data_rows([
-        model_run_data_row.data_row().uid
-        for model_run_data_row in model_run_data_rows
-    ])
+    model_run_with_data_rows.upsert_data_rows(
+        [
+            model_run_data_row.data_row().uid
+            for model_run_data_row in model_run_data_rows
+        ]
+    )
     assert n_data_rows == len(
-        list(model_run_with_data_rows.model_run_data_rows()))
+        list(model_run_with_data_rows.model_run_data_rows())
+    )
 
 
-@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
-                    reason="does not work for onprem")
+@pytest.mark.skipif(
+    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem",
+    reason="does not work for onprem",
+)
 def test_model_run_status(model_run_with_data_rows):
-
     def get_model_run_status():
         return model_run_with_data_rows.client.execute(
             """query trainingPipelinePyApi($modelRunId: ID!) {
             trainingPipeline(where: {id : $modelRunId}) {status, errorMessage, metadata}}
-        """, {'modelRunId': model_run_with_data_rows.uid},
-            experimental=True)['trainingPipeline']
+        """,
+            {"modelRunId": model_run_with_data_rows.uid},
+            experimental=True,
+        )["trainingPipeline"]
 
     model_run_status = get_model_run_status()
-    assert model_run_status['status'] is None
-    assert model_run_status['metadata'] is None
-    assert model_run_status['errorMessage'] is None
+    assert model_run_status["status"] is None
+    assert model_run_status["metadata"] is None
+    assert model_run_status["errorMessage"] is None
 
     status = "COMPLETE"
-    metadata = {'key1': 'value1'}
+    metadata = {"key1": "value1"}
     errorMessage = "an error"
     model_run_with_data_rows.update_status(status, metadata, errorMessage)
 
     model_run_status = get_model_run_status()
-    assert model_run_status['status'] == status
-    assert model_run_status['metadata'] == metadata
-    assert model_run_status['errorMessage'] == errorMessage
+    assert model_run_status["status"] == status
+    assert model_run_status["metadata"] == metadata
+    assert model_run_status["errorMessage"] == errorMessage
 
-    extra_metadata = {'key2': 'value2'}
+    extra_metadata = {"key2": "value2"}
     model_run_with_data_rows.update_status(status, extra_metadata)
     model_run_status = get_model_run_status()
-    assert model_run_status['status'] == status
-    assert model_run_status['metadata'] == {**metadata, **extra_metadata}
-    assert model_run_status['errorMessage'] == errorMessage
+    assert model_run_status["status"] == status
+    assert model_run_status["metadata"] == {**metadata, **extra_metadata}
+    assert model_run_status["errorMessage"] == errorMessage
 
     status = ModelRun.Status.FAILED
     model_run_with_data_rows.update_status(status, metadata, errorMessage)
     model_run_status = get_model_run_status()
-    assert model_run_status['status'] == status.value
+    assert model_run_status["status"] == status.value
 
     with pytest.raises(ValueError):
-        model_run_with_data_rows.update_status("INVALID", metadata,
-                                               errorMessage)
+        model_run_with_data_rows.update_status(
+            "INVALID", metadata, errorMessage
+        )
 
 
-def test_model_run_split_assignment_by_data_row_ids(model_run, dataset,
-                                                    image_url):
+def test_model_run_split_assignment_by_data_row_ids(
+    model_run, dataset, image_url
+):
     n_data_rows = 2
-    data_rows = dataset.create_data_rows([{
-        "row_data": image_url
-    } for _ in range(n_data_rows)])
+    data_rows = dataset.create_data_rows(
+        [{"row_data": image_url} for _ in range(n_data_rows)]
+    )
     data_rows.wait_till_done()
-    data_row_ids = [data_row['id'] for data_row in data_rows.result]
+    data_row_ids = [data_row["id"] for data_row in data_rows.result]
     model_run.upsert_data_rows(data_row_ids)
 
     with pytest.raises(ValueError):
@@ -185,15 +195,16 @@ def test_model_run_split_assignment_by_data_row_ids(model_run, dataset,
         assert counts[split] == n_data_rows
 
 
-@pytest.mark.parametrize('data_rows', [2], indirect=True)
+@pytest.mark.parametrize("data_rows", [2], indirect=True)
 def test_model_run_split_assignment_by_global_keys(model_run, data_rows):
     global_keys = [data_row.global_key for data_row in data_rows]
 
     model_run.upsert_data_rows(global_keys=global_keys)
 
     for split in ["TRAINING", "TEST", "VALIDATION", "UNASSIGNED", *DataSplit]:
-        model_run.assign_data_rows_to_split(split=split,
-                                            global_keys=global_keys)
+        model_run.assign_data_rows_to_split(
+            split=split, global_keys=global_keys
+        )
         splits = [
             data_row.data_split.value
             for data_row in model_run.model_run_data_rows()

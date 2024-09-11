@@ -37,13 +37,15 @@ def test_data_row_type_by_data_row_id(
     annotations_by_media_type,
     hardcoded_datarow_id,
 ):
-    annotations_ndjson =  annotations_by_media_type[media_type]
+    annotations_ndjson = annotations_by_media_type[media_type]
     annotations_ndjson = [annotation[0] for annotation in annotations_ndjson]
-    
+
     label = list(NDJsonConverter.deserialize(annotations_ndjson))[0]
-   
-    data_label = lb_types.Label(data=data_type_class(uid = hardcoded_datarow_id()),
-                       annotations=label.annotations)
+
+    data_label = lb_types.Label(
+        data=data_type_class(uid=hardcoded_datarow_id()),
+        annotations=label.annotations,
+    )
 
     assert data_label.data.uid == label.data.uid
     assert label.annotations == data_label.annotations
@@ -67,13 +69,15 @@ def test_data_row_type_by_global_key(
     annotations_by_media_type,
     hardcoded_global_key,
 ):
-    annotations_ndjson =  annotations_by_media_type[media_type]
+    annotations_ndjson = annotations_by_media_type[media_type]
     annotations_ndjson = [annotation[0] for annotation in annotations_ndjson]
-    
+
     label = list(NDJsonConverter.deserialize(annotations_ndjson))[0]
-   
-    data_label = lb_types.Label(data=data_type_class(global_key = hardcoded_global_key()),
-                       annotations=label.annotations)
+
+    data_label = lb_types.Label(
+        data=data_type_class(global_key=hardcoded_global_key()),
+        annotations=label.annotations,
+    )
 
     assert data_label.data.global_key == label.data.global_key
     assert label.annotations == data_label.annotations

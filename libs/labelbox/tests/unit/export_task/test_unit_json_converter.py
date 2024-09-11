@@ -1,10 +1,14 @@
 from unittest.mock import MagicMock
 
-from labelbox.schema.export_task import Converter, JsonConverter, Range, _MetadataFileInfo
+from labelbox.schema.export_task import (
+    Converter,
+    JsonConverter,
+    Range,
+    _MetadataFileInfo,
+)
 
 
 class TestJsonConverter:
-
     def test_with_correct_ndjson(self, generate_random_ndjson):
         line_count = 10
         ndjson = generate_random_ndjson(line_count)
@@ -71,8 +75,9 @@ class TestJsonConverter:
             for idx, output in enumerate(converter.convert(input_args)):
                 assert output.current_line == line_start + idx
                 assert output.current_offset == current_offset
-                assert output.json_str == ndjson[line_start +
-                                                 idx][skipped_bytes:]
+                assert (
+                    output.json_str == ndjson[line_start + idx][skipped_bytes:]
+                )
                 current_offset += len(output.json_str) + 1
                 skipped_bytes = 0
 
@@ -100,7 +105,8 @@ class TestJsonConverter:
             for idx, output in enumerate(converter.convert(input_args)):
                 assert output.current_line == line_start + idx
                 assert output.current_offset == current_offset
-                assert output.json_str == ndjson[line_start +
-                                                 idx][skipped_bytes:]
+                assert (
+                    output.json_str == ndjson[line_start + idx][skipped_bytes:]
+                )
                 current_offset += len(output.json_str) + 1
                 skipped_bytes = 0

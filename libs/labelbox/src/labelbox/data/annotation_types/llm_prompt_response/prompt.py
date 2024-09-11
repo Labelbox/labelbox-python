@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class PromptText(ConfidenceMixin, CustomMetricsMixin, BaseModel):
-    """ Prompt text for LLM data generation
+    """Prompt text for LLM data generation
 
     >>> PromptText(answer = "some text answer",
     >>>    confidence = 0.5,
@@ -14,11 +14,13 @@ class PromptText(ConfidenceMixin, CustomMetricsMixin, BaseModel):
     >>>         "value": 0.1
     >>>     }])
     """
+
     answer: str
 
 
-class PromptClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
-                               CustomMetricsMixin):
+class PromptClassificationAnnotation(
+    BaseAnnotation, ConfidenceMixin, CustomMetricsMixin
+):
     """Prompt annotation (non localized)
 
     >>> PromptClassificationAnnotation(
@@ -30,6 +32,6 @@ class PromptClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
         name (Optional[str])
         feature_schema_id (Optional[Cuid])
         value (Union[Text])
-     """
+    """
 
     value: PromptText

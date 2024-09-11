@@ -53,29 +53,30 @@ pytest_plugins = []
 
 @pytest.fixture(scope="session")
 def rand_gen():
-
     def gen(field_type):
         if field_type is str:
-            return "".join(ascii_letters[randint(0,
-                                                 len(ascii_letters) - 1)]
-                           for _ in range(16))
+            return "".join(
+                ascii_letters[randint(0, len(ascii_letters) - 1)]
+                for _ in range(16)
+            )
 
         if field_type is datetime:
             return datetime.now()
 
-        raise Exception("Can't random generate for field type '%r'" %
-                        field_type)
+        raise Exception(
+            "Can't random generate for field type '%r'" % field_type
+        )
 
     return gen
 
 
 class Environ(Enum):
-    LOCAL = 'local'
-    PROD = 'prod'
-    STAGING = 'staging'
-    CUSTOM = 'custom'
-    STAGING_EU = 'staging-eu'
-    EPHEMERAL = 'ephemeral'  # Used for testing PRs with ephemeral environments
+    LOCAL = "local"
+    PROD = "prod"
+    STAGING = "staging"
+    CUSTOM = "custom"
+    STAGING_EU = "staging-eu"
+    EPHEMERAL = "ephemeral"  # Used for testing PRs with ephemeral environments
 
 
 @pytest.fixture
@@ -89,48 +90,50 @@ def external_id() -> str:
 
 
 def ephemeral_endpoint() -> str:
-    return os.getenv('LABELBOX_TEST_BASE_URL', EPHEMERAL_BASE_URL)
+    return os.getenv("LABELBOX_TEST_BASE_URL", EPHEMERAL_BASE_URL)
 
 
 def graphql_url(environ: str) -> str:
     if environ == Environ.LOCAL:
-        return 'http://localhost:3000/api/graphql'
+        return "http://localhost:3000/api/graphql"
     elif environ == Environ.PROD:
-        return 'https://api.labelbox.com/graphql'
+        return "https://api.labelbox.com/graphql"
     elif environ == Environ.STAGING:
-        return 'https://api.lb-stage.xyz/graphql'
+        return "https://api.lb-stage.xyz/graphql"
     elif environ == Environ.CUSTOM:
         graphql_api_endpoint = os.environ.get(
-            'LABELBOX_TEST_GRAPHQL_API_ENDPOINT')
+            "LABELBOX_TEST_GRAPHQL_API_ENDPOINT"
+        )
         if graphql_api_endpoint is None:
             raise Exception("Missing LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
         return graphql_api_endpoint
     elif environ == Environ.EPHEMERAL:
         return f"{ephemeral_endpoint()}/graphql"
-    return 'http://host.docker.internal:8080/graphql'
+    return "http://host.docker.internal:8080/graphql"
 
 
 def rest_url(environ: str) -> str:
     if environ == Environ.LOCAL:
-        return 'http://localhost:3000/api/v1'
+        return "http://localhost:3000/api/v1"
     elif environ == Environ.PROD:
-        return 'https://api.labelbox.com/api/v1'
+        return "https://api.labelbox.com/api/v1"
     elif environ == Environ.STAGING:
-        return 'https://api.lb-stage.xyz/api/v1'
+        return "https://api.lb-stage.xyz/api/v1"
     elif environ == Environ.CUSTOM:
-        rest_api_endpoint = os.environ.get('LABELBOX_TEST_REST_API_ENDPOINT')
+        rest_api_endpoint = os.environ.get("LABELBOX_TEST_REST_API_ENDPOINT")
         if rest_api_endpoint is None:
             raise Exception("Missing LABELBOX_TEST_REST_API_ENDPOINT")
         return rest_api_endpoint
     elif environ == Environ.EPHEMERAL:
         return f"{ephemeral_endpoint()}/api/v1"
-    return 'http://host.docker.internal:8080/api/v1'
+    return "http://host.docker.internal:8080/api/v1"
 
 
 def testing_api_key(environ: Environ) -> str:
     keys = [
         f"LABELBOX_TEST_API_KEY_{environ.value.upper()}",
-        "LABELBOX_TEST_API_KEY", "LABELBOX_API_KEY"
+        "LABELBOX_TEST_API_KEY",
+        "LABELBOX_API_KEY",
     ]
     for key in keys:
         value = os.environ.get(key)
@@ -143,47 +146,51 @@ def service_api_key() -> str:
     service_api_key = os.environ["SERVICE_API_KEY"]
     if service_api_key is None:
         raise Exception(
-            "SERVICE_API_KEY is missing and needed for admin client")
+            "SERVICE_API_KEY is missing and needed for admin client"
+        )
     return service_api_key
 
 
 class IntegrationClient(Client):
-
     def __init__(self, environ: str) -> None:
         api_url = graphql_url(environ)
         api_key = testing_api_key(environ)
         rest_endpoint = rest_url(environ)
-        super().__init__(api_key,
-                         api_url,
-                         enable_experimental=True,
-                         rest_endpoint=rest_endpoint)
+        super().__init__(
+            api_key,
+            api_url,
+            enable_experimental=True,
+            rest_endpoint=rest_endpoint,
+        )
         self.queries = []
 
     def execute(self, query=None, params=None, check_naming=True, **kwargs):
         if check_naming and query is not None:
-            assert re.match(r"\s*(?:query|mutation) \w+PyApi",
-                            query) is not None
+            assert (
+                re.match(r"\s*(?:query|mutation) \w+PyApi", query) is not None
+            )
         self.queries.append((query, params))
-        if not kwargs.get('timeout'):
-            kwargs['timeout'] = 30.0
+        if not kwargs.get("timeout"):
+            kwargs["timeout"] = 30.0
         return super().execute(query, params, **kwargs)
 
 
 class AdminClient(Client):
-
     def __init__(self, env):
         """
-            The admin client creates organizations and users using admin api described here https://labelbox.atlassian.net/wiki/spaces/AP/pages/2206564433/Internal+Admin+APIs.
+        The admin client creates organizations and users using admin api described here https://labelbox.atlassian.net/wiki/spaces/AP/pages/2206564433/Internal+Admin+APIs.
         """
         self._api_key = service_api_key()
         self._admin_endpoint = f"{ephemeral_endpoint()}/admin/v1"
         self._api_url = graphql_url(env)
         self._rest_endpoint = rest_url(env)
 
-        super().__init__(self._api_key,
-                         self._api_url,
-                         enable_experimental=True,
-                         rest_endpoint=self._rest_endpoint)
+        super().__init__(
+            self._api_key,
+            self._api_url,
+            enable_experimental=True,
+            rest_endpoint=self._rest_endpoint,
+        )
 
     def _create_organization(self) -> str:
         endpoint = f"{self._admin_endpoint}/organizations/"
@@ -195,12 +202,14 @@ class AdminClient(Client):
 
         data = response.json()
         if response.status_code not in [
-                requests.codes.created, requests.codes.ok
+            requests.codes.created,
+            requests.codes.ok,
         ]:
-            raise Exception("Failed to create org, message: " +
-                            str(data['message']))
+            raise Exception(
+                "Failed to create org, message: " + str(data["message"])
+            )
 
-        return data['id']
+        return data["id"]
 
     def _create_user(self, organization_id=None) -> Tuple[str, str]:
         if organization_id is None:
@@ -221,31 +230,35 @@ class AdminClient(Client):
         )
         data = response.json()
         if response.status_code not in [
-                requests.codes.created, requests.codes.ok
+            requests.codes.created,
+            requests.codes.ok,
         ]:
-            raise Exception("Failed to create user, message: " +
-                            str(data['message']))
+            raise Exception(
+                "Failed to create user, message: " + str(data["message"])
+            )
 
-        user_identity_id = data['identityId']
+        user_identity_id = data["identityId"]
 
-        endpoint = f"{self._admin_endpoint}/organizations/{organization_id}/users/"
+        endpoint = (
+            f"{self._admin_endpoint}/organizations/{organization_id}/users/"
+        )
         response = requests.post(
             endpoint,
             headers=self.headers,
-            json={
-                "identityId": user_identity_id,
-                "organizationRole": "Admin"
-            },
+            json={"identityId": user_identity_id, "organizationRole": "Admin"},
         )
 
         data = response.json()
         if response.status_code not in [
-                requests.codes.created, requests.codes.ok
+            requests.codes.created,
+            requests.codes.ok,
         ]:
-            raise Exception("Failed to create link user to org, message: " +
-                            str(data['message']))
+            raise Exception(
+                "Failed to create link user to org, message: "
+                + str(data["message"])
+            )
 
-        user_id = data['id']
+        user_id = data["id"]
 
         endpoint = f"{self._admin_endpoint}/users/{user_id}/token"
         response = requests.get(
@@ -254,10 +267,13 @@ class AdminClient(Client):
         )
         data = response.json()
         if response.status_code not in [
-                requests.codes.created, requests.codes.ok
+            requests.codes.created,
+            requests.codes.ok,
         ]:
-            raise Exception("Failed to create ephemeral user, message: " +
-                            str(data['message']))
+            raise Exception(
+                "Failed to create ephemeral user, message: "
+                + str(data["message"])
+            )
 
         token = data["token"]
 
@@ -282,17 +298,18 @@ class AdminClient(Client):
 
 
 class EphemeralClient(Client):
-
     def __init__(self, environ=Environ.EPHEMERAL):
         self.admin_client = AdminClient(environ)
         self.api_key = self.admin_client.create_api_key_for_user()
         api_url = graphql_url(environ)
         rest_endpoint = rest_url(environ)
 
-        super().__init__(self.api_key,
-                         api_url,
-                         enable_experimental=True,
-                         rest_endpoint=rest_endpoint)
+        super().__init__(
+            self.api_key,
+            api_url,
+            enable_experimental=True,
+            rest_endpoint=rest_endpoint,
+        )
 
 
 @pytest.fixture
@@ -322,7 +339,7 @@ def environ() -> Environ:
         value = os.environ.get(key)
         if value is not None:
             return Environ(value)
-    raise Exception(f'Missing env key in: {os.environ}')
+    raise Exception(f"Missing env key in: {os.environ}")
 
 
 def cancel_invite(client, invite_id):
@@ -331,7 +348,7 @@ def cancel_invite(client, invite_id):
     """
     query_str = """mutation CancelInvitePyApi($where: WhereUniqueIdInput!) {
             cancelInvite(where: $where) {id}}"""
-    client.execute(query_str, {'where': {'id': invite_id}}, experimental=True)
+    client.execute(query_str, {"where": {"id": invite_id}}, experimental=True)
 
 
 def get_project_invites(client, project_id):
@@ -344,11 +361,14 @@ def get_project_invites(client, project_id):
         invites(from: $from, first: $first) { nodes { %s
         projectInvites { projectId projectRoleName } } nextCursor}}}
     """ % (id_param, id_param, query.results_query_part(Invite))
-    return PaginatedCollection(client,
-                               query_str, {id_param: project_id},
-                               ['project', 'invites', 'nodes'],
-                               Invite,
-                               cursor_path=['project', 'invites', 'nextCursor'])
+    return PaginatedCollection(
+        client,
+        query_str,
+        {id_param: project_id},
+        ["project", "invites", "nodes"],
+        Invite,
+        cursor_path=["project", "invites", "nextCursor"],
+    )
 
 
 def get_invites(client):
@@ -360,18 +380,23 @@ def get_invites(client):
                 nodes { id createdAt organizationRoleName inviteeEmail } nextCursor }}}"""
     invites = PaginatedCollection(
         client,
-        query_str, {}, ['organization', 'invites', 'nodes'],
+        query_str,
+        {},
+        ["organization", "invites", "nodes"],
         Invite,
-        cursor_path=['organization', 'invites', 'nextCursor'],
-        experimental=True)
+        cursor_path=["organization", "invites", "nextCursor"],
+        experimental=True,
+    )
     return invites
 
 
 @pytest.fixture
 def queries():
-    return SimpleNamespace(cancel_invite=cancel_invite,
-                           get_project_invites=get_project_invites,
-                           get_invites=get_invites)
+    return SimpleNamespace(
+        cancel_invite=cancel_invite,
+        get_project_invites=get_project_invites,
+        get_invites=get_invites,
+    )
 
 
 @pytest.fixture(scope="session")
@@ -388,52 +413,57 @@ def client(environ: str):
 
 @pytest.fixture(scope="session")
 def pdf_url(client):
-    pdf_url = client.upload_file('tests/assets/loremipsum.pdf')
-    return {"row_data": {"pdf_url": pdf_url,}, "global_key": str(uuid.uuid4())}
+    pdf_url = client.upload_file("tests/assets/loremipsum.pdf")
+    return {
+        "row_data": {
+            "pdf_url": pdf_url,
+        },
+        "global_key": str(uuid.uuid4()),
+    }
 
 
 @pytest.fixture(scope="session")
 def pdf_entity_data_row(client):
     pdf_url = client.upload_file(
-        'tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483.pdf')
+        "tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483.pdf"
+    )
     text_layer_url = client.upload_file(
-        'tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483-lb-textlayer.json'
+        "tests/assets/arxiv-pdf_data_99-word-token-pdfs_0801.3483-lb-textlayer.json"
     )
 
     return {
-        "row_data": {
-            "pdf_url": pdf_url,
-            "text_layer_url": text_layer_url
-        },
-        "global_key": str(uuid.uuid4())
+        "row_data": {"pdf_url": pdf_url, "text_layer_url": text_layer_url},
+        "global_key": str(uuid.uuid4()),
     }
 
 
 @pytest.fixture()
 def conversation_entity_data_row(client, rand_gen):
     return {
-        "row_data":
-            "https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json",
-        "global_key":
-            f"https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json-{rand_gen(str)}",
+        "row_data": "https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json",
+        "global_key": f"https://storage.googleapis.com/labelbox-developer-testing-assets/conversational_text/1000-conversations/conversation-1.json-{rand_gen(str)}",
     }
 
 
 @pytest.fixture
 def project(client, rand_gen):
-    project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch,
-                                    media_type=MediaType.Image)
+    project = client.create_project(
+        name=rand_gen(str),
+        queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
+    )
     yield project
     project.delete()
 
 
 @pytest.fixture
 def consensus_project(client, rand_gen):
-    project = client.create_project(name=rand_gen(str),
-                                    quality_mode=QualityMode.Consensus,
-                                    queue_mode=QueueMode.Batch,
-                                    media_type=MediaType.Image)
+    project = client.create_project(
+        name=rand_gen(str),
+        quality_mode=QualityMode.Consensus,
+        queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
+    )
     yield project
     project.delete()
 
@@ -443,23 +473,24 @@ def model_config(client, rand_gen, valid_model_id):
     model_config = client.create_model_config(
         name=rand_gen(str),
         model_id=valid_model_id,
-        inference_params={"param": "value"})
+        inference_params={"param": "value"},
+    )
     yield model_config
     client.delete_model_config(model_config.uid)
 
 
 @pytest.fixture
-def consensus_project_with_batch(consensus_project, initial_dataset, rand_gen,
-                                 image_url):
+def consensus_project_with_batch(
+    consensus_project, initial_dataset, rand_gen, image_url
+):
     project = consensus_project
     dataset = initial_dataset
 
     data_rows = []
     for _ in range(3):
-        data_rows.append({
-            DataRow.row_data: image_url,
-            DataRow.global_key: str(uuid.uuid4())
-        })
+        data_rows.append(
+            {DataRow.row_data: image_url, DataRow.global_key: str(uuid.uuid4())}
+        )
     task = dataset.create_data_rows(data_rows)
     task.wait_till_done()
     assert task.status == "COMPLETE"
@@ -469,7 +500,7 @@ def consensus_project_with_batch(consensus_project, initial_dataset, rand_gen,
     batch = project.create_batch(
         rand_gen(str),
         data_rows,  # sample of data row objects
-        5  # priority between 1(Highest) - 5(lowest)
+        5,  # priority between 1(Highest) - 5(lowest)
     )
 
     yield [project, batch, data_rows]
@@ -483,7 +514,7 @@ def dataset(client, rand_gen):
     dataset.delete()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def unique_dataset(client, rand_gen):
     dataset = client.create_dataset(name=rand_gen(str))
     yield dataset
@@ -492,12 +523,12 @@ def unique_dataset(client, rand_gen):
 
 @pytest.fixture
 def small_dataset(dataset: Dataset):
-    task = dataset.create_data_rows([
-        {
-            "row_data": SMALL_DATASET_URL,
-            "external_id": "my-image"
-        },
-    ] * 2)
+    task = dataset.create_data_rows(
+        [
+            {"row_data": SMALL_DATASET_URL, "external_id": "my-image"},
+        ]
+        * 2
+    )
     task.wait_till_done()
 
     yield dataset
@@ -506,13 +537,15 @@ def small_dataset(dataset: Dataset):
 @pytest.fixture
 def data_row(dataset, image_url, rand_gen):
     global_key = f"global-key-{rand_gen(str)}"
-    task = dataset.create_data_rows([
-        {
-            "row_data": image_url,
-            "external_id": "my-image",
-            "global_key": global_key
-        },
-    ])
+    task = dataset.create_data_rows(
+        [
+            {
+                "row_data": image_url,
+                "external_id": "my-image",
+                "global_key": global_key,
+            },
+        ]
+    )
     task.wait_till_done()
     dr = dataset.data_rows().get_one()
     yield dr
@@ -522,13 +555,15 @@ def data_row(dataset, image_url, rand_gen):
 @pytest.fixture
 def data_row_and_global_key(dataset, image_url, rand_gen):
     global_key = f"global-key-{rand_gen(str)}"
-    task = dataset.create_data_rows([
-        {
-            "row_data": image_url,
-            "external_id": "my-image",
-            "global_key": global_key
-        },
-    ])
+    task = dataset.create_data_rows(
+        [
+            {
+                "row_data": image_url,
+                "external_id": "my-image",
+                "global_key": global_key,
+            },
+        ]
+    )
     task.wait_till_done()
     dr = dataset.data_rows().get_one()
     yield dr, global_key
@@ -539,10 +574,11 @@ def data_row_and_global_key(dataset, image_url, rand_gen):
 # @pytest.mark.parametrize('data_rows', [<count of data rows>], indirect=True)
 # if omitted, count defaults to 1
 @pytest.fixture
-def data_rows(dataset, image_url, request, wait_for_data_row_processing,
-              client):
+def data_rows(
+    dataset, image_url, request, wait_for_data_row_processing, client
+):
     count = 1
-    if hasattr(request, 'param'):
+    if hasattr(request, "param"):
         count = request.param
 
     datarows = [
@@ -565,26 +601,26 @@ def data_rows(dataset, image_url, request, wait_for_data_row_processing,
 @pytest.fixture
 def iframe_url(environ) -> str:
     if environ in [Environ.PROD, Environ.LOCAL]:
-        return 'https://editor.labelbox.com'
+        return "https://editor.labelbox.com"
     elif environ == Environ.STAGING:
-        return 'https://editor.lb-stage.xyz'
+        return "https://editor.lb-stage.xyz"
 
 
 @pytest.fixture
 def sample_image() -> str:
-    path_to_video = 'tests/integration/media/sample_image.jpg'
+    path_to_video = "tests/integration/media/sample_image.jpg"
     return path_to_video
 
 
 @pytest.fixture
 def sample_video() -> str:
-    path_to_video = 'tests/integration/media/cat.mp4'
+    path_to_video = "tests/integration/media/cat.mp4"
     return path_to_video
 
 
 @pytest.fixture
 def sample_bulk_conversation() -> list:
-    path_to_conversation = 'tests/integration/media/bulk_conversation.json'
+    path_to_conversation = "tests/integration/media/bulk_conversation.json"
     with open(path_to_conversation) as json_file:
         conversations = json.load(json_file)
     return conversations
@@ -599,8 +635,15 @@ def organization(client):
 
 
 @pytest.fixture
-def configured_project_with_label(client, rand_gen, image_url, project, dataset,
-                                  data_row, wait_for_label_processing):
+def configured_project_with_label(
+    client,
+    rand_gen,
+    image_url,
+    project,
+    dataset,
+    data_row,
+    wait_for_label_processing,
+):
     """Project with a connected dataset, having one datarow
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
@@ -609,16 +652,18 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
     project._wait_until_data_rows_are_processed(
         data_row_ids=[data_row.uid],
         wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
-        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS)
+        sleep_interval=DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS,
+    )
 
     project.create_batch(
         rand_gen(str),
         [data_row.uid],  # sample of data row objects
-        5  # priority between 1(Highest) - 5(lowest)
+        5,  # priority between 1(Highest) - 5(lowest)
     )
     ontology = _setup_ontology(project)
-    label = _create_label(project, data_row, ontology,
-                          wait_for_label_processing)
+    label = _create_label(
+        project, data_row, ontology, wait_for_label_processing
+    )
     yield [project, dataset, data_row, label]
 
     for label in project.labels():
@@ -626,32 +671,32 @@ def configured_project_with_label(client, rand_gen, image_url, project, dataset,
 
 
 def _create_label(project, data_row, ontology, wait_for_label_processing):
-    predictions = [{
-        "uuid": str(uuid.uuid4()),
-        "schemaId": ontology.tools[0].feature_schema_id,
-        "dataRow": {
-            "id": data_row.uid
-        },
-        "bbox": {
-            "top": 20,
-            "left": 20,
-            "height": 50,
-            "width": 50
+    predictions = [
+        {
+            "uuid": str(uuid.uuid4()),
+            "schemaId": ontology.tools[0].feature_schema_id,
+            "dataRow": {"id": data_row.uid},
+            "bbox": {"top": 20, "left": 20, "height": 50, "width": 50},
         }
-    }]
+    ]
 
     def create_label():
-        """ Ad-hoc function to create a LabelImport
+        """Ad-hoc function to create a LabelImport
         Creates a LabelImport task which will create a label
         """
         upload_task = LabelImport.create_from_objects(
-            project.client, project.uid, f'label-import-{uuid.uuid4()}',
-            predictions)
+            project.client,
+            project.uid,
+            f"label-import-{uuid.uuid4()}",
+            predictions,
+        )
         upload_task.wait_until_done(sleep_time_seconds=5)
-        assert upload_task.state == AnnotationImportState.FINISHED, "Label Import did not finish"
-        assert len(
-            upload_task.errors
-        ) == 0, f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
+        assert (
+            upload_task.state == AnnotationImportState.FINISHED
+        ), "Label Import did not finish"
+        assert (
+            len(upload_task.errors) == 0
+        ), f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
 
     project.create_label = create_label
     project.create_label()
@@ -662,10 +707,14 @@ def _create_label(project, data_row, ontology, wait_for_label_processing):
 def _setup_ontology(project):
     editor = list(
         project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
-    ontology_builder = OntologyBuilder(tools=[
-        Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
-    ])
+            where=LabelingFrontend.name == "editor"
+        )
+    )[0]
+    ontology_builder = OntologyBuilder(
+        tools=[
+            Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
+        ]
+    )
     project.setup(editor, ontology_builder.asdict())
     # TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
     time.sleep(2)
@@ -674,34 +723,37 @@ def _setup_ontology(project):
 
 @pytest.fixture
 def big_dataset(dataset: Dataset):
-    task = dataset.create_data_rows([
-        {
-            "row_data": IMAGE_URL,
-            "external_id": EXTERNAL_ID
-        },
-    ] * 3)
+    task = dataset.create_data_rows(
+        [
+            {"row_data": IMAGE_URL, "external_id": EXTERNAL_ID},
+        ]
+        * 3
+    )
     task.wait_till_done()
 
     yield dataset
 
 
 @pytest.fixture
-def configured_batch_project_with_label(project, dataset, data_row,
-                                        wait_for_label_processing):
+def configured_batch_project_with_label(
+    project, dataset, data_row, wait_for_label_processing
+):
     """Project with a batch having one datarow
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
     One label is already created and yielded when using fixture
     """
     data_rows = [dr.uid for dr in list(dataset.data_rows())]
-    project._wait_until_data_rows_are_processed(data_row_ids=data_rows,
-                                                sleep_interval=3)
+    project._wait_until_data_rows_are_processed(
+        data_row_ids=data_rows, sleep_interval=3
+    )
     project.create_batch("test-batch", data_rows)
     project.data_row_ids = data_rows
 
     ontology = _setup_ontology(project)
-    label = _create_label(project, data_row, ontology,
-                          wait_for_label_processing)
+    label = _create_label(
+        project, data_row, ontology, wait_for_label_processing
+    )
 
     yield [project, dataset, data_row, label]
 
@@ -710,15 +762,16 @@ def configured_batch_project_with_label(project, dataset, data_row,
 
 
 @pytest.fixture
-def configured_batch_project_with_multiple_datarows(project, dataset, data_rows,
-                                                    wait_for_label_processing):
+def configured_batch_project_with_multiple_datarows(
+    project, dataset, data_rows, wait_for_label_processing
+):
     """Project with a batch having multiple datarows
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
     """
     global_keys = [dr.global_key for dr in data_rows]
 
-    batch_name = f'batch {uuid.uuid4()}'
+    batch_name = f"batch {uuid.uuid4()}"
     project.create_batch(batch_name, global_keys=global_keys)
 
     ontology = _setup_ontology(project)
@@ -732,15 +785,16 @@ def configured_batch_project_with_multiple_datarows(project, dataset, data_rows,
 
 
 @pytest.fixture
-def configured_batch_project_for_labeling_service(project,
-                                                  data_row_and_global_key):
+def configured_batch_project_for_labeling_service(
+    project, data_row_and_global_key
+):
     """Project with a batch having multiple datarows
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
     """
     global_keys = [data_row_and_global_key[1]]
 
-    batch_name = f'batch {uuid.uuid4()}'
+    batch_name = f"batch {uuid.uuid4()}"
     project.create_batch(batch_name, global_keys=global_keys)
 
     _setup_ontology(project)
@@ -830,12 +884,9 @@ def video_data(client, rand_gen, video_data_row, wait_for_data_row_processing):
 
 def create_video_data_row(rand_gen):
     return {
-        "row_data":
-            "https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4",
-        "global_key":
-            f"https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4-{rand_gen(str)}",
-        "media_type":
-            "VIDEO",
+        "row_data": "https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4",
+        "global_key": f"https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4-{rand_gen(str)}",
+        "media_type": "VIDEO",
     }
 
 
@@ -857,25 +908,25 @@ def video_data_row(rand_gen):
 
 
 class ExportV2Helpers:
-
     @classmethod
-    def run_project_export_v2_task(cls,
-                                   project,
-                                   num_retries=5,
-                                   task_name=None,
-                                   filters={},
-                                   params={}):
+    def run_project_export_v2_task(
+        cls, project, num_retries=5, task_name=None, filters={}, params={}
+    ):
         task = None
-        params = params if params else {
-            "project_details": True,
-            "performance_details": False,
-            "data_row_details": True,
-            "label_details": True
-        }
-        while (num_retries > 0):
-            task = project.export_v2(task_name=task_name,
-                                     filters=filters,
-                                     params=params)
+        params = (
+            params
+            if params
+            else {
+                "project_details": True,
+                "performance_details": False,
+                "data_row_details": True,
+                "label_details": True,
+            }
+        )
+        while num_retries > 0:
+            task = project.export_v2(
+                task_name=task_name, filters=filters, params=params
+            )
             task.wait_till_done()
             assert task.status == "COMPLETE"
             assert task.errors is None
@@ -887,21 +938,19 @@ class ExportV2Helpers:
         return task.result
 
     @classmethod
-    def run_dataset_export_v2_task(cls,
-                                   dataset,
-                                   num_retries=5,
-                                   task_name=None,
-                                   filters={},
-                                   params={}):
+    def run_dataset_export_v2_task(
+        cls, dataset, num_retries=5, task_name=None, filters={}, params={}
+    ):
         task = None
-        params = params if params else {
-            "performance_details": False,
-            "label_details": True
-        }
-        while (num_retries > 0):
-            task = dataset.export_v2(task_name=task_name,
-                                     filters=filters,
-                                     params=params)
+        params = (
+            params
+            if params
+            else {"performance_details": False, "label_details": True}
+        )
+        while num_retries > 0:
+            task = dataset.export_v2(
+                task_name=task_name, filters=filters, params=params
+            )
             task.wait_till_done()
             assert task.status == "COMPLETE"
             assert task.errors is None
@@ -914,23 +963,20 @@ class ExportV2Helpers:
         return task.result
 
     @classmethod
-    def run_catalog_export_v2_task(cls,
-                                   client,
-                                   num_retries=5,
-                                   task_name=None,
-                                   filters={},
-                                   params={}):
+    def run_catalog_export_v2_task(
+        cls, client, num_retries=5, task_name=None, filters={}, params={}
+    ):
         task = None
-        params = params if params else {
-            "performance_details": False,
-            "label_details": True
-        }
+        params = (
+            params
+            if params
+            else {"performance_details": False, "label_details": True}
+        )
         catalog = client.get_catalog()
-        while (num_retries > 0):
-
-            task = catalog.export_v2(task_name=task_name,
-                                     filters=filters,
-                                     params=params)
+        while num_retries > 0:
+            task = catalog.export_v2(
+                task_name=task_name, filters=filters, params=params
+            )
             task.wait_till_done()
             assert task.status == "COMPLETE"
             assert task.errors is None
@@ -956,9 +1002,10 @@ def big_dataset_data_row_ids(big_dataset: Dataset):
     yield [dr.json["data_row"]["id"] for dr in stream]
 
 
-@pytest.fixture(scope='function')
-def dataset_with_invalid_data_rows(unique_dataset: Dataset,
-                                   upload_invalid_data_rows_for_dataset):
+@pytest.fixture(scope="function")
+def dataset_with_invalid_data_rows(
+    unique_dataset: Dataset, upload_invalid_data_rows_for_dataset
+):
     upload_invalid_data_rows_for_dataset(unique_dataset)
 
     yield unique_dataset
@@ -966,22 +1013,25 @@ def dataset_with_invalid_data_rows(unique_dataset: Dataset,
 
 @pytest.fixture
 def upload_invalid_data_rows_for_dataset():
-
     def _upload_invalid_data_rows_for_dataset(dataset: Dataset):
-        task = dataset.create_data_rows([
-            {
-                "row_data": 'gs://invalid-bucket/example.png',  # forbidden
-                "external_id": "image-without-access.jpg"
-            },
-        ] * 2)
+        task = dataset.create_data_rows(
+            [
+                {
+                    "row_data": "gs://invalid-bucket/example.png",  # forbidden
+                    "external_id": "image-without-access.jpg",
+                },
+            ]
+            * 2
+        )
         task.wait_till_done()
 
     return _upload_invalid_data_rows_for_dataset
 
 
 @pytest.fixture
-def configured_project(project_with_empty_ontology, initial_dataset, rand_gen,
-                       image_url):
+def configured_project(
+    project_with_empty_ontology, initial_dataset, rand_gen, image_url
+):
     dataset = initial_dataset
     data_row_id = dataset.create_data_row(row_data=image_url).uid
     project = project_with_empty_ontology
@@ -989,7 +1039,7 @@ def configured_project(project_with_empty_ontology, initial_dataset, rand_gen,
     batch = project.create_batch(
         rand_gen(str),
         [data_row_id],  # sample of data row objects
-        5  # priority between 1(Highest) - 5(lowest)
+        5,  # priority between 1(Highest) - 5(lowest)
     )
     project.data_row_ids = [data_row_id]
 
@@ -1002,18 +1052,23 @@ def configured_project(project_with_empty_ontology, initial_dataset, rand_gen,
 def project_with_empty_ontology(project):
     editor = list(
         project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
+            where=LabelingFrontend.name == "editor"
+        )
+    )[0]
     empty_ontology = {"tools": [], "classifications": []}
     project.setup(editor, empty_ontology)
     yield project
 
 
 @pytest.fixture
-def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
-                                             image_url):
-    project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch,
-                                    media_type=MediaType.Image)
+def configured_project_with_complex_ontology(
+    client, initial_dataset, rand_gen, image_url
+):
+    project = client.create_project(
+        name=rand_gen(str),
+        queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
+    )
     dataset = initial_dataset
     data_row = dataset.create_data_row(row_data=image_url)
     data_row_ids = [data_row.uid]
@@ -1021,13 +1076,15 @@ def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
     project.create_batch(
         rand_gen(str),
         data_row_ids,  # sample of data row objects
-        5  # priority between 1(Highest) - 5(lowest)
+        5,  # priority between 1(Highest) - 5(lowest)
     )
     project.data_row_ids = data_row_ids
 
     editor = list(
         project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
+            where=LabelingFrontend.name == "editor"
+        )
+    )[0]
 
     ontology = OntologyBuilder()
     tools = [
@@ -1035,24 +1092,29 @@ def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
         Tool(tool=Tool.Type.LINE, name="test-line-class"),
         Tool(tool=Tool.Type.POINT, name="test-point-class"),
         Tool(tool=Tool.Type.POLYGON, name="test-polygon-class"),
-        Tool(tool=Tool.Type.NER, name="test-ner-class")
+        Tool(tool=Tool.Type.NER, name="test-ner-class"),
     ]
 
     options = [
         Option(value="first option answer"),
         Option(value="second option answer"),
-        Option(value="third option answer")
+        Option(value="third option answer"),
     ]
 
     classifications = [
-        Classification(class_type=Classification.Type.TEXT,
-                       name="test-text-class"),
-        Classification(class_type=Classification.Type.RADIO,
-                       name="test-radio-class",
-                       options=options),
-        Classification(class_type=Classification.Type.CHECKLIST,
-                       name="test-checklist-class",
-                       options=options)
+        Classification(
+            class_type=Classification.Type.TEXT, name="test-text-class"
+        ),
+        Classification(
+            class_type=Classification.Type.RADIO,
+            name="test-radio-class",
+            options=options,
+        ),
+        Classification(
+            class_type=Classification.Type.CHECKLIST,
+            name="test-checklist-class",
+            options=options,
+        ),
     ]
 
     for t in tools:
@@ -1070,7 +1132,6 @@ def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
 
 @pytest.fixture
 def embedding(client: Client, environ):
-
     uuid_str = uuid.uuid4().hex
     time.sleep(randint(1, 5))
     embedding = client.create_embedding(f"sdk-int-{uuid_str}", 8)
@@ -1085,13 +1146,16 @@ def valid_model_id():
 
 
 @pytest.fixture
-def requested_labeling_service(rand_gen,
-                               live_chat_evaluation_project_with_new_dataset,
-                               chat_evaluation_ontology, model_config):
+def requested_labeling_service(
+    rand_gen,
+    live_chat_evaluation_project_with_new_dataset,
+    chat_evaluation_ontology,
+    model_config,
+):
     project = live_chat_evaluation_project_with_new_dataset
     project.connect_ontology(chat_evaluation_ontology)
 
-    project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
+    project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
 
     labeling_service = project.get_labeling_service()
     project.add_model_config(model_config.uid)

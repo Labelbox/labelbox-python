@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 class Label(DbObject, Updateable, BulkDeletable):
-    """ Label represents an assessment on a DataRow. For example one label could
+    """Label represents an assessment on a DataRow. For example one label could
     contain 100 bounding boxes (annotations).
 
     Attributes:
@@ -46,7 +46,7 @@ class Label(DbObject, Updateable, BulkDeletable):
 
     @staticmethod
     def bulk_delete(labels) -> None:
-        """ Deletes all the given Labels.
+        """Deletes all the given Labels.
 
         Args:
             labels (list of Label): The Labels to delete.
@@ -54,7 +54,7 @@ class Label(DbObject, Updateable, BulkDeletable):
         BulkDeletable._bulk_delete(labels, False)
 
     def create_review(self, **kwargs) -> "Review":
-        """ Creates a Review for this label.
+        """Creates a Review for this label.
 
         Args:
             **kwargs: Review attributes. At a minimum, a `Review.score` field value must be provided.
@@ -64,7 +64,7 @@ class Label(DbObject, Updateable, BulkDeletable):
         return self.client._create(Entity.Review, kwargs)
 
     def create_benchmark(self) -> "Benchmark":
-        """ Creates a Benchmark for this Label.
+        """Creates a Benchmark for this Label.
 
         Returns:
             The newly created Benchmark.
@@ -72,7 +72,9 @@ class Label(DbObject, Updateable, BulkDeletable):
         label_id_param = "labelId"
         query_str = """mutation CreateBenchmarkPyApi($%s: ID!) {
             createBenchmark(data: {labelId: $%s}) {%s}} """ % (
-            label_id_param, label_id_param,
-            query.results_query_part(Entity.Benchmark))
+            label_id_param,
+            label_id_param,
+            query.results_query_part(Entity.Benchmark),
+        )
         res = self.client.execute(query_str, {label_id_param: self.uid})
         return Entity.Benchmark(self.client, res["createBenchmark"])

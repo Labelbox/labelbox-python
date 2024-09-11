@@ -1,11 +1,14 @@
 import pytest
 
 
-def test_create_offline_chat_evaluation_project(client, rand_gen,
-                                                offline_chat_evaluation_project,
-                                                chat_evaluation_ontology,
-                                                offline_conversational_data_row,
-                                                model_config):
+def test_create_offline_chat_evaluation_project(
+    client,
+    rand_gen,
+    offline_chat_evaluation_project,
+    chat_evaluation_ontology,
+    offline_conversational_data_row,
+    model_config,
+):
     project = offline_chat_evaluation_project
     assert project
 

@@ -15,7 +15,7 @@ def test_loads(ndjson_content):
 def test_loads_bytes(ndjson_content):
     expected_line, expected_objects = ndjson_content
 
-    bytes_line = expected_line.encode('utf-8')
+    bytes_line = expected_line.encode("utf-8")
     parsed_line = parser.loads(bytes_line)
 
     assert parsed_line == expected_objects

@@ -13,9 +13,7 @@ class ThreadSafeGen:
     """
 
     def __init__(self, iterable: Iterable[Any]):
-        """
-
-        """
+        """ """
         self.iterable = iterable
         self.lock = threading.Lock()
 
@@ -70,7 +68,8 @@ class PrefetchGenerator:
                 self.queue.put(value)
         except Exception as e:
             self.queue.put(
-                ValueError(f"Unexpected exception while filling queue: {e}"))
+                ValueError(f"Unexpected exception while filling queue: {e}")
+            )
         finally:
             self.queue.put(None)
 

@@ -6,19 +6,37 @@ import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+    overload,
+)
 from urllib.parse import urlparse
 
-from labelbox.schema.labeling_service import LabelingService, LabelingServiceStatus
+from labelbox.schema.labeling_service import (
+    LabelingService,
+    LabelingServiceStatus,
+)
 from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 import requests
 
 from labelbox import parser
 from labelbox import utils
 from labelbox.exceptions import error_message_for_unparsed_graphql_error
-from labelbox.exceptions import (InvalidQueryError, LabelboxError,
-                                 ProcessingWaitTimeout, ResourceConflict,
-                                 ResourceNotFoundError)
+from labelbox.exceptions import (
+    InvalidQueryError,
+    LabelboxError,
+    ProcessingWaitTimeout,
+    ResourceConflict,
+    ResourceNotFoundError,
+)
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -26,7 +44,11 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.consensus_settings import ConsensusSettings
 from labelbox.schema.create_batches_task import CreateBatchesTask
 from labelbox.schema.data_row import DataRow
-from labelbox.schema.export_filters import ProjectExportFilters, validate_datetime, build_filters
+from labelbox.schema.export_filters import (
+    ProjectExportFilters,
+    validate_datetime,
+    build_filters,
+)
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.id_type import IdType
@@ -39,24 +61,32 @@ from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
-from labelbox.schema.ontology_kind import (EditorTaskType, OntologyKind,
-                                           UploadType)
-from labelbox.schema.project_overview import ProjectOverview, ProjectOverviewDetailed
+from labelbox.schema.ontology_kind import (
+    EditorTaskType,
+    OntologyKind,
+    UploadType,
+)
+from labelbox.schema.project_overview import (
+    ProjectOverview,
+    ProjectOverviewDetailed,
+)
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
 
 
 DataRowPriority = int
-LabelingParameterOverrideInput = Tuple[Union[DataRow, DataRowIdentifier],
-                                       DataRowPriority]
+LabelingParameterOverrideInput = Tuple[
+    Union[DataRow, DataRowIdentifier], DataRowPriority
+]
 
 logger = logging.getLogger(__name__)
 MAX_SYNC_BATCH_ROW_COUNT = 1_000
 
 
 def validate_labeling_parameter_overrides(
-        data: List[LabelingParameterOverrideInput]) -> None:
+    data: List[LabelingParameterOverrideInput],
+) -> None:
     for idx, row in enumerate(data):
         if len(row) < 2:
             raise TypeError(
@@ -131,11 +161,14 @@ class Project(DbObject, Updateable, Deletable):
     organization = Relationship.ToOne("Organization", False)
     labeling_frontend = Relationship.ToOne(
         "LabelingFrontend",
-        config=Relationship.Config(disconnect_supported=False))
+        config=Relationship.Config(disconnect_supported=False),
+    )
     labeling_frontend_options = Relationship.ToMany(
-        "LabelingFrontendOptions", False, "labeling_frontend_options")
+        "LabelingFrontendOptions", False, "labeling_frontend_options"
+    )
     labeling_parameter_overrides = Relationship.ToMany(
-        "LabelingParameterOverride", False, "labeling_parameter_overrides")
+        "LabelingParameterOverride", False, "labeling_parameter_overrides"
+    )
     webhooks = Relationship.ToMany("Webhook", False)
     benchmarks = Relationship.ToMany("Benchmark", False)
     ontology = Relationship.ToOne("Ontology", True)
@@ -148,23 +181,31 @@ class Project(DbObject, Updateable, Deletable):
         Returns:
             True if this project is a live chat evaluation project, False otherwise
         """
-        return self.media_type == MediaType.Conversational and self.editor_task_type == EditorTaskType.ModelChatEvaluation
+        return (
+            self.media_type == MediaType.Conversational
+            and self.editor_task_type == EditorTaskType.ModelChatEvaluation
+        )
 
     def is_prompt_response(self) -> bool:
         """
         Returns:
             True if this project is a prompt response project, False otherwise
         """
-        return self.media_type == MediaType.LLMPromptResponseCreation or self.media_type == MediaType.LLMPromptCreation or self.editor_task_type == EditorTaskType.ResponseCreation
+        return (
+            self.media_type == MediaType.LLMPromptResponseCreation
+            or self.media_type == MediaType.LLMPromptCreation
+            or self.editor_task_type == EditorTaskType.ResponseCreation
+        )
 
     def is_auto_data_generation(self) -> bool:
-        return (self.upload_type == UploadType.Auto)  # type: ignore
+        return self.upload_type == UploadType.Auto  # type: ignore
 
     # we test not only the project ontology is None, but also a default empty ontology that we create when we attach a labeling front end in createLabelingFrontendOptions
     def is_empty_ontology(self) -> bool:
         ontology = self.ontology()  # type: ignore
-        return ontology is None or (len(ontology.tools()) == 0 and
-                                    len(ontology.classifications()) == 0)
+        return ontology is None or (
+            len(ontology.tools()) == 0 and len(ontology.classifications()) == 0
+        )
 
     def project_model_configs(self):
         query_str = """query ProjectModelConfigsPyApi($id: ID!) {
@@ -189,7 +230,7 @@ class Project(DbObject, Updateable, Deletable):
         ]
 
     def update(self, **kwargs):
-        """ Updates this project with the specified attributes
+        """Updates this project with the specified attributes
 
         Args:
             kwargs: a dictionary containing attributes to be upserted
@@ -214,14 +255,16 @@ class Project(DbObject, Updateable, Deletable):
             if MediaType.is_supported(media_type):
                 kwargs["media_type"] = media_type.value
             else:
-                raise TypeError(f"{media_type} is not a valid media type. Use"
-                                f" any of {MediaType.get_supported_members()}"
-                                " from MediaType. Example: MediaType.Image.")
+                raise TypeError(
+                    f"{media_type} is not a valid media type. Use"
+                    f" any of {MediaType.get_supported_members()}"
+                    " from MediaType. Example: MediaType.Image."
+                )
 
         return super().update(**kwargs)
 
     def members(self) -> PaginatedCollection:
-        """ Fetch all current members for this project
+        """Fetch all current members for this project
 
         Returns:
             A `PaginatedCollection` of `ProjectMember`s
@@ -232,13 +275,18 @@ class Project(DbObject, Updateable, Deletable):
              project(where: {id : $%s}) { id members(skip: %%d first: %%d){ id user { %s } role { id name } accessFrom }
            }
         }""" % (id_param, id_param, query.results_query_part(Entity.User))
-        return PaginatedCollection(self.client, query_str,
-                                   {id_param: str(self.uid)},
-                                   ["project", "members"], ProjectMember)
+        return PaginatedCollection(
+            self.client,
+            query_str,
+            {id_param: str(self.uid)},
+            ["project", "members"],
+            ProjectMember,
+        )
 
     def update_project_resource_tags(
-            self, resource_tag_ids: List[str]) -> List[ResourceTag]:
-        """ Creates project resource tags
+        self, resource_tag_ids: List[str]
+    ) -> List[ResourceTag]:
+        """Creates project resource tags
 
         Args:
             resource_tag_ids
@@ -250,13 +298,18 @@ class Project(DbObject, Updateable, Deletable):
 
         query_str = """mutation UpdateProjectResourceTagsPyApi($%s:ID!,$%s:[String!]) {
             project(where:{id:$%s}){updateProjectResourceTags(input:{%s:$%s}){%s}}}""" % (
-            project_id_param, tag_ids_param, project_id_param, tag_ids_param,
-            tag_ids_param, query.results_query_part(ResourceTag))
+            project_id_param,
+            tag_ids_param,
+            project_id_param,
+            tag_ids_param,
+            tag_ids_param,
+            query.results_query_part(ResourceTag),
+        )
 
-        res = self.client.execute(query_str, {
-            project_id_param: self.uid,
-            tag_ids_param: resource_tag_ids
-        })
+        res = self.client.execute(
+            query_str,
+            {project_id_param: self.uid, tag_ids_param: resource_tag_ids},
+        )
 
         return [
             ResourceTag(self.client, tag)
@@ -274,13 +327,14 @@ class Project(DbObject, Updateable, Deletable):
             }
             }""" % (query.results_query_part(ResourceTag))
 
-        results = self.client.execute(
-            query_str, {"projectId": self.uid})['project']['resourceTags']
+        results = self.client.execute(query_str, {"projectId": self.uid})[
+            "project"
+        ]["resourceTags"]
 
         return [ResourceTag(self.client, tag) for tag in results]
 
     def labels(self, datasets=None, order_by=None) -> PaginatedCollection:
-        """ Custom relationship expansion method to support limited filtering.
+        """Custom relationship expansion method to support limited filtering.
 
         Args:
             datasets (iterable of Dataset): Optional collection of Datasets
@@ -292,14 +346,17 @@ class Project(DbObject, Updateable, Deletable):
 
         if datasets is not None:
             where = " where:{dataRow: {dataset: {id_in: [%s]}}}" % ", ".join(
-                '"%s"' % dataset.uid for dataset in datasets)
+                '"%s"' % dataset.uid for dataset in datasets
+            )
         else:
             where = ""
 
         if order_by is not None:
             query.check_order_by_clause(Label, order_by)
-            order_by_str = "orderBy: %s_%s" % (order_by[0].graphql_name,
-                                               order_by[1].name.upper())
+            order_by_str = "orderBy: %s_%s" % (
+                order_by[0].graphql_name,
+                order_by[1].name.upper(),
+            )
         else:
             order_by_str = ""
 
@@ -307,17 +364,25 @@ class Project(DbObject, Updateable, Deletable):
         query_str = """query GetProjectLabelsPyApi($%s: ID!)
             {project (where: {id: $%s})
                 {labels (skip: %%d first: %%d %s %s) {%s}}}""" % (
-            id_param, id_param, where, order_by_str,
-            query.results_query_part(Label))
+            id_param,
+            id_param,
+            where,
+            order_by_str,
+            query.results_query_part(Label),
+        )
 
-        return PaginatedCollection(self.client, query_str, {id_param: self.uid},
-                                   ["project", "labels"], Label)
+        return PaginatedCollection(
+            self.client,
+            query_str,
+            {id_param: self.uid},
+            ["project", "labels"],
+            Label,
+        )
 
     def export_queued_data_rows(
-            self,
-            timeout_seconds=120,
-            include_metadata: bool = False) -> List[Dict[str, str]]:
-        """ Returns all data rows that are currently enqueued for this project.
+        self, timeout_seconds=120, include_metadata: bool = False
+    ) -> List[Dict[str, str]]:
+        """Returns all data rows that are currently enqueued for this project.
 
         Args:
             timeout_seconds (float): Max waiting time, in seconds.
@@ -329,7 +394,8 @@ class Project(DbObject, Updateable, Deletable):
         """
         warnings.warn(
             "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
-            DeprecationWarning)
+            DeprecationWarning,
+        )
         id_param = "projectId"
         metadata_param = "includeMetadataInput"
         query_str = """mutation GetQueuedDataRowsExportUrlPyApi($%s: ID!, $%s: Boolean!)
@@ -338,10 +404,10 @@ class Project(DbObject, Updateable, Deletable):
         sleep_time = 2
         start_time = time.time()
         while True:
-            res = self.client.execute(query_str, {
-                id_param: self.uid,
-                metadata_param: include_metadata
-            })
+            res = self.client.execute(
+                query_str,
+                {id_param: self.uid, metadata_param: include_metadata},
+            )
             res = res["exportQueuedDataRows"]
             if res["status"] == "COMPLETE":
                 download_url = res["downloadUrl"]
@@ -359,14 +425,14 @@ class Project(DbObject, Updateable, Deletable):
 
             logger.debug(
                 "Project '%s' queued data row export, waiting for server...",
-                self.uid)
+                self.uid,
+            )
             time.sleep(sleep_time)
 
-    def export_labels(self,
-                      download=False,
-                      timeout_seconds=1800,
-                      **kwargs) -> Optional[Union[str, List[Dict[Any, Any]]]]:
-        """ Calls the server-side Label exporting that generates a JSON
+    def export_labels(
+        self, download=False, timeout_seconds=1800, **kwargs
+    ) -> Optional[Union[str, List[Dict[Any, Any]]]]:
+        """Calls the server-side Label exporting that generates a JSON
         payload, and returns the URL to that payload.
 
         Will only generate a new URL at a max frequency of 30 min.
@@ -389,7 +455,8 @@ class Project(DbObject, Updateable, Deletable):
         """
         warnings.warn(
             "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
-            DeprecationWarning)
+            DeprecationWarning,
+        )
 
         def _string_from_dict(dictionary: dict, value_with_quotes=False) -> str:
             """Returns a concatenated string of the dictionary's keys and values
@@ -397,12 +464,14 @@ class Project(DbObject, Updateable, Deletable):
             The string will be formatted as {key}: 'value' for each key. Value will be inclusive of
             quotations while key will not. This can be toggled with `value_with_quotes`"""
 
-            quote = "\"" if value_with_quotes else ""
-            return ",".join([
-                f"""{c}: {quote}{dictionary.get(c)}{quote}"""
-                for c in dictionary
-                if dictionary.get(c)
-            ])
+            quote = '"' if value_with_quotes else ""
+            return ",".join(
+                [
+                    f"""{c}: {quote}{dictionary.get(c)}{quote}"""
+                    for c in dictionary
+                    if dictionary.get(c)
+                ]
+            )
 
         sleep_time = 2
         id_param = "projectId"
@@ -412,15 +481,16 @@ class Project(DbObject, Updateable, Deletable):
         if "start" in kwargs or "end" in kwargs:
             created_at_dict = {
                 "start": kwargs.get("start", ""),
-                "end": kwargs.get("end", "")
+                "end": kwargs.get("end", ""),
             }
             [validate_datetime(date) for date in created_at_dict.values()]
             filter_param_dict["labelCreatedAt"] = "{%s}" % _string_from_dict(
-                created_at_dict, value_with_quotes=True)
+                created_at_dict, value_with_quotes=True
+            )
 
         if "last_activity_start" in kwargs or "last_activity_end" in kwargs:
-            last_activity_start = kwargs.get('last_activity_start')
-            last_activity_end = kwargs.get('last_activity_end')
+            last_activity_start = kwargs.get("last_activity_start")
+            last_activity_end = kwargs.get("last_activity_end")
 
             if last_activity_start:
                 validate_datetime(str(last_activity_start))
@@ -428,15 +498,14 @@ class Project(DbObject, Updateable, Deletable):
                 validate_datetime(str(last_activity_end))
 
             filter_param_dict["lastActivityAt"] = "{%s}" % _string_from_dict(
-                {
-                    "start": last_activity_start,
-                    "end": last_activity_end
-                },
-                value_with_quotes=True)
+                {"start": last_activity_start, "end": last_activity_end},
+                value_with_quotes=True,
+            )
 
         if filter_param_dict:
-            filter_param = """, filters: {%s }""" % (_string_from_dict(
-                filter_param_dict, value_with_quotes=False))
+            filter_param = """, filters: {%s }""" % (
+                _string_from_dict(filter_param_dict, value_with_quotes=False)
+            )
 
         query_str = """mutation GetLabelExportUrlPyApi($%s: ID!)
             {exportLabels(data:{projectId: $%s%s}) {downloadUrl createdAt shouldPoll} }
@@ -448,7 +517,7 @@ class Project(DbObject, Updateable, Deletable):
             res = self.client.execute(query_str, {id_param: self.uid})
             res = res["exportLabels"]
             if not res["shouldPoll"] and res["downloadUrl"] is not None:
-                url = res['downloadUrl']
+                url = res["downloadUrl"]
                 if not download:
                     return url
                 else:
@@ -460,8 +529,9 @@ class Project(DbObject, Updateable, Deletable):
             if current_time - start_time > timeout_seconds:
                 return None
 
-            logger.debug("Project '%s' label export, waiting for server...",
-                         self.uid)
+            logger.debug(
+                "Project '%s' label export, waiting for server...", self.uid
+            )
             time.sleep(sleep_time)
 
     def export(
@@ -516,7 +586,7 @@ class Project(DbObject, Updateable, Deletable):
         >>>     task.result
         """
         task, is_streamable = self._export(task_name, filters, params)
-        if (is_streamable):
+        if is_streamable:
             return ExportTask(task, True)
         return task
 
@@ -527,34 +597,39 @@ class Project(DbObject, Updateable, Deletable):
         params: Optional[ProjectExportParams] = None,
         streamable: bool = False,
     ) -> Tuple[Task, bool]:
-        _params = params or ProjectExportParams({
-            "attachments": False,
-            "embeddings": False,
-            "metadata_fields": False,
-            "data_row_details": False,
-            "project_details": False,
-            "performance_details": False,
-            "label_details": False,
-            "media_type_override": None,
-            "interpolated_frames": False,
-        })
+        _params = params or ProjectExportParams(
+            {
+                "attachments": False,
+                "embeddings": False,
+                "metadata_fields": False,
+                "data_row_details": False,
+                "project_details": False,
+                "performance_details": False,
+                "label_details": False,
+                "media_type_override": None,
+                "interpolated_frames": False,
+            }
+        )
 
-        _filters = filters or ProjectExportFilters({
-            "last_activity_at": None,
-            "label_created_at": None,
-            "data_row_ids": None,
-            "global_keys": None,
-            "batch_ids": None,
-            "workflow_status": None
-        })
+        _filters = filters or ProjectExportFilters(
+            {
+                "last_activity_at": None,
+                "label_created_at": None,
+                "data_row_ids": None,
+                "global_keys": None,
+                "batch_ids": None,
+                "workflow_status": None,
+            }
+        )
 
         mutation_name = "exportDataRowsInProject"
         create_task_query_str = (
             f"mutation {mutation_name}PyApi"
             f"($input: ExportDataRowsInProjectInput!)"
-            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}")
+            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}"
+        )
 
-        media_type_override = _params.get('media_type_override', None)
+        media_type_override = _params.get("media_type_override", None)
         query_params: Dict[str, Any] = {
             "input": {
                 "taskName": task_name,
@@ -564,28 +639,28 @@ class Project(DbObject, Updateable, Deletable):
                     "searchQuery": {
                         "scope": None,
                         "query": [],
-                    }
+                    },
                 },
                 "params": {
-                    "mediaTypeOverride":
-                        media_type_override.value
-                        if media_type_override is not None else None,
-                    "includeAttachments":
-                        _params.get('attachments', False),
-                    "includeEmbeddings":
-                        _params.get('embeddings', False),
-                    "includeMetadata":
-                        _params.get('metadata_fields', False),
-                    "includeDataRowDetails":
-                        _params.get('data_row_details', False),
-                    "includeProjectDetails":
-                        _params.get('project_details', False),
-                    "includePerformanceDetails":
-                        _params.get('performance_details', False),
-                    "includeLabelDetails":
-                        _params.get('label_details', False),
-                    "includeInterpolatedFrames":
-                        _params.get('interpolated_frames', False),
+                    "mediaTypeOverride": media_type_override.value
+                    if media_type_override is not None
+                    else None,
+                    "includeAttachments": _params.get("attachments", False),
+                    "includeEmbeddings": _params.get("embeddings", False),
+                    "includeMetadata": _params.get("metadata_fields", False),
+                    "includeDataRowDetails": _params.get(
+                        "data_row_details", False
+                    ),
+                    "includeProjectDetails": _params.get(
+                        "project_details", False
+                    ),
+                    "includePerformanceDetails": _params.get(
+                        "performance_details", False
+                    ),
+                    "includeLabelDetails": _params.get("label_details", False),
+                    "includeInterpolatedFrames": _params.get(
+                        "interpolated_frames", False
+                    ),
                 },
                 "streamable": streamable,
             }
@@ -594,16 +669,16 @@ class Project(DbObject, Updateable, Deletable):
         search_query = build_filters(self.client, _filters)
         query_params["input"]["filters"]["searchQuery"]["query"] = search_query
 
-        res = self.client.execute(create_task_query_str,
-                                  query_params,
-                                  error_log_key="errors")
+        res = self.client.execute(
+            create_task_query_str, query_params, error_log_key="errors"
+        )
         res = res[mutation_name]
         task_id = res["taskId"]
         is_streamable = res["isStreamable"]
         return Task.get_task(self.client, task_id), is_streamable
 
     def export_issues(self, status=None) -> str:
-        """ Calls the server-side Issues exporting that
+        """Calls the server-side Issues exporting that
         returns the URL to that payload.
 
         Args:
@@ -622,19 +697,19 @@ class Project(DbObject, Updateable, Deletable):
         valid_statuses = {None, "Open", "Resolved"}
 
         if status not in valid_statuses:
-            raise ValueError("status must be in {}. Found {}".format(
-                valid_statuses, status))
+            raise ValueError(
+                "status must be in {}. Found {}".format(valid_statuses, status)
+            )
 
-        res = self.client.execute(query_str, {
-            id_param: self.uid,
-            status_param: status
-        })
+        res = self.client.execute(
+            query_str, {id_param: self.uid, status_param: status}
+        )
 
-        res = res['project']
+        res = res["project"]
 
         logger.debug("Project '%s' issues export, link generated", self.uid)
 
-        return res.get('issueExportUrl')
+        return res.get("issueExportUrl")
 
     def upsert_instructions(self, instructions_file: str) -> None:
         """
@@ -660,7 +735,8 @@ class Project(DbObject, Updateable, Deletable):
         if frontend.name != "Editor":
             logger.warning(
                 f"This function has only been tested to work with the Editor front end. Found %s",
-                frontend.name)
+                frontend.name,
+            )
 
         supported_instruction_formats = (".pdf", ".html")
         if not instructions_file.endswith(supported_instruction_formats):
@@ -683,13 +759,13 @@ class Project(DbObject, Updateable, Deletable):
                 }
             }"""
 
-        self.client.execute(query_str, {
-            'projectId': self.uid,
-            'instructions_url': instructions_url
-        })
+        self.client.execute(
+            query_str,
+            {"projectId": self.uid, "instructions_url": instructions_url},
+        )
 
     def labeler_performance(self) -> PaginatedCollection:
-        """ Returns the labeler performances for this Project.
+        """Returns the labeler performances for this Project.
 
         Returns:
             A PaginatedCollection of LabelerPerformance objects.
@@ -706,17 +782,25 @@ class Project(DbObject, Updateable, Deletable):
             result["user"] = Entity.User(client, result["user"])
             # python isoformat doesn't accept Z as utc timezone
             result["lastActivityTime"] = utils.format_iso_from_string(
-                result["lastActivityTime"].replace('Z', '+00:00'))
-            return LabelerPerformance(**{
-                utils.snake_case(key): value for key, value in result.items()
-            })
+                result["lastActivityTime"].replace("Z", "+00:00")
+            )
+            return LabelerPerformance(
+                **{
+                    utils.snake_case(key): value
+                    for key, value in result.items()
+                }
+            )
 
-        return PaginatedCollection(self.client, query_str, {id_param: self.uid},
-                                   ["project", "labelerPerformance"],
-                                   create_labeler_performance)
+        return PaginatedCollection(
+            self.client,
+            query_str,
+            {id_param: self.uid},
+            ["project", "labelerPerformance"],
+            create_labeler_performance,
+        )
 
     def review_metrics(self, net_score) -> int:
-        """ Returns this Project's review metrics.
+        """Returns this Project's review metrics.
 
         Args:
             net_score (None or Review.NetScore): Indicates desired metric.
@@ -726,7 +810,8 @@ class Project(DbObject, Updateable, Deletable):
         if net_score not in (None,) + tuple(Entity.Review.NetScore):
             raise InvalidQueryError(
                 "Review metrics net score must be either None "
-                "or one of Review.NetScore values")
+                "or one of Review.NetScore values"
+            )
         id_param = "projectId"
         net_score_literal = "None" if net_score is None else net_score.name
         query_str = """query ProjectReviewMetricsPyApi($%s: ID!){
@@ -758,24 +843,23 @@ class Project(DbObject, Updateable, Deletable):
         if not self.is_empty_ontology():
             raise ValueError("Ontology already connected to project.")
 
-        if self.labeling_frontend(
-        ) is None:  # Chat evaluation projects are automatically set up via the same api that creates a project
-            self._connect_default_labeling_front_end(ontology_as_dict={
-                "tools": [],
-                "classifications": []
-            })
+        if (
+            self.labeling_frontend() is None
+        ):  # Chat evaluation projects are automatically set up via the same api that creates a project
+            self._connect_default_labeling_front_end(
+                ontology_as_dict={"tools": [], "classifications": []}
+            )
 
         query_str = """mutation ConnectOntologyPyApi($projectId: ID!, $ontologyId: ID!){
             project(where: {id: $projectId}) {connectOntology(ontologyId: $ontologyId) {id}}}"""
-        self.client.execute(query_str, {
-            'ontologyId': ontology.uid,
-            'projectId': self.uid
-        })
+        self.client.execute(
+            query_str, {"ontologyId": ontology.uid, "projectId": self.uid}
+        )
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
     def setup(self, labeling_frontend, labeling_frontend_options) -> None:
-        """ This method will associate default labeling frontend with the project and create an ontology based on labeling_frontend_options.
+        """This method will associate default labeling frontend with the project and create an ontology based on labeling_frontend_options.
 
         Args:
             labeling_frontend (LabelingFrontend): Do not use, this parameter is deprecated. We now associate the default labeling frontend with the project.
@@ -804,11 +888,15 @@ class Project(DbObject, Updateable, Deletable):
 
     def _connect_default_labeling_front_end(self, ontology_as_dict: dict):
         labeling_frontend = self.labeling_frontend()
-        if labeling_frontend is None:  # Chat evaluation projects are automatically set up via the same api that creates a project
+        if (
+            labeling_frontend is None
+        ):  # Chat evaluation projects are automatically set up via the same api that creates a project
             warnings.warn("Connecting default labeling editor for the project.")
             labeling_frontend = next(
                 self.client.get_labeling_frontends(
-                    where=Entity.LabelingFrontend.name == "Editor"))
+                    where=Entity.LabelingFrontend.name == "Editor"
+                )
+            )
             self.labeling_frontend.connect(labeling_frontend)
 
         if not isinstance(ontology_as_dict, str):
@@ -818,11 +906,13 @@ class Project(DbObject, Updateable, Deletable):
 
         LFO = Entity.LabelingFrontendOptions
         self.client._create(
-            LFO, {
+            LFO,
+            {
                 LFO.project: self,
                 LFO.labeling_frontend: labeling_frontend,
-                LFO.customization_options: labeling_frontend_options_str
-            })
+                LFO.customization_options: labeling_frontend_options_str,
+            },
+        )
 
     def create_batch(
         self,
@@ -855,7 +945,8 @@ class Project(DbObject, Updateable, Deletable):
 
         if self.is_auto_data_generation():
             raise ValueError(
-                "Cannot create batches for auto data generation projects")
+                "Cannot create batches for auto data generation projects"
+            )
 
         dr_ids = []
         if data_rows is not None:
@@ -866,7 +957,8 @@ class Project(DbObject, Updateable, Deletable):
                     dr_ids.append(dr)
                 else:
                     raise ValueError(
-                        "`data_rows` must be DataRow ids or DataRow objects")
+                        "`data_rows` must be DataRow ids or DataRow objects"
+                    )
 
         if data_rows is not None:
             row_count = len(dr_ids)
@@ -877,23 +969,28 @@ class Project(DbObject, Updateable, Deletable):
 
         if row_count > 100_000:
             raise ValueError(
-                f"Batch exceeds max size, break into smaller batches")
+                f"Batch exceeds max size, break into smaller batches"
+            )
         if not row_count:
             raise ValueError("You need at least one data row in a batch")
 
         self._wait_until_data_rows_are_processed(
-            dr_ids, global_keys, self._wait_processing_max_seconds)
+            dr_ids, global_keys, self._wait_processing_max_seconds
+        )
 
         if consensus_settings:
-            consensus_settings = ConsensusSettings(**consensus_settings).model_dump(
-                by_alias=True)
+            consensus_settings = ConsensusSettings(
+                **consensus_settings
+            ).model_dump(by_alias=True)
 
         if row_count >= MAX_SYNC_BATCH_ROW_COUNT:
-            return self._create_batch_async(name, dr_ids, global_keys, priority,
-                                            consensus_settings)
+            return self._create_batch_async(
+                name, dr_ids, global_keys, priority, consensus_settings
+            )
         else:
-            return self._create_batch_sync(name, dr_ids, global_keys, priority,
-                                           consensus_settings)
+            return self._create_batch_sync(
+                name, dr_ids, global_keys, priority, consensus_settings
+            )
 
     def create_batches(
         self,
@@ -936,16 +1033,19 @@ class Project(DbObject, Updateable, Deletable):
                     dr_ids.append(dr)
                 else:
                     raise ValueError(
-                        "`data_rows` must be DataRow ids or DataRow objects")
+                        "`data_rows` must be DataRow ids or DataRow objects"
+                    )
 
         self._wait_until_data_rows_are_processed(
-            dr_ids, global_keys, self._wait_processing_max_seconds)
+            dr_ids, global_keys, self._wait_processing_max_seconds
+        )
 
         if consensus_settings:
-            consensus_settings = ConsensusSettings(**consensus_settings).model_dump(
-                by_alias=True)
+            consensus_settings = ConsensusSettings(
+                **consensus_settings
+            ).model_dump(by_alias=True)
 
-        method = 'createBatches'
+        method = "createBatches"
         mutation_str = """mutation %sPyApi($projectId: ID!, $input: CreateBatchesInput!) {
                                       project(where: {id: $projectId}) {
                                         %s(input: $input) {
@@ -965,12 +1065,13 @@ class Project(DbObject, Updateable, Deletable):
                 "dataRowIds": dr_ids,
                 "globalKeys": global_keys,
                 "priority": priority,
-                "consensusSettings": consensus_settings
-            }
+                "consensusSettings": consensus_settings,
+            },
         }
 
-        tasks = self.client.execute(
-            mutation_str, params, experimental=True)["project"][method]["tasks"]
+        tasks = self.client.execute(mutation_str, params, experimental=True)[
+            "project"
+        ][method]["tasks"]
         batch_ids = [task["batchUuid"] for task in tasks]
         task_ids = [task["taskId"] for task in tasks]
 
@@ -981,8 +1082,8 @@ class Project(DbObject, Updateable, Deletable):
         name_prefix: str,
         dataset_id: str,
         priority: int = 5,
-        consensus_settings: Optional[Dict[str,
-                                          Any]] = None) -> CreateBatchesTask:
+        consensus_settings: Optional[Dict[str, Any]] = None,
+    ) -> CreateBatchesTask:
         """
         Creates batches for a project from a dataset, selecting only the data rows that are not already added to the
         project. When the dataset contains more than 100k data rows and multiple batches are needed, the specific batch
@@ -1009,10 +1110,11 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError("Project must be in batch mode")
 
         if consensus_settings:
-            consensus_settings = ConsensusSettings(**consensus_settings).model_dump(
-                by_alias=True)
+            consensus_settings = ConsensusSettings(
+                **consensus_settings
+            ).model_dump(by_alias=True)
 
-        method = 'createBatchesFromDataset'
+        method = "createBatchesFromDataset"
         mutation_str = """mutation %sPyApi($projectId: ID!, $input: CreateBatchesFromDatasetInput!) {
                                         project(where: {id: $projectId}) {
                                             %s(input: $input) {
@@ -1031,21 +1133,23 @@ class Project(DbObject, Updateable, Deletable):
                 "batchNamePrefix": name_prefix,
                 "datasetId": dataset_id,
                 "priority": priority,
-                "consensusSettings": consensus_settings
-            }
+                "consensusSettings": consensus_settings,
+            },
         }
 
-        tasks = self.client.execute(
-            mutation_str, params, experimental=True)["project"][method]["tasks"]
+        tasks = self.client.execute(mutation_str, params, experimental=True)[
+            "project"
+        ][method]["tasks"]
 
         batch_ids = [task["batchUuid"] for task in tasks]
         task_ids = [task["taskId"] for task in tasks]
 
         return CreateBatchesTask(self.client, self.uid, batch_ids, task_ids)
 
-    def _create_batch_sync(self, name, dr_ids, global_keys, priority,
-                           consensus_settings):
-        method = 'createBatchV2'
+    def _create_batch_sync(
+        self, name, dr_ids, global_keys, priority, consensus_settings
+    ):
+        method = "createBatchV2"
         query_str = """mutation %sPyApi($projectId: ID!, $batchInput: CreateBatchInput!) {
                   project(where: {id: $projectId}) {
                     %s(input: $batchInput) {
@@ -1064,28 +1168,30 @@ class Project(DbObject, Updateable, Deletable):
                 "dataRowIds": dr_ids,
                 "globalKeys": global_keys,
                 "priority": priority,
-                "consensusSettings": consensus_settings
-            }
+                "consensusSettings": consensus_settings,
+            },
         }
-        res = self.client.execute(query_str,
-                                  params,
-                                  timeout=180.0,
-                                  experimental=True)["project"][method]
-        batch = res['batch']
-        batch['size'] = res['batch']['size']
-        return Entity.Batch(self.client,
-                            self.uid,
-                            batch,
-                            failed_data_row_ids=res['failedDataRowIds'])
+        res = self.client.execute(
+            query_str, params, timeout=180.0, experimental=True
+        )["project"][method]
+        batch = res["batch"]
+        batch["size"] = res["batch"]["size"]
+        return Entity.Batch(
+            self.client,
+            self.uid,
+            batch,
+            failed_data_row_ids=res["failedDataRowIds"],
+        )
 
-    def _create_batch_async(self,
-                            name: str,
-                            dr_ids: Optional[List[str]] = None,
-                            global_keys: Optional[List[str]] = None,
-                            priority: int = 5,
-                            consensus_settings: Optional[Dict[str,
-                                                              float]] = None):
-        method = 'createEmptyBatch'
+    def _create_batch_async(
+        self,
+        name: str,
+        dr_ids: Optional[List[str]] = None,
+        global_keys: Optional[List[str]] = None,
+        priority: int = 5,
+        consensus_settings: Optional[Dict[str, float]] = None,
+    ):
+        method = "createEmptyBatch"
         create_empty_batch_mutation_str = """mutation %sPyApi($projectId: ID!, $input: CreateEmptyBatchInput!) {
                                       project(where: {id: $projectId}) {
                                         %s(input: $input) {
@@ -1097,19 +1203,18 @@ class Project(DbObject, Updateable, Deletable):
 
         params = {
             "projectId": self.uid,
-            "input": {
-                "name": name,
-                "consensusSettings": consensus_settings
-            }
+            "input": {"name": name, "consensusSettings": consensus_settings},
         }
 
-        res = self.client.execute(create_empty_batch_mutation_str,
-                                  params,
-                                  timeout=180.0,
-                                  experimental=True)["project"][method]
-        batch_id = res['id']
+        res = self.client.execute(
+            create_empty_batch_mutation_str,
+            params,
+            timeout=180.0,
+            experimental=True,
+        )["project"][method]
+        batch_id = res["id"]
 
-        method = 'addDataRowsToBatchAsync'
+        method = "addDataRowsToBatchAsync"
         add_data_rows_mutation_str = """mutation %sPyApi($projectId: ID!, $input: AddDataRowsToBatchInput!) {
                                       project(where: {id: $projectId}) {
                                         %s(input: $input) {
@@ -1126,20 +1231,21 @@ class Project(DbObject, Updateable, Deletable):
                 "dataRowIds": dr_ids,
                 "globalKeys": global_keys,
                 "priority": priority,
-            }
+            },
         }
 
-        res = self.client.execute(add_data_rows_mutation_str,
-                                  params,
-                                  timeout=180.0,
-                                  experimental=True)["project"][method]
+        res = self.client.execute(
+            add_data_rows_mutation_str, params, timeout=180.0, experimental=True
+        )["project"][method]
 
-        task_id = res['taskId']
+        task_id = res["taskId"]
 
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
-            raise LabelboxError(f"Batch was not created successfully: " +
-                                json.dumps(task.errors))
+            raise LabelboxError(
+                f"Batch was not created successfully: "
+                + json.dumps(task.errors)
+            )
 
         return self.client.get_batch(self.uid, batch_id)
 
@@ -1173,21 +1279,24 @@ class Project(DbObject, Updateable, Deletable):
             status = "DISABLED"
         else:
             raise ValueError(
-                "Must provide either `BATCH` or `DATASET` as a mode")
+                "Must provide either `BATCH` or `DATASET` as a mode"
+            )
 
-        query_str = """mutation %s($projectId: ID!, $status: TagSetStatusInput!) {
+        query_str = (
+            """mutation %s($projectId: ID!, $status: TagSetStatusInput!) {
               project(where: {id: $projectId}) {
                  setTagSetStatus(input: {tagSetStatus: $status}) {
                     tagSetStatus
                 }
             }
         }
-        """ % "setTagSetStatusPyApi"
+        """
+            % "setTagSetStatusPyApi"
+        )
 
-        self.client.execute(query_str, {
-            'projectId': self.uid,
-            'status': status
-        })
+        self.client.execute(
+            query_str, {"projectId": self.uid, "status": status}
+        )
 
         return mode
 
@@ -1202,7 +1311,7 @@ class Project(DbObject, Updateable, Deletable):
             }
         }"""
 
-        res = self.client.execute(query_str, {'projectId': self.uid})
+        res = self.client.execute(query_str, {"projectId": self.uid})
         return res["project"]["labelCount"]
 
     def get_queue_mode(self) -> "QueueMode":
@@ -1221,17 +1330,22 @@ class Project(DbObject, Updateable, Deletable):
 
         logger.warning(
             "Obtaining the queue_mode for a project through this method will soon"
-            " no longer be supported.")
+            " no longer be supported."
+        )
 
-        query_str = """query %s($projectId: ID!) {
+        query_str = (
+            """query %s($projectId: ID!) {
               project(where: {id: $projectId}) {
                  tagSetStatus
             }
         }
-        """ % "GetTagSetStatusPyApi"
+        """
+            % "GetTagSetStatusPyApi"
+        )
 
-        status = self.client.execute(
-            query_str, {'projectId': self.uid})["project"]["tagSetStatus"]
+        status = self.client.execute(query_str, {"projectId": self.uid})[
+            "project"
+        ]["tagSetStatus"]
 
         if status == "ENABLED":
             return QueueMode.Batch
@@ -1241,7 +1355,7 @@ class Project(DbObject, Updateable, Deletable):
             raise ValueError("Status not known")
 
     def add_model_config(self, model_config_id: str) -> str:
-        """ Adds a model config to this project.
+        """Adds a model config to this project.
 
         Args:
             model_config_id (str): ID of a model config to add to this project.
@@ -1264,10 +1378,11 @@ class Project(DbObject, Updateable, Deletable):
             result = self.client.execute(query, params)
         except LabelboxError as e:
             if e.message.startswith(
-                    "Unknown error: "
+                "Unknown error: "
             ):  # unfortunate hack to handle unparsed graphql errors
                 error_content = error_message_for_unparsed_graphql_error(
-                    e.message)
+                    e.message
+                )
             else:
                 error_content = e.message
             raise LabelboxError(message=error_content) from e
@@ -1277,7 +1392,7 @@ class Project(DbObject, Updateable, Deletable):
         return result["createProjectModelConfig"]["projectModelConfigId"]
 
     def delete_project_model_config(self, project_model_config_id: str) -> bool:
-        """ Deletes the association between a model config and this project.
+        """Deletes the association between a model config and this project.
 
         Args:
             project_model_config_id (str): ID of a project model config association to delete for this project.
@@ -1319,12 +1434,14 @@ class Project(DbObject, Updateable, Deletable):
 
         result = self.client.execute(query, {"projectId": self.uid})
         self.model_setup_complete = result["setProjectModelSetupComplete"][
-            "modelSetupComplete"]
+            "modelSetupComplete"
+        ]
         return result["setProjectModelSetupComplete"]["modelSetupComplete"]
 
     def set_labeling_parameter_overrides(
-            self, data: List[LabelingParameterOverrideInput]) -> bool:
-        """ Adds labeling parameter overrides to this project.
+        self, data: List[LabelingParameterOverrideInput]
+    ) -> bool:
+        """Adds labeling parameter overrides to this project.
 
         See information on priority here:
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
@@ -1364,22 +1481,25 @@ class Project(DbObject, Updateable, Deletable):
                 {setLabelingParameterOverrides
                 (dataWithDataRowIdentifiers: [$dataWithDataRowIdentifiers])
                 {success}}}
-            """)
+            """
+        )
 
         data_rows_with_identifiers = ""
         for data_row, priority in data:
             if isinstance(data_row, DataRow):
-                data_rows_with_identifiers += f"{{dataRowIdentifier: {{id: \"{data_row.uid}\", idType: {IdType.DataRowId}}}, priority: {priority}}},"
+                data_rows_with_identifiers += f'{{dataRowIdentifier: {{id: "{data_row.uid}", idType: {IdType.DataRowId}}}, priority: {priority}}},'
             elif isinstance(data_row, UniqueId) or isinstance(
-                    data_row, GlobalKey):
-                data_rows_with_identifiers += f"{{dataRowIdentifier: {{id: \"{data_row.key}\", idType: {data_row.id_type}}}, priority: {priority}}},"
+                data_row, GlobalKey
+            ):
+                data_rows_with_identifiers += f'{{dataRowIdentifier: {{id: "{data_row.key}", idType: {data_row.id_type}}}, priority: {priority}}},'
             else:
                 raise TypeError(
                     f"Data row identifier should be be of type DataRow or Data Row Identifier. Found {type(data_row)}."
                 )
 
         query_str = template.substitute(
-            dataWithDataRowIdentifiers=data_rows_with_identifiers)
+            dataWithDataRowIdentifiers=data_rows_with_identifiers
+        )
         res = self.client.execute(query_str, {"projectId": self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
@@ -1422,8 +1542,10 @@ class Project(DbObject, Updateable, Deletable):
 
         if isinstance(data_rows, list):
             data_rows = UniqueIds(data_rows)
-            warnings.warn("Using data row ids will be deprecated. Please use "
-                          "UniqueIds or GlobalKeys instead.")
+            warnings.warn(
+                "Using data row ids will be deprecated. Please use "
+                "UniqueIds or GlobalKeys instead."
+            )
 
         method = "createQueuePriorityUpdateTask"
         priority_param = "priority"
@@ -1442,28 +1564,40 @@ class Project(DbObject, Updateable, Deletable):
                 }
               }
             }
-        """ % (method, priority_param, project_param, data_rows_param,
-               project_param, method, priority_param, data_rows_param)
+        """ % (
+            method,
+            priority_param,
+            project_param,
+            data_rows_param,
+            project_param,
+            method,
+            priority_param,
+            data_rows_param,
+        )
         res = self.client.execute(
-            query_str, {
+            query_str,
+            {
                 priority_param: priority,
                 project_param: self.uid,
                 data_rows_param: {
                     "ids": [id for id in data_rows],
                     "idType": data_rows.id_type,
                 },
-            })["project"][method]
+            },
+        )["project"][method]
 
-        task_id = res['taskId']
+        task_id = res["taskId"]
 
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
-            raise LabelboxError(f"Priority was not updated successfully: " +
-                                json.dumps(task.errors))
+            raise LabelboxError(
+                f"Priority was not updated successfully: "
+                + json.dumps(task.errors)
+            )
         return True
 
     def extend_reservations(self, queue_type) -> int:
-        """ Extends all the current reservations for the current user on the given
+        """Extends all the current reservations for the current user on the given
         queue type.
         Args:
             queue_type (str): Either "LabelingQueue" or "ReviewQueue"
@@ -1476,12 +1610,15 @@ class Project(DbObject, Updateable, Deletable):
         id_param = "projectId"
         query_str = """mutation ExtendReservationsPyApi($%s: ID!){
             extendReservations(projectId:$%s queueType:%s)}""" % (
-            id_param, id_param, queue_type)
+            id_param,
+            id_param,
+            queue_type,
+        )
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["extendReservations"]
 
     def enable_model_assisted_labeling(self, toggle: bool = True) -> bool:
-        """ Turns model assisted labeling either on or off based on input
+        """Turns model assisted labeling either on or off based on input
 
         Args:
             toggle (bool): True or False boolean
@@ -1503,10 +1640,11 @@ class Project(DbObject, Updateable, Deletable):
 
         res = self.client.execute(query_str, params)
         return res["project"]["showPredictionsToLabelers"][
-            "showingPredictionsToLabelers"]
+            "showingPredictionsToLabelers"
+        ]
 
     def bulk_import_requests(self) -> PaginatedCollection:
-        """ Returns bulk import request objects which are used in model-assisted labeling.
+        """Returns bulk import request objects which are used in model-assisted labeling.
         These are returned with the oldest first, and most recent last.
         """
 
@@ -1519,15 +1657,21 @@ class Project(DbObject, Updateable, Deletable):
             ) {
                 %s
             }
-        }""" % (id_param, id_param,
-                query.results_query_part(Entity.BulkImportRequest))
-        return PaginatedCollection(self.client, query_str,
-                                   {id_param: str(self.uid)},
-                                   ["bulkImportRequests"],
-                                   Entity.BulkImportRequest)
+        }""" % (
+            id_param,
+            id_param,
+            query.results_query_part(Entity.BulkImportRequest),
+        )
+        return PaginatedCollection(
+            self.client,
+            query_str,
+            {id_param: str(self.uid)},
+            ["bulkImportRequests"],
+            Entity.BulkImportRequest,
+        )
 
     def batches(self) -> PaginatedCollection:
-        """ Fetch all batches that belong to this project
+        """Fetch all batches that belong to this project
 
         Returns:
             A `PaginatedCollection` of `Batch`es
@@ -1539,13 +1683,16 @@ class Project(DbObject, Updateable, Deletable):
         """ % (id_param, id_param, query.results_query_part(Entity.Batch))
         return PaginatedCollection(
             self.client,
-            query_str, {id_param: self.uid}, ['project', 'batches', 'nodes'],
+            query_str,
+            {id_param: self.uid},
+            ["project", "batches", "nodes"],
             lambda client, res: Entity.Batch(client, self.uid, res),
-            cursor_path=['project', 'batches', 'pageInfo', 'endCursor'],
-            experimental=True)
+            cursor_path=["project", "batches", "pageInfo", "endCursor"],
+            experimental=True,
+        )
 
     def task_queues(self) -> List[TaskQueue]:
-        """ Fetch all task queues that belong to this project
+        """Fetch all task queues that belong to this project
 
         Returns:
             A `List` of `TaskQueue`s
@@ -1560,9 +1707,8 @@ class Project(DbObject, Updateable, Deletable):
         """ % (query.results_query_part(Entity.TaskQueue))
 
         task_queue_values = self.client.execute(
-            query_str, {"projectId": self.uid},
-            timeout=180.0,
-            experimental=True)["project"]["taskQueues"]
+            query_str, {"projectId": self.uid}, timeout=180.0, experimental=True
+        )["project"]["taskQueues"]
 
         return [
             Entity.TaskQueue(self.client, field_values)
@@ -1570,13 +1716,15 @@ class Project(DbObject, Updateable, Deletable):
         ]
 
     @overload
-    def move_data_rows_to_task_queue(self, data_row_ids: DataRowIdentifiers,
-                                     task_queue_id: str):
+    def move_data_rows_to_task_queue(
+        self, data_row_ids: DataRowIdentifiers, task_queue_id: str
+    ):
         pass
 
     @overload
-    def move_data_rows_to_task_queue(self, data_row_ids: List[str],
-                                     task_queue_id: str):
+    def move_data_rows_to_task_queue(
+        self, data_row_ids: List[str], task_queue_id: str
+    ):
         pass
 
     def move_data_rows_to_task_queue(self, data_row_ids, task_queue_id: str):
@@ -1595,11 +1743,14 @@ class Project(DbObject, Updateable, Deletable):
         """
         if isinstance(data_row_ids, list):
             data_row_ids = UniqueIds(data_row_ids)
-            warnings.warn("Using data row ids will be deprecated. Please use "
-                          "UniqueIds or GlobalKeys instead.")
+            warnings.warn(
+                "Using data row ids will be deprecated. Please use "
+                "UniqueIds or GlobalKeys instead."
+            )
 
         method = "createBulkAddRowsToQueueTask"
-        query_str = """mutation AddDataRowsToTaskQueueAsyncPyApi(
+        query_str = (
+            """mutation AddDataRowsToTaskQueueAsyncPyApi(
           $projectId: ID!
           $queueId: ID
           $dataRowIdentifiers: AddRowsToTaskQueueViaDataRowIdentifiersInput!
@@ -1612,10 +1763,13 @@ class Project(DbObject, Updateable, Deletable):
             }
           }
         }
-        """ % method
+        """
+            % method
+        )
 
         task_id = self.client.execute(
-            query_str, {
+            query_str,
+            {
                 "projectId": self.uid,
                 "queueId": task_queue_id,
                 "dataRowIdentifiers": {
@@ -1624,12 +1778,15 @@ class Project(DbObject, Updateable, Deletable):
                 },
             },
             timeout=180.0,
-            experimental=True)["project"][method]["taskId"]
+            experimental=True,
+        )["project"][method]["taskId"]
 
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
-            raise LabelboxError(f"Data rows were not moved successfully: " +
-                                json.dumps(task.errors))
+            raise LabelboxError(
+                f"Data rows were not moved successfully: "
+                + json.dumps(task.errors)
+            )
 
     def _wait_for_task(self, task_id: str) -> Task:
         task = Task.get_task(self.client, task_id)
@@ -1638,11 +1795,12 @@ class Project(DbObject, Updateable, Deletable):
         return task
 
     def upload_annotations(
-            self,
-            name: str,
-            annotations: Union[str, Path, Iterable[Dict]],
-            validate: bool = False) -> 'BulkImportRequest':  # type: ignore
-        """ Uploads annotations to a new Editor project.
+        self,
+        name: str,
+        annotations: Union[str, Path, Iterable[Dict]],
+        validate: bool = False,
+    ) -> "BulkImportRequest":  # type: ignore
+        """Uploads annotations to a new Editor project.
 
         Args:
             name (str): name of the BulkImportRequest job
@@ -1660,7 +1818,7 @@ class Project(DbObject, Updateable, Deletable):
         if isinstance(annotations, str) or isinstance(annotations, Path):
 
             def _is_url_valid(url: Union[str, Path]) -> bool:
-                """ Verifies that the given string is a valid url.
+                """Verifies that the given string is a valid url.
 
                 Args:
                     url: string to be checked
@@ -1679,12 +1837,13 @@ class Project(DbObject, Updateable, Deletable):
                     project_id=self.uid,
                     name=name,
                     url=str(annotations),
-                    validate=validate)
+                    validate=validate,
+                )
             else:
                 path = Path(annotations)
                 if not path.exists():
                     raise FileNotFoundError(
-                        f'{annotations} is not a valid url nor existing local file'
+                        f"{annotations} is not a valid url nor existing local file"
                     )
                 return Entity.BulkImportRequest.create_from_local_file(
                     client=self.client,
@@ -1699,64 +1858,79 @@ class Project(DbObject, Updateable, Deletable):
                 project_id=self.uid,
                 name=name,
                 predictions=annotations,  # type: ignore
-                validate=validate)
+                validate=validate,
+            )
         else:
             raise ValueError(
-                f'Invalid annotations given of type: {type(annotations)}')
+                f"Invalid annotations given of type: {type(annotations)}"
+            )
 
     def _wait_until_data_rows_are_processed(
-            self,
-            data_row_ids: Optional[List[str]] = None,
-            global_keys: Optional[List[str]] = None,
-            wait_processing_max_seconds: int = _wait_processing_max_seconds,
-            sleep_interval=30):
-        """ Wait until all the specified data rows are processed"""
+        self,
+        data_row_ids: Optional[List[str]] = None,
+        global_keys: Optional[List[str]] = None,
+        wait_processing_max_seconds: int = _wait_processing_max_seconds,
+        sleep_interval=30,
+    ):
+        """Wait until all the specified data rows are processed"""
         start_time = datetime.now()
 
         max_data_rows_per_poll = 100_000
         if data_row_ids is not None:
             for i in range(0, len(data_row_ids), max_data_rows_per_poll):
-                chunk = data_row_ids[i:i + max_data_rows_per_poll]
+                chunk = data_row_ids[i : i + max_data_rows_per_poll]
                 self._poll_data_row_processing_status(
-                    chunk, [], start_time, wait_processing_max_seconds,
-                    sleep_interval)
+                    chunk,
+                    [],
+                    start_time,
+                    wait_processing_max_seconds,
+                    sleep_interval,
+                )
 
         if global_keys is not None:
             for i in range(0, len(global_keys), max_data_rows_per_poll):
-                chunk = global_keys[i:i + max_data_rows_per_poll]
+                chunk = global_keys[i : i + max_data_rows_per_poll]
                 self._poll_data_row_processing_status(
-                    [], chunk, start_time, wait_processing_max_seconds,
-                    sleep_interval)
+                    [],
+                    chunk,
+                    start_time,
+                    wait_processing_max_seconds,
+                    sleep_interval,
+                )
 
     def _poll_data_row_processing_status(
-            self,
-            data_row_ids: List[str],
-            global_keys: List[str],
-            start_time: datetime,
-            wait_processing_max_seconds: int = _wait_processing_max_seconds,
-            sleep_interval=30):
-
+        self,
+        data_row_ids: List[str],
+        global_keys: List[str],
+        start_time: datetime,
+        wait_processing_max_seconds: int = _wait_processing_max_seconds,
+        sleep_interval=30,
+    ):
         while True:
-            if (datetime.now() -
-                    start_time).total_seconds() >= wait_processing_max_seconds:
+            if (
+                datetime.now() - start_time
+            ).total_seconds() >= wait_processing_max_seconds:
                 raise ProcessingWaitTimeout(
                     """Maximum wait time exceeded while waiting for data rows to be processed.
-                    Try creating a batch a bit later""")
+                    Try creating a batch a bit later"""
+                )
 
             all_good = self.__check_data_rows_have_been_processed(
-                data_row_ids, global_keys)
+                data_row_ids, global_keys
+            )
             if all_good:
                 return
 
             logger.debug(
-                'Some of the data rows are still being processed, waiting...')
+                "Some of the data rows are still being processed, waiting..."
+            )
             time.sleep(sleep_interval)
 
     def __check_data_rows_have_been_processed(
-            self,
-            data_row_ids: Optional[List[str]] = None,
-            global_keys: Optional[List[str]] = None):
-
+        self,
+        data_row_ids: Optional[List[str]] = None,
+        global_keys: Optional[List[str]] = None,
+    ):
         if data_row_ids is not None and len(data_row_ids) > 0:
             param_name = "dataRowIds"
             params = {param_name: data_row_ids}
@@ -1773,11 +1947,12 @@ class Project(DbObject, Updateable, Deletable):
 
         response = self.client.execute(query_str, params)
         return response["queryAllDataRowsHaveBeenProcessed"][
-            "allDataRowsHaveBeenProcessed"]
+            "allDataRowsHaveBeenProcessed"
+        ]
 
     def get_overview(
-            self,
-            details=False) -> Union[ProjectOverview, ProjectOverviewDetailed]:
+        self, details=False
+    ) -> Union[ProjectOverview, ProjectOverviewDetailed]:
         """Return the overview of a project.
 
         This method returns the number of data rows per task queue and issues of a project,
@@ -1816,8 +1991,9 @@ class Project(DbObject, Updateable, Deletable):
         """
 
         # Must use experimental to access "issues"
-        result = self.client.execute(query, {"projectId": self.uid},
-                                     experimental=True)["project"]
+        result = self.client.execute(
+            query, {"projectId": self.uid}, experimental=True
+        )["project"]
 
         # Reformat category names
         overview = {
@@ -1838,16 +2014,14 @@ class Project(DbObject, Updateable, Deletable):
             # Build dictionary for queue details for review and rework queues
             for category in ["rework", "review"]:
                 queues = [
-                    {
-                        tq["name"]: tq.get("dataRowCount")
-                    }
+                    {tq["name"]: tq.get("dataRowCount")}
                     for tq in result.get("taskQueues")
                     if tq.get("queueType") == f"MANUAL_{category.upper()}_QUEUE"
                 ]
 
                 overview[f"in_{category}"] = {
                     "data": queues,
-                    "total": overview[f"in_{category}"]
+                    "total": overview[f"in_{category}"],
                 }
 
             return ProjectOverviewDetailed(**overview)
@@ -1897,7 +2071,7 @@ class Project(DbObject, Updateable, Deletable):
         """Get the labeling service for this project.
 
         Returns:
-            LabelingServiceDashboard: The labeling service for this project. 
+            LabelingServiceDashboard: The labeling service for this project.
 
         Attributes of the dashboard include:
             id (str): The project id.
@@ -1927,12 +2101,13 @@ class ProjectMember(DbObject):
 
 
 class LabelingParameterOverride(DbObject):
-    """ Customizes the order of assets in the label queue.
+    """Customizes the order of assets in the label queue.
 
     Attributes:
         priority (int): A prioritization score.
         number_of_labels (int): Number of times an asset should be labeled.
     """
+
     priority = Field.Int("priority")
     number_of_labels = Field.Int("number_of_labels")
 
@@ -1940,8 +2115,10 @@ class LabelingParameterOverride(DbObject):
 
 
 LabelerPerformance = namedtuple(
-    "LabelerPerformance", "user count seconds_per_label, total_time_labeling "
-    "consensus average_benchmark_agreement last_activity_time")
+    "LabelerPerformance",
+    "user count seconds_per_label, total_time_labeling "
+    "consensus average_benchmark_agreement last_activity_time",
+)
 LabelerPerformance.__doc__ = (
-    "Named tuple containing info about a labeler's performance.")
-
+    "Named tuple containing info about a labeler's performance."
+)

@@ -71,7 +71,9 @@ def test_update_project_resource_tags(client, rand_gen, data_for_project_test):
             id
         }
         }
-        """, {"tag_id": tag_id})
+        """,
+            {"tag_id": tag_id},
+        )
         return res
 
     org = client.get_organization()
@@ -89,7 +91,7 @@ def test_update_project_resource_tags(client, rand_gen, data_for_project_test):
 
     tagA = client.get_organization().create_resource_tag(tag)
     assert tagA.text == textA
-    assert '#' + tagA.color == colorA
+    assert "#" + tagA.color == colorA
     assert tagA.uid is not None
 
     tags = org.get_resource_tags()
@@ -98,7 +100,7 @@ def test_update_project_resource_tags(client, rand_gen, data_for_project_test):
 
     tagB = client.get_organization().create_resource_tag(tagB)
     assert tagB.text == textB
-    assert '#' + tagB.color == colorB
+    assert "#" + tagB.color == colorB
     assert tagB.uid is not None
 
     tags = client.get_organization().get_resource_tags()
@@ -107,7 +109,8 @@ def test_update_project_resource_tags(client, rand_gen, data_for_project_test):
     assert lenB > lenA
 
     project_resource_tag = client.get_project(
-        p1.uid).update_project_resource_tags([str(tagA.uid)])
+        p1.uid
+    ).update_project_resource_tags([str(tagA.uid)])
     assert len(project_resource_tag) == 1
     assert project_resource_tag[0].uid == tagA.uid
 
@@ -136,75 +139,84 @@ def test_extend_reservations(project):
         project.extend_reservations("InvalidQueueType")
 
 
-@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
-                    reason="new mutation does not work for onprem")
+@pytest.mark.skipif(
+    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem",
+    reason="new mutation does not work for onprem",
+)
 def test_attach_instructions(client, project):
     with pytest.raises(ValueError) as execinfo:
-        project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
-    assert str(
-        execinfo.value
-    ) == "Cannot attach instructions to a project that has not been set up."
+        project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
+    assert (
+        str(execinfo.value)
+        == "Cannot attach instructions to a project that has not been set up."
+    )
     editor = list(
-        client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"))[0]
+        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
+    )[0]
     empty_ontology = {"tools": [], "classifications": []}
     project.setup(editor, empty_ontology)
 
-    project.upsert_instructions('tests/integration/media/sample_pdf.pdf')
+    project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
     time.sleep(3)
-    assert project.ontology().normalized['projectInstructions'] is not None
+    assert project.ontology().normalized["projectInstructions"] is not None
 
     with pytest.raises(ValueError) as exc_info:
-        project.upsert_instructions('/tmp/file.invalid_file_extension')
+        project.upsert_instructions("/tmp/file.invalid_file_extension")
     assert "instructions_file must be a pdf or html file. Found" in str(
-        exc_info.value)
+        exc_info.value
+    )
 
 
-@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
-                    reason="new mutation does not work for onprem")
+@pytest.mark.skipif(
+    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem",
+    reason="new mutation does not work for onprem",
+)
 def test_html_instructions(project_with_empty_ontology):
-    html_file_path = '/tmp/instructions.html'
+    html_file_path = "/tmp/instructions.html"
     sample_html_str = "<html></html>"
 
-    with open(html_file_path, 'w') as file:
+    with open(html_file_path, "w") as file:
         file.write(sample_html_str)
 
     project_with_empty_ontology.upsert_instructions(html_file_path)
     updated_ontology = project_with_empty_ontology.ontology().normalized
 
-    instructions = updated_ontology.pop('projectInstructions')
+    instructions = updated_ontology.pop("projectInstructions")
     assert requests.get(instructions).text == sample_html_str
 
 
-@pytest.mark.skipif(condition=os.environ['LABELBOX_TEST_ENVIRON'] == "onprem",
-                    reason="new mutation does not work for onprem")
+@pytest.mark.skipif(
+    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem",
+    reason="new mutation does not work for onprem",
+)
 def test_same_ontology_after_instructions(
-        configured_project_with_complex_ontology):
+    configured_project_with_complex_ontology,
+):
     project, _ = configured_project_with_complex_ontology
     initial_ontology = project.ontology().normalized
-    project.upsert_instructions('tests/assets/loremipsum.pdf')
+    project.upsert_instructions("tests/assets/loremipsum.pdf")
     updated_ontology = project.ontology().normalized
 
-    instructions = updated_ontology.pop('projectInstructions')
+    instructions = updated_ontology.pop("projectInstructions")
 
     assert initial_ontology == updated_ontology
     assert instructions is not None
 
 
 def test_batches(project: Project, dataset: Dataset, image_url):
-    task = dataset.create_data_rows([
-        {
-            "row_data": image_url,
-            "external_id": "my-image"
-        },
-    ] * 2)
+    task = dataset.create_data_rows(
+        [
+            {"row_data": image_url, "external_id": "my-image"},
+        ]
+        * 2
+    )
     task.wait_till_done()
     export_task = dataset.export()
     export_task.wait_till_done()
     stream = export_task.get_buffered_stream()
     data_rows = [dr.json["data_row"]["id"] for dr in stream]
-    batch_one = f'batch one {uuid.uuid4()}'
-    batch_two = f'batch two {uuid.uuid4()}'
+    batch_one = f"batch one {uuid.uuid4()}"
+    batch_two = f"batch two {uuid.uuid4()}"
     project.create_batch(batch_one, [data_rows[0]])
     project.create_batch(batch_two, [data_rows[1]])
 
@@ -212,19 +224,19 @@ def test_batches(project: Project, dataset: Dataset, image_url):
     assert names == {batch_one, batch_two}
 
 
-@pytest.mark.parametrize('data_rows', [2], indirect=True)
+@pytest.mark.parametrize("data_rows", [2], indirect=True)
 def test_create_batch_with_global_keys_sync(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
-    batch_name = f'batch {uuid.uuid4()}'
+    batch_name = f"batch {uuid.uuid4()}"
     batch = project.create_batch(batch_name, global_keys=global_keys)
 
     assert batch.size == len(set(data_rows))
 
 
-@pytest.mark.parametrize('data_rows', [2], indirect=True)
+@pytest.mark.parametrize("data_rows", [2], indirect=True)
 def test_create_batch_with_global_keys_async(project: Project, data_rows):
     global_keys = [dr.global_key for dr in data_rows]
-    batch_name = f'batch {uuid.uuid4()}'
+    batch_name = f"batch {uuid.uuid4()}"
     batch = project._create_batch_async(batch_name, global_keys=global_keys)
 
     assert batch.size == len(set(data_rows))
@@ -243,28 +255,35 @@ def test_media_type(client, project: Project, rand_gen):
     for media_type in MediaType.get_supported_members():
         # Exclude LLM media types for now, as they are not supported
         if MediaType[media_type] in [
-                MediaType.LLMPromptCreation,
-                MediaType.LLMPromptResponseCreation, MediaType.LLM
+            MediaType.LLMPromptCreation,
+            MediaType.LLMPromptResponseCreation,
+            MediaType.LLM,
         ]:
             continue
 
-        project = client.create_project(name=rand_gen(str),
-                                        media_type=MediaType[media_type])
+        project = client.create_project(
+            name=rand_gen(str), media_type=MediaType[media_type]
+        )
         assert project.media_type == MediaType[media_type]
         project.delete()
 
 
 def test_queue_mode(client, rand_gen):
-    project = client.create_project(name=rand_gen(str))  # defaults to benchmark and consensus
+    project = client.create_project(
+        name=rand_gen(str)
+    )  # defaults to benchmark and consensus
     assert project.auto_audit_number_of_labels == 3
     assert project.auto_audit_percentage == 0
 
-    project = client.create_project(name=rand_gen(str), quality_modes=[QualityMode.Benchmark])
+    project = client.create_project(
+        name=rand_gen(str), quality_modes=[QualityMode.Benchmark]
+    )
     assert project.auto_audit_number_of_labels == 1
     assert project.auto_audit_percentage == 1
 
     project = client.create_project(
-        name=rand_gen(str), quality_modes=[QualityMode.Benchmark, QualityMode.Consensus]
+        name=rand_gen(str),
+        quality_modes=[QualityMode.Benchmark, QualityMode.Consensus],
     )
     assert project.auto_audit_number_of_labels == 3
     assert project.auto_audit_percentage == 0
@@ -282,14 +301,18 @@ def test_label_count(client, configured_batch_project_with_label):
 
 def test_clone(client, project, rand_gen):
     # cannot clone unknown project media type
-    project = client.create_project(name=rand_gen(str),
-                                    media_type=MediaType.Image)
+    project = client.create_project(
+        name=rand_gen(str), media_type=MediaType.Image
+    )
     cloned_project = project.clone()
 
     assert cloned_project.description == project.description
     assert cloned_project.media_type == project.media_type
     assert cloned_project.queue_mode == project.queue_mode
-    assert cloned_project.auto_audit_number_of_labels == project.auto_audit_number_of_labels
+    assert (
+        cloned_project.auto_audit_number_of_labels
+        == project.auto_audit_number_of_labels
+    )
     assert cloned_project.auto_audit_percentage == project.auto_audit_percentage
     assert cloned_project.get_label_count() == 0
 

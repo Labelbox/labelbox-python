@@ -13,7 +13,7 @@ class App(_CamelCaseMixin):
     class_to_schema_id: Dict[str, str]
     ontology_id: str
     created_by: Optional[str] = None
-    
+
     model_config = ConfigDict(protected_namespaces=())
 
     @classmethod
@@ -21,4 +21,4 @@ class App(_CamelCaseMixin):
         return "App"
 
 
-APP_FIELD_NAMES = list(App.model_json_schema()['properties'].keys())
+APP_FIELD_NAMES = list(App.model_json_schema()["properties"].keys())

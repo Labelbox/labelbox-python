@@ -1,10 +1,12 @@
 from pydantic import BaseModel
 from enum import Enum
-from labelbox.data.annotation_types.annotation import BaseAnnotation, ObjectAnnotation
+from labelbox.data.annotation_types.annotation import (
+    BaseAnnotation,
+    ObjectAnnotation,
+)
 
 
 class Relationship(BaseModel):
-
     class Type(Enum):
         UNIDIRECTIONAL = "unidirectional"
         BIDIRECTIONAL = "bidirectional"

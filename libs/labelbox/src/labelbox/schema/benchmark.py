@@ -3,7 +3,7 @@ from labelbox.orm.model import Field, Relationship
 
 
 class Benchmark(DbObject):
-    """ Represents a benchmark label.
+    """Represents a benchmark label.
 
     The Benchmarks tool works by interspersing data to be labeled, for
     which there is a benchmark label, to each person labeling. These
@@ -19,6 +19,7 @@ class Benchmark(DbObject):
         created_by (Relationship): `ToOne` relationship to User
         reference_label (Relationship): `ToOne` relationship to Label
     """
+
     created_at = Field.DateTime("created_at")
     created_by = Relationship.ToOne("User", False, "created_by")
     last_activity = Field.DateTime("last_activity")
@@ -30,7 +31,10 @@ class Benchmark(DbObject):
     def delete(self) -> None:
         label_param = "labelId"
         query_str = """mutation DeleteBenchmarkPyApi($%s: ID!) {
-            deleteBenchmark(where: {labelId: $%s}) {id}} """ % (label_param,
-                                                                label_param)
-        self.client.execute(query_str,
-                            {label_param: self.reference_label().uid})
+            deleteBenchmark(where: {labelId: $%s}) {id}} """ % (
+            label_param,
+            label_param,
+        )
+        self.client.execute(
+            query_str, {label_param: self.reference_label().uid}
+        )

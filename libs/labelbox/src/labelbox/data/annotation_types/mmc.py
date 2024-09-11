@@ -10,7 +10,7 @@ from labelbox.data.annotation_types.annotation import BaseAnnotation
 class MessageInfo(_CamelCaseMixin):
     message_id: str
     model_config_name: str
-    
+
     model_config = ConfigDict(protected_namespaces=())
 
 
@@ -21,7 +21,7 @@ class OrderedMessageInfo(MessageInfo):
 class _BaseMessageEvaluationTask(_CamelCaseMixin, ABC):
     format: ClassVar[str]
     parent_message_id: str
-    
+
     model_config = ConfigDict(protected_namespaces=())
 
 
@@ -48,5 +48,8 @@ class MessageRankingTask(_BaseMessageEvaluationTask):
 
 
 class MessageEvaluationTaskAnnotation(BaseAnnotation):
-    value: Union[MessageSingleSelectionTask, MessageMultiSelectionTask,
-                 MessageRankingTask]
+    value: Union[
+        MessageSingleSelectionTask,
+        MessageMultiSelectionTask,
+        MessageRankingTask,
+    ]
