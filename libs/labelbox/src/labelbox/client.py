@@ -215,16 +215,16 @@ class Client:
                 del headers['Content-Type']
                 del headers['Accept']
             
-            request = requests.Request('POST',
-                                       endpoint,
-                                       data=data,
-                                       files=files if files else None)
-
-            prepped: requests.PreparedRequest = self._connection.prepare_request(
-                request
+            request = requests.Request(
+                "POST",
+                endpoint,
+                headers=headers,
+                data=data,
+                files=files if files else None,
             )
-            
-            prepped.headers = headers
+
+            prepped: requests.PreparedRequest = request.prepare()
+
             
             settings = self._connection.merge_environment_settings(prepped.url, {}, None, None, None)
             
