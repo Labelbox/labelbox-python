@@ -6,7 +6,11 @@ from labelbox import Client
 from labelbox.exceptions import ResourceCreationError
 from labelbox.schema.user import User
 from labelbox.schema.project import Project
-from labelbox.exceptions import UnprocessableEntityError, MalformedQueryException, ResourceNotFoundError
+from labelbox.exceptions import (
+    UnprocessableEntityError,
+    MalformedQueryException,
+    ResourceNotFoundError,
+)
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.media_type import MediaType
@@ -28,6 +32,7 @@ class UserGroupColor(Enum):
         YELLOW (str): Hex color code for yellow (#E7BF00).
         GRAY (str): Hex color code for gray (#B8C4D3).
     """
+
     BLUE = "9EC5FF"
     PURPLE = "CEB8FF"
     ORANGE = "FFB35F"
@@ -38,7 +43,7 @@ class UserGroupColor(Enum):
     YELLOW = "E7BF00"
     GRAY = "B8C4D3"
 
- 
+
 class UserGroup(BaseModel):
     """
     Represents a user group in Labelbox.
@@ -59,14 +64,14 @@ class UserGroup(BaseModel):
         delete(self) -> bool
         get_user_groups(client: Client) -> Iterator["UserGroup"]
     """
+
     id: str
     name: str
     color: UserGroupColor
     users: Set[User]
     projects: Set[Project]
     client: Client
-    model_config = ConfigDict(arbitrary_types_allowed = True)
-    
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(
         self,
@@ -75,7 +80,7 @@ class UserGroup(BaseModel):
         name: str = "",
         color: UserGroupColor = UserGroupColor.BLUE,
         users: Set[User] = set(),
-        projects: Set[Project] = set()
+        projects: Set[Project] = set(),
     ):
         """
         Initializes a UserGroup object.
@@ -91,7 +96,9 @@ class UserGroup(BaseModel):
         Raises:
             RuntimeError: If the experimental feature is not enabled in the client.
         """
-        super().__init__(client=client, id=id, name=name, color=color, users=users, projects=projects)
+        super().__init__(
+            client=client, id=id, name=name, color=color, users=users, projects=projects
+        )
         if not self.client.enable_experimental:
             raise RuntimeError("Please enable experimental in client to use UserGroups")
 
@@ -138,9 +145,13 @@ class UserGroup(BaseModel):
         params = {
             "id": self.id,
         }
-        result = self.client.execute(query, params)
+        result = self.client.execute(
+            query, params, experimental=self.client.enable_experimental
+        )
         if not result:
-            raise ResourceNotFoundError(message="Failed to get user group as user group does not exist")
+            raise ResourceNotFoundError(
+                message="Failed to get user group as user group does not exist"
+            )
         self.name = result["userGroup"]["name"]
         self.color = UserGroupColor(result["userGroup"]["color"])
         self.projects = self._get_projects_set(result["userGroup"]["projects"]["nodes"])
@@ -190,23 +201,20 @@ class UserGroup(BaseModel):
         }
         """
         params = {
-            "id":
-                self.id,
-            "name":
-                self.name,
-            "color":
-                self.color.value,
-            "projectIds": [
-                project.uid for project in self.projects
-            ],
-            "userIds": [
-                user.uid for user in self.users
-            ]
+            "id": self.id,
+            "name": self.name,
+            "color": self.color.value,
+            "projectIds": [project.uid for project in self.projects],
+            "userIds": [user.uid for user in self.users],
         }
         try:
-            result = self.client.execute(query, params)
+            result = self.client.execute(
+                query, params, experimental=self.client.enable_experimental
+            )
             if not result:
-                raise ResourceNotFoundError(message="Failed to update user group as user group does not exist")
+                raise ResourceNotFoundError(
+                    message="Failed to update user group as user group does not exist"
+                )
         except MalformedQueryException as e:
             raise UnprocessableEntityError("Failed to update user group") from e
         return self
@@ -257,26 +265,24 @@ class UserGroup(BaseModel):
         }
         """
         params = {
-            "name":
-                self.name,
-            "color":
-                self.color.value,
-            "projectIds": [
-                project.uid for project in self.projects
-            ],
-            "userIds": [
-                user.uid for user in self.users
-            ]
+            "name": self.name,
+            "color": self.color.value,
+            "projectIds": [project.uid for project in self.projects],
+            "userIds": [user.uid for user in self.users],
         }
         result = None
         error = None
-        try: 
-            result = self.client.execute(query, params)
+        try:
+            result = self.client.execute(
+                query, params, experimental=self.client.enable_experimental
+            )
         except Exception as e:
             error = e
         if not result or error:
             # this is client side only, server doesn't have an equivalent error
-            raise ResourceCreationError(f"Failed to create user group, either user group name is in use currently, or provided user or projects don't exist server error: {error}")
+            raise ResourceCreationError(
+                f"Failed to create user group, either user group name is in use currently, or provided user or projects don't exist server error: {error}"
+            )
         result = result["createUserGroup"]["group"]
         self.id = result["id"]
         return self
@@ -291,7 +297,7 @@ class UserGroup(BaseModel):
 
         Returns:
             bool: True if the user group was successfully deleted, False otherwise.
-        
+
         Raises:
             ResourceNotFoundError: If the deletion of the user group fails due to not existing
             ValueError: If the group ID is not provided.
@@ -306,9 +312,13 @@ class UserGroup(BaseModel):
         }
         """
         params = {"id": self.id}
-        result = self.client.execute(query, params)
+        result = self.client.execute(
+            query, params, experimental=self.client.enable_experimental
+        )
         if not result:
-            raise ResourceNotFoundError(message="Failed to delete user group as user group does not exist")
+            raise ResourceNotFoundError(
+                message="Failed to delete user group as user group does not exist"
+            )
         return result["deleteUserGroup"]["success"]
 
     def get_user_groups(self) -> Iterator["UserGroup"]:
@@ -350,7 +360,10 @@ class UserGroup(BaseModel):
         nextCursor = None
         while True:
             userGroups = self.client.execute(
-                query, {"after": nextCursor})["userGroups"]
+                query,
+                {"after": nextCursor},
+                experimental=self.client.enable_experimental,
+            )["userGroups"]
             if not userGroups:
                 return
                 yield
