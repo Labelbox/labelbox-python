@@ -717,7 +717,7 @@ class Client:
 
         data = {**data, **extra_params}
         query_string, params = query.create(db_object_type, data)
-        res = self.execute(query_string, params)
+        res = self.execute(query_string, params, raise_return_resource_not_found=True)
 
         if not res:
             raise labelbox.exceptions.LabelboxError(
