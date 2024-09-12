@@ -241,9 +241,8 @@ def polygon_inference(prediction_id_mapping):
 
 
 @pytest.fixture
-def configured_project_with_ontology(
-    client, initial_dataset, ontology, rand_gen, image_url
-):
+def configured_project_with_ontology(client, initial_dataset, ontology,
+                                     rand_gen, image_url, teardown_helpers):
     dataset = initial_dataset
     project = client.create_project(
         name=rand_gen(str),
@@ -264,22 +263,21 @@ def configured_project_with_ontology(
     )
     project.data_row_ids = data_row_ids
     yield project
-    project.delete()
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
 
 
 @pytest.fixture
-def configured_project_without_data_rows(client, ontology, rand_gen):
-    project = client.create_project(
-        name=rand_gen(str),
-        description=rand_gen(str),
-        queue_mode=QueueMode.Batch,
-    )
+def configured_project_without_data_rows(client, ontology, rand_gen,
+                                         teardown_helpers):
+    project = client.create_project(name=rand_gen(str),
+                                    description=rand_gen(str),
+                                    queue_mode=QueueMode.Batch)
     editor = list(
         client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
     )[0]
     project.setup(editor, ontology)
     yield project
-    project.delete()
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
 
 
 @pytest.fixture

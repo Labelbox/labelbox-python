@@ -7,13 +7,22 @@ from collections import Counter
 from labelbox import DataSplit, ModelRun
 
 
-@pytest.mark.order(1)
-def test_model_run(client, configured_project_with_label, data_row, rand_gen):
+@pytest.fixture
+def current_model(client, configured_project_with_label, rand_gen):
     project, _, _, label = configured_project_with_label
-    label_id = label.uid
     ontology = project.ontology()
-    data = {"name": rand_gen(str), "ontology_id": ontology.uid}
-    model = client.create_model(data["name"], data["ontology_id"])
+
+    model = client.create_model(rand_gen(str), ontology.uid)
+    yield model
+
+    model.delete()
+
+
+def test_model_run(client, configured_project_with_label, current_model,
+                   data_row, rand_gen):
+    _, _, _, label = configured_project_with_label
+    label_id = label.uid
+    model = current_model
 
     name = rand_gen(str)
     config = {"batch_size": 100, "reruns": None}
