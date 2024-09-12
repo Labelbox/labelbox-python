@@ -225,6 +225,8 @@ class Client:
                 request
             )
             
+            prepped.headers = headers
+            
             settings = self._connection.merge_environment_settings(prepped.url, {}, None, None, None)
             
             response = self._connection.send(prepped, timeout=timeout, **settings)
