@@ -107,9 +107,15 @@ def test_updates_a_feature_schema(client, feature_schema):
     assert updated_feature_schema.normalized["name"] == "new name"
 
 
+<<<<<<< HEAD
 def test_does_not_include_used_feature_schema(client):
     tool = client.upsert_feature_schema(point.asdict())
     feature_schema_id = tool.normalized["featureSchemaId"]
+=======
+def test_does_not_include_used_feature_schema(client, feature_schema):
+    tool = feature_schema
+    feature_schema_id = tool.normalized['featureSchemaId']
+>>>>>>> b54a37e7 (Followup update for the feature schema test)
     ontology = client.create_ontology_from_feature_schemas(
         name="ontology name",
         feature_schema_ids=[feature_schema_id],
@@ -120,4 +126,3 @@ def test_does_not_include_used_feature_schema(client):
     assert feature_schema_id not in unused_feature_schemas
 
     client.delete_unused_ontology(ontology.uid)
-    client.delete_unused_feature_schema(feature_schema_id)
