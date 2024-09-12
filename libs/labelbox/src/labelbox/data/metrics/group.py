@@ -1,11 +1,18 @@
 """
 Tools for grouping features and labels so that we can compute metrics on the individual groups
 """
+
 from collections import defaultdict
 from typing import Dict, List, Tuple, Union
 
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation
-from labelbox.data.annotation_types.classification.classification import Checklist, ClassificationAnswer, Radio, Text
+from labelbox.data.annotation_types.classification.classification import (
+    Checklist,
+    ClassificationAnswer,
+    Radio,
+    Text,
+)
+
 try:
     from typing import Literal
 except ImportError:
@@ -17,7 +24,7 @@ from ..annotation_types import ObjectAnnotation, ClassificationAnnotation, Label
 
 def get_identifying_key(
     features_a: List[FeatureSchema], features_b: List[FeatureSchema]
-) -> Union[Literal['name'], Literal['feature_schema_id']]:
+) -> Union[Literal["name"], Literal["feature_schema_id"]]:
     """
     Checks to make sure that features in both sets contain the same type of identifying keys.
     This can either be the feature name or feature schema id.
@@ -30,22 +37,24 @@ def get_identifying_key(
     """
 
     all_schema_ids_defined_pred, all_names_defined_pred = all_have_key(
-        features_a)
-    if (not all_schema_ids_defined_pred and not all_names_defined_pred):
+        features_a
+    )
+    if not all_schema_ids_defined_pred and not all_names_defined_pred:
         raise ValueError("All data must have feature_schema_ids or names set")
 
     all_schema_ids_defined_gt, all_names_defined_gt = all_have_key(features_b)
 
     # Prefer name becuse the user will be able to know what it means
     # Schema id incase that doesn't exist.
-    if (all_names_defined_pred and all_names_defined_gt):
-        return 'name'
+    if all_names_defined_pred and all_names_defined_gt:
+        return "name"
     elif all_schema_ids_defined_pred and all_schema_ids_defined_gt:
-        return 'feature_schema_id'
+        return "feature_schema_id"
     else:
         raise ValueError(
             "Ground truth and prediction annotations must have set all name or feature ids. "
-            "Otherwise there is no key to match on. Please update.")
+            "Otherwise there is no key to match on. Please update."
+        )
 
 
 def all_have_key(features: List[FeatureSchema]) -> Tuple[bool, bool]:
@@ -79,10 +88,9 @@ def all_have_key(features: List[FeatureSchema]) -> Tuple[bool, bool]:
     return all_schemas, all_names
 
 
-def get_label_pairs(labels_a: list,
-                    labels_b: list,
-                    match_on="uid",
-                    filter_mismatch=False) -> Dict[str, Tuple[Label, Label]]:
+def get_label_pairs(
+    labels_a: list, labels_b: list, match_on="uid", filter_mismatch=False
+) -> Dict[str, Tuple[Label, Label]]:
     """
     This is a function to pairing a list of prediction labels and a list of ground truth labels easier.
     There are a few potentiall problems with this function.
@@ -101,7 +109,7 @@ def get_label_pairs(labels_a: list,
 
     """
 
-    if match_on not in ['uid', 'external_id']:
+    if match_on not in ["uid", "external_id"]:
         raise ValueError("Can only match on  `uid` or `exteranl_id`.")
 
     label_lookup_a = {
@@ -147,9 +155,10 @@ def get_feature_pairs(
 
     """
     identifying_key = get_identifying_key(features_a, features_b)
-    lookup_a, lookup_b = _create_feature_lookup(
-        features_a,
-        identifying_key), _create_feature_lookup(features_b, identifying_key)
+    lookup_a, lookup_b = (
+        _create_feature_lookup(features_a, identifying_key),
+        _create_feature_lookup(features_b, identifying_key),
+    )
 
     keys = set(lookup_a.keys()).union(set(lookup_b.keys()))
     result = defaultdict(list)
@@ -158,8 +167,9 @@ def get_feature_pairs(
     return result
 
 
-def _create_feature_lookup(features: List[FeatureSchema],
-                           key: str) -> Dict[str, List[FeatureSchema]]:
+def _create_feature_lookup(
+    features: List[FeatureSchema], key: str
+) -> Dict[str, List[FeatureSchema]]:
     """
     Groups annotation by name (if available otherwise feature schema id).
 
@@ -172,29 +182,33 @@ def _create_feature_lookup(features: List[FeatureSchema],
     grouped_features = defaultdict(list)
     for feature in features:
         if isinstance(feature, ClassificationAnnotation):
-            #checklists
+            # checklists
             if isinstance(feature.value, Checklist):
                 for answer in feature.value.answer:
                     new_answer = Radio(answer=answer)
                     new_annotation = ClassificationAnnotation(
                         value=new_answer,
                         name=answer.name,
-                        feature_schema_id=answer.feature_schema_id)
+                        feature_schema_id=answer.feature_schema_id,
+                    )
 
-                    grouped_features[getattr(answer,
-                                             key)].append(new_annotation)
+                    grouped_features[getattr(answer, key)].append(
+                        new_annotation
+                    )
             elif isinstance(feature.value, Text):
                 grouped_features[getattr(feature, key)].append(feature)
             else:
-                grouped_features[getattr(feature.value.answer,
-                                         key)].append(feature)
+                grouped_features[getattr(feature.value.answer, key)].append(
+                    feature
+                )
         else:
             grouped_features[getattr(feature, key)].append(feature)
     return grouped_features
 
 
-def has_no_matching_annotations(ground_truths: List[ObjectAnnotation],
-                                predictions: List[ObjectAnnotation]):
+def has_no_matching_annotations(
+    ground_truths: List[ObjectAnnotation], predictions: List[ObjectAnnotation]
+):
     if len(ground_truths) and not len(predictions):
         # No existing predictions but existing ground truths means no matches.
         return True
@@ -204,6 +218,7 @@ def has_no_matching_annotations(ground_truths: List[ObjectAnnotation],
     return False
 
 
-def has_no_annotations(ground_truths: List[ObjectAnnotation],
-                       predictions: List[ObjectAnnotation]):
+def has_no_annotations(
+    ground_truths: List[ObjectAnnotation], predictions: List[ObjectAnnotation]
+):
     return not len(ground_truths) and not len(predictions)

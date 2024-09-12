@@ -64,4 +64,11 @@ from .data.tiled_image import TileLayer
 from .llm_prompt_response.prompt import PromptText
 from .llm_prompt_response.prompt import PromptClassificationAnnotation
 
-from .mmc import MessageInfo, OrderedMessageInfo, MessageSingleSelectionTask, MessageMultiSelectionTask, MessageRankingTask, MessageEvaluationTaskAnnotation
+from .mmc import (
+    MessageInfo,
+    OrderedMessageInfo,
+    MessageSingleSelectionTask,
+    MessageMultiSelectionTask,
+    MessageRankingTask,
+    MessageEvaluationTaskAnnotation,
+)

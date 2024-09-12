@@ -3,9 +3,9 @@ from labelbox.orm.model import Field
 
 
 class ModelConfig(DbObject):
-    """ A ModelConfig represents a set of inference params configured for a model
+    """A ModelConfig represents a set of inference params configured for a model
 
-    Attributes: 
+    Attributes:
         inference_params (JSON): Dict of inference params
         model_id (str): ID of the model to configure
         name (str): Name of config

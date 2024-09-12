@@ -4,7 +4,6 @@ from labelbox.schema.id_type import IdType
 
 
 class Identifiables:
-
     def __init__(self, iterable, id_type: str):
         """
         Args:
@@ -36,7 +35,10 @@ class Identifiables:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Identifiables):
             return False
-        return self._iterable == other._iterable and self._id_type == other._id_type
+        return (
+            self._iterable == other._iterable
+            and self._id_type == other._id_type
+        )
 
 
 class UniqueIds(Identifiables):

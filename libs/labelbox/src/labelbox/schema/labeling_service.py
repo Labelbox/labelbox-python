@@ -16,6 +16,7 @@ class LabelingService(_CamelCaseMixin):
     """
     Labeling service for a project. This is a service that can be requested to label data for a project.
     """
+
     id: Cuid
     project_id: Cuid
     created_at: datetime
@@ -28,10 +29,11 @@ class LabelingService(_CamelCaseMixin):
         super().__init__(**kwargs)
         if not self.client.enable_experimental:
             raise RuntimeError(
-                "Please enable experimental in client to use LabelingService")
+                "Please enable experimental in client to use LabelingService"
+            )
 
     @classmethod
-    def start(cls, client, project_id: Cuid) -> 'LabelingService':
+    def start(cls, client, project_id: Cuid) -> "LabelingService":
         """
         Starts the labeling service for the project. This is equivalent to a UI action to Request Specialized Labelers
 
@@ -52,7 +54,7 @@ class LabelingService(_CamelCaseMixin):
         return cls.get(client, project_id)
 
     @classmethod
-    def get(cls, client, project_id: Cuid) -> 'LabelingService':
+    def get(cls, client, project_id: Cuid) -> "LabelingService":
         """
         Returns the labeling service associated with the project.
 
@@ -74,14 +76,15 @@ class LabelingService(_CamelCaseMixin):
         result = client.execute(query, {"projectId": project_id})
         if result["projectBoostWorkforce"] is None:
             raise ResourceNotFoundError(
-                message="The project does not have a labeling service.")
+                message="The project does not have a labeling service."
+            )
         data = result["projectBoostWorkforce"]
         data["client"] = client
         return LabelingService(**data)
 
-    def request(self) -> 'LabelingService':
+    def request(self) -> "LabelingService":
         """
-        Creates a request to labeling service to start labeling for the project. 
+        Creates a request to labeling service to start labeling for the project.
         Our back end will validate that the project is ready for labeling and then request the labeling service.
 
         Returns:
@@ -100,15 +103,18 @@ class LabelingService(_CamelCaseMixin):
             }
         }
         """
-        result = self.client.execute(query_str, {"projectId": self.project_id},
-                                     raise_return_resource_not_found=True)
+        result = self.client.execute(
+            query_str,
+            {"projectId": self.project_id},
+            raise_return_resource_not_found=True,
+        )
         success = result["validateAndRequestProjectBoostWorkforce"]["success"]
         if not success:
             raise Exception("Failed to start labeling service")
         return LabelingService.get(self.client, self.project_id)
 
     @classmethod
-    def getOrCreate(cls, client, project_id: Cuid) -> 'LabelingService':
+    def getOrCreate(cls, client, project_id: Cuid) -> "LabelingService":
         """
         Returns the labeling service associated with the project. If the project does not have a labeling service, it will create one.
 

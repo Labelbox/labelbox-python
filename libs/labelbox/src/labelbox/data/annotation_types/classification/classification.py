@@ -18,40 +18,45 @@ class ClassificationAnswer(FeatureSchema, ConfidenceMixin, CustomMetricsMixin):
         So unlike object annotations, classification annotations
           track keyframes at a classification answer level.
     """
+
     extra: Dict[str, Any] = {}
     keyframe: Optional[bool] = None
-    classifications: Optional[List['ClassificationAnnotation']] = None
+    classifications: Optional[List["ClassificationAnnotation"]] = None
 
 
 class Radio(ConfidenceMixin, CustomMetricsMixin, BaseModel):
-    """ A classification with only one selected option allowed
+    """A classification with only one selected option allowed
 
     >>> Radio(answer = ClassificationAnswer(name = "dog"))
 
     """
+
     answer: ClassificationAnswer
 
 
 class Checklist(ConfidenceMixin, BaseModel):
-    """ A classification with many selected options allowed
+    """A classification with many selected options allowed
 
     >>> Checklist(answer = [ClassificationAnswer(name = "cloudy")])
 
     """
+
     answer: List[ClassificationAnswer]
 
 
 class Text(ConfidenceMixin, CustomMetricsMixin, BaseModel):
-    """ Free form text
+    """Free form text
 
     >>> Text(answer = "some text answer")
 
     """
+
     answer: str
 
 
-class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
-                               CustomMetricsMixin):
+class ClassificationAnnotation(
+    BaseAnnotation, ConfidenceMixin, CustomMetricsMixin
+):
     """Classification annotations (non localized)
 
     >>> ClassificationAnnotation(
@@ -65,7 +70,7 @@ class ClassificationAnnotation(BaseAnnotation, ConfidenceMixin,
         feature_schema_id (Optional[Cuid])
         value (Union[Text, Checklist, Radio])
         extra (Dict[str, Any])
-     """
+    """
 
     value: Union[Text, Checklist, Radio]
     message_id: Optional[str] = None

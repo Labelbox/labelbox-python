@@ -8,7 +8,6 @@ from labelbox.schema.export_task import (
 
 
 class TestFileRetrieverByOffset:
-
     def test_by_offset_from_start(self, generate_random_ndjson, mock_response):
         line_count = 10
         ndjson = generate_random_ndjson(line_count)
@@ -19,25 +18,21 @@ class TestFileRetrieverByOffset:
             return_value={
                 "task": {
                     "exportFileFromOffset": {
-                        "offsets": {
-                            "start": "0",
-                            "end": len(file_content) - 1
-                        },
-                        "lines": {
-                            "start": "0",
-                            "end": str(line_count - 1)
-                        },
+                        "offsets": {"start": "0", "end": len(file_content) - 1},
+                        "lines": {"start": "0", "end": str(line_count - 1)},
                         "file": "http://some-url.com/file.ndjson",
                     }
                 }
-            })
+            }
+        )
 
         mock_ctx = _TaskContext(
             client=mock_client,
             task_id="task-id",
             stream_type=StreamType.RESULT,
-            metadata_header=_MetadataHeader(total_size=len(file_content),
-                                            total_lines=line_count),
+            metadata_header=_MetadataHeader(
+                total_size=len(file_content), total_lines=line_count
+            ),
         )
 
         with patch("requests.get", return_value=mock_response(file_content)):
@@ -60,25 +55,21 @@ class TestFileRetrieverByOffset:
             return_value={
                 "task": {
                     "exportFileFromOffset": {
-                        "offsets": {
-                            "start": "0",
-                            "end": len(file_content) - 1
-                        },
-                        "lines": {
-                            "start": "0",
-                            "end": str(line_count - 1)
-                        },
+                        "offsets": {"start": "0", "end": len(file_content) - 1},
+                        "lines": {"start": "0", "end": str(line_count - 1)},
                         "file": "http://some-url.com/file.ndjson",
                     }
                 }
-            })
+            }
+        )
 
         mock_ctx = _TaskContext(
             client=mock_client,
             task_id="task-id",
             stream_type=StreamType.RESULT,
-            metadata_header=_MetadataHeader(total_size=len(file_content),
-                                            total_lines=line_count),
+            metadata_header=_MetadataHeader(
+                total_size=len(file_content), total_lines=line_count
+            ),
         )
 
         line_start = 5

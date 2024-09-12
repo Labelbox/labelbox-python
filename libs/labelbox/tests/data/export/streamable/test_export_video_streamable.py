@@ -10,7 +10,6 @@ from labelbox.schema.export_task import ExportTask, StreamType
 
 
 class TestExportVideo:
-
     @pytest.fixture
     def user_id(self, client):
         return client.get_user().uid
@@ -41,12 +40,15 @@ class TestExportVideo:
 
         for data_row_uid in data_row_uids:
             labels = [
-                lb_types.Label(data=VideoData(uid=data_row_uid),
-                               annotations=bbox_video_annotation_objects)
+                lb_types.Label(
+                    data=VideoData(uid=data_row_uid),
+                    annotations=bbox_video_annotation_objects,
+                )
             ]
 
         label_import = lb.LabelImport.create_from_objects(
-            client, project_id, f"test-import-{project_id}", labels)
+            client, project_id, f"test-import-{project_id}", labels
+        )
         label_import.wait_until_done()
 
         assert label_import.state == AnnotationImportState.FINISHED
@@ -65,18 +67,21 @@ class TestExportVideo:
         assert isinstance(export_task, ExportTask)
         assert export_task.has_result()
         assert export_task.has_errors() is False
-        assert export_task.get_total_file_size(
-            stream_type=StreamType.RESULT) > 0
+        assert (
+            export_task.get_total_file_size(stream_type=StreamType.RESULT) > 0
+        )
 
         export_data = json.loads(list(export_task.get_stream())[0].json_str)
         data_row_export = export_data["data_row"]
         assert data_row_export["global_key"] == video_data_row["global_key"]
         assert data_row_export["row_data"] == video_data_row["row_data"]
         assert export_data["media_attributes"]["mime_type"] == "video/mp4"
-        assert export_data["media_attributes"][
-            "frame_rate"] == 10  # as per the video_data fixture
-        assert (export_data["media_attributes"]["frame_count"] == 100
-               )  # as per the video_data fixture
+        assert (
+            export_data["media_attributes"]["frame_rate"] == 10
+        )  # as per the video_data fixture
+        assert (
+            export_data["media_attributes"]["frame_count"] == 100
+        )  # as per the video_data fixture
         expected_export_label = {
             "label_kind": "Video",
             "version": "1.0.0",
@@ -96,17 +101,17 @@ class TestExportVideo:
                                 "feature_id": "clgjnpyse000ui3zx6fr1d880",
                                 "name": "bbox",
                                 "annotation_kind": "VideoBoundingBox",
-                                "classifications": [{
-                                    "feature_id": "clgjnpyse000vi3zxtgtfh01y",
-                                    "name": "nested",
-                                    "radio_answer": {
-                                        "feature_id":
-                                            "clgjnpyse000wi3zxnxgv53ps",
-                                        "name":
-                                            "radio_option_1",
-                                        "classifications": [],
-                                    },
-                                }],
+                                "classifications": [
+                                    {
+                                        "feature_id": "clgjnpyse000vi3zxtgtfh01y",
+                                        "name": "nested",
+                                        "radio_answer": {
+                                            "feature_id": "clgjnpyse000wi3zxnxgv53ps",
+                                            "name": "radio_option_1",
+                                            "classifications": [],
+                                        },
+                                    }
+                                ],
                                 "bounding_box": {
                                     "top": 98.0,
                                     "left": 146.0,
@@ -123,17 +128,17 @@ class TestExportVideo:
                                 "feature_id": "clgjnpyse000ui3zx6fr1d880",
                                 "name": "bbox",
                                 "annotation_kind": "VideoBoundingBox",
-                                "classifications": [{
-                                    "feature_id": "clgjnpyse000vi3zxtgtfh01y",
-                                    "name": "nested",
-                                    "radio_answer": {
-                                        "feature_id":
-                                            "clgjnpyse000wi3zxnxgv53ps",
-                                        "name":
-                                            "radio_option_1",
-                                        "classifications": [],
-                                    },
-                                }],
+                                "classifications": [
+                                    {
+                                        "feature_id": "clgjnpyse000vi3zxtgtfh01y",
+                                        "name": "nested",
+                                        "radio_answer": {
+                                            "feature_id": "clgjnpyse000wi3zxnxgv53ps",
+                                            "name": "radio_option_1",
+                                            "classifications": [],
+                                        },
+                                    }
+                                ],
                                 "bounding_box": {
                                     "top": 98.0,
                                     "left": 146.0,
@@ -162,14 +167,12 @@ class TestExportVideo:
                         "classifications": [],
                     },
                 },
-                "segments": {
-                    "clgjnpyse000ui3zx6fr1d880": [[13, 13], [18, 19]]
-                },
+                "segments": {"clgjnpyse000ui3zx6fr1d880": [[13, 13], [18, 19]]},
                 "key_frame_feature_map": {
                     "clgjnpyse000ui3zx6fr1d880": {
                         "13": True,
                         "18": False,
-                        "19": True
+                        "19": True,
                     }
                 },
                 "classifications": [],
@@ -183,8 +186,9 @@ class TestExportVideo:
         export_label = project_export_labels[0]
         assert (export_label["label_kind"]) == "Video"
 
-        assert (export_label["label_details"].keys()
-               ) == expected_export_label["label_details"].keys()
+        assert (export_label["label_details"].keys()) == expected_export_label[
+            "label_details"
+        ].keys()
 
         expected_frames_ids = [
             vannotation.frame for vannotation in bbox_video_annotation_objects
@@ -193,9 +197,7 @@ class TestExportVideo:
         export_frames = export_annotations["frames"]
         export_frames_ids = [int(frame_id) for frame_id in export_frames.keys()]
         all_frames_exported = []
-        for (value) in (
-                expected_frames_ids
-        ):  # note need to understand why we are exporting more frames than we created
+        for value in expected_frames_ids:  # note need to understand why we are exporting more frames than we created
             if value not in export_frames_ids:
                 all_frames_exported.append(value)
         assert len(all_frames_exported) == 0
@@ -216,15 +218,23 @@ class TestExportVideo:
 
         # Since the bounding box moves to the right, the interpolated frame content should start
         # a little bit more far to the right
-        assert (export_frames[str(first_frame_id + 1)]["objects"]
-                [first_exported_label_id]["bounding_box"]["left"]
-                > export_frames[str(first_frame_id)]["objects"]
-                [first_exported_label_id]["bounding_box"]["left"])
+        assert (
+            export_frames[str(first_frame_id + 1)]["objects"][
+                first_exported_label_id
+            ]["bounding_box"]["left"]
+            > export_frames[str(first_frame_id)]["objects"][
+                first_exported_label_id
+            ]["bounding_box"]["left"]
+        )
         # But it shouldn't be further than the last frame
-        assert (export_frames[str(first_frame_id + 1)]["objects"]
-                [first_exported_label_id]["bounding_box"]["left"]
-                < export_frames[str(last_frame_id)]["objects"]
-                [first_exported_label_id]["bounding_box"]["left"])
+        assert (
+            export_frames[str(first_frame_id + 1)]["objects"][
+                first_exported_label_id
+            ]["bounding_box"]["left"]
+            < export_frames[str(last_frame_id)]["objects"][
+                first_exported_label_id
+            ]["bounding_box"]["left"]
+        )
         # END OF THE VIDEO INTERPOLATION ASSERTIONS
 
         frame_with_nested_classifications = export_frames["13"]

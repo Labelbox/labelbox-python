@@ -9,11 +9,18 @@ from labelbox.schema.invite import InviteLimit
 from labelbox.schema.resource_tag import ResourceTag
 
 if TYPE_CHECKING:
-    from labelbox import Role, User, ProjectRole, Invite, InviteLimit, IAMIntegration
+    from labelbox import (
+        Role,
+        User,
+        ProjectRole,
+        Invite,
+        InviteLimit,
+        IAMIntegration,
+    )
 
 
 class Organization(DbObject):
-    """ An Organization is a group of Users.
+    """An Organization is a group of Users.
 
     It is associated with data created by Users within that Organization.
     Typically all Users within an Organization have access to data created by any User in the same Organization.
@@ -47,10 +54,11 @@ class Organization(DbObject):
     resource_tags = Relationship.ToMany("ResourceTags", False)
 
     def invite_user(
-            self,
-            email: str,
-            role: "Role",
-            project_roles: Optional[List["ProjectRole"]] = None) -> "Invite":
+        self,
+        email: str,
+        role: "Role",
+        project_roles: Optional[List["ProjectRole"]] = None,
+    ) -> "Invite":
         """
         Invite a new member to the org. This will send the user an email invite
 
@@ -76,30 +84,40 @@ class Organization(DbObject):
         data_param = "data"
         query_str = """mutation createInvitesPyApi($%s: [CreateInviteInput!]){
                     createInvites(data: $%s){  invite { id createdAt organizationRoleName inviteeEmail inviter { %s } }}}""" % (
-            data_param, data_param, query.results_query_part(Entity.User))
+            data_param,
+            data_param,
+            query.results_query_part(Entity.User),
+        )
 
-        projects = [{
-            "projectId": project_role.project.uid,
-            "projectRoleId": project_role.role.uid
-        } for project_role in project_roles or []]
+        projects = [
+            {
+                "projectId": project_role.project.uid,
+                "projectRoleId": project_role.role.uid,
+            }
+            for project_role in project_roles or []
+        ]
 
         res = self.client.execute(
-            query_str, {
-                data_param: [{
-                    "inviterId": self.client.get_user().uid,
-                    "inviteeEmail": email,
-                    "organizationId": self.uid,
-                    "organizationRoleId": role.uid,
-                    "projects": projects
-                }]
-            })
-        invite_response = res['createInvites'][0]['invite']
+            query_str,
+            {
+                data_param: [
+                    {
+                        "inviterId": self.client.get_user().uid,
+                        "inviteeEmail": email,
+                        "organizationId": self.uid,
+                        "organizationRoleId": role.uid,
+                        "projects": projects,
+                    }
+                ]
+            },
+        )
+        invite_response = res["createInvites"][0]["invite"]
         if not invite_response:
             raise LabelboxError(f"Unable to send invite for email {email}")
         return Entity.Invite(self.client, invite_response)
 
     def invite_limit(self) -> InviteLimit:
-        """ Retrieve invite limits for the org
+        """Retrieve invite limits for the org
         This already accounts for users currently in the org
         Meaining that  `used = users + invites, remaining = limit - (users + invites)`
 
@@ -111,10 +129,13 @@ class Organization(DbObject):
         res = self.client.execute(
             """query InvitesLimitPyApi($%s: ID!) {
             invitesLimit(where: {id: $%s}) { used limit remaining }
-        }""" % (org_id_param, org_id_param), {org_id_param: self.uid})
-        return InviteLimit(**{
-            utils.snake_case(k): v for k, v in res['invitesLimit'].items()
-        })
+        }"""
+            % (org_id_param, org_id_param),
+            {org_id_param: self.uid},
+        )
+        return InviteLimit(
+            **{utils.snake_case(k): v for k, v in res["invitesLimit"].items()}
+        )
 
     def remove_user(self, user: "User") -> None:
         """
@@ -128,7 +149,10 @@ class Organization(DbObject):
         self.client.execute(
             """mutation DeleteMemberPyApi($%s: ID!) {
             updateUser(where: {id: $%s}, data: {deleted: true}) { id deleted }
-        }""" % (user_id_param, user_id_param), {user_id_param: user.uid})
+        }"""
+            % (user_id_param, user_id_param),
+            {user_id_param: user.uid},
+        )
 
     def create_resource_tag(self, tag: Dict[str, str]) -> ResourceTag:
         """
@@ -145,30 +169,38 @@ class Organization(DbObject):
 
         query_str = """mutation CreateResourceTagPyApi($text:String!,$color:String!) {
                 createResourceTag(input:{text:$%s,color:$%s}) {%s}}
-        """ % (tag_text_param, tag_color_param,
-               query.results_query_part(ResourceTag))
+        """ % (
+            tag_text_param,
+            tag_color_param,
+            query.results_query_part(ResourceTag),
+        )
 
         params = {
             tag_text_param: tag.get("text", None),
-            tag_color_param: tag.get("color", None)
+            tag_color_param: tag.get("color", None),
         }
         if not all(params.values()):
             raise ValueError(
-                f"tag must contain 'text' and 'color' keys. received: {tag}")
+                f"tag must contain 'text' and 'color' keys. received: {tag}"
+            )
 
         res = self.client.execute(query_str, params)
-        return ResourceTag(self.client, res['createResourceTag'])
+        return ResourceTag(self.client, res["createResourceTag"])
 
     def get_resource_tags(self) -> List[ResourceTag]:
         """
         Returns all resource tags for an organization
         """
-        query_str = """query GetOrganizationResourceTagsPyApi{organization{resourceTag{%s}}}""" % (
-            query.results_query_part(ResourceTag))
+        query_str = (
+            """query GetOrganizationResourceTagsPyApi{organization{resourceTag{%s}}}"""
+            % (query.results_query_part(ResourceTag))
+        )
 
         return [
-            ResourceTag(self.client, tag) for tag in self.client.execute(
-                query_str)['organization']['resourceTag']
+            ResourceTag(self.client, tag)
+            for tag in self.client.execute(query_str)["organization"][
+                "resourceTag"
+            ]
         ]
 
     def get_iam_integrations(self) -> List["IAMIntegration"]:
@@ -184,10 +216,12 @@ class Organization(DbObject):
                 ... on GcpIamIntegrationSettings {serviceAccountEmailId readBucket}
                 }
 
-            } } """ % query.results_query_part(Entity.IAMIntegration))
+            } } """
+            % query.results_query_part(Entity.IAMIntegration)
+        )
         return [
             Entity.IAMIntegration(self.client, integration_data)
-            for integration_data in res['iamIntegrations']
+            for integration_data in res["iamIntegrations"]
         ]
 
     def get_default_iam_integration(self) -> Optional["IAMIntegration"]:
@@ -197,12 +231,14 @@ class Organization(DbObject):
         """
         integrations = self.get_iam_integrations()
         default_integration = [
-            integration for integration in integrations
+            integration
+            for integration in integrations
             if integration.is_org_default
         ]
         if len(default_integration) > 1:
             raise ValueError(
                 "Found more than one default signer. Please contact Labelbox to resolve"
             )
-        return None if not len(
-            default_integration) else default_integration.pop()
+        return (
+            None if not len(default_integration) else default_integration.pop()
+        )

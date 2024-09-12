@@ -3,7 +3,7 @@ from labelbox.orm.model import Field, Relationship
 
 
 class LabelingFrontend(DbObject):
-    """ Label editor.
+    """Label editor.
 
     Represents an HTML / JavaScript UI that is used to generate
     labels. “Editor” is the default Labeling Frontend that comes in every
@@ -16,13 +16,14 @@ class LabelingFrontend(DbObject):
 
         projects (Relationship): `ToMany` relationship to Project
     """
+
     name = Field.String("name")
     description = Field.String("description")
     iframe_url_path = Field.String("iframe_url_path")
 
 
 class LabelingFrontendOptions(DbObject):
-    """ Label interface options.
+    """Label interface options.
 
     Attributes:
         customization_options (str)
@@ -31,6 +32,7 @@ class LabelingFrontendOptions(DbObject):
         labeling_frontend (Relationship): `ToOne` relationship to LabelingFrontend
         organization (Relationship): `ToOne` relationship to Organization
     """
+
     customization_options = Field.String("customization_options")
 
     project = Relationship.ToOne("Project")

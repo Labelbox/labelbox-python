@@ -30,10 +30,14 @@ def test_relationship():
     ]
 
     assert res_relationship_second_annotation
-    assert res_relationship_second_annotation["relationship"][
-        "source"] != res_relationship_annotation["relationship"]["source"]
-    assert res_relationship_second_annotation["relationship"][
-        "target"] != res_relationship_annotation["relationship"]["target"]
+    assert (
+        res_relationship_second_annotation["relationship"]["source"]
+        != res_relationship_annotation["relationship"]["source"]
+    )
+    assert (
+        res_relationship_second_annotation["relationship"]["target"]
+        != res_relationship_annotation["relationship"]["target"]
+    )
     assert res_relationship_second_annotation["relationship"]["source"] in [
         annot["uuid"] for annot in res_source_and_target
     ]

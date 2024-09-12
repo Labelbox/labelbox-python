@@ -1,13 +1,23 @@
 from typing import Dict, List, Tuple, Union
 
 from labelbox.schema import ontology
-from .annotation_types import (Text, Checklist, Radio,
-                               ClassificationAnnotation, ObjectAnnotation, Mask,
-                               Point, Line, Polygon, Rectangle, TextEntity)
+from .annotation_types import (
+    Text,
+    Checklist,
+    Radio,
+    ClassificationAnnotation,
+    ObjectAnnotation,
+    Mask,
+    Point,
+    Line,
+    Polygon,
+    Rectangle,
+    TextEntity,
+)
 
 
 def get_feature_schema_lookup(
-    ontology_builder: ontology.OntologyBuilder
+    ontology_builder: ontology.OntologyBuilder,
 ) -> Tuple[Dict[str, str], Dict[str, str]]:
     tool_lookup = {}
     classification_lookup = {}
@@ -19,11 +29,13 @@ def get_feature_schema_lookup(
                     f"feature_schema_id cannot be None for classification `{classification.name}`."
                 )
             if isinstance(classification, ontology.Classification):
-                classification_lookup[
-                    classification.name] = classification.feature_schema_id
+                classification_lookup[classification.name] = (
+                    classification.feature_schema_id
+                )
             elif isinstance(classification, ontology.Option):
-                classification_lookup[
-                    classification.value] = classification.feature_schema_id
+                classification_lookup[classification.value] = (
+                    classification.feature_schema_id
+                )
             else:
                 raise TypeError(
                     f"Unexpected type found in ontology. `{type(classification)}`"
@@ -33,15 +45,18 @@ def get_feature_schema_lookup(
     for tool in ontology_builder.tools:
         if tool.feature_schema_id is None:
             raise ValueError(
-                f"feature_schema_id cannot be None for tool `{tool.name}`.")
+                f"feature_schema_id cannot be None for tool `{tool.name}`."
+            )
         tool_lookup[tool.name] = tool.feature_schema_id
         flatten_classification(tool.classifications)
     flatten_classification(ontology_builder.classifications)
     return tool_lookup, classification_lookup
 
 
-def _get_options(annotation: ClassificationAnnotation,
-                 existing_options: List[ontology.Option]):
+def _get_options(
+    annotation: ClassificationAnnotation,
+    existing_options: List[ontology.Option],
+):
     if isinstance(annotation.value, Radio):
         answers = [annotation.value.answer]
     elif isinstance(annotation.value, Text):
@@ -63,7 +78,7 @@ def _get_options(annotation: ClassificationAnnotation,
 
 def get_classifications(
     annotations: List[ClassificationAnnotation],
-    existing_classifications: List[ontology.Classification]
+    existing_classifications: List[ontology.Classification],
 ) -> List[ontology.Classification]:
     existing_classifications = {
         classification.name: classification
@@ -74,37 +89,45 @@ def get_classifications(
         classification_feature = existing_classifications.get(annotation.name)
         if classification_feature:
             classification_feature.options = _get_options(
-                annotation, classification_feature.options)
+                annotation, classification_feature.options
+            )
         elif annotation.name not in existing_classifications:
             existing_classifications[annotation.name] = ontology.Classification(
                 class_type=classification_mapping(annotation),
                 name=annotation.name,
-                options=_get_options(annotation, []))
+                options=_get_options(annotation, []),
+            )
     return list(existing_classifications.values())
 
 
 def get_tools(
-        annotations: List[ObjectAnnotation],
-        existing_tools: List[ontology.Classification]) -> List[ontology.Tool]:
+    annotations: List[ObjectAnnotation],
+    existing_tools: List[ontology.Classification],
+) -> List[ontology.Tool]:
     existing_tools = {tool.name: tool for tool in existing_tools}
     for annotation in annotations:
         if annotation.name in existing_tools:
             # We just want to update classifications
             existing_tools[
-                annotation.name].classifications = get_classifications(
-                    annotation.classifications,
-                    existing_tools[annotation.name].classifications)
+                annotation.name
+            ].classifications = get_classifications(
+                annotation.classifications,
+                existing_tools[annotation.name].classifications,
+            )
         else:
             existing_tools[annotation.name] = ontology.Tool(
                 tool=tool_mapping(annotation),
                 name=annotation.name,
-                classifications=get_classifications(annotation.classifications,
-                                                    []))
+                classifications=get_classifications(
+                    annotation.classifications, []
+                ),
+            )
     return list(existing_tools.values())
 
 
 def tool_mapping(
-        annotation) -> Union[Mask, Polygon, Point, Rectangle, Line, TextEntity]:
+    annotation,
+) -> Union[Mask, Polygon, Point, Rectangle, Line, TextEntity]:
     tool_types = ontology.Tool.Type
     mapping = {
         Mask: tool_types.SEGMENTATION,
@@ -122,8 +145,7 @@ def tool_mapping(
     return result
 
 
-def classification_mapping(
-        annotation) -> Union[Text, Checklist, Radio]:
+def classification_mapping(annotation) -> Union[Text, Checklist, Radio]:
     classification_types = ontology.Classification.Type
     mapping = {
         Text: classification_types.TEXT,

@@ -6,8 +6,8 @@ from pydantic import model_validator
 
 
 class GenericDataRowData(BaseData, _NoCoercionMixin):
-    """Generic data row data. This is replacing all other DataType passed into Label
-    """
+    """Generic data row data. This is replacing all other DataType passed into Label"""
+
     url: Optional[str] = None
     class_name: Literal["GenericDataRowData"] = "GenericDataRowData"
 
@@ -17,7 +17,7 @@ class GenericDataRowData(BaseData, _NoCoercionMixin):
     @model_validator(mode="before")
     @classmethod
     def validate_one_datarow_key_present(cls, data):
-        keys = ['external_id', 'global_key', 'uid']
+        keys = ["external_id", "global_key", "uid"]
         count = sum([key in data for key in keys])
 
         if count < 1:

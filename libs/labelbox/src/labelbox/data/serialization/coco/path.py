@@ -1,8 +1,8 @@
 from pathlib import Path
 from pydantic import BaseModel, model_serializer
 
-class PathSerializerMixin(BaseModel):
 
+class PathSerializerMixin(BaseModel):
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         res = handler(self)

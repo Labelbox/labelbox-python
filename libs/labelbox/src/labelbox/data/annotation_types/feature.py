@@ -10,6 +10,7 @@ class FeatureSchema(BaseModel):
     Could be a annotation, a subclass, or an option.
     Schema ids might not be known when constructing these objects so both a name and schema id are valid.
     """
+
     name: Optional[str] = None
     feature_schema_id: Optional[Cuid] = None
 

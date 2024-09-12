@@ -8,8 +8,9 @@ from ...serialization.coco.instance_dataset import CocoInstanceDataset
 from ...serialization.coco.panoptic_dataset import CocoPanopticDataset
 
 
-def create_path_if_not_exists(path: Union[Path, str],
-                              ignore_existing_data=False):
+def create_path_if_not_exists(
+    path: Union[Path, str], ignore_existing_data=False
+):
     path = Path(path)
     if not path.exists():
         path.mkdir(parents=True, exist_ok=True)
@@ -37,10 +38,12 @@ class COCOConverter:
     """
 
     @staticmethod
-    def serialize_instances(labels: LabelCollection,
-                            image_root: Union[Path, str],
-                            ignore_existing_data=False,
-                            max_workers=8) -> Dict[str, Any]:
+    def serialize_instances(
+        labels: LabelCollection,
+        image_root: Union[Path, str],
+        ignore_existing_data=False,
+        max_workers=8,
+    ) -> Dict[str, Any]:
         """
         Convert a Labelbox LabelCollection into an mscoco dataset.
         This function will only convert masks, polygons, and rectangles.
@@ -60,20 +63,23 @@ class COCOConverter:
         warnings.warn(
             "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
             DeprecationWarning,
-            stacklevel=2)
+            stacklevel=2,
+        )
 
         image_root = create_path_if_not_exists(image_root, ignore_existing_data)
-        return CocoInstanceDataset.from_common(labels=labels,
-                                               image_root=image_root,
-                                               max_workers=max_workers).model_dump()
+        return CocoInstanceDataset.from_common(
+            labels=labels, image_root=image_root, max_workers=max_workers
+        ).model_dump()
 
     @staticmethod
-    def serialize_panoptic(labels: LabelCollection,
-                           image_root: Union[Path, str],
-                           mask_root: Union[Path, str],
-                           all_stuff: bool = False,
-                           ignore_existing_data=False,
-                           max_workers: int = 8) -> Dict[str, Any]:
+    def serialize_panoptic(
+        labels: LabelCollection,
+        image_root: Union[Path, str],
+        mask_root: Union[Path, str],
+        all_stuff: bool = False,
+        ignore_existing_data=False,
+        max_workers: int = 8,
+    ) -> Dict[str, Any]:
         """
         Convert a Labelbox LabelCollection into an mscoco dataset.
         This function will only convert masks, polygons, and rectangles.
@@ -96,20 +102,25 @@ class COCOConverter:
         warnings.warn(
             "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
             DeprecationWarning,
-            stacklevel=2)
+            stacklevel=2,
+        )
 
         image_root = create_path_if_not_exists(image_root, ignore_existing_data)
         mask_root = create_path_if_not_exists(mask_root, ignore_existing_data)
-        return CocoPanopticDataset.from_common(labels=labels,
-                                               image_root=image_root,
-                                               mask_root=mask_root,
-                                               all_stuff=all_stuff,
-                                               max_workers=max_workers).model_dump()
+        return CocoPanopticDataset.from_common(
+            labels=labels,
+            image_root=image_root,
+            mask_root=mask_root,
+            all_stuff=all_stuff,
+            max_workers=max_workers,
+        ).model_dump()
 
     @staticmethod
-    def deserialize_panoptic(json_data: Dict[str, Any], image_root: Union[Path,
-                                                                          str],
-                             mask_root: Union[Path, str]) -> LabelGenerator:
+    def deserialize_panoptic(
+        json_data: Dict[str, Any],
+        image_root: Union[Path, str],
+        mask_root: Union[Path, str],
+    ) -> LabelGenerator:
         """
         Convert coco panoptic data into the labelbox format (as a LabelGenerator).
 
@@ -124,17 +135,19 @@ class COCOConverter:
         warnings.warn(
             "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
             DeprecationWarning,
-            stacklevel=2)
+            stacklevel=2,
+        )
 
-        image_root = validate_path(image_root, 'image_root')
-        mask_root = validate_path(mask_root, 'mask_root')
+        image_root = validate_path(image_root, "image_root")
+        mask_root = validate_path(mask_root, "mask_root")
         objs = CocoPanopticDataset(**json_data)
         gen = objs.to_common(image_root, mask_root)
         return LabelGenerator(data=gen)
 
     @staticmethod
-    def deserialize_instances(json_data: Dict[str, Any],
-                              image_root: Path) -> LabelGenerator:
+    def deserialize_instances(
+        json_data: Dict[str, Any], image_root: Path
+    ) -> LabelGenerator:
         """
         Convert coco object data into the labelbox format (as a LabelGenerator).
 
@@ -148,9 +161,10 @@ class COCOConverter:
         warnings.warn(
             "You are currently utilizing COCOconverter for this action, which will be deprecated in a later release.",
             DeprecationWarning,
-            stacklevel=2)
+            stacklevel=2,
+        )
 
-        image_root = validate_path(image_root, 'image_root')
+        image_root = validate_path(image_root, "image_root")
         objs = CocoInstanceDataset(**json_data)
         gen = objs.to_common(image_root)
         return LabelGenerator(data=gen)

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Webhook(DbObject, Updateable):
-    """ Represents a server-side rule for sending notifications to a web-server
+    """Represents a server-side rule for sending notifications to a web-server
     whenever one of several predefined actions happens within a context of
     a Project or an Organization.
 
@@ -53,7 +53,7 @@ class Webhook(DbObject, Updateable):
 
     @staticmethod
     def create(client, topics, url, secret, project) -> "Webhook":
-        """ Creates a Webhook.
+        """Creates a Webhook.
 
         Args:
             client (Client): The Labelbox client used to connect
@@ -84,13 +84,19 @@ class Webhook(DbObject, Updateable):
             raise ValueError("URL must be a non-empty string.")
         Webhook.validate_topics(topics)
 
-        project_str = "" if project is None \
-            else ("project:{id:\"%s\"}," % project.uid)
+        project_str = (
+            "" if project is None else ('project:{id:"%s"},' % project.uid)
+        )
 
         query_str = """mutation CreateWebhookPyApi {
             createWebhook(data:{%s topics:{set:[%s]}, url:"%s", secret:"%s" }){%s}
-        } """ % (project_str, " ".join(topics), url, secret,
-                 query.results_query_part(Entity.Webhook))
+        } """ % (
+            project_str,
+            " ".join(topics),
+            url,
+            secret,
+            query.results_query_part(Entity.Webhook),
+        )
 
         return Webhook(client, client.execute(query_str)["createWebhook"])
 
@@ -98,7 +104,8 @@ class Webhook(DbObject, Updateable):
     def validate_topics(topics) -> None:
         if isinstance(topics, str) or not isinstance(topics, Iterable):
             raise TypeError(
-                f"Topics must be List[Webhook.Topic]. Found `{topics}`")
+                f"Topics must be List[Webhook.Topic]. Found `{topics}`"
+            )
 
         for topic in topics:
             Webhook.validate_value(topic, Webhook.Topic)
@@ -118,7 +125,7 @@ class Webhook(DbObject, Updateable):
         self.update(status=self.Status.INACTIVE.value)
 
     def update(self, topics=None, url=None, status=None):
-        """ Updates the Webhook.
+        """Updates the Webhook.
 
         Args:
             topics (Optional[List[Topic]]): The new topics.
@@ -137,15 +144,17 @@ class Webhook(DbObject, Updateable):
         if status is not None:
             self.validate_value(status, self.Status)
 
-        topics_str = "" if topics is None \
-            else "topics: {set: [%s]}" % " ".join(topics)
-        url_str = "" if url is None else "url: \"%s\"" % url
+        topics_str = (
+            "" if topics is None else "topics: {set: [%s]}" % " ".join(topics)
+        )
+        url_str = "" if url is None else 'url: "%s"' % url
         status_str = "" if status is None else "status: %s" % status
 
         query_str = """mutation UpdateWebhookPyApi {
             updateWebhook(where: {id: "%s"} data:{%s}){%s}} """ % (
-            self.uid, ", ".join(filter(None,
-                                       (topics_str, url_str, status_str))),
-            query.results_query_part(Entity.Webhook))
+            self.uid,
+            ", ".join(filter(None, (topics_str, url_str, status_str))),
+            query.results_query_part(Entity.Webhook),
+        )
 
         self._set_field_values(self.client.execute(query_str)["updateWebhook"])

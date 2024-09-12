@@ -7,12 +7,12 @@ from labelbox.orm.model import Field
 
 
 class AttachmentType(str, Enum):
-
     @classmethod
     def __missing__(cls, value: object):
         if str(value) == "TEXT":
             warnings.warn(
-                "The TEXT attachment type is deprecated. Use RAW_TEXT instead.")
+                "The TEXT attachment type is deprecated. Use RAW_TEXT instead."
+            )
             return cls.RAW_TEXT
         return value
 
@@ -44,13 +44,13 @@ class AssetAttachment(DbObject):
 
     @classmethod
     def validate_attachment_json(cls, attachment_json: Dict[str, str]) -> None:
-        for required_key in ['type', 'value']:
+        for required_key in ["type", "value"]:
             if required_key not in attachment_json:
                 raise ValueError(
                     f"Must provide a `{required_key}` key for each attachment. Found {attachment_json}."
                 )
-        cls.validate_attachment_value(attachment_json['value'])
-        cls.validate_attachment_type(attachment_json['type'])
+        cls.validate_attachment_value(attachment_json["value"])
+        cls.validate_attachment_type(attachment_json["type"])
 
     @classmethod
     def validate_attachment_value(cls, attachment_value: str) -> None:
@@ -75,10 +75,12 @@ class AssetAttachment(DbObject):
             }"""
         self.client.execute(query_str, {"attachment_id": self.uid})
 
-    def update(self,
-               name: Optional[str] = None,
-               type: Optional[str] = None,
-               value: Optional[str] = None):
+    def update(
+        self,
+        name: Optional[str] = None,
+        type: Optional[str] = None,
+        value: Optional[str] = None,
+    ):
         """Updates an attachment on the data row."""
         if not name and not type and value is None:
             raise ValueError(
@@ -101,9 +103,10 @@ class AssetAttachment(DbObject):
               data: {name: $name, type: $type, value: $value}
             ) { id name type value }
             }"""
-        res = (self.client.execute(query_str,
-                                   query_params))['updateDataRowAttachment']
+        res = (self.client.execute(query_str, query_params))[
+            "updateDataRowAttachment"
+        ]
 
-        self.attachment_name = res['name']
-        self.attachment_value = res['value']
-        self.attachment_type = res['type']
+        self.attachment_name = res["name"]
+        self.attachment_value = res["value"]
+        self.attachment_type = res["type"]

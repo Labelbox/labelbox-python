@@ -3,11 +3,17 @@ import pytest
 
 from labelbox.schema.ontology_kind import OntologyKind
 
-@pytest.mark.parametrize("prompt_response_ontology", [OntologyKind.ResponseCreation], indirect=True)
-def test_create_response_creation_project(client, rand_gen,
-                                          response_creation_project,
-                                          prompt_response_ontology,
-                                          response_data_row):
+
+@pytest.mark.parametrize(
+    "prompt_response_ontology", [OntologyKind.ResponseCreation], indirect=True
+)
+def test_create_response_creation_project(
+    client,
+    rand_gen,
+    response_creation_project,
+    prompt_response_ontology,
+    response_data_row,
+):
     project: Project = response_creation_project
     assert project
 

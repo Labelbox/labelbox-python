@@ -3,7 +3,7 @@ from labelbox.orm.model import Field, Relationship
 
 
 class ResourceTag(DbObject, Updateable):
-    """ Resource tag to label and identify your labelbox resources easier.
+    """Resource tag to label and identify your labelbox resources easier.
 
     Attributes:
         text (str)

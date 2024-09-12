@@ -20,15 +20,18 @@ def round_dict(data):
     return data
 
 
-@pytest.mark.parametrize('filename', [
-    'tests/data/assets/ndjson/classification_import_global_key.json',
-    'tests/data/assets/ndjson/metric_import_global_key.json',
-    'tests/data/assets/ndjson/polyline_import_global_key.json',
-    'tests/data/assets/ndjson/text_entity_import_global_key.json',
-    'tests/data/assets/ndjson/conversation_entity_import_global_key.json',
-])
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "tests/data/assets/ndjson/classification_import_global_key.json",
+        "tests/data/assets/ndjson/metric_import_global_key.json",
+        "tests/data/assets/ndjson/polyline_import_global_key.json",
+        "tests/data/assets/ndjson/text_entity_import_global_key.json",
+        "tests/data/assets/ndjson/conversation_entity_import_global_key.json",
+    ],
+)
 def test_many_types(filename: str):
-    with open(filename, 'r') as f:
+    with open(filename, "r") as f:
         data = json.load(f)
     res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
@@ -37,19 +40,20 @@ def test_many_types(filename: str):
 
 
 def test_image():
-    with open('tests/data/assets/ndjson/image_import_global_key.json',
-              'r') as f:
+    with open(
+        "tests/data/assets/ndjson/image_import_global_key.json", "r"
+    ) as f:
         data = json.load(f)
     res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
     for r in res:
-        r.pop('classifications', None)
+        r.pop("classifications", None)
     assert [round_dict(x) for x in res] == [round_dict(x) for x in data]
     f.close()
 
 
 def test_pdf():
-    with open('tests/data/assets/ndjson/pdf_import_global_key.json', 'r') as f:
+    with open("tests/data/assets/ndjson/pdf_import_global_key.json", "r") as f:
         data = json.load(f)
     res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
@@ -58,8 +62,9 @@ def test_pdf():
 
 
 def test_video():
-    with open('tests/data/assets/ndjson/video_import_global_key.json',
-              'r') as f:
+    with open(
+        "tests/data/assets/ndjson/video_import_global_key.json", "r"
+    ) as f:
         data = json.load(f)
 
     res = list(NDJsonConverter.deserialize(data))

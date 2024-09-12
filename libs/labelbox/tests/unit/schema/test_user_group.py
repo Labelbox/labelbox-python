@@ -2,13 +2,20 @@ import pytest
 from collections import defaultdict
 from unittest.mock import MagicMock
 from labelbox import Client
-from labelbox.exceptions import ResourceConflict, ResourceCreationError, ResourceNotFoundError, MalformedQueryException, UnprocessableEntityError
+from labelbox.exceptions import (
+    ResourceConflict,
+    ResourceCreationError,
+    ResourceNotFoundError,
+    MalformedQueryException,
+    UnprocessableEntityError,
+)
 from labelbox.schema.project import Project
 from labelbox.schema.user import User
 from labelbox.schema.user_group import UserGroup, UserGroupColor
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.media_type import MediaType
+
 
 @pytest.fixture
 def group_user():
@@ -30,7 +37,6 @@ def group_project():
 
 
 class TestUserGroupColor:
-
     def test_user_group_color_values(self):
         assert UserGroupColor.BLUE.value == "9EC5FF"
         assert UserGroupColor.PURPLE.value == "CEB8FF"
@@ -44,12 +50,11 @@ class TestUserGroupColor:
 
 
 class TestUserGroup:
-
     def setup_method(self):
         self.client = MagicMock(Client)
         self.client.enable_experimental = True
         self.group = UserGroup(client=self.client)
-  
+
     def test_constructor_experimental_needed(self):
         client = MagicMock(Client)
         client.enable_experimental = False
@@ -74,36 +79,20 @@ class TestUserGroup:
 
     def test_get(self):
         projects = [
-            {
-                "id": "project_id_1",
-                "name": "project_1"
-            },
-            {
-                "id": "project_id_2",
-                "name": "project_2"
-            }
+            {"id": "project_id_1", "name": "project_1"},
+            {"id": "project_id_2", "name": "project_2"},
         ]
         group_members = [
-            {
-                "id": "user_id_1",
-                "email": "email_1"
-            },
-            {
-                "id": "user_id_2",
-                "email": "email_2"
-            }
+            {"id": "user_id_1", "email": "email_1"},
+            {"id": "user_id_2", "email": "email_2"},
         ]
         self.client.execute.return_value = {
             "userGroup": {
                 "id": "group_id",
                 "name": "Test Group",
                 "color": "4ED2F9",
-                "projects": {
-                    "nodes": projects
-                },
-                "members": {
-                    "nodes": group_members
-                }
+                "projects": {"nodes": projects},
+                "members": {"nodes": group_members},
             }
         }
         group = UserGroup(self.client)
@@ -135,8 +124,8 @@ class TestUserGroup:
         group.id = "group_id"
         group.name = "Test Group"
         group.color = UserGroupColor.BLUE
-        group.users = { group_user }
-        group.projects = { group_project }
+        group.users = {group_user}
+        group.projects = {group_project}
 
         updated_group = group.update()
 
@@ -209,15 +198,11 @@ class TestUserGroup:
         group = self.group
         group.name = "New Group"
         group.color = UserGroupColor.PINK
-        group.users = { group_user }
-        group.projects = { group_project }
+        group.users = {group_user}
+        group.projects = {group_project}
 
         self.client.execute.return_value = {
-            "createUserGroup": {
-                "group": {
-                    "id": "group_id"
-                }
-            }
+            "createUserGroup": {"group": {"id": "group_id"}}
         }
         created_group = group.create()
         execute = self.client.execute.call_args[0]
@@ -237,7 +222,7 @@ class TestUserGroup:
         assert list(created_group.users)[0].uid == "user_id"
         assert len(created_group.projects) == 1
         assert list(created_group.projects)[0].uid == "project_id"
-    
+
     def test_create_resource_creation_error(self):
         self.client.execute.side_effect = ResourceConflict("Error")
         group = UserGroup(self.client)
@@ -251,9 +236,7 @@ class TestUserGroup:
         group.id = "group_id"
 
         self.client.execute.return_value = {
-            "deleteUserGroup": {
-                "success": True
-            }
+            "deleteUserGroup": {"success": True}
         }
         deleted = group.delete()
         execute = self.client.execute.call_args[0]
@@ -287,75 +270,78 @@ class TestUserGroup:
     def test_user_groups(self):
         self.client.execute.return_value = {
             "userGroups": {
-                "nextCursor":
-                    None,
-                "nodes": [{
-                    "id": "group_id_1",
-                    "name": "Group 1",
-                    "color": "9EC5FF",
-                    "projects": {
-                        "nodes": [{
-                            "id": "project_id_1",
-                            "name": "Project 1"
-                        }, {
-                            "id": "project_id_2",
-                            "name": "Project 2"
-                        }]
+                "nextCursor": None,
+                "nodes": [
+                    {
+                        "id": "group_id_1",
+                        "name": "Group 1",
+                        "color": "9EC5FF",
+                        "projects": {
+                            "nodes": [
+                                {"id": "project_id_1", "name": "Project 1"},
+                                {"id": "project_id_2", "name": "Project 2"},
+                            ]
+                        },
+                        "members": {
+                            "nodes": [
+                                {
+                                    "id": "user_id_1",
+                                    "email": "user1@example.com",
+                                },
+                                {
+                                    "id": "user_id_2",
+                                    "email": "user2@example.com",
+                                },
+                            ]
+                        },
                     },
-                    "members": {
-                        "nodes": [{
-                            "id": "user_id_1",
-                            "email": "user1@example.com"
-                        }, {
-                            "id": "user_id_2",
-                            "email": "user2@example.com"
-                        }]
-                    }
-                }, {
-                    "id": "group_id_2",
-                    "name": "Group 2",
-                    "color": "9EC5FF",
-                    "projects": {
-                        "nodes": [{
-                            "id": "project_id_3",
-                            "name": "Project 3"
-                        }, {
-                            "id": "project_id_4",
-                            "name": "Project 4"
-                        }]
+                    {
+                        "id": "group_id_2",
+                        "name": "Group 2",
+                        "color": "9EC5FF",
+                        "projects": {
+                            "nodes": [
+                                {"id": "project_id_3", "name": "Project 3"},
+                                {"id": "project_id_4", "name": "Project 4"},
+                            ]
+                        },
+                        "members": {
+                            "nodes": [
+                                {
+                                    "id": "user_id_3",
+                                    "email": "user3@example.com",
+                                },
+                                {
+                                    "id": "user_id_4",
+                                    "email": "user4@example.com",
+                                },
+                            ]
+                        },
                     },
-                    "members": {
-                        "nodes": [{
-                            "id": "user_id_3",
-                            "email": "user3@example.com"
-                        }, {
-                            "id": "user_id_4",
-                            "email": "user4@example.com"
-                        }]
-                    }
-                }, {
-                    "id": "group_id_3",
-                    "name": "Group 3",
-                    "color": "9EC5FF",
-                    "projects": {
-                        "nodes": [{
-                            "id": "project_id_5",
-                            "name": "Project 5"
-                        }, {
-                            "id": "project_id_6",
-                            "name": "Project 6"
-                        }]
+                    {
+                        "id": "group_id_3",
+                        "name": "Group 3",
+                        "color": "9EC5FF",
+                        "projects": {
+                            "nodes": [
+                                {"id": "project_id_5", "name": "Project 5"},
+                                {"id": "project_id_6", "name": "Project 6"},
+                            ]
+                        },
+                        "members": {
+                            "nodes": [
+                                {
+                                    "id": "user_id_5",
+                                    "email": "user5@example.com",
+                                },
+                                {
+                                    "id": "user_id_6",
+                                    "email": "user6@example.com",
+                                },
+                            ]
+                        },
                     },
-                    "members": {
-                        "nodes": [{
-                            "id": "user_id_5",
-                            "email": "user5@example.com"
-                        }, {
-                            "id": "user_id_6",
-                            "email": "user6@example.com"
-                        }]
-                    }
-                }]
+                ],
             }
         }
 
@@ -389,4 +375,5 @@ class TestUserGroup:
 
 if __name__ == "__main__":
     import subprocess
+
     subprocess.call(["pytest", "-v", __file__])

@@ -4,15 +4,32 @@ from itertools import product
 import numpy as np
 from shapely.geometry import Polygon
 
-from ..group import get_feature_pairs, get_identifying_key, has_no_annotations, has_no_matching_annotations
-from ...annotation_types import (ObjectAnnotation, ClassificationAnnotation,
-                                 Mask, Geometry, Point, Line, Checklist, Text,
-                                 TextEntity, Radio, ScalarMetricValue)
+from ..group import (
+    get_feature_pairs,
+    get_identifying_key,
+    has_no_annotations,
+    has_no_matching_annotations,
+)
+from ...annotation_types import (
+    ObjectAnnotation,
+    ClassificationAnnotation,
+    Mask,
+    Geometry,
+    Point,
+    Line,
+    Checklist,
+    Text,
+    TextEntity,
+    Radio,
+    ScalarMetricValue,
+)
 
 
-def miou(ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-         predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-         include_subclasses: bool) -> Optional[ScalarMetricValue]:
+def miou(
+    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    include_subclasses: bool,
+) -> Optional[ScalarMetricValue]:
     """
     Computes miou for an arbitrary set of ground truth and predicted annotations.
     It first computes the iou for each metric and then takes the average (weighting each class equally)
@@ -35,11 +52,11 @@ def miou(ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
     return None if not len(ious) else np.mean(ious)
 
 
-def feature_miou(ground_truths: List[Union[ObjectAnnotation,
-                                           ClassificationAnnotation]],
-                 predictions: List[Union[ObjectAnnotation,
-                                         ClassificationAnnotation]],
-                 include_subclasses: bool) -> Optional[ScalarMetricValue]:
+def feature_miou(
+    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    include_subclasses: bool,
+) -> Optional[ScalarMetricValue]:
     """
     Computes iou score for all features of the same class.
 
@@ -52,7 +69,7 @@ def feature_miou(ground_truths: List[Union[ObjectAnnotation,
         float representing the iou score for the feature type if score can be computed otherwise None.
     """
     if has_no_matching_annotations(ground_truths, predictions):
-        return 0.
+        return 0.0
     elif has_no_annotations(ground_truths, predictions):
         return None
     elif isinstance(predictions[0].value, Mask):
@@ -65,13 +82,16 @@ def feature_miou(ground_truths: List[Union[ObjectAnnotation,
         return ner_miou(ground_truths, predictions, include_subclasses)
     else:
         raise ValueError(
-            f"Unexpected annotation found. Found {type(predictions[0].value)}")
+            f"Unexpected annotation found. Found {type(predictions[0].value)}"
+        )
 
 
-def vector_miou(ground_truths: List[ObjectAnnotation],
-                predictions: List[ObjectAnnotation],
-                include_subclasses: bool,
-                buffer=70.) -> Optional[ScalarMetricValue]:
+def vector_miou(
+    ground_truths: List[ObjectAnnotation],
+    predictions: List[ObjectAnnotation],
+    include_subclasses: bool,
+    buffer=70.0,
+) -> Optional[ScalarMetricValue]:
     """
     Computes iou score for all features with the same feature schema id.
     Calculation includes subclassifications.
@@ -84,44 +104,57 @@ def vector_miou(ground_truths: List[ObjectAnnotation],
          If there are no matches then this returns none
     """
     if has_no_matching_annotations(ground_truths, predictions):
-        return 0.
+        return 0.0
     elif has_no_annotations(ground_truths, predictions):
         return None
     pairs = _get_vector_pairs(ground_truths, predictions, buffer=buffer)
     return object_pair_miou(pairs, include_subclasses)
 
 
-def object_pair_miou(pairs: List[Tuple[ObjectAnnotation, ObjectAnnotation,
-                                       ScalarMetricValue]],
-                     include_subclasses) -> ScalarMetricValue:
+def object_pair_miou(
+    pairs: List[Tuple[ObjectAnnotation, ObjectAnnotation, ScalarMetricValue]],
+    include_subclasses,
+) -> ScalarMetricValue:
     pairs.sort(key=lambda triplet: triplet[2], reverse=True)
     solution_agreements = []
     solution_features = set()
     all_features = set()
     for prediction, ground_truth, agreement in pairs:
         all_features.update({id(prediction), id(ground_truth)})
-        if id(prediction) not in solution_features and id(
-                ground_truth) not in solution_features:
+        if (
+            id(prediction) not in solution_features
+            and id(ground_truth) not in solution_features
+        ):
             solution_features.update({id(prediction), id(ground_truth)})
             if include_subclasses:
-                classification_iou = miou(prediction.classifications,
-                                          ground_truth.classifications,
-                                          include_subclasses=False)
-                classification_iou = classification_iou if classification_iou is not None else agreement
+                classification_iou = miou(
+                    prediction.classifications,
+                    ground_truth.classifications,
+                    include_subclasses=False,
+                )
+                classification_iou = (
+                    classification_iou
+                    if classification_iou is not None
+                    else agreement
+                )
                 solution_agreements.append(
-                    (agreement + classification_iou) / 2.)
+                    (agreement + classification_iou) / 2.0
+                )
             else:
                 solution_agreements.append(agreement)
 
     # Add zeros for unmatched Features
-    solution_agreements.extend([0.0] *
-                               (len(all_features) - len(solution_features)))
+    solution_agreements.extend(
+        [0.0] * (len(all_features) - len(solution_features))
+    )
     return np.mean(solution_agreements)
 
 
-def mask_miou(ground_truths: List[ObjectAnnotation],
-              predictions: List[ObjectAnnotation],
-              include_subclasses: bool) -> Optional[ScalarMetricValue]:
+def mask_miou(
+    ground_truths: List[ObjectAnnotation],
+    predictions: List[ObjectAnnotation],
+    include_subclasses: bool,
+) -> Optional[ScalarMetricValue]:
     """
     Computes iou score for all features with the same feature schema id.
     Calculation includes subclassifications.
@@ -133,7 +166,7 @@ def mask_miou(ground_truths: List[ObjectAnnotation],
         float representing the iou score for the masks
     """
     if has_no_matching_annotations(ground_truths, predictions):
-        return 0.
+        return 0.0
     elif has_no_annotations(ground_truths, predictions):
         return None
 
@@ -141,22 +174,26 @@ def mask_miou(ground_truths: List[ObjectAnnotation],
         pairs = _get_mask_pairs(ground_truths, predictions)
         return object_pair_miou(pairs, include_subclasses=include_subclasses)
 
-    prediction_np = np.max([pred.value.draw(color=1) for pred in predictions],
-                           axis=0)
+    prediction_np = np.max(
+        [pred.value.draw(color=1) for pred in predictions], axis=0
+    )
     ground_truth_np = np.max(
         [ground_truth.value.draw(color=1) for ground_truth in ground_truths],
-        axis=0)
+        axis=0,
+    )
     if prediction_np.shape != ground_truth_np.shape:
         raise ValueError(
             "Prediction and mask must have the same shape."
-            f" Found {prediction_np.shape}/{ground_truth_np.shape}.")
+            f" Found {prediction_np.shape}/{ground_truth_np.shape}."
+        )
 
     return _mask_iou(ground_truth_np, prediction_np)
 
 
 def classification_miou(
-        ground_truths: List[ClassificationAnnotation],
-        predictions: List[ClassificationAnnotation]) -> ScalarMetricValue:
+    ground_truths: List[ClassificationAnnotation],
+    predictions: List[ClassificationAnnotation],
+) -> ScalarMetricValue:
     """
     Computes iou score for all features with the same feature schema id.
 
@@ -168,14 +205,15 @@ def classification_miou(
     """
 
     if len(predictions) != len(ground_truths) != 1:
-        return 0.
+        return 0.0
 
     prediction, ground_truth = predictions[0], ground_truths[0]
 
     if type(prediction) != type(ground_truth):
         raise TypeError(
             "Classification features must be the same type to compute agreement. "
-            f"Found `{type(prediction)}` and `{type(ground_truth)}`")
+            f"Found `{type(prediction)}` and `{type(ground_truth)}`"
+        )
 
     if isinstance(prediction.value, Text):
         return text_iou(ground_truth.value, prediction.value)
@@ -193,7 +231,8 @@ def radio_iou(ground_truth: Radio, prediction: Radio) -> ScalarMetricValue:
     """
     key = get_identifying_key([prediction.answer], [ground_truth.answer])
     return float(
-        getattr(prediction.answer, key) == getattr(ground_truth.answer, key))
+        getattr(prediction.answer, key) == getattr(ground_truth.answer, key)
+    )
 
 
 def text_iou(ground_truth: Text, prediction: Text) -> ScalarMetricValue:
@@ -203,8 +242,9 @@ def text_iou(ground_truth: Text, prediction: Text) -> ScalarMetricValue:
     return float(prediction.answer == ground_truth.answer)
 
 
-def checklist_iou(ground_truth: Checklist,
-                  prediction: Checklist) -> ScalarMetricValue:
+def checklist_iou(
+    ground_truth: Checklist, prediction: Checklist
+) -> ScalarMetricValue:
     """
     Calculates agreement between ground truth and predicted checklist items
     """
@@ -212,13 +252,15 @@ def checklist_iou(ground_truth: Checklist,
     schema_ids_pred = {getattr(answer, key) for answer in prediction.answer}
     schema_ids_label = {getattr(answer, key) for answer in ground_truth.answer}
     return float(
-        len(schema_ids_label & schema_ids_pred) /
-        len(schema_ids_label | schema_ids_pred))
+        len(schema_ids_label & schema_ids_pred)
+        / len(schema_ids_label | schema_ids_pred)
+    )
 
 
 def _get_vector_pairs(
-    ground_truths: List[ObjectAnnotation], predictions: List[ObjectAnnotation],
-    buffer: float
+    ground_truths: List[ObjectAnnotation],
+    predictions: List[ObjectAnnotation],
+    buffer: float,
 ) -> List[Tuple[ObjectAnnotation, ObjectAnnotation, ScalarMetricValue]]:
     """
     # Get iou score for all pairs of ground truths and predictions
@@ -226,14 +268,17 @@ def _get_vector_pairs(
     pairs = []
     for ground_truth, prediction in product(ground_truths, predictions):
         if isinstance(prediction.value, Geometry) and isinstance(
-                ground_truth.value, Geometry):
+            ground_truth.value, Geometry
+        ):
             if isinstance(prediction.value, (Line, Point)):
-
-                score = _polygon_iou(prediction.value.shapely.buffer(buffer),
-                                     ground_truth.value.shapely.buffer(buffer))
+                score = _polygon_iou(
+                    prediction.value.shapely.buffer(buffer),
+                    ground_truth.value.shapely.buffer(buffer),
+                )
             else:
-                score = _polygon_iou(prediction.value.shapely,
-                                     ground_truth.value.shapely)
+                score = _polygon_iou(
+                    prediction.value.shapely, ground_truth.value.shapely
+                )
             pairs.append((ground_truth, prediction, score))
     return pairs
 
@@ -247,9 +292,11 @@ def _get_mask_pairs(
     pairs = []
     for ground_truth, prediction in product(ground_truths, predictions):
         if isinstance(prediction.value, Mask) and isinstance(
-                ground_truth.value, Mask):
-            score = _mask_iou(prediction.value.draw(color=1),
-                              ground_truth.value.draw(color=1))
+            ground_truth.value, Mask
+        ):
+            score = _mask_iou(
+                prediction.value.draw(color=1), ground_truth.value.draw(color=1)
+            )
             pairs.append((ground_truth, prediction, score))
     return pairs
 
@@ -259,7 +306,7 @@ def _polygon_iou(poly1: Polygon, poly2: Polygon) -> ScalarMetricValue:
     poly1, poly2 = _ensure_valid_poly(poly1), _ensure_valid_poly(poly2)
     if poly1.intersects(poly2):
         return poly1.intersection(poly2).area / poly1.union(poly2).area
-    return 0.
+    return 0.0
 
 
 def _ensure_valid_poly(poly):
@@ -286,22 +333,28 @@ def _get_ner_pairs(
 
 def _ner_iou(ner1: TextEntity, ner2: TextEntity):
     """Computes iou between two text entity annotations"""
-    intersection_start, intersection_end = max(ner1.start, ner2.start), min(
-        ner1.end, ner2.end)
-    union_start, union_end = min(ner1.start,
-                                 ner2.start), max(ner1.end, ner2.end)
-    #edge case of only one character in text
+    intersection_start, intersection_end = (
+        max(ner1.start, ner2.start),
+        min(ner1.end, ner2.end),
+    )
+    union_start, union_end = (
+        min(ner1.start, ner2.start),
+        max(ner1.end, ner2.end),
+    )
+    # edge case of only one character in text
     if union_start == union_end:
         return 1
-    #if there is no intersection
+    # if there is no intersection
     if intersection_start > intersection_end:
         return 0
     return (intersection_end - intersection_start) / (union_end - union_start)
 
 
-def ner_miou(ground_truths: List[ObjectAnnotation],
-             predictions: List[ObjectAnnotation],
-             include_subclasses: bool) -> Optional[ScalarMetricValue]:
+def ner_miou(
+    ground_truths: List[ObjectAnnotation],
+    predictions: List[ObjectAnnotation],
+    include_subclasses: bool,
+) -> Optional[ScalarMetricValue]:
     """
     Computes iou score for all features with the same feature schema id.
     Calculation includes subclassifications.
@@ -314,7 +367,7 @@ def ner_miou(ground_truths: List[ObjectAnnotation],
          If there are no matches then this returns none
     """
     if has_no_matching_annotations(ground_truths, predictions):
-        return 0.
+        return 0.0
     elif has_no_annotations(ground_truths, predictions):
         return None
     pairs = _get_ner_pairs(ground_truths, predictions)

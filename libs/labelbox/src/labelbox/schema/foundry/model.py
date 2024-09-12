@@ -15,4 +15,4 @@ class Model(_CamelCaseMixin, BaseModel):
     created_at: datetime
 
 
-MODEL_FIELD_NAMES = list(Model.model_json_schema()['properties'].keys())
+MODEL_FIELD_NAMES = list(Model.model_json_schema()["properties"].keys())

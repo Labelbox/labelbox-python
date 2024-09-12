@@ -13,6 +13,7 @@ class EmbeddingVector(BaseModel):
         vector (list): The raw vector values - the number of entries should match the Embedding's dimensions
         clusters (list): The cluster groupings
     """
+
     embedding_id: str
     vector: List[float]
     clusters: Optional[List[int]] = None
@@ -37,6 +38,7 @@ class Embedding(BaseModel):
         dims (int): Refers to the size of the vector space in which words, phrases, or other entities are embedded
         custom (bool): Indicates whether the embedding is a Precomputed embedding or a Custom embedding
     """
+
     id: str
     name: str
     custom: bool
@@ -54,10 +56,11 @@ class Embedding(BaseModel):
         """
         self._client.delete_embedding(self.id)
 
-    def import_vectors_from_file(self,
-                                 path: str,
-                                 callback: Optional[Callable[[Dict[str, Any]],
-                                                             None]] = None):
+    def import_vectors_from_file(
+        self,
+        path: str,
+        callback: Optional[Callable[[Dict[str, Any]], None]] = None,
+    ):
         """
         Import vectors into a given embedding from an NDJSON file.  An
         NDJSON file consists of newline delimited JSON.  Each line of the file
