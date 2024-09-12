@@ -217,7 +217,6 @@ class Client:
             
             request = requests.Request('POST',
                                        endpoint,
-                                       headers=headers,
                                        data=data,
                                        files=files if files else None)
 
