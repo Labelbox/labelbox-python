@@ -5,13 +5,15 @@ from labelbox.data.annotation_types.classification.classification import (
     Radio,
     Text,
 )
+from labelbox.data.annotation_types.data.generic_data_row_data import (
+    GenericDataRowData,
+)
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 
 from labelbox.types import (
     Label,
     ClassificationAnnotation,
     ClassificationAnswer,
-    GenericDataRowData,
 )
 from labelbox.data.mixins import CustomMetric
 
