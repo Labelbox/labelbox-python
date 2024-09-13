@@ -8,9 +8,6 @@ def test_metric():
         data = json.load(file)
 
     label_list = list(NDJsonConverter.deserialize(data))
-    from pprint import pprint
-
-    pprint(label_list)
     reserialized = list(NDJsonConverter.serialize(label_list))
     assert reserialized == data
 
