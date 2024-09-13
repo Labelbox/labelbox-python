@@ -13,8 +13,9 @@ class LabelsConfidencePresenceChecker:
         return len(keys.intersection(set(["confidence"]))) == 1
 
     @classmethod
-    def _collect_keys_from_list(cls, objects: List[Dict[str, Any]],
-                                keys: Set[str]):
+    def _collect_keys_from_list(
+        cls, objects: List[Dict[str, Any]], keys: Set[str]
+    ):
         for obj in objects:
             if isinstance(obj, (list, tuple)):
                 cls._collect_keys_from_list(obj, keys)

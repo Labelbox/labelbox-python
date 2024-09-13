@@ -29,10 +29,10 @@ def test_labels(configured_project_with_label):
 
 # TODO: Skipping this test in staging due to label not updating
 @pytest.mark.skipif(
-    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem" or
-    os.environ["LABELBOX_TEST_ENVIRON"] == "staging" or
-    os.environ["LABELBOX_TEST_ENVIRON"] == "local" or
-    os.environ["LABELBOX_TEST_ENVIRON"] == "custom",
+    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem"
+    or os.environ["LABELBOX_TEST_ENVIRON"] == "staging"
+    or os.environ["LABELBOX_TEST_ENVIRON"] == "local"
+    or os.environ["LABELBOX_TEST_ENVIRON"] == "custom",
     reason="does not work for onprem",
 )
 def test_label_update(configured_project_with_label):
@@ -82,8 +82,10 @@ def test_upsert_label_scores(configured_project_with_label, client: Client):
 
     label = next(project.labels())
 
-    scores = client.upsert_label_feedback(label_id=label.uid,
-                                          feedback="That's a great label!",
-                                          scores={"overall": 5})
+    scores = client.upsert_label_feedback(
+        label_id=label.uid,
+        feedback="That's a great label!",
+        scores={"overall": 5},
+    )
     assert len(scores) == 1
     assert scores[0].score == 5

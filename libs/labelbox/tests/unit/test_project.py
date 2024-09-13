@@ -32,15 +32,21 @@ def project_entity():
 
 
 @pytest.mark.parametrize(
-    'api_editor_task_type, expected_editor_task_type',
-    [(None, EditorTaskType.Missing),
-     ('MODEL_CHAT_EVALUATION', EditorTaskType.ModelChatEvaluation),
-     ('RESPONSE_CREATION', EditorTaskType.ResponseCreation),
-     ('OFFLINE_MODEL_CHAT_EVALUATION',
-      EditorTaskType.OfflineModelChatEvaluation),
-     ('NEW_TYPE', EditorTaskType.Missing)])
-def test_project_editor_task_type(api_editor_task_type,
-                                  expected_editor_task_type, project_entity):
+    "api_editor_task_type, expected_editor_task_type",
+    [
+        (None, EditorTaskType.Missing),
+        ("MODEL_CHAT_EVALUATION", EditorTaskType.ModelChatEvaluation),
+        ("RESPONSE_CREATION", EditorTaskType.ResponseCreation),
+        (
+            "OFFLINE_MODEL_CHAT_EVALUATION",
+            EditorTaskType.OfflineModelChatEvaluation,
+        ),
+        ("NEW_TYPE", EditorTaskType.Missing),
+    ],
+)
+def test_project_editor_task_type(
+    api_editor_task_type, expected_editor_task_type, project_entity
+):
     client = MagicMock()
     project = Project(
         client,

@@ -40,7 +40,7 @@ def test_syntax_error(client):
 def test_semantic_error(client):
     with pytest.raises(labelbox.exceptions.InvalidQueryError) as excinfo:
         client.execute("query {bbb {id}}", check_naming=False)
-    assert excinfo.value.message.startswith("Cannot query field \"bbb\"")
+    assert excinfo.value.message.startswith('Cannot query field "bbb"')
 
 
 def test_timeout_error(client, project):
@@ -59,8 +59,9 @@ def test_timeout_error(client, project):
 
 def test_query_complexity_error(client):
     with pytest.raises(labelbox.exceptions.ValidationFailedError) as excinfo:
-        client.execute("{projects {datasets {dataRows {labels {id}}}}}",
-                       check_naming=False)
+        client.execute(
+            "{projects {datasets {dataRows {labels {id}}}}}", check_naming=False
+        )
     assert excinfo.value.message == "Query complexity limit exceeded"
 
 
@@ -70,8 +71,9 @@ def test_resource_not_found_error(client):
 
 
 def test_network_error(client):
-    client = labelbox.client.Client(api_key=client.api_key,
-                                    endpoint="not_a_valid_URL")
+    client = labelbox.client.Client(
+        api_key=client.api_key, endpoint="not_a_valid_URL"
+    )
 
     with pytest.raises(labelbox.exceptions.NetworkError) as excinfo:
         client.create_project(name="Project name")
@@ -103,7 +105,6 @@ def test_invalid_attribute_error(
 
 @pytest.mark.skip("timeouts cause failure before rate limit")
 def test_api_limit_error(client):
-
     def get(arg):
         try:
             return client.get_user()

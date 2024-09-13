@@ -1,19 +1,22 @@
 # type: ignore
 from labelbox.data.annotation_types.metrics.scalar import ScalarMetric
 from typing import List, Optional, Union
-from ...annotation_types import (Label, ObjectAnnotation,
-                                 ClassificationAnnotation)
+from ...annotation_types import (
+    Label,
+    ObjectAnnotation,
+    ClassificationAnnotation,
+)
 
 from ..group import get_feature_pairs
 from .calculation import feature_miou
 from .calculation import miou
 
 
-def miou_metric(ground_truths: List[Union[ObjectAnnotation,
-                                          ClassificationAnnotation]],
-                predictions: List[Union[ObjectAnnotation,
-                                        ClassificationAnnotation]],
-                include_subclasses=False) -> List[ScalarMetric]:
+def miou_metric(
+    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    include_subclasses=False,
+) -> List[ScalarMetric]:
     """
     Computes miou between two sets of annotations.
     These annotations should relate to the same data (image/video).
@@ -34,11 +37,11 @@ def miou_metric(ground_truths: List[Union[ObjectAnnotation,
     return [ScalarMetric(metric_name="custom_iou", value=iou)]
 
 
-def feature_miou_metric(ground_truths: List[Union[ObjectAnnotation,
-                                                  ClassificationAnnotation]],
-                        predictions: List[Union[ObjectAnnotation,
-                                                ClassificationAnnotation]],
-                        include_subclasses=True) -> List[ScalarMetric]:
+def feature_miou_metric(
+    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    include_subclasses=True,
+) -> List[ScalarMetric]:
     """
     Computes the miou for each type of class in the list of annotations.
     These annotations should relate to the same data (image/video).
@@ -56,21 +59,24 @@ def feature_miou_metric(ground_truths: List[Union[ObjectAnnotation,
     annotation_pairs = get_feature_pairs(predictions, ground_truths)
     metrics = []
     for key in annotation_pairs:
-
-        value = feature_miou(annotation_pairs[key][0], annotation_pairs[key][1],
-                             include_subclasses)
+        value = feature_miou(
+            annotation_pairs[key][0],
+            annotation_pairs[key][1],
+            include_subclasses,
+        )
         if value is None:
             continue
         metrics.append(
-            ScalarMetric(metric_name="custom_iou",
-                         feature_name=key,
-                         value=value))
+            ScalarMetric(
+                metric_name="custom_iou", feature_name=key, value=value
+            )
+        )
     return metrics
 
 
-def data_row_miou(ground_truth: Label,
-                  prediction: Label,
-                  include_subclasses=False) -> Optional[float]:
+def data_row_miou(
+    ground_truth: Label, prediction: Label, include_subclasses=False
+) -> Optional[float]:
     """
 
     This function is no longer supported. Use miou() for raw values or miou_metric() for the metric
@@ -84,5 +90,6 @@ def data_row_miou(ground_truth: Label,
         float indicating the iou score for this data row.
         Returns None if there are no annotations in ground_truth or prediction Labels
     """
-    return miou(ground_truth.annotations, prediction.annotations,
-                include_subclasses)
+    return miou(
+        ground_truth.annotations, prediction.annotations, include_subclasses
+    )

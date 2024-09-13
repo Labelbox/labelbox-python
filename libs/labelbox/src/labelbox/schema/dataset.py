@@ -15,7 +15,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
 import requests
 
-from labelbox.exceptions import InvalidQueryError, LabelboxError, ResourceNotFoundError, ResourceCreationError
+from labelbox.exceptions import (
+    InvalidQueryError,
+    LabelboxError,
+    ResourceNotFoundError,
+    ResourceCreationError,
+)
 from labelbox.orm.comparison import Comparison
 from labelbox.orm.db_object import DbObject, Updateable, Deletable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -25,25 +30,34 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.embedding import EmbeddingVector
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
-from labelbox.schema.export_params import CatalogExportParams, validate_catalog_export_params
+from labelbox.schema.export_params import (
+    CatalogExportParams,
+    validate_catalog_export_params,
+)
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.task import Task, DataUpsertTask
 from labelbox.schema.user import User
 from labelbox.schema.iam_integration import IAMIntegration
-from labelbox.schema.internal.data_row_upsert_item import (DataRowItemBase,
-                                                           DataRowUpsertItem,
-                                                           DataRowCreateItem)
+from labelbox.schema.internal.data_row_upsert_item import (
+    DataRowItemBase,
+    DataRowUpsertItem,
+    DataRowCreateItem,
+)
 import labelbox.schema.internal.data_row_uploader as data_row_uploader
-from labelbox.schema.internal.descriptor_file_creator import DescriptorFileCreator
+from labelbox.schema.internal.descriptor_file_creator import (
+    DescriptorFileCreator,
+)
 from labelbox.schema.internal.datarow_upload_constants import (
-    FILE_UPLOAD_THREAD_COUNT, UPSERT_CHUNK_SIZE_BYTES)
+    FILE_UPLOAD_THREAD_COUNT,
+    UPSERT_CHUNK_SIZE_BYTES,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class Dataset(DbObject, Updateable, Deletable):
-    """ A Dataset is a collection of DataRows.
+    """A Dataset is a collection of DataRows.
 
     Attributes:
         name (str)
@@ -65,8 +79,9 @@ class Dataset(DbObject, Updateable, Deletable):
     # Relationships
     created_by = Relationship.ToOne("User", False, "created_by")
     organization = Relationship.ToOne("Organization", False)
-    iam_integration = Relationship.ToOne("IAMIntegration", False,
-                                         "iam_integration", "signer")
+    iam_integration = Relationship.ToOne(
+        "IAMIntegration", False, "iam_integration", "signer"
+    )
 
     def data_rows(
         self,
@@ -90,8 +105,11 @@ class Dataset(DbObject, Updateable, Deletable):
         """
 
         page_size = 500  # hardcode to avoid overloading the server
-        where_param = query.where_as_dict(Entity.DataRow,
-                                          where) if where is not None else None
+        where_param = (
+            query.where_as_dict(Entity.DataRow, where)
+            if where is not None
+            else None
+        )
 
         template = Template(
             """query DatasetDataRowsPyApi($$id: ID!, $$from: ID, $$first: Int, $$where: DatasetDataRowWhereInput)  {
@@ -101,28 +119,30 @@ class Dataset(DbObject, Updateable, Deletable):
                                 pageInfo { hasNextPage startCursor }
                             }
                         }
-                    """)
+                    """
+        )
         query_str = template.substitute(
-            datarow_selections=query.results_query_part(Entity.DataRow))
+            datarow_selections=query.results_query_part(Entity.DataRow)
+        )
 
         params = {
-            'id': self.uid,
-            'from': from_cursor,
-            'first': page_size,
-            'where': where_param,
+            "id": self.uid,
+            "from": from_cursor,
+            "first": page_size,
+            "where": where_param,
         }
 
         return PaginatedCollection(
             client=self.client,
             query=query_str,
             params=params,
-            dereferencing=['datasetDataRows', 'nodes'],
+            dereferencing=["datasetDataRows", "nodes"],
             obj_class=Entity.DataRow,
-            cursor_path=['datasetDataRows', 'pageInfo', 'startCursor'],
+            cursor_path=["datasetDataRows", "pageInfo", "startCursor"],
         )
 
     def create_data_row(self, items=None, **kwargs) -> "DataRow":
-        """ Creates a single DataRow belonging to this dataset.
+        """Creates a single DataRow belonging to this dataset.
         >>> dataset.create_data_row(row_data="http://my_site.com/photos/img_01.jpg")
 
         Args:
@@ -148,7 +168,8 @@ class Dataset(DbObject, Updateable, Deletable):
 
         file_upload_thread_count = 1
         completed_task = self._create_data_rows_sync(
-            [args], file_upload_thread_count=file_upload_thread_count)
+            [args], file_upload_thread_count=file_upload_thread_count
+        )
 
         res = completed_task.result
         if res is None or len(res) == 0:
@@ -156,13 +177,12 @@ class Dataset(DbObject, Updateable, Deletable):
                 f"Data row upload did not complete, task status {completed_task.status} task id {completed_task.uid}"
             )
 
-        return self.client.get_data_row(res[0]['id'])
+        return self.client.get_data_row(res[0]["id"])
 
     def create_data_rows_sync(
-            self,
-            items,
-            file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT) -> None:
-        """ Synchronously bulk upload data rows.
+        self, items, file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
+    ) -> None:
+        """Synchronously bulk upload data rows.
 
         Use this instead of `Dataset.create_data_rows` for smaller batches of data rows that need to be uploaded quickly.
         Cannot use this for uploads containing more than 1000 data rows.
@@ -184,17 +204,18 @@ class Dataset(DbObject, Updateable, Deletable):
         """
         warnings.warn(
             "This method is deprecated and will be "
-            "removed in a future release. Please use create_data_rows instead.")
+            "removed in a future release. Please use create_data_rows instead."
+        )
 
         self._create_data_rows_sync(
-            items, file_upload_thread_count=file_upload_thread_count)
+            items, file_upload_thread_count=file_upload_thread_count
+        )
 
         return None  # Return None if no exception is raised
 
-    def _create_data_rows_sync(self,
-                               items,
-                               file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
-                              ) -> "DataUpsertTask":
+    def _create_data_rows_sync(
+        self, items, file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
+    ) -> "DataUpsertTask":
         max_data_rows_supported = 1000
         if len(items) > max_data_rows_supported:
             raise ValueError(
@@ -203,15 +224,18 @@ class Dataset(DbObject, Updateable, Deletable):
             )
         if file_upload_thread_count < 1:
             raise ValueError(
-                "file_upload_thread_count must be a positive integer")
+                "file_upload_thread_count must be a positive integer"
+            )
 
-        task: DataUpsertTask = self.create_data_rows(items,
-                                                     file_upload_thread_count)
+        task: DataUpsertTask = self.create_data_rows(
+            items, file_upload_thread_count
+        )
         task.wait_till_done()
 
         if task.has_errors():
             raise ResourceCreationError(
-                f"Data row upload errors: {task.errors}", cause=task.uid)
+                f"Data row upload errors: {task.errors}", cause=task.uid
+            )
         if task.status != "COMPLETE":
             raise ResourceCreationError(
                 f"Data row upload did not complete, task status {task.status} task id {task.uid}"
@@ -219,11 +243,10 @@ class Dataset(DbObject, Updateable, Deletable):
 
         return task
 
-    def create_data_rows(self,
-                         items,
-                         file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
-                        ) -> "DataUpsertTask":
-        """ Asynchronously bulk upload data rows
+    def create_data_rows(
+        self, items, file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
+    ) -> "DataUpsertTask":
+        """Asynchronously bulk upload data rows
 
         Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 1000 data rows.
 
@@ -249,7 +272,8 @@ class Dataset(DbObject, Updateable, Deletable):
 
         if file_upload_thread_count < 1:
             raise ValueError(
-                "file_upload_thread_count must be a positive integer")
+                "file_upload_thread_count must be a positive integer"
+            )
 
         # Usage example
         upload_items = self._separate_and_process_items(items)
@@ -265,14 +289,15 @@ class Dataset(DbObject, Updateable, Deletable):
         return dict_items + dict_string_items
 
     def _build_from_local_paths(
-            self,
-            items: List[str],
-            file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT) -> List[dict]:
+        self,
+        items: List[str],
+        file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT,
+    ) -> List[dict]:
         uploaded_items = []
 
         def upload_file(item):
             item_url = self.client.upload_file(item)
-            return {'row_data': item_url, 'external_id': item}
+            return {"row_data": item_url, "external_id": item}
 
         with ThreadPoolExecutor(file_upload_thread_count) as executor:
             futures = [
@@ -285,10 +310,10 @@ class Dataset(DbObject, Updateable, Deletable):
 
         return uploaded_items
 
-    def data_rows_for_external_id(self,
-                                  external_id,
-                                  limit=10) -> List["DataRow"]:
-        """ Convenience method for getting a multiple `DataRow` belonging to this
+    def data_rows_for_external_id(
+        self, external_id, limit=10
+    ) -> List["DataRow"]:
+        """Convenience method for getting a multiple `DataRow` belonging to this
         `Dataset` that has the given `external_id`.
 
         Args:
@@ -315,7 +340,7 @@ class Dataset(DbObject, Updateable, Deletable):
         return at_most_data_rows
 
     def data_row_for_external_id(self, external_id) -> "DataRow":
-        """ Convenience method for getting a single `DataRow` belonging to this
+        """Convenience method for getting a single `DataRow` belonging to this
         `Dataset` that has the given `external_id`.
 
         Args:
@@ -329,65 +354,15 @@ class Dataset(DbObject, Updateable, Deletable):
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
-        data_rows = self.data_rows_for_external_id(external_id=external_id,
-                                                   limit=2)
+        data_rows = self.data_rows_for_external_id(
+            external_id=external_id, limit=2
+        )
         if len(data_rows) > 1:
             logger.warning(
                 f"More than one data_row has the provided external_id : `%s`. Use function data_rows_for_external_id to fetch all",
-                external_id)
+                external_id,
+            )
         return data_rows[0]
-
-    def export_data_rows(self,
-                         timeout_seconds=120,
-                         include_metadata: bool = False) -> Generator:
-        """ Returns a generator that produces all data rows that are currently
-        attached to this dataset.
-
-        Note: For efficiency, the data are cached for 30 minutes. Newly created data rows will not appear
-        until the end of the cache period.
-
-        Args:
-            timeout_seconds (float): Max waiting time, in seconds.
-            include_metadata (bool): True to return related DataRow metadata
-        Returns:
-            Generator that yields DataRow objects belonging to this dataset.
-        Raises:
-            LabelboxError: if the export fails or is unable to download within the specified time.
-        """
-        warnings.warn(
-            "You are currently utilizing exports v1 for this action, which will be deprecated after April 30th, 2024. We recommend transitioning to exports v2. To view export v2 details, visit our docs: https://docs.labelbox.com/reference/label-export",
-            DeprecationWarning)
-        id_param = "datasetId"
-        metadata_param = "includeMetadataInput"
-        query_str = """mutation GetDatasetDataRowsExportUrlPyApi($%s: ID!, $%s: Boolean!)
-            {exportDatasetDataRows(data:{datasetId: $%s , includeMetadataInput: $%s}) {downloadUrl createdAt status}}
-        """ % (id_param, metadata_param, id_param, metadata_param)
-        sleep_time = 2
-        while True:
-            res = self.client.execute(query_str, {
-                id_param: self.uid,
-                metadata_param: include_metadata
-            })
-            res = res["exportDatasetDataRows"]
-            if res["status"] == "COMPLETE":
-                download_url = res["downloadUrl"]
-                response = requests.get(download_url)
-                response.raise_for_status()
-                reader = parser.reader(StringIO(response.text))
-                return (
-                    Entity.DataRow(self.client, result) for result in reader)
-            elif res["status"] == "FAILED":
-                raise LabelboxError("Data row export failed.")
-
-            timeout_seconds -= sleep_time
-            if timeout_seconds <= 0:
-                raise LabelboxError(
-                    f"Unable to export data rows within {timeout_seconds} seconds."
-                )
-
-            logger.debug("Dataset '%s' data row export, waiting for server...",
-                         self.uid)
-            time.sleep(sleep_time)
 
     def export(
         self,
@@ -439,7 +414,7 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     task.result
         """
         task, is_streamable = self._export(task_name, filters, params)
-        if (is_streamable):
+        if is_streamable:
             return ExportTask(task, True)
         return task
 
@@ -450,36 +425,41 @@ class Dataset(DbObject, Updateable, Deletable):
         params: Optional[CatalogExportParams] = None,
         streamable: bool = False,
     ) -> Tuple[Task, bool]:
-        _params = params or CatalogExportParams({
-            "attachments": False,
-            "embeddings": False,
-            "metadata_fields": False,
-            "data_row_details": False,
-            "project_details": False,
-            "performance_details": False,
-            "label_details": False,
-            "media_type_override": None,
-            "model_run_ids": None,
-            "project_ids": None,
-            "interpolated_frames": False,
-            "all_projects": False,
-            "all_model_runs": False,
-        })
+        _params = params or CatalogExportParams(
+            {
+                "attachments": False,
+                "embeddings": False,
+                "metadata_fields": False,
+                "data_row_details": False,
+                "project_details": False,
+                "performance_details": False,
+                "label_details": False,
+                "media_type_override": None,
+                "model_run_ids": None,
+                "project_ids": None,
+                "interpolated_frames": False,
+                "all_projects": False,
+                "all_model_runs": False,
+            }
+        )
         validate_catalog_export_params(_params)
 
-        _filters = filters or DatasetExportFilters({
-            "last_activity_at": None,
-            "label_created_at": None,
-            "data_row_ids": None,
-            "global_keys": None,
-        })
+        _filters = filters or DatasetExportFilters(
+            {
+                "last_activity_at": None,
+                "label_created_at": None,
+                "data_row_ids": None,
+                "global_keys": None,
+            }
+        )
 
         mutation_name = "exportDataRowsInCatalog"
         create_task_query_str = (
             f"mutation {mutation_name}PyApi"
             f"($input: ExportDataRowsInCatalogInput!)"
-            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}")
-        media_type_override = _params.get('media_type_override', None)
+            f"{{{mutation_name}(input: $input){{taskId isStreamable}}}}"
+        )
+        media_type_override = _params.get("media_type_override", None)
 
         if task_name is None:
             task_name = f"Export v2: dataset - {self.name}"
@@ -494,61 +474,53 @@ class Dataset(DbObject, Updateable, Deletable):
                 },
                 "isStreamableReady": True,
                 "params": {
-                    "mediaTypeOverride":
-                        media_type_override.value
-                        if media_type_override is not None else None,
-                    "includeAttachments":
-                        _params.get('attachments', False),
-                    "includeEmbeddings":
-                        _params.get('embeddings', False),
-                    "includeMetadata":
-                        _params.get('metadata_fields', False),
-                    "includeDataRowDetails":
-                        _params.get('data_row_details', False),
-                    "includeProjectDetails":
-                        _params.get('project_details', False),
-                    "includePerformanceDetails":
-                        _params.get('performance_details', False),
-                    "includeLabelDetails":
-                        _params.get('label_details', False),
-                    "includeInterpolatedFrames":
-                        _params.get('interpolated_frames', False),
-                    "includePredictions":
-                        _params.get('predictions', False),
-                    "projectIds":
-                        _params.get('project_ids', None),
-                    "modelRunIds":
-                        _params.get('model_run_ids', None),
-                    "allProjects":
-                        _params.get('all_projects', False),
-                    "allModelRuns":
-                        _params.get('all_model_runs', False),
+                    "mediaTypeOverride": media_type_override.value
+                    if media_type_override is not None
+                    else None,
+                    "includeAttachments": _params.get("attachments", False),
+                    "includeEmbeddings": _params.get("embeddings", False),
+                    "includeMetadata": _params.get("metadata_fields", False),
+                    "includeDataRowDetails": _params.get(
+                        "data_row_details", False
+                    ),
+                    "includeProjectDetails": _params.get(
+                        "project_details", False
+                    ),
+                    "includePerformanceDetails": _params.get(
+                        "performance_details", False
+                    ),
+                    "includeLabelDetails": _params.get("label_details", False),
+                    "includeInterpolatedFrames": _params.get(
+                        "interpolated_frames", False
+                    ),
+                    "includePredictions": _params.get("predictions", False),
+                    "projectIds": _params.get("project_ids", None),
+                    "modelRunIds": _params.get("model_run_ids", None),
+                    "allProjects": _params.get("all_projects", False),
+                    "allModelRuns": _params.get("all_model_runs", False),
                 },
                 "streamable": streamable,
             }
         }
 
         search_query = build_filters(self.client, _filters)
-        search_query.append({
-            "ids": [self.uid],
-            "operator": "is",
-            "type": "dataset"
-        })
+        search_query.append(
+            {"ids": [self.uid], "operator": "is", "type": "dataset"}
+        )
 
         query_params["input"]["filters"]["searchQuery"]["query"] = search_query
 
-        res = self.client.execute(create_task_query_str,
-                                  query_params,
-                                  error_log_key="errors")
+        res = self.client.execute(
+            create_task_query_str, query_params, error_log_key="errors"
+        )
         res = res[mutation_name]
         task_id = res["taskId"]
         is_streamable = res["isStreamable"]
         return Task.get_task(self.client, task_id), is_streamable
 
-    def upsert_data_rows(self,
-                         items,
-                         file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
-                        ) -> "DataUpsertTask":
+    def upsert_data_rows(
+        self, items, file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
+    ) -> "DataUpsertTask":
         """
         Upserts data rows in this dataset. When "key" is provided, and it references an existing data row,
         an update will be performed. When "key" is not provided a new data row will be created.
@@ -585,19 +557,19 @@ class Dataset(DbObject, Updateable, Deletable):
     def _exec_upsert_data_rows(
         self,
         specs: List[DataRowItemBase],
-        file_upload_thread_count: int = FILE_UPLOAD_THREAD_COUNT
+        file_upload_thread_count: int = FILE_UPLOAD_THREAD_COUNT,
     ) -> "DataUpsertTask":
-
         manifest = data_row_uploader.upload_in_chunks(
             client=self.client,
             specs=specs,
             file_upload_thread_count=file_upload_thread_count,
-            max_chunk_size_bytes=UPSERT_CHUNK_SIZE_BYTES)
+            max_chunk_size_bytes=UPSERT_CHUNK_SIZE_BYTES,
+        )
 
         data = json.dumps(manifest.model_dump()).encode("utf-8")
-        manifest_uri = self.client.upload_data(data,
-                                               content_type="application/json",
-                                               filename="manifest.json")
+        manifest_uri = self.client.upload_data(
+            data, content_type="application/json", filename="manifest.json"
+        )
 
         query_str = """
             mutation UpsertDataRowsPyApi($manifestUri: String!) {
@@ -614,44 +586,47 @@ class Dataset(DbObject, Updateable, Deletable):
         return task
 
     def add_iam_integration(
-            self, iam_integration: Union[str,
-                                         IAMIntegration]) -> IAMIntegration:
-        """          
-        Sets the IAM integration for the dataset. IAM integration is used to sign URLs for data row assets.
+        self, iam_integration: Union[str, IAMIntegration]
+    ) -> IAMIntegration:
+        """
+            Sets the IAM integration for the dataset. IAM integration is used to sign URLs for data row assets.
 
-    Args:
-            iam_integration (Union[str, IAMIntegration]): IAM integration object or IAM integration id.
+        Args:
+                iam_integration (Union[str, IAMIntegration]): IAM integration object or IAM integration id.
 
-        Returns:
-            IAMIntegration: IAM integration object.
+            Returns:
+                IAMIntegration: IAM integration object.
 
-        Raises:
-            LabelboxError: If the IAM integration can't be set.
+            Raises:
+                LabelboxError: If the IAM integration can't be set.
 
-        Examples:
-        
-            >>>    # Get all IAM integrations
-            >>>    iam_integrations = client.get_organization().get_iam_integrations()
-            >>>    
-            >>>    # Get IAM integration id
-            >>>    iam_integration_id = [integration.uid for integration
-            >>>      in iam_integrations
-            >>>      if integration.name == "My S3 integration"][0]
-            >>>
-            >>>   # Set IAM integration for integration id
-            >>>   dataset.set_iam_integration(iam_integration_id)
-            >>>
-            >>>    # Get IAM integration object
-            >>>    iam_integration = [integration.uid for integration
-            >>>      in iam_integrations
-            >>>      if integration.name == "My S3 integration"][0]
-            >>>
-            >>>   # Set IAM integration for IAMIntegrtion object
-            >>>   dataset.set_iam_integration(iam_integration)
+            Examples:
+
+                >>>    # Get all IAM integrations
+                >>>    iam_integrations = client.get_organization().get_iam_integrations()
+                >>>
+                >>>    # Get IAM integration id
+                >>>    iam_integration_id = [integration.uid for integration
+                >>>      in iam_integrations
+                >>>      if integration.name == "My S3 integration"][0]
+                >>>
+                >>>   # Set IAM integration for integration id
+                >>>   dataset.set_iam_integration(iam_integration_id)
+                >>>
+                >>>    # Get IAM integration object
+                >>>    iam_integration = [integration.uid for integration
+                >>>      in iam_integrations
+                >>>      if integration.name == "My S3 integration"][0]
+                >>>
+                >>>   # Set IAM integration for IAMIntegrtion object
+                >>>   dataset.set_iam_integration(iam_integration)
         """
 
-        iam_integration_id = iam_integration.uid if isinstance(
-            iam_integration, IAMIntegration) else iam_integration
+        iam_integration_id = (
+            iam_integration.uid
+            if isinstance(iam_integration, IAMIntegration)
+            else iam_integration
+        )
 
         query = """
             mutation SetSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
@@ -667,29 +642,30 @@ class Dataset(DbObject, Updateable, Deletable):
             }
         """
 
-        response = self.client.execute(query, {
-            "signerId": iam_integration_id,
-            "datasetId": self.uid
-        })
+        response = self.client.execute(
+            query, {"signerId": iam_integration_id, "datasetId": self.uid}
+        )
 
         if not response:
-            raise ResourceNotFoundError(IAMIntegration, {
-                "signerId": iam_integration_id,
-                "datasetId": self.uid
-            })
+            raise ResourceNotFoundError(
+                IAMIntegration,
+                {"signerId": iam_integration_id, "datasetId": self.uid},
+            )
 
         try:
-            iam_integration_id = response.get("setSignerForDataset",
-                                              {}).get("signer", {})["id"]
+            iam_integration_id = response.get("setSignerForDataset", {}).get(
+                "signer", {}
+            )["id"]
 
             return [
-                integration for integration in
-                self.client.get_organization().get_iam_integrations()
+                integration
+                for integration in self.client.get_organization().get_iam_integrations()
                 if integration.uid == iam_integration_id
             ][0]
         except:
             raise LabelboxError(
-                f"Can't retrieve IAM integration {iam_integration_id}")
+                f"Can't retrieve IAM integration {iam_integration_id}"
+            )
 
     def remove_iam_integration(self) -> None:
         """

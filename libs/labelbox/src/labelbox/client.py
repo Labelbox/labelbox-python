@@ -26,7 +26,9 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema import role
-from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
+from labelbox.schema.conflict_resolution_strategy import (
+    ConflictResolutionStrategy,
+)
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
@@ -38,26 +40,46 @@ from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.identifiables import DataRowIds
 from labelbox.schema.identifiables import GlobalKeys
 from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox.schema.media_type import MediaType, get_media_type_validation_error
+from labelbox.schema.media_type import (
+    MediaType,
+    get_media_type_validation_error,
+)
 from labelbox.schema.model import Model
 from labelbox.schema.model_config import ModelConfig
 from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
-from labelbox.schema.ontology import Tool, Classification, FeatureSchema, PromptResponseClassification
+from labelbox.schema.ontology import (
+    Tool,
+    Classification,
+    FeatureSchema,
+    PromptResponseClassification,
+)
 from labelbox.schema.organization import Organization
 from labelbox.schema.project import Project
-from labelbox.schema.quality_mode import QualityMode, BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS, \
-    BENCHMARK_AUTO_AUDIT_PERCENTAGE, CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS, CONSENSUS_AUTO_AUDIT_PERCENTAGE
+from labelbox.schema.quality_mode import (
+    QualityMode,
+    BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS,
+    BENCHMARK_AUTO_AUDIT_PERCENTAGE,
+    CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS,
+    CONSENSUS_AUTO_AUDIT_PERCENTAGE,
+)
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.role import Role
-from labelbox.schema.send_to_annotate_params import SendToAnnotateFromCatalogParams, build_destination_task_queue_input, \
-    build_predictions_input, build_annotations_input
+from labelbox.schema.send_to_annotate_params import (
+    SendToAnnotateFromCatalogParams,
+    build_destination_task_queue_input,
+    build_predictions_input,
+    build_annotations_input,
+)
 from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.task import Task, DataUpsertTask
 from labelbox.schema.user import User
 from labelbox.schema.label_score import LabelScore
-from labelbox.schema.ontology_kind import (OntologyKind, EditorTaskTypeMapper,
-                                           EditorTaskType)
+from labelbox.schema.ontology_kind import (
+    OntologyKind,
+    EditorTaskTypeMapper,
+    EditorTaskType,
+)
 from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 
 logger = logging.getLogger(__name__)
@@ -72,20 +94,22 @@ def python_version_info():
 
 
 class Client:
-    """ A Labelbox client.
+    """A Labelbox client.
 
     Contains info necessary for connecting to a Labelbox server (URL,
     authentication key). Provides functions for querying and creating
     top-level data objects (Projects, Datasets).
     """
 
-    def __init__(self,
-                 api_key=None,
-                 endpoint='https://api.labelbox.com/graphql',
-                 enable_experimental=False,
-                 app_url="https://app.labelbox.com",
-                 rest_endpoint="https://api.labelbox.com/api/v1"):
-        """ Creates and initializes a Labelbox Client.
+    def __init__(
+        self,
+        api_key=None,
+        endpoint="https://api.labelbox.com/graphql",
+        enable_experimental=False,
+        app_url="https://app.labelbox.com",
+        rest_endpoint="https://api.labelbox.com/api/v1",
+    ):
+        """Creates and initializes a Labelbox Client.
 
         Logging is defaulted to level WARNING. To receive more verbose
         output to console, update `logging.level` to the appropriate level.
@@ -106,7 +130,8 @@ class Client:
         if api_key is None:
             if _LABELBOX_API_KEY not in os.environ:
                 raise labelbox.exceptions.AuthenticationError(
-                    "Labelbox API key not provided")
+                    "Labelbox API key not provided"
+                )
             api_key = os.environ[_LABELBOX_API_KEY]
         self.api_key = api_key
 
@@ -123,7 +148,8 @@ class Client:
         self._connection: requests.Session = self._init_connection()
 
     def _init_connection(self) -> requests.Session:
-        connection = requests.Session(
+        connection = (
+            requests.Session()
         )  # using default connection pool size of 10
         connection.headers.update(self._default_headers())
 
@@ -135,26 +161,31 @@ class Client:
 
     def _default_headers(self):
         return {
-            'Authorization': 'Bearer %s' % self.api_key,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-User-Agent': f"python-sdk {SDK_VERSION}",
-            'X-Python-Version': f"{python_version_info()}",
+            "Authorization": "Bearer %s" % self.api_key,
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-User-Agent": f"python-sdk {SDK_VERSION}",
+            "X-Python-Version": f"{python_version_info()}",
         }
 
-    @retry.Retry(predicate=retry.if_exception_type(
-        labelbox.exceptions.InternalServerError,
-        labelbox.exceptions.TimeoutError))
-    def execute(self,
-                query=None,
-                params=None,
-                data=None,
-                files=None,
-                timeout=60.0,
-                experimental=False,
-                error_log_key="message",
-                raise_return_resource_not_found=False):
-        """ Sends a request to the server for the execution of the
+    @retry.Retry(
+        predicate=retry.if_exception_type(
+            labelbox.exceptions.InternalServerError,
+            labelbox.exceptions.TimeoutError,
+        )
+    )
+    def execute(
+        self,
+        query=None,
+        params=None,
+        data=None,
+        files=None,
+        timeout=60.0,
+        experimental=False,
+        error_log_key="message",
+        raise_return_resource_not_found=False,
+    ):
+        """Sends a request to the server for the execution of the
         given query.
 
         Checks the response for errors and wraps errors
@@ -199,26 +230,30 @@ class Client:
                 params = {
                     key: convert_value(value) for key, value in params.items()
                 }
-            data = json.dumps({
-                'query': query,
-                'variables': params
-            }).encode('utf-8')
+            data = json.dumps({"query": query, "variables": params}).encode(
+                "utf-8"
+            )
         elif data is None:
             raise ValueError("query and data cannot both be none")
 
-        endpoint = self.endpoint if not experimental else self.endpoint.replace(
-            "/graphql", "/_gql")
+        endpoint = (
+            self.endpoint
+            if not experimental
+            else self.endpoint.replace("/graphql", "/_gql")
+        )
 
         try:
             headers = self._connection.headers.copy()
             if files:
-                del headers['Content-Type']
-                del headers['Accept']
-            request = requests.Request('POST',
-                                       endpoint,
-                                       headers=headers,
-                                       data=data,
-                                       files=files if files else None)
+                del headers["Content-Type"]
+                del headers["Accept"]
+            request = requests.Request(
+                "POST",
+                endpoint,
+                headers=headers,
+                data=data,
+                files=files if files else None,
+            )
 
             prepped: requests.PreparedRequest = request.prepare()
 
@@ -231,20 +266,30 @@ class Client:
             raise labelbox.exceptions.NetworkError(e)
         except Exception as e:
             raise labelbox.exceptions.LabelboxError(
-                "Unknown error during Client.query(): " + str(e), e)
+                "Unknown error during Client.query(): " + str(e), e
+            )
 
-        if 200 <= response.status_code < 300 or response.status_code < 500 or response.status_code >= 600:
+        if (
+            200 <= response.status_code < 300
+            or response.status_code < 500
+            or response.status_code >= 600
+        ):
             try:
                 r_json = response.json()
             except Exception:
                 raise labelbox.exceptions.LabelboxError(
-                    "Failed to parse response as JSON: %s" % response.text)
+                    "Failed to parse response as JSON: %s" % response.text
+                )
         else:
-            if "upstream connect error or disconnect/reset before headers" in response.text:
+            if (
+                "upstream connect error or disconnect/reset before headers"
+                in response.text
+            ):
                 raise labelbox.exceptions.InternalServerError(
-                    "Connection reset")
+                    "Connection reset"
+                )
             elif response.status_code == 502:
-                error_502 = '502 Bad Gateway'
+                error_502 = "502 Bad Gateway"
                 raise labelbox.exceptions.InternalServerError(error_502)
             elif 500 <= response.status_code < 600:
                 error_500 = f"Internal server http error {response.status_code}"
@@ -253,7 +298,7 @@ class Client:
         errors = r_json.get("errors", [])
 
         def check_errors(keywords, *path):
-            """ Helper that looks for any of the given `keywords` in any of
+            """Helper that looks for any of the given `keywords` in any of
             current errors on paths (like error[path][component][to][keyword]).
             """
             for error in errors:
@@ -270,18 +315,23 @@ class Client:
             except:
                 return 500
 
-        if check_errors(["AUTHENTICATION_ERROR"], "extensions",
-                        "code") is not None:
+        if (
+            check_errors(["AUTHENTICATION_ERROR"], "extensions", "code")
+            is not None
+        ):
             raise labelbox.exceptions.AuthenticationError("Invalid API key")
 
-        authorization_error = check_errors(["AUTHORIZATION_ERROR"],
-                                           "extensions", "code")
+        authorization_error = check_errors(
+            ["AUTHORIZATION_ERROR"], "extensions", "code"
+        )
         if authorization_error is not None:
             raise labelbox.exceptions.AuthorizationError(
-                authorization_error["message"])
+                authorization_error["message"]
+            )
 
-        validation_error = check_errors(["GRAPHQL_VALIDATION_FAILED"],
-                                        "extensions", "code")
+        validation_error = check_errors(
+            ["GRAPHQL_VALIDATION_FAILED"], "extensions", "code"
+        )
 
         if validation_error is not None:
             message = validation_error["message"]
@@ -290,11 +340,13 @@ class Client:
             else:
                 raise labelbox.exceptions.InvalidQueryError(message)
 
-        graphql_error = check_errors(["GRAPHQL_PARSE_FAILED"], "extensions",
-                                     "code")
+        graphql_error = check_errors(
+            ["GRAPHQL_PARSE_FAILED"], "extensions", "code"
+        )
         if graphql_error is not None:
             raise labelbox.exceptions.InvalidQueryError(
-                graphql_error["message"])
+                graphql_error["message"]
+            )
 
         # Check if API limit was exceeded
         response_msg = r_json.get("message", "")
@@ -302,34 +354,41 @@ class Client:
         if response_msg.startswith("You have exceeded"):
             raise labelbox.exceptions.ApiLimitError(response_msg)
 
-        resource_not_found_error = check_errors(["RESOURCE_NOT_FOUND"],
-                                                "extensions", "code")
+        resource_not_found_error = check_errors(
+            ["RESOURCE_NOT_FOUND"], "extensions", "code"
+        )
         if resource_not_found_error is not None:
             if raise_return_resource_not_found:
                 raise labelbox.exceptions.ResourceNotFoundError(
-                    message=resource_not_found_error["message"])
+                    message=resource_not_found_error["message"]
+                )
             else:
                 # Return None and let the caller methods raise an exception
                 # as they already know which resource type and ID was requested
                 return None
 
-        resource_conflict_error = check_errors(["RESOURCE_CONFLICT"],
-                                               "extensions", "code")
+        resource_conflict_error = check_errors(
+            ["RESOURCE_CONFLICT"], "extensions", "code"
+        )
         if resource_conflict_error is not None:
             raise labelbox.exceptions.ResourceConflict(
-                resource_conflict_error["message"])
+                resource_conflict_error["message"]
+            )
 
-        malformed_request_error = check_errors(["MALFORMED_REQUEST"],
-                                               "extensions", "code")
+        malformed_request_error = check_errors(
+            ["MALFORMED_REQUEST"], "extensions", "code"
+        )
         if malformed_request_error is not None:
             raise labelbox.exceptions.MalformedQueryException(
-                malformed_request_error[error_log_key])
+                malformed_request_error[error_log_key]
+            )
 
         # A lot of different error situations are now labeled serverside
         # as INTERNAL_SERVER_ERROR, when they are actually client errors.
         # TODO: fix this in the server API
-        internal_server_error = check_errors(["INTERNAL_SERVER_ERROR"],
-                                             "extensions", "code")
+        internal_server_error = check_errors(
+            ["INTERNAL_SERVER_ERROR"], "extensions", "code"
+        )
         if internal_server_error is not None:
             message = internal_server_error.get("message")
             error_status_code = get_error_status_code(internal_server_error)
@@ -344,8 +403,9 @@ class Client:
             else:
                 raise labelbox.exceptions.InternalServerError(message)
 
-        not_allowed_error = check_errors(["OPERATION_NOT_ALLOWED"],
-                                         "extensions", "code")
+        not_allowed_error = check_errors(
+            ["OPERATION_NOT_ALLOWED"], "extensions", "code"
+        )
         if not_allowed_error is not None:
             message = not_allowed_error.get("message")
             raise labelbox.exceptions.OperationNotAllowedException(message)
@@ -356,10 +416,14 @@ class Client:
                 map(
                     lambda x: {
                         "message": x["message"],
-                        "code": x["extensions"]["code"]
-                    }, errors))
-            raise labelbox.exceptions.LabelboxError("Unknown error: %s" %
-                                                    str(messages))
+                        "code": x["extensions"]["code"],
+                    },
+                    errors,
+                )
+            )
+            raise labelbox.exceptions.LabelboxError(
+                "Unknown error: %s" % str(messages)
+            )
 
         # if we do return a proper error code, and didn't catch this above
         # reraise
@@ -368,7 +432,7 @@ class Client:
         # in the SDK
         if response.status_code != requests.codes.ok:
             message = f"{response.status_code} {response.reason}"
-            cause = r_json.get('message')
+            cause = r_json.get("message")
             raise labelbox.exceptions.LabelboxError(message, cause)
 
         return r_json["data"]
@@ -388,18 +452,23 @@ class Client:
         content_type, _ = mimetypes.guess_type(path)
         filename = os.path.basename(path)
         with open(path, "rb") as f:
-            return self.upload_data(content=f.read(),
-                                    filename=filename,
-                                    content_type=content_type)
+            return self.upload_data(
+                content=f.read(), filename=filename, content_type=content_type
+            )
 
-    @retry.Retry(predicate=retry.if_exception_type(
-        labelbox.exceptions.InternalServerError))
-    def upload_data(self,
-                    content: bytes,
-                    filename: str = None,
-                    content_type: str = None,
-                    sign: bool = False) -> str:
-        """ Uploads the given data (bytes) to Labelbox.
+    @retry.Retry(
+        predicate=retry.if_exception_type(
+            labelbox.exceptions.InternalServerError
+        )
+    )
+    def upload_data(
+        self,
+        content: bytes,
+        filename: str = None,
+        content_type: str = None,
+        sign: bool = False,
+    ) -> str:
+        """Uploads the given data (bytes) to Labelbox.
 
         Args:
             content: bytestring to upload
@@ -415,40 +484,43 @@ class Client:
         """
 
         request_data = {
-            "operations":
-                json.dumps({
+            "operations": json.dumps(
+                {
                     "variables": {
                         "file": None,
                         "contentLength": len(content),
-                        "sign": sign
+                        "sign": sign,
                     },
-                    "query":
-                        """mutation UploadFile($file: Upload!, $contentLength: Int!,
+                    "query": """mutation UploadFile($file: Upload!, $contentLength: Int!,
                                             $sign: Boolean) {
                             uploadFile(file: $file, contentLength: $contentLength,
                                        sign: $sign) {url filename} } """,
-                }),
+                }
+            ),
             "map": (None, json.dumps({"1": ["variables.file"]})),
         }
 
         files = {
-            "1": (filename, content, content_type) if
-                 (filename and content_type) else content
+            "1": (filename, content, content_type)
+            if (filename and content_type)
+            else content
         }
         headers = self._connection.headers.copy()
         headers.pop("Content-Type", None)
-        request = requests.Request('POST',
-                                   self.endpoint,
-                                   headers=headers,
-                                   data=request_data,
-                                   files=files)
+        request = requests.Request(
+            "POST",
+            self.endpoint,
+            headers=headers,
+            data=request_data,
+            files=files,
+        )
 
         prepped: requests.PreparedRequest = request.prepare()
 
         response = self._connection.send(prepped)
 
         if response.status_code == 502:
-            error_502 = '502 Bad Gateway'
+            error_502 = "502 Bad Gateway"
             raise labelbox.exceptions.InternalServerError(error_502)
         elif response.status_code == 503:
             raise labelbox.exceptions.InternalServerError(response.text)
@@ -459,22 +531,25 @@ class Client:
             file_data = response.json().get("data", None)
         except ValueError as e:  # response is not valid JSON
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, unknown cause", e)
+                "Failed to upload, unknown cause", e
+            )
 
         if not file_data or not file_data.get("uploadFile", None):
             try:
                 errors = response.json().get("errors", [])
-                error_msg = next(iter(errors), {}).get("message",
-                                                       "Unknown error")
+                error_msg = next(iter(errors), {}).get(
+                    "message", "Unknown error"
+                )
             except Exception as e:
                 error_msg = "Unknown error"
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, message: %s" % error_msg)
+                "Failed to upload, message: %s" % error_msg
+            )
 
         return file_data["uploadFile"]["url"]
 
     def _get_single(self, db_object_type, uid):
-        """ Fetches a single object of the given type, for the given ID.
+        """Fetches a single object of the given type, for the given ID.
 
         Args:
             db_object_type (type): DbObject subclass.
@@ -491,12 +566,13 @@ class Client:
         res = res and res.get(utils.camel_case(db_object_type.type_name()))
         if res is None:
             raise labelbox.exceptions.ResourceNotFoundError(
-                db_object_type, params)
+                db_object_type, params
+            )
         else:
             return db_object_type(self, res)
 
     def get_project(self, project_id) -> Project:
-        """ Gets a single Project with the given ID.
+        """Gets a single Project with the given ID.
 
         >>> project = client.get_project("<project_id>")
 
@@ -511,7 +587,7 @@ class Client:
         return self._get_single(Entity.Project, project_id)
 
     def get_dataset(self, dataset_id) -> Dataset:
-        """ Gets a single Dataset with the given ID.
+        """Gets a single Dataset with the given ID.
 
         >>> dataset = client.get_dataset("<dataset_id>")
 
@@ -526,21 +602,21 @@ class Client:
         return self._get_single(Entity.Dataset, dataset_id)
 
     def get_user(self) -> User:
-        """ Gets the current User database object.
+        """Gets the current User database object.
 
         >>> user = client.get_user()
         """
         return self._get_single(Entity.User, None)
 
     def get_organization(self) -> Organization:
-        """ Gets the Organization DB object of the current user.
+        """Gets the Organization DB object of the current user.
 
         >>> organization = client.get_organization()
         """
         return self._get_single(Entity.Organization, None)
 
     def _get_all(self, db_object_type, where, filter_deleted=True):
-        """ Fetches all the objects of the given type the user has access to.
+        """Fetches all the objects of the given type the user has access to.
 
         Args:
             db_object_type (type): DbObject subclass.
@@ -555,12 +631,15 @@ class Client:
         query_str, params = query.get_all(db_object_type, where)
 
         return PaginatedCollection(
-            self, query_str, params,
+            self,
+            query_str,
+            params,
             [utils.camel_case(db_object_type.type_name()) + "s"],
-            db_object_type)
+            db_object_type,
+        )
 
     def get_projects(self, where=None) -> PaginatedCollection:
-        """ Fetches all the projects the user has access to.
+        """Fetches all the projects the user has access to.
 
         >>> projects = client.get_projects(where=(Project.name == "<project_name>") & (Project.description == "<project_description>"))
 
@@ -573,7 +652,7 @@ class Client:
         return self._get_all(Entity.Project, where)
 
     def get_users(self, where=None) -> PaginatedCollection:
-        """ Fetches all the users.
+        """Fetches all the users.
 
         >>> users = client.get_users(where=User.email == "<user_email>")
 
@@ -586,7 +665,7 @@ class Client:
         return self._get_all(Entity.User, where, filter_deleted=False)
 
     def get_datasets(self, where=None) -> PaginatedCollection:
-        """ Fetches one or more datasets.
+        """Fetches one or more datasets.
 
         >>> datasets = client.get_datasets(where=(Dataset.name == "<dataset_name>") & (Dataset.description == "<dataset_description>"))
 
@@ -599,7 +678,7 @@ class Client:
         return self._get_all(Entity.Dataset, where)
 
     def get_labeling_frontends(self, where=None) -> List[LabelingFrontend]:
-        """ Fetches all the labeling frontends.
+        """Fetches all the labeling frontends.
 
         >>> frontend = client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
 
@@ -612,7 +691,7 @@ class Client:
         return self._get_all(Entity.LabelingFrontend, where)
 
     def _create(self, db_object_type, data, extra_params={}):
-        """ Creates an object on the server. Attribute values are
+        """Creates an object on the server. Attribute values are
             passed as keyword arguments:
 
         Args:
@@ -630,25 +709,30 @@ class Client:
         # Convert string attribute names to Field or Relationship objects.
         # Also convert Labelbox object values to their UIDs.
         data = {
-            db_object_type.attribute(attr) if isinstance(attr, str) else attr:
-                value.uid if isinstance(value, DbObject) else value
+            db_object_type.attribute(attr)
+            if isinstance(attr, str)
+            else attr: value.uid if isinstance(value, DbObject) else value
             for attr, value in data.items()
         }
 
         data = {**data, **extra_params}
         query_string, params = query.create(db_object_type, data)
-        res = self.execute(query_string, params)
+        res = self.execute(
+            query_string, params, raise_return_resource_not_found=True
+        )
 
         if not res:
-            raise labelbox.exceptions.LabelboxError("Failed to create %s" %
-                                                    db_object_type.type_name())
+            raise labelbox.exceptions.LabelboxError(
+                "Failed to create %s" % db_object_type.type_name()
+            )
         res = res["create%s" % db_object_type.type_name()]
 
         return db_object_type(self, res)
 
-    def create_model_config(self, name: str, model_id: str,
-                            inference_params: dict) -> ModelConfig:
-        """ Creates a new model config with the given params.
+    def create_model_config(
+        self, name: str, model_id: str, inference_params: dict
+    ) -> ModelConfig:
+        """Creates a new model config with the given params.
             Model configs are scoped to organizations, and can be reused between projects.
 
         Args:
@@ -673,13 +757,13 @@ class Client:
         params = {
             "modelId": model_id,
             "inferenceParams": inference_params,
-            "name": name
+            "name": name,
         }
         result = self.execute(query, params)
-        return ModelConfig(self, result['createModelConfig'])
+        return ModelConfig(self, result["createModelConfig"])
 
     def delete_model_config(self, id: str) -> bool:
-        """ Deletes an existing model config with the given id
+        """Deletes an existing model config with the given id
 
         Args:
             id (str): ID of existing model config
@@ -697,13 +781,14 @@ class Client:
         result = self.execute(query, params)
         if not result:
             raise labelbox.exceptions.ResourceNotFoundError(
-                Entity.ModelConfig, params)
-        return result['deleteModelConfig']['success']
+                Entity.ModelConfig, params
+            )
+        return result["deleteModelConfig"]["success"]
 
-    def create_dataset(self,
-                       iam_integration=IAMIntegration._DEFAULT,
-                       **kwargs) -> Dataset:
-        """ Creates a Dataset object on the server.
+    def create_dataset(
+        self, iam_integration=IAMIntegration._DEFAULT, **kwargs
+    ) -> Dataset:
+        """Creates a Dataset object on the server.
 
         Attribute values are passed as keyword arguments.
 
@@ -724,8 +809,9 @@ class Client:
         """
         dataset = self._create(Entity.Dataset, kwargs)
         if iam_integration == IAMIntegration._DEFAULT:
-            iam_integration = self.get_organization(
-            ).get_default_iam_integration()
+            iam_integration = (
+                self.get_organization().get_default_iam_integration()
+            )
 
         if iam_integration is None:
             return dataset
@@ -738,21 +824,23 @@ class Client:
 
             if not iam_integration.valid:
                 raise ValueError(
-                    "Integration is not valid. Please select another.")
+                    "Integration is not valid. Please select another."
+                )
 
             self.execute(
                 """mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
                     setSignerForDataset(data: { signerId: $signerId}, where: {id: $datasetId}){id}}
-                """, {
-                    'signerId': iam_integration.uid,
-                    'datasetId': dataset.uid
-                })
+                """,
+                {"signerId": iam_integration.uid, "datasetId": dataset.uid},
+            )
             validation_result = self.execute(
                 """mutation validateDatasetPyApi($id: ID!){validateDataset(where: {id : $id}){
                     valid checks{name, success}}}
-                """, {'id': dataset.uid})
+                """,
+                {"id": dataset.uid},
+            )
 
-            if not validation_result['validateDataset']['valid']:
+            if not validation_result["validateDataset"]["valid"]:
                 raise labelbox.exceptions.LabelboxError(
                     f"IAMIntegration was not successfully added to the dataset."
                 )
@@ -762,7 +850,7 @@ class Client:
         return dataset
 
     def create_project(self, **kwargs) -> Project:
-        """ Creates a Project object on the server.
+        """Creates a Project object on the server.
 
         Attribute values are passed as keyword arguments.
 
@@ -800,26 +888,32 @@ class Client:
         return self._create_project(**kwargs)
 
     @overload
-    def create_model_evaluation_project(self,
-                                        dataset_name: str,
-                                        dataset_id: str = None,
-                                        data_row_count: int = 100,
-                                        **kwargs) -> Project:
+    def create_model_evaluation_project(
+        self,
+        dataset_name: str,
+        dataset_id: str = None,
+        data_row_count: int = 100,
+        **kwargs,
+    ) -> Project:
         pass
 
     @overload
-    def create_model_evaluation_project(self,
-                                        dataset_id: str,
-                                        dataset_name: str = None,
-                                        data_row_count: int = 100,
-                                        **kwargs) -> Project:
+    def create_model_evaluation_project(
+        self,
+        dataset_id: str,
+        dataset_name: str = None,
+        data_row_count: int = 100,
+        **kwargs,
+    ) -> Project:
         pass
 
-    def create_model_evaluation_project(self,
-                                        dataset_id: Optional[str] = None,
-                                        dataset_name: Optional[str] = None,
-                                        data_row_count: int = 100,
-                                        **kwargs) -> Project:
+    def create_model_evaluation_project(
+        self,
+        dataset_id: Optional[str] = None,
+        dataset_name: Optional[str] = None,
+        data_row_count: int = 100,
+        **kwargs,
+    ) -> Project:
         """
         Use this method exclusively to create a chat model evaluation project.
         Args:
@@ -875,10 +969,12 @@ class Client:
         Returns:
             Project: The created project
         """
-        kwargs[
-            "media_type"] = MediaType.Conversational  # Only Conversational is supported
-        kwargs[
-            "editor_task_type"] = EditorTaskType.OfflineModelChatEvaluation.value  # Special editor task type for offline model evaluation
+        kwargs["media_type"] = (
+            MediaType.Conversational
+        )  # Only Conversational is supported
+        kwargs["editor_task_type"] = (
+            EditorTaskType.OfflineModelChatEvaluation.value
+        )  # Special editor task type for offline model evaluation
 
         # The following arguments are not supported for offline model evaluation
         kwargs.pop("dataset_name_or_id", None)
@@ -888,11 +984,12 @@ class Client:
         return self._create_project(**kwargs)
 
     def create_prompt_response_generation_project(
-            self,
-            dataset_id: Optional[str] = None,
-            dataset_name: Optional[str] = None,
-            data_row_count: int = 100,
-            **kwargs) -> Project:
+        self,
+        dataset_id: Optional[str] = None,
+        dataset_name: Optional[str] = None,
+        data_row_count: int = 100,
+        **kwargs,
+    ) -> Project:
         """
         Use this method exclusively to create a prompt and response generation project.
 
@@ -927,7 +1024,8 @@ class Client:
 
         if dataset_id and dataset_name:
             raise ValueError(
-                "Only provide a dataset_name or dataset_id, not both.")
+                "Only provide a dataset_name or dataset_id, not both."
+            )
 
         if data_row_count <= 0:
             raise ValueError("data_row_count must be a positive integer.")
@@ -940,7 +1038,8 @@ class Client:
             dataset_name_or_id = dataset_name
 
         if "media_type" in kwargs and kwargs.get("media_type") not in [
-                MediaType.LLMPromptCreation, MediaType.LLMPromptResponseCreation
+            MediaType.LLMPromptCreation,
+            MediaType.LLMPromptResponseCreation,
         ]:
             raise ValueError(
                 "media_type must be either LLMPromptCreation or LLMPromptResponseCreation"
@@ -963,8 +1062,9 @@ class Client:
             Project: The created project
         """
         kwargs["media_type"] = MediaType.Text  # Only Text is supported
-        kwargs[
-            "editor_task_type"] = EditorTaskType.ResponseCreation.value  # Special editor task type for response creation projects
+        kwargs["editor_task_type"] = (
+            EditorTaskType.ResponseCreation.value
+        )  # Special editor task type for response creation projects
 
         # The following arguments are not supported for response creation projects
         kwargs.pop("dataset_name_or_id", None)
@@ -976,7 +1076,10 @@ class Client:
     def _create_project(self, **kwargs) -> Project:
         auto_audit_percentage = kwargs.get("auto_audit_percentage")
         auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
-        if auto_audit_percentage is not None or auto_audit_number_of_labels is not None:
+        if (
+            auto_audit_percentage is not None
+            or auto_audit_number_of_labels is not None
+        ):
             raise ValueError(
                 "quality_modes must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
             )
@@ -999,13 +1102,16 @@ class Client:
         if media_type and MediaType.is_supported(media_type):
             media_type_value = media_type.value
         elif media_type:
-            raise TypeError(f"{media_type} is not a valid media type. Use"
-                            f" any of {MediaType.get_supported_members()}"
-                            " from MediaType. Example: MediaType.Image.")
+            raise TypeError(
+                f"{media_type} is not a valid media type. Use"
+                f" any of {MediaType.get_supported_members()}"
+                " from MediaType. Example: MediaType.Image."
+            )
         else:
             logger.warning(
                 "Creating a project without specifying media_type"
-                " through this method will soon no longer be supported.")
+                " through this method will soon no longer be supported."
+            )
             media_type_value = None
 
         quality_modes = kwargs.get("quality_modes")
@@ -1034,22 +1140,28 @@ class Client:
         if quality_mode:
             quality_modes_set = {quality_mode}
 
-        if (quality_modes_set is None or len(quality_modes_set) == 0 or
-                quality_modes_set
-                == {QualityMode.Benchmark, QualityMode.Consensus}):
-            data[
-                "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+        if (
+            quality_modes_set is None
+            or len(quality_modes_set) == 0
+            or quality_modes_set
+            == {QualityMode.Benchmark, QualityMode.Consensus}
+        ):
+            data["auto_audit_number_of_labels"] = (
+                CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+            )
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
             data["is_consensus_enabled"] = True
         elif quality_modes_set == {QualityMode.Benchmark}:
-            data[
-                "auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_number_of_labels"] = (
+                BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
+            )
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
         elif quality_modes_set == {QualityMode.Consensus}:
-            data[
-                "auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_number_of_labels"] = (
+                CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+            )
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
             data["is_consensus_enabled"] = True
         else:
@@ -1062,10 +1174,12 @@ class Client:
             params["media_type"] = media_type_value
 
         extra_params = {
-            Field.String("dataset_name_or_id"):
-                params.pop("dataset_name_or_id", None),
-            Field.Boolean("append_to_existing_dataset"):
-                params.pop("append_to_existing_dataset", None),
+            Field.String("dataset_name_or_id"): params.pop(
+                "dataset_name_or_id", None
+            ),
+            Field.Boolean("append_to_existing_dataset"): params.pop(
+                "append_to_existing_dataset", None
+            ),
         }
         extra_params = {k: v for k, v in extra_params.items() if v is not None}
         return self._create(Entity.Project, params, extra_params)
@@ -1089,13 +1203,14 @@ class Client:
 
     def get_data_row_by_global_key(self, global_key: str) -> DataRow:
         """
-            Returns: DataRow: returns a single data row given the global key
+        Returns: DataRow: returns a single data row given the global key
         """
         res = self.get_data_row_ids_for_global_keys([global_key])
-        if res['status'] != "SUCCESS":
+        if res["status"] != "SUCCESS":
             raise labelbox.exceptions.ResourceNotFoundError(
-                Entity.DataRow, {global_key: global_key})
-        data_row_id = res['results'][0]
+                Entity.DataRow, {global_key: global_key}
+            )
+        data_row_id = res["results"][0]
 
         return self.get_data_row(data_row_id)
 
@@ -1111,7 +1226,7 @@ class Client:
         return self._data_row_metadata_ontology
 
     def get_model(self, model_id) -> Model:
-        """ Gets a single Model with the given ID.
+        """Gets a single Model with the given ID.
 
         >>> model = client.get_model("<model_id>")
 
@@ -1126,7 +1241,7 @@ class Client:
         return self._get_single(Entity.Model, model_id)
 
     def get_models(self, where=None) -> List[Model]:
-        """ Fetches all the models the user has access to.
+        """Fetches all the models the user has access to.
 
         >>> models = client.get_models(where=(Model.name == "<model_name>"))
 
@@ -1139,7 +1254,7 @@ class Client:
         return self._get_all(Entity.Model, where, filter_deleted=False)
 
     def create_model(self, name, ontology_id) -> Model:
-        """ Creates a Model object on the server.
+        """Creates a Model object on the server.
 
         >>> model = client.create_model(<model_name>, <ontology_id>)
 
@@ -1158,14 +1273,14 @@ class Client:
                 }
             }""" % query.results_query_part(Entity.Model)
 
-        result = self.execute(query_str, {
-            "name": name,
-            "ontologyId": ontology_id
-        })
-        return Entity.Model(self, result['createModel'])
+        result = self.execute(
+            query_str, {"name": name, "ontologyId": ontology_id}
+        )
+        return Entity.Model(self, result["createModel"])
 
     def get_data_row_ids_for_external_ids(
-            self, external_ids: List[str]) -> Dict[str, List[str]]:
+        self, external_ids: List[str]
+    ) -> Dict[str, List[str]]:
         """
         Returns a list of data row ids for a list of external ids.
         There is a max of 1500 items returned at a time.
@@ -1183,10 +1298,10 @@ class Client:
         result = defaultdict(list)
         for i in range(0, len(external_ids), max_ids_per_request):
             for row in self.execute(
-                    query_str,
-                {'externalId_in': external_ids[i:i + max_ids_per_request]
-                })['externalIdsToDataRowIds']:
-                result[row['externalId']].append(row['dataRowId'])
+                query_str,
+                {"externalId_in": external_ids[i : i + max_ids_per_request]},
+            )["externalIdsToDataRowIds"]:
+                result[row["externalId"]].append(row["dataRowId"])
         return result
 
     def get_ontology(self, ontology_id) -> Ontology:
@@ -1216,10 +1331,15 @@ class Client:
             }
         }
         """ % query.results_query_part(Entity.Ontology)
-        params = {'search': name_contains, 'filter': {'status': 'ALL'}}
-        return PaginatedCollection(self, query_str, params,
-                                   ['ontologies', 'nodes'], Entity.Ontology,
-                                   ['ontologies', 'nextCursor'])
+        params = {"search": name_contains, "filter": {"status": "ALL"}}
+        return PaginatedCollection(
+            self,
+            query_str,
+            params,
+            ["ontologies", "nodes"],
+            Entity.Ontology,
+            ["ontologies", "nextCursor"],
+        )
 
     def get_feature_schema(self, feature_schema_id):
         """
@@ -1237,10 +1357,9 @@ class Client:
 
         res = self.execute(
             query_str,
-            {'rootSchemaNodeWhere': {
-                'featureSchemaId': feature_schema_id
-            }})['rootSchemaNode']
-        res['id'] = res['normalized']['featureSchemaId']
+            {"rootSchemaNodeWhere": {"featureSchemaId": feature_schema_id}},
+        )["rootSchemaNode"]
+        res["id"] = res["normalized"]["featureSchemaId"]
         return Entity.FeatureSchema(self, res)
 
     def get_feature_schemas(self, name_contains) -> PaginatedCollection:
@@ -1261,25 +1380,30 @@ class Client:
             }
         }
         """ % query.results_query_part(Entity.FeatureSchema)
-        params = {'search': name_contains, 'filter': {'status': 'ALL'}}
+        params = {"search": name_contains, "filter": {"status": "ALL"}}
 
         def rootSchemaPayloadToFeatureSchema(client, payload):
             # Technically we are querying for a Schema Node.
             # But the features are the same so we just grab the feature schema id
-            payload['id'] = payload['normalized']['featureSchemaId']
+            payload["id"] = payload["normalized"]["featureSchemaId"]
             return Entity.FeatureSchema(client, payload)
 
-        return PaginatedCollection(self, query_str, params,
-                                   ['rootSchemaNodes', 'nodes'],
-                                   rootSchemaPayloadToFeatureSchema,
-                                   ['rootSchemaNodes', 'nextCursor'])
+        return PaginatedCollection(
+            self,
+            query_str,
+            params,
+            ["rootSchemaNodes", "nodes"],
+            rootSchemaPayloadToFeatureSchema,
+            ["rootSchemaNodes", "nextCursor"],
+        )
 
     def create_ontology_from_feature_schemas(
-            self,
-            name,
-            feature_schema_ids,
-            media_type: MediaType = None,
-            ontology_kind: OntologyKind = None) -> Ontology:
+        self,
+        name,
+        feature_schema_ids,
+        media_type: MediaType = None,
+        ontology_kind: OntologyKind = None,
+    ) -> Ontology:
         """
         Creates an ontology from a list of feature schema ids
 
@@ -1298,22 +1422,27 @@ class Client:
         tools, classifications = [], []
         for feature_schema_id in feature_schema_ids:
             feature_schema = self.get_feature_schema(feature_schema_id)
-            tool = ['tool']
-            if 'tool' in feature_schema.normalized:
-                tool = feature_schema.normalized['tool']
+            tool = ["tool"]
+            if "tool" in feature_schema.normalized:
+                tool = feature_schema.normalized["tool"]
                 try:
                     Tool.Type(tool)
                     tools.append(feature_schema.normalized)
                 except ValueError:
                     raise ValueError(
-                        f"Tool `{tool}` not in list of supported tools.")
-            elif 'type' in feature_schema.normalized:
-                classification = feature_schema.normalized['type']
-                if classification in Classification.Type._value2member_map_.keys(
+                        f"Tool `{tool}` not in list of supported tools."
+                    )
+            elif "type" in feature_schema.normalized:
+                classification = feature_schema.normalized["type"]
+                if (
+                    classification
+                    in Classification.Type._value2member_map_.keys()
                 ):
                     Classification.Type(classification)
                     classifications.append(feature_schema.normalized)
-                elif classification in PromptResponseClassification.Type._value2member_map_.keys(
+                elif (
+                    classification
+                    in PromptResponseClassification.Type._value2member_map_.keys()
                 ):
                     PromptResponseClassification.Type(classification)
                     classifications.append(feature_schema.normalized)
@@ -1325,13 +1454,15 @@ class Client:
                 raise ValueError(
                     "Neither `tool` or `classification` found in the normalized feature schema"
                 )
-        normalized = {'tools': tools, 'classifications': classifications}
+        normalized = {"tools": tools, "classifications": classifications}
 
         # validation for ontology_kind and media_type is done within self.create_ontology
-        return self.create_ontology(name=name,
-                                    normalized=normalized,
-                                    media_type=media_type,
-                                    ontology_kind=ontology_kind)
+        return self.create_ontology(
+            name=name,
+            normalized=normalized,
+            media_type=media_type,
+            ontology_kind=ontology_kind,
+        )
 
     def delete_unused_feature_schema(self, feature_schema_id: str) -> None:
         """
@@ -1342,14 +1473,18 @@ class Client:
             >>> client.delete_unused_feature_schema("cleabc1my012ioqvu5anyaabc")
         """
 
-        endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
-            feature_schema_id)
+        endpoint = (
+            self.rest_endpoint
+            + "/feature-schemas/"
+            + urllib.parse.quote(feature_schema_id)
+        )
         response = self._connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to delete the feature schema, message: " +
-                str(response.json()['message']))
+                "Failed to delete the feature schema, message: "
+                + str(response.json()["message"])
+            )
 
     def delete_unused_ontology(self, ontology_id: str) -> None:
         """
@@ -1359,17 +1494,22 @@ class Client:
         Example:
             >>> client.delete_unused_ontology("cleabc1my012ioqvu5anyaabc")
         """
-        endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
-            ontology_id)
+        endpoint = (
+            self.rest_endpoint
+            + "/ontologies/"
+            + urllib.parse.quote(ontology_id)
+        )
         response = self._connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to delete the ontology, message: " +
-                str(response.json()['message']))
+                "Failed to delete the ontology, message: "
+                + str(response.json()["message"])
+            )
 
-    def update_feature_schema_title(self, feature_schema_id: str,
-                                    title: str) -> FeatureSchema:
+    def update_feature_schema_title(
+        self, feature_schema_id: str, title: str
+    ) -> FeatureSchema:
         """
         Updates a title of a feature schema
         Args:
@@ -1381,16 +1521,21 @@ class Client:
             >>> client.update_feature_schema_title("cleabc1my012ioqvu5anyaabc", "New Title")
         """
 
-        endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
-            feature_schema_id) + '/definition'
+        endpoint = (
+            self.rest_endpoint
+            + "/feature-schemas/"
+            + urllib.parse.quote(feature_schema_id)
+            + "/definition"
+        )
         response = self._connection.patch(endpoint, json={"title": title})
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(feature_schema_id)
         else:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to update the feature schema, message: " +
-                str(response.json()['message']))
+                "Failed to update the feature schema, message: "
+                + str(response.json()["message"])
+            )
 
     def upsert_feature_schema(self, feature_schema: Dict) -> FeatureSchema:
         """
@@ -1408,23 +1553,29 @@ class Client:
             >>> client.upsert_feature_schema(tool.asdict())
         """
 
-        feature_schema_id = feature_schema.get(
-            "featureSchemaId") or "new_feature_schema_id"
-        endpoint = self.rest_endpoint + "/feature-schemas/" + urllib.parse.quote(
-            feature_schema_id)
+        feature_schema_id = (
+            feature_schema.get("featureSchemaId") or "new_feature_schema_id"
+        )
+        endpoint = (
+            self.rest_endpoint
+            + "/feature-schemas/"
+            + urllib.parse.quote(feature_schema_id)
+        )
         response = self._connection.put(
-            endpoint, json={"normalized": json.dumps(feature_schema)})
+            endpoint, json={"normalized": json.dumps(feature_schema)}
+        )
 
         if response.status_code == requests.codes.ok:
-            return self.get_feature_schema(response.json()['schemaId'])
+            return self.get_feature_schema(response.json()["schemaId"])
         else:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to upsert the feature schema, message: " +
-                str(response.json()['message']))
+                "Failed to upsert the feature schema, message: "
+                + str(response.json()["message"])
+            )
 
-    def insert_feature_schema_into_ontology(self, feature_schema_id: str,
-                                            ontology_id: str,
-                                            position: int) -> None:
+    def insert_feature_schema_into_ontology(
+        self, feature_schema_id: str, ontology_id: str, position: int
+    ) -> None:
         """
         Inserts a feature schema into an ontology. If the feature schema is already in the ontology,
         it will be moved to the new position.
@@ -1436,14 +1587,19 @@ class Client:
             >>> client.insert_feature_schema_into_ontology("cleabc1my012ioqvu5anyaabc", "clefdvwl7abcgefgu3lyvcde", 2)
         """
 
-        endpoint = self.rest_endpoint + '/ontologies/' + urllib.parse.quote(
-            ontology_id) + "/feature-schemas/" + urllib.parse.quote(
-                feature_schema_id)
+        endpoint = (
+            self.rest_endpoint
+            + "/ontologies/"
+            + urllib.parse.quote(ontology_id)
+            + "/feature-schemas/"
+            + urllib.parse.quote(feature_schema_id)
+        )
         response = self._connection.post(endpoint, json={"position": position})
         if response.status_code != requests.codes.created:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to insert the feature schema into the ontology, message: "
-                + str(response.json()['message']))
+                + str(response.json()["message"])
+            )
 
     def get_unused_ontologies(self, after: str = None) -> List[str]:
         """
@@ -1466,8 +1622,9 @@ class Client:
             return response.json()
         else:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to get unused ontologies, message: " +
-                str(response.json()['message']))
+                "Failed to get unused ontologies, message: "
+                + str(response.json()["message"])
+            )
 
     def get_unused_feature_schemas(self, after: str = None) -> List[str]:
         """
@@ -1490,14 +1647,17 @@ class Client:
             return response.json()
         else:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to get unused feature schemas, message: " +
-                str(response.json()['message']))
+                "Failed to get unused feature schemas, message: "
+                + str(response.json()["message"])
+            )
 
-    def create_ontology(self,
-                        name,
-                        normalized,
-                        media_type: MediaType = None,
-                        ontology_kind: OntologyKind = None) -> Ontology:
+    def create_ontology(
+        self,
+        name,
+        normalized,
+        media_type: MediaType = None,
+        ontology_kind: OntologyKind = None,
+    ) -> Ontology:
         """
         Creates an ontology from normalized data
             >>> normalized = {"tools" : [{'tool': 'polygon',  'name': 'cat', 'color': 'black'}], "classifications" : []}
@@ -1515,7 +1675,7 @@ class Client:
             name (str): Name of the ontology
             normalized (dict): A normalized ontology payload. See above for details.
             media_type (MediaType or None): Media type of a new ontology
-            ontology_kind (OntologyKind or None): set to OntologyKind.ModelEvaluation if the ontology is for chat evaluation or 
+            ontology_kind (OntologyKind or None): set to OntologyKind.ModelEvaluation if the ontology is for chat evaluation or
                 OntologyKind.ResponseCreation if ontology is for response creation, leave as None otherwise.
 
         Returns:
@@ -1533,9 +1693,11 @@ class Client:
 
         if ontology_kind and OntologyKind.is_supported(ontology_kind):
             media_type = OntologyKind.evaluate_ontology_kind_with_media_type(
-                ontology_kind, media_type)
+                ontology_kind, media_type
+            )
             editor_task_type_value = EditorTaskTypeMapper.to_editor_task_type(
-                ontology_kind, media_type).value
+                ontology_kind, media_type
+            ).value
         elif ontology_kind:
             raise OntologyKind.get_ontology_kind_validation_error(ontology_kind)
         else:
@@ -1545,17 +1707,17 @@ class Client:
                            upsertOntology(data: $data){ %s }
         } """ % query.results_query_part(Entity.Ontology)
         params = {
-            'data': {
-                'name': name,
-                'normalized': json.dumps(normalized),
-                'mediaType': media_type_value
+            "data": {
+                "name": name,
+                "normalized": json.dumps(normalized),
+                "mediaType": media_type_value,
             }
         }
         if editor_task_type_value:
-            params['data']['editorTaskType'] = editor_task_type_value
+            params["data"]["editorTaskType"] = editor_task_type_value
 
         res = self.execute(query_str, params)
-        return Entity.Ontology(self, res['upsertOntology'])
+        return Entity.Ontology(self, res["upsertOntology"])
 
     def create_feature_schema(self, normalized):
         """
@@ -1592,15 +1754,15 @@ class Client:
                         upsertRootSchemaNode(data: $data){ %s }
         } """ % query.results_query_part(Entity.FeatureSchema)
         normalized = {k: v for k, v in normalized.items() if v}
-        params = {'data': {'normalized': json.dumps(normalized)}}
-        res = self.execute(query_str, params)['upsertRootSchemaNode']
+        params = {"data": {"normalized": json.dumps(normalized)}}
+        res = self.execute(query_str, params)["upsertRootSchemaNode"]
         # Technically we are querying for a Schema Node.
         # But the features are the same so we just grab the feature schema id
-        res['id'] = res['normalized']['featureSchemaId']
+        res["id"] = res["normalized"]["featureSchemaId"]
         return Entity.FeatureSchema(self, res)
 
     def get_model_run(self, model_run_id: str) -> ModelRun:
-        """ Gets a single ModelRun with the given ID.
+        """Gets a single ModelRun with the given ID.
 
         >>> model_run = client.get_model_run("<model_run_id>")
 
@@ -1612,9 +1774,10 @@ class Client:
         return self._get_single(Entity.ModelRun, model_run_id)
 
     def assign_global_keys_to_data_rows(
-            self,
-            global_key_to_data_row_inputs: List[Dict[str, str]],
-            timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
+        self,
+        global_key_to_data_row_inputs: List[Dict[str, str]],
+        timeout_seconds=60,
+    ) -> Dict[str, Union[str, List[Any]]]:
         """
         Assigns global keys to data rows.
 
@@ -1645,21 +1808,29 @@ class Client:
             [{'data_row_id': 'cl7tpjzw30031ka6g4evqdfoy', 'global_key': 'gk"', 'error': 'Invalid global key'}]
         """
 
-        def _format_successful_rows(rows: Dict[str, str],
-                                    sanitized: bool) -> List[Dict[str, str]]:
-            return [{
-                'data_row_id': r['dataRowId'],
-                'global_key': r['globalKey'],
-                'sanitized': sanitized
-            } for r in rows]
+        def _format_successful_rows(
+            rows: Dict[str, str], sanitized: bool
+        ) -> List[Dict[str, str]]:
+            return [
+                {
+                    "data_row_id": r["dataRowId"],
+                    "global_key": r["globalKey"],
+                    "sanitized": sanitized,
+                }
+                for r in rows
+            ]
 
-        def _format_failed_rows(rows: Dict[str, str],
-                                error_msg: str) -> List[Dict[str, str]]:
-            return [{
-                'data_row_id': r['dataRowId'],
-                'global_key': r['globalKey'],
-                'error': error_msg
-            } for r in rows]
+        def _format_failed_rows(
+            rows: Dict[str, str], error_msg: str
+        ) -> List[Dict[str, str]]:
+            return [
+                {
+                    "data_row_id": r["dataRowId"],
+                    "global_key": r["globalKey"],
+                    "error": error_msg,
+                }
+                for r in rows
+            ]
 
         # Validate input dict
         validation_errors = []
@@ -1679,9 +1850,10 @@ class Client:
         }
         """
         params = {
-            'globalKeyDataRowLinks': [{
-                utils.camel_case(key): value for key, value in input.items()
-            } for input in global_key_to_data_row_inputs]
+            "globalKeyDataRowLinks": [
+                {utils.camel_case(key): value for key, value in input.items()}
+                for input in global_key_to_data_row_inputs
+            ]
         }
         assign_global_keys_to_data_rows_job = self.execute(query_str, params)
 
@@ -1709,9 +1881,9 @@ class Client:
                 }}}
         """
         result_params = {
-            "jobId":
-                assign_global_keys_to_data_rows_job["assignGlobalKeysToDataRows"
-                                                   ]["jobId"]
+            "jobId": assign_global_keys_to_data_rows_job[
+                "assignGlobalKeysToDataRows"
+            ]["jobId"]
         }
 
         # Poll job status until finished, then retrieve results
@@ -1719,27 +1891,36 @@ class Client:
         start_time = time.time()
         while True:
             res = self.execute(result_query_str, result_params)
-            if res["assignGlobalKeysToDataRowsResult"][
-                    "jobStatus"] == "COMPLETE":
+            if (
+                res["assignGlobalKeysToDataRowsResult"]["jobStatus"]
+                == "COMPLETE"
+            ):
                 results, errors = [], []
-                res = res['assignGlobalKeysToDataRowsResult']['data']
+                res = res["assignGlobalKeysToDataRowsResult"]["data"]
                 # Successful assignments
                 results.extend(
-                    _format_successful_rows(rows=res['sanitizedAssignments'],
-                                            sanitized=True))
+                    _format_successful_rows(
+                        rows=res["sanitizedAssignments"], sanitized=True
+                    )
+                )
                 results.extend(
-                    _format_successful_rows(rows=res['unmodifiedAssignments'],
-                                            sanitized=False))
+                    _format_successful_rows(
+                        rows=res["unmodifiedAssignments"], sanitized=False
+                    )
+                )
                 # Failed assignments
                 errors.extend(
                     _format_failed_rows(
-                        rows=res['invalidGlobalKeyAssignments'],
-                        error_msg=
-                        "Invalid assignment. Either DataRow does not exist, or globalKey is invalid"
-                    ))
+                        rows=res["invalidGlobalKeyAssignments"],
+                        error_msg="Invalid assignment. Either DataRow does not exist, or globalKey is invalid",
+                    )
+                )
                 errors.extend(
-                    _format_failed_rows(rows=res['accessDeniedAssignments'],
-                                        error_msg="Access denied to Data Row"))
+                    _format_failed_rows(
+                        rows=res["accessDeniedAssignments"],
+                        error_msg="Access denied to Data Row",
+                    )
+                )
 
                 if not errors:
                     status = CollectionJobStatus.SUCCESS.value
@@ -1758,10 +1939,12 @@ class Client:
                     "results": results,
                     "errors": errors,
                 }
-            elif res["assignGlobalKeysToDataRowsResult"][
-                    "jobStatus"] == "FAILED":
+            elif (
+                res["assignGlobalKeysToDataRowsResult"]["jobStatus"] == "FAILED"
+            ):
                 raise labelbox.exceptions.LabelboxError(
-                    "Job assign_global_keys_to_data_rows failed.")
+                    "Job assign_global_keys_to_data_rows failed."
+                )
             current_time = time.time()
             if current_time - start_time > timeout_seconds:
                 raise labelbox.exceptions.TimeoutError(
@@ -1770,9 +1953,8 @@ class Client:
             time.sleep(sleep_time)
 
     def get_data_row_ids_for_global_keys(
-            self,
-            global_keys: List[str],
-            timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
+        self, global_keys: List[str], timeout_seconds=60
+    ) -> Dict[str, Union[str, List[Any]]]:
         """
         Gets data row ids for a list of global keys.
 
@@ -1805,9 +1987,10 @@ class Client:
             [{'global_key': 'asdf', 'error': 'Data Row not found'}]
         """
 
-        def _format_failed_rows(rows: List[str],
-                                error_msg: str) -> List[Dict[str, str]]:
-            return [{'global_key': r, 'error': error_msg} for r in rows]
+        def _format_failed_rows(
+            rows: List[str], error_msg: str
+        ) -> List[Dict[str, str]]:
+            return [{"global_key": r, "error": error_msg} for r in rows]
 
         # Start get data rows for global keys job
         query_str = """query getDataRowsForGlobalKeysPyApi($globalKeys: [ID!]!) {
@@ -1825,8 +2008,9 @@ class Client:
                 } jobStatus}}
             """
         result_params = {
-            "jobId":
-                data_rows_for_global_keys_job["dataRowsForGlobalKeys"]["jobId"]
+            "jobId": data_rows_for_global_keys_job["dataRowsForGlobalKeys"][
+                "jobId"
+            ]
         }
 
         # Poll job status until finished, then retrieve results
@@ -1834,20 +2018,25 @@ class Client:
         start_time = time.time()
         while True:
             res = self.execute(result_query_str, result_params)
-            if res["dataRowsForGlobalKeysResult"]['jobStatus'] == "COMPLETE":
-                data = res["dataRowsForGlobalKeysResult"]['data']
+            if res["dataRowsForGlobalKeysResult"]["jobStatus"] == "COMPLETE":
+                data = res["dataRowsForGlobalKeysResult"]["data"]
                 results, errors = [], []
-                results.extend([row['id'] for row in data['fetchedDataRows']])
+                results.extend([row["id"] for row in data["fetchedDataRows"]])
                 errors.extend(
-                    _format_failed_rows(data['notFoundGlobalKeys'],
-                                        "Data Row not found"))
+                    _format_failed_rows(
+                        data["notFoundGlobalKeys"], "Data Row not found"
+                    )
+                )
                 errors.extend(
-                    _format_failed_rows(data['accessDeniedGlobalKeys'],
-                                        "Access denied to Data Row"))
+                    _format_failed_rows(
+                        data["accessDeniedGlobalKeys"],
+                        "Access denied to Data Row",
+                    )
+                )
 
                 # Invalid results may contain empty string, so we must filter
                 # them prior to checking for PARTIAL_SUCCESS
-                filtered_results = list(filter(lambda r: r != '', results))
+                filtered_results = list(filter(lambda r: r != "", results))
                 if not errors:
                     status = CollectionJobStatus.SUCCESS.value
                 elif errors and len(filtered_results) > 0:
@@ -1861,9 +2050,10 @@ class Client:
                     )
 
                 return {"status": status, "results": results, "errors": errors}
-            elif res["dataRowsForGlobalKeysResult"]['jobStatus'] == "FAILED":
+            elif res["dataRowsForGlobalKeysResult"]["jobStatus"] == "FAILED":
                 raise labelbox.exceptions.LabelboxError(
-                    "Job dataRowsForGlobalKeys failed.")
+                    "Job dataRowsForGlobalKeys failed."
+                )
             current_time = time.time()
             if current_time - start_time > timeout_seconds:
                 raise labelbox.exceptions.TimeoutError(
@@ -1872,9 +2062,8 @@ class Client:
             time.sleep(sleep_time)
 
     def clear_global_keys(
-            self,
-            global_keys: List[str],
-            timeout_seconds=60) -> Dict[str, Union[str, List[Any]]]:
+        self, global_keys: List[str], timeout_seconds=60
+    ) -> Dict[str, Union[str, List[Any]]]:
         """
         Clears global keys for the data rows tha correspond to the global keys provided.
 
@@ -1900,9 +2089,10 @@ class Client:
             [{'global_key': 'notfoundkey', 'error': 'Failed to find data row matching provided global key'}]
         """
 
-        def _format_failed_rows(rows: List[str],
-                                error_msg: str) -> List[Dict[str, str]]:
-            return [{'global_key': r, 'error': error_msg} for r in rows]
+        def _format_failed_rows(
+            rows: List[str], error_msg: str
+        ) -> List[Dict[str, str]]:
+            return [{"global_key": r, "error": error_msg} for r in rows]
 
         # Start get data rows for global keys job
         query_str = """mutation clearGlobalKeysPyApi($globalKeys: [ID!]!) {
@@ -1928,22 +2118,28 @@ class Client:
         start_time = time.time()
         while True:
             res = self.execute(result_query_str, result_params)
-            if res["clearGlobalKeysResult"]['jobStatus'] == "COMPLETE":
-                data = res["clearGlobalKeysResult"]['data']
+            if res["clearGlobalKeysResult"]["jobStatus"] == "COMPLETE":
+                data = res["clearGlobalKeysResult"]["data"]
                 results, errors = [], []
-                results.extend(data['clearedGlobalKeys'])
-                errors.extend(
-                    _format_failed_rows(data['failedToClearGlobalKeys'],
-                                        "Clearing global key failed"))
+                results.extend(data["clearedGlobalKeys"])
                 errors.extend(
                     _format_failed_rows(
-                        data['notFoundGlobalKeys'],
-                        "Failed to find data row matching provided global key"))
+                        data["failedToClearGlobalKeys"],
+                        "Clearing global key failed",
+                    )
+                )
                 errors.extend(
                     _format_failed_rows(
-                        data['accessDeniedGlobalKeys'],
-                        "Denied access to modify data row matching provided global key"
-                    ))
+                        data["notFoundGlobalKeys"],
+                        "Failed to find data row matching provided global key",
+                    )
+                )
+                errors.extend(
+                    _format_failed_rows(
+                        data["accessDeniedGlobalKeys"],
+                        "Denied access to modify data row matching provided global key",
+                    )
+                )
 
                 if not errors:
                     status = CollectionJobStatus.SUCCESS.value
@@ -1958,13 +2154,15 @@ class Client:
                     )
 
                 return {"status": status, "results": results, "errors": errors}
-            elif res["clearGlobalKeysResult"]['jobStatus'] == "FAILED":
+            elif res["clearGlobalKeysResult"]["jobStatus"] == "FAILED":
                 raise labelbox.exceptions.LabelboxError(
-                    "Job clearGlobalKeys failed.")
+                    "Job clearGlobalKeys failed."
+                )
             current_time = time.time()
             if current_time - start_time > timeout_seconds:
                 raise labelbox.exceptions.TimeoutError(
-                    "Timed out waiting for clear_global_keys job to complete.")
+                    "Timed out waiting for clear_global_keys job to complete."
+                )
             time.sleep(sleep_time)
 
     def get_catalog(self) -> Catalog:
@@ -1990,11 +2188,12 @@ class Client:
                 }
             }
         """
-        res = self.execute(query_str, {'id': slice_id})
-        return Entity.CatalogSlice(self, res['getSavedQuery'])
+        res = self.execute(query_str, {"id": slice_id})
+        return Entity.CatalogSlice(self, res["getSavedQuery"])
 
-    def is_feature_schema_archived(self, ontology_id: str,
-                                   feature_schema_id: str) -> bool:
+    def is_feature_schema_archived(
+        self, ontology_id: str, feature_schema_id: str
+    ) -> bool:
         """
         Returns true if a feature schema is archived in the specified ontology, returns false otherwise.
 
@@ -2005,33 +2204,39 @@ class Client:
             bool
         """
 
-        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
-            ontology_id)
+        ontology_endpoint = (
+            self.rest_endpoint
+            + "/ontologies/"
+            + urllib.parse.quote(ontology_id)
+        )
         response = self._connection.get(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
-            feature_schema_nodes = response.json()['featureSchemaNodes']
-            tools = feature_schema_nodes['tools']
-            classifications = feature_schema_nodes['classifications']
-            relationships = feature_schema_nodes['relationships']
+            feature_schema_nodes = response.json()["featureSchemaNodes"]
+            tools = feature_schema_nodes["tools"]
+            classifications = feature_schema_nodes["classifications"]
+            relationships = feature_schema_nodes["relationships"]
             feature_schema_node_list = tools + classifications + relationships
             filtered_feature_schema_nodes = [
                 feature_schema_node
                 for feature_schema_node in feature_schema_node_list
-                if feature_schema_node['featureSchemaId'] == feature_schema_id
+                if feature_schema_node["featureSchemaId"] == feature_schema_id
             ]
             if filtered_feature_schema_nodes:
-                return bool(filtered_feature_schema_nodes[0]['archived'])
+                return bool(filtered_feature_schema_nodes[0]["archived"])
             else:
                 raise labelbox.exceptions.LabelboxError(
-                    "The specified feature schema was not in the ontology.")
+                    "The specified feature schema was not in the ontology."
+                )
 
         elif response.status_code == 404:
             raise labelbox.exceptions.ResourceNotFoundError(
-                Ontology, ontology_id)
+                Ontology, ontology_id
+            )
         else:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to get the feature schema archived status.")
+                "Failed to get the feature schema archived status."
+            )
 
     def get_model_slice(self, slice_id) -> ModelSlice:
         """
@@ -2057,13 +2262,14 @@ class Client:
         res = self.execute(query_str, {"id": slice_id})
         if res is None or res["getSavedQuery"] is None:
             raise labelbox.exceptions.ResourceNotFoundError(
-                ModelSlice, slice_id)
+                ModelSlice, slice_id
+            )
 
         return Entity.ModelSlice(self, res["getSavedQuery"])
 
     def delete_feature_schema_from_ontology(
-            self, ontology_id: str,
-            feature_schema_id: str) -> DeleteFeatureFromOntologyResult:
+        self, ontology_id: str, feature_schema_id: str
+    ) -> DeleteFeatureFromOntologyResult:
         """
         Deletes or archives a feature schema from an ontology.
         If the feature schema is a root level node with associated labels, it will be archived.
@@ -2080,31 +2286,38 @@ class Client:
         Example:
             >>> client.delete_feature_schema_from_ontology(<ontology_id>, <feature_schema_id>)
         """
-        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
-            ontology_id) + "/feature-schemas/" + urllib.parse.quote(
-                feature_schema_id)
+        ontology_endpoint = (
+            self.rest_endpoint
+            + "/ontologies/"
+            + urllib.parse.quote(ontology_id)
+            + "/feature-schemas/"
+            + urllib.parse.quote(feature_schema_id)
+        )
         response = self._connection.delete(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
-            if response_json['archived'] == True:
+            if response_json["archived"] == True:
                 logger.info(
-                    'Feature schema was archived from the ontology because it had associated labels.'
+                    "Feature schema was archived from the ontology because it had associated labels."
                 )
-            elif response_json['deleted'] == True:
+            elif response_json["deleted"] == True:
                 logger.info(
-                    'Feature schema was successfully removed from the ontology')
+                    "Feature schema was successfully removed from the ontology"
+                )
             result = DeleteFeatureFromOntologyResult()
-            result.archived = bool(response_json['archived'])
-            result.deleted = bool(response_json['deleted'])
+            result.archived = bool(response_json["archived"])
+            result.deleted = bool(response_json["deleted"])
             return result
         else:
             raise labelbox.exceptions.LabelboxError(
-                "Failed to remove feature schema from ontology, message: " +
-                str(response.json()['message']))
+                "Failed to remove feature schema from ontology, message: "
+                + str(response.json()["message"])
+            )
 
-    def unarchive_feature_schema_node(self, ontology_id: str,
-                                      root_feature_schema_id: str) -> None:
+    def unarchive_feature_schema_node(
+        self, ontology_id: str, root_feature_schema_id: str
+    ) -> None:
         """
         Unarchives a feature schema node in an ontology.
         Only root level feature schema nodes can be unarchived.
@@ -2114,18 +2327,25 @@ class Client:
         Returns:
             None
         """
-        ontology_endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(
-            ontology_id) + '/feature-schemas/' + urllib.parse.quote(
-                root_feature_schema_id) + '/unarchive'
+        ontology_endpoint = (
+            self.rest_endpoint
+            + "/ontologies/"
+            + urllib.parse.quote(ontology_id)
+            + "/feature-schemas/"
+            + urllib.parse.quote(root_feature_schema_id)
+            + "/unarchive"
+        )
         response = self._connection.patch(ontology_endpoint)
         if response.status_code == requests.codes.ok:
-            if not bool(response.json()['unarchived']):
+            if not bool(response.json()["unarchived"]):
                 raise labelbox.exceptions.LabelboxError(
-                    "Failed unarchive the feature schema.")
+                    "Failed unarchive the feature schema."
+                )
         else:
             raise labelbox.exceptions.LabelboxError(
                 "Failed unarchive the feature schema node, message: ",
-                response.text)
+                response.text,
+            )
 
     def get_batch(self, project_id: str, batch_id: str) -> Entity.Batch:
         # obtain batch entity to return
@@ -2138,24 +2358,28 @@ class Client:
                              }
                         }
                     }
-                    """ % ("getProjectBatchPyApi",
-                           query.results_query_part(Entity.Batch))
+                    """ % (
+            "getProjectBatchPyApi",
+            query.results_query_part(Entity.Batch),
+        )
 
         batch = self.execute(
-            get_batch_str, {
-                "projectId": project_id,
-                "batchId": batch_id
-            },
+            get_batch_str,
+            {"projectId": project_id, "batchId": batch_id},
             timeout=180.0,
-            experimental=True)["project"]["batches"]["nodes"][0]
+            experimental=True,
+        )["project"]["batches"]["nodes"][0]
 
         return Entity.Batch(self, project_id, batch)
 
-    def send_to_annotate_from_catalog(self, destination_project_id: str,
-                                      task_queue_id: Optional[str],
-                                      batch_name: str,
-                                      data_rows: Union[DataRowIds, GlobalKeys],
-                                      params: Dict[str, Any]):
+    def send_to_annotate_from_catalog(
+        self,
+        destination_project_id: str,
+        task_queue_id: Optional[str],
+        batch_name: str,
+        data_rows: Union[DataRowIds, GlobalKeys],
+        params: Dict[str, Any],
+    ):
         """
         Sends data rows from catalog to a specified project for annotation.
 
@@ -2196,56 +2420,55 @@ class Client:
         """
 
         destination_task_queue = build_destination_task_queue_input(
-            task_queue_id)
+            task_queue_id
+        )
         data_rows_query = self.build_catalog_query(data_rows)
 
-        predictions_input = build_predictions_input(
-            validated_params.predictions_ontology_mapping,
-            validated_params.source_model_run_id
-        ) if validated_params.source_model_run_id else None
+        predictions_input = (
+            build_predictions_input(
+                validated_params.predictions_ontology_mapping,
+                validated_params.source_model_run_id,
+            )
+            if validated_params.source_model_run_id
+            else None
+        )
 
-        annotations_input = build_annotations_input(
-            validated_params.annotations_ontology_mapping, validated_params.
-            source_project_id) if validated_params.source_project_id else None
+        annotations_input = (
+            build_annotations_input(
+                validated_params.annotations_ontology_mapping,
+                validated_params.source_project_id,
+            )
+            if validated_params.source_project_id
+            else None
+        )
 
         res = self.execute(
-            mutation_str, {
+            mutation_str,
+            {
                 "input": {
-                    "destinationProjectId":
-                        destination_project_id,
+                    "destinationProjectId": destination_project_id,
                     "batchInput": {
                         "batchName": batch_name,
-                        "batchPriority": validated_params.batch_priority
+                        "batchPriority": validated_params.batch_priority,
                     },
-                    "destinationTaskQueue":
-                        destination_task_queue,
-                    "excludeDataRowsInProject":
-                        validated_params.exclude_data_rows_in_project,
-                    "annotationsInput":
-                        annotations_input,
-                    "predictionsInput":
-                        predictions_input,
-                    "conflictLabelsResolutionStrategy":
-                        validated_params.override_existing_annotations_rule,
-                    "searchQuery": {
-                        "scope": None,
-                        "query": [data_rows_query]
-                    },
+                    "destinationTaskQueue": destination_task_queue,
+                    "excludeDataRowsInProject": validated_params.exclude_data_rows_in_project,
+                    "annotationsInput": annotations_input,
+                    "predictionsInput": predictions_input,
+                    "conflictLabelsResolutionStrategy": validated_params.override_existing_annotations_rule,
+                    "searchQuery": {"scope": None, "query": [data_rows_query]},
                     "ordering": {
                         "type": "RANDOM",
-                        "random": {
-                            "seed": random.randint(0, 10000)
-                        },
-                        "sorting": None
+                        "random": {"seed": random.randint(0, 10000)},
+                        "sorting": None,
                     },
-                    "sorting":
-                        None,
-                    "limit":
-                        None
+                    "sorting": None,
+                    "limit": None,
                 }
-            })['sendToAnnotateFromCatalog']
+            },
+        )["sendToAnnotateFromCatalog"]
 
-        return Entity.Task.get_task(self, res['taskId'])
+        return Entity.Task.get_task(self, res["taskId"])
 
     @staticmethod
     def build_catalog_query(data_rows: Union[DataRowIds, GlobalKeys]):
@@ -2262,13 +2485,13 @@ class Client:
             data_rows_query = {
                 "type": "data_row_id",
                 "operator": "is",
-                "ids": list(data_rows)
+                "ids": list(data_rows),
             }
         elif isinstance(data_rows, GlobalKeys):
             data_rows_query = {
                 "type": "global_key",
                 "operator": "is",
-                "ids": list(data_rows)
+                "ids": list(data_rows),
             }
         else:
             raise ValueError(
@@ -2276,9 +2499,12 @@ class Client:
             )
         return data_rows_query
 
-    def run_foundry_app(self, model_run_name: str, data_rows: Union[DataRowIds,
-                                                                    GlobalKeys],
-                        app_id: str) -> Task:
+    def run_foundry_app(
+        self,
+        model_run_name: str,
+        data_rows: Union[DataRowIds, GlobalKeys],
+        app_id: str,
+    ) -> Task:
         """
         Run a foundry app
 
@@ -2345,11 +2571,13 @@ class Client:
         for e in embeddings:
             if e.name == name:
                 return e
-        raise labelbox.exceptions.ResourceNotFoundError(Embedding,
-                                                        dict(name=name))
+        raise labelbox.exceptions.ResourceNotFoundError(
+            Embedding, dict(name=name)
+        )
 
-    def upsert_label_feedback(self, label_id: str, feedback: str,
-                              scores: Dict[str, float]) -> List[LabelScore]:
+    def upsert_label_feedback(
+        self, label_id: str, feedback: str, scores: Dict[str, float]
+    ) -> List[LabelScore]:
         """
         Submits the label feedback which is a free-form text and numeric
         label scores.
@@ -2385,15 +2613,14 @@ class Client:
             }
             }
         """
-        res = self.execute(mutation_str, {
-            "labelId": label_id,
-            "feedback": feedback,
-            "scores": scores
-        })
+        res = self.execute(
+            mutation_str,
+            {"labelId": label_id, "feedback": feedback, "scores": scores},
+        )
         scores_raw = res["upsertAutoQaLabelFeedback"]["scores"]
 
         return [
-            labelbox.LabelScore(name=x['name'], score=x['score'])
+            labelbox.LabelScore(name=x["name"], score=x["score"])
             for x in scores_raw
         ]
 
@@ -2406,12 +2633,12 @@ class Client:
 
         Optional parameters:
         search_query: A list of search filters representing the search
-        
+
         NOTE:
             - Retrieves all projects for the organization or as filtered by the search query
               - INCLUDING those not requesting labeling services
             - Sorted by project created date in ascending order.
-        
+
         Examples:
             Retrieves all labeling service dashboards for a given workspace id:
             >>> workspace_filter = WorkspaceFilter(
@@ -2442,7 +2669,7 @@ class Client:
 
         Returns:
             Task or DataUpsertTask
-        
+
         Throws:
             ResourceNotFoundError: If the task does not exist.
 
@@ -2471,9 +2698,10 @@ class Client:
         data = result.get("user", {}).get("createdTasks", [])
         if not data:
             raise labelbox.exceptions.ResourceNotFoundError(
-                message=f"The task {task_id} does not exist.")
+                message=f"The task {task_id} does not exist."
+            )
         task_data = data[0]
-        if task_data["type"].lower() == 'adv-upsert-data-rows':
+        if task_data["type"].lower() == "adv-upsert-data-rows":
             task = DataUpsertTask(self, task_data)
         else:
             task = Task(self, task_data)

@@ -9,8 +9,9 @@ from typing import Literal
 Count = conint(ge=0, le=1e10)
 
 ConfusionMatrixMetricValue = Tuple[Count, Count, Count, Count]
-ConfusionMatrixMetricConfidenceValue = Dict[ConfidenceValue,
-                                            ConfusionMatrixMetricValue]
+ConfusionMatrixMetricConfidenceValue = Dict[
+    ConfidenceValue, ConfusionMatrixMetricValue
+]
 
 
 class ConfusionMatrixAggregation(Enum):
@@ -18,7 +19,7 @@ class ConfusionMatrixAggregation(Enum):
 
 
 class ConfusionMatrixMetric(BaseMetric):
-    """ Class representing confusion matrix metrics.
+    """Class representing confusion matrix metrics.
 
     In the editor, this provides precision, recall, and f-scores.
     This should be used over multiple scalar metrics so that aggregations are accurate.
@@ -28,7 +29,11 @@ class ConfusionMatrixMetric(BaseMetric):
 
     aggregation cannot be adjusted for confusion matrix metrics.
     """
+
     metric_name: str
-    value: Union[ConfusionMatrixMetricValue,
-                 ConfusionMatrixMetricConfidenceValue]
-    aggregation: Optional[ConfusionMatrixAggregation] = ConfusionMatrixAggregation.CONFUSION_MATRIX
+    value: Union[
+        ConfusionMatrixMetricValue, ConfusionMatrixMetricConfidenceValue
+    ]
+    aggregation: Optional[ConfusionMatrixAggregation] = (
+        ConfusionMatrixAggregation.CONFUSION_MATRIX
+    )

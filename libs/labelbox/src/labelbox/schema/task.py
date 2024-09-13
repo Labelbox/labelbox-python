@@ -11,7 +11,8 @@ from labelbox.orm.model import Field, Relationship, Entity
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.internal.datarow_upload_constants import (
-    DOWNLOAD_RESULT_PAGE_SIZE,)
+    DOWNLOAD_RESULT_PAGE_SIZE,
+)
 
 if TYPE_CHECKING:
     from labelbox import User
@@ -25,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class Task(DbObject):
-    """ Represents a server-side process that might take a longer time to process.
+    """Represents a server-side process that might take a longer time to process.
     Allows the Task state to be updated and checked on the client side.
 
     Attributes:
@@ -38,6 +39,7 @@ class Task(DbObject):
         created_by (Relationship): `ToOne` relationship to User
         organization (Relationship): `ToOne` relationship to Organization
     """
+
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
     name = Field.String("name")
@@ -54,18 +56,21 @@ class Task(DbObject):
     organization = Relationship.ToOne("Organization")
 
     def __eq__(self, task):
-        return isinstance(
-            task, Task) and task.uid == self.uid and task.type == self.type
+        return (
+            isinstance(task, Task)
+            and task.uid == self.uid
+            and task.type == self.type
+        )
 
     def __hash__(self):
         return hash(self.uid)
 
     # Import and upsert have several instances of special casing
     def is_creation_task(self) -> bool:
-        return self.name == 'JSON Import' or self.type == 'adv-upsert-data-rows'
+        return self.name == "JSON Import" or self.type == "adv-upsert-data-rows"
 
     def refresh(self) -> None:
-        """ Refreshes Task data from the server. """
+        """Refreshes Task data from the server."""
         assert self._user is not None
         tasks = list(self._user.created_tasks(where=Task.uid == self.uid))
         if len(tasks) != 1:
@@ -84,24 +89,25 @@ class Task(DbObject):
             return bool(self.failed_data_rows)
         return self.status == "FAILED"
 
-    def wait_until_done(self,
-                        timeout_seconds: float = 300.0,
-                        check_frequency: float = 2.0) -> None:
+    def wait_until_done(
+        self, timeout_seconds: float = 300.0, check_frequency: float = 2.0
+    ) -> None:
         self.wait_till_done(timeout_seconds, check_frequency)
 
-    def wait_till_done(self,
-                       timeout_seconds: float = 300.0,
-                       check_frequency: float = 2.0) -> None:
-        """ Waits until the task is completed. Periodically queries the server
-            to update the task attributes.
+    def wait_till_done(
+        self, timeout_seconds: float = 300.0, check_frequency: float = 2.0
+    ) -> None:
+        """Waits until the task is completed. Periodically queries the server
+        to update the task attributes.
 
-            Args:
-                timeout_seconds (float): Maximum time this method can block, in seconds. Defaults to five minutes.
-                check_frequency (float): Frequency of queries to server to update the task attributes, in seconds. Defaults to two seconds. Minimal value is two seconds.
-            """
+        Args:
+            timeout_seconds (float): Maximum time this method can block, in seconds. Defaults to five minutes.
+            check_frequency (float): Frequency of queries to server to update the task attributes, in seconds. Defaults to two seconds. Minimal value is two seconds.
+        """
         if check_frequency < 2.0:
             raise ValueError(
-                "Expected check frequency to be two seconds or more")
+                "Expected check frequency to be two seconds or more"
+            )
         while timeout_seconds > 0:
             if self.status != "IN_PROGRESS":
                 if self.has_errors():
@@ -109,16 +115,16 @@ class Task(DbObject):
                         "There are errors present. Please look at `task.errors` for more details"
                     )
                 return
-            logger.debug("Task.wait_till_done sleeping for %d seconds",
-                         check_frequency)
+            logger.debug(
+                "Task.wait_till_done sleeping for %d seconds", check_frequency
+            )
             time.sleep(check_frequency)
             timeout_seconds -= check_frequency
             self.refresh()
 
     @property
     def errors(self) -> Optional[Dict[str, Any]]:
-        """ Fetch the error associated with an import task.
-        """
+        """Fetch the error associated with an import task."""
         if self.is_creation_task():
             if self.status == "FAILED":
                 result = self._fetch_remote_json()
@@ -126,10 +132,12 @@ class Task(DbObject):
             elif self.status == "COMPLETE":
                 return self.failed_data_rows
         elif self.type == "export-data-rows":
-            return self._fetch_remote_json(remote_json_field='errors_url')
-        elif (self.type == "add-data-rows-to-batch" or
-              self.type == "send-to-task-queue" or
-              self.type == "send-to-annotate"):
+            return self._fetch_remote_json(remote_json_field="errors_url")
+        elif (
+            self.type == "add-data-rows-to-batch"
+            or self.type == "send-to-task-queue"
+            or self.type == "send-to-annotate"
+        ):
             if self.status == "FAILED":
                 # for these tasks, the error is embedded in the result itself
                 return json.loads(self.result_url)
@@ -137,26 +145,27 @@ class Task(DbObject):
 
     @property
     def result(self) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
-        """ Fetch the result for an import task.
-        """
+        """Fetch the result for an import task."""
         if self.status == "FAILED":
             raise ValueError(f"Job failed. Errors : {self.errors}")
         else:
             result = self._fetch_remote_json()
-            if self.type == 'export-data-rows':
+            if self.type == "export-data-rows":
                 return result
 
-            return [{
-                'id': data_row['id'],
-                'external_id': data_row.get('externalId'),
-                'row_data': data_row['rowData'],
-                'global_key': data_row.get('globalKey'),
-            } for data_row in result['createdDataRows']]
+            return [
+                {
+                    "id": data_row["id"],
+                    "external_id": data_row.get("externalId"),
+                    "row_data": data_row["rowData"],
+                    "global_key": data_row.get("globalKey"),
+                }
+                for data_row in result["createdDataRows"]
+            ]
 
     @property
     def failed_data_rows(self) -> Optional[Dict[str, Any]]:
-        """ Fetch data rows which failed to be created for an import task.
-        """
+        """Fetch data rows which failed to be created for an import task."""
         result = self._fetch_remote_json()
         if len(result.get("errors", [])) > 0:
             return result["errors"]
@@ -165,8 +174,7 @@ class Task(DbObject):
 
     @property
     def created_data_rows(self) -> Optional[Dict[str, Any]]:
-        """ Fetch data rows which successfully created for an import task.
-        """
+        """Fetch data rows which successfully created for an import task."""
         result = self._fetch_remote_json()
         if len(result.get("createdDataRows", [])) > 0:
             return result["createdDataRows"]
@@ -174,23 +182,22 @@ class Task(DbObject):
             return None
 
     @lru_cache()
-    def _fetch_remote_json(self,
-                           remote_json_field: Optional[str] = None
-                          ) -> Dict[str, Any]:
-        """ Function for fetching and caching the result data.
-        """
+    def _fetch_remote_json(
+        self, remote_json_field: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Function for fetching and caching the result data."""
 
         def download_result(remote_json_field: Optional[str], format: str):
-            url = getattr(self, remote_json_field or 'result_url')
+            url = getattr(self, remote_json_field or "result_url")
 
             if url is None:
                 return None
 
             response = requests.get(url)
             response.raise_for_status()
-            if format == 'json':
+            if format == "json":
                 return response.json()
-            elif format == 'ndjson':
+            elif format == "ndjson":
                 return parser.loads(response.text)
             else:
                 raise ValueError(
@@ -198,9 +205,9 @@ class Task(DbObject):
                 )
 
         if self.is_creation_task():
-            format = 'json'
-        elif self.type == 'export-data-rows':
-            format = 'ndjson'
+            format = "json"
+        elif self.type == "export-data-rows":
+            format = "ndjson"
         else:
             raise ValueError(
                 "Task result is only supported for `JSON Import` and `export` tasks."
@@ -221,7 +228,8 @@ class Task(DbObject):
     def get_task(client, task_id):
         user: User = client.get_user()
         tasks: List[Task] = list(
-            user.created_tasks(where=Entity.Task.uid == task_id))
+            user.created_tasks(where=Entity.Task.uid == task_id)
+        )
         # Cache user in a private variable as the relationship can't be
         # resolved due to server-side limitations (see Task.created_by)
         # for more info.
@@ -261,12 +269,14 @@ class DataUpsertTask(Task):
 
     @property
     def created_data_rows(  # type: ignore
-            self) -> Optional[List[Dict[str, Any]]]:
+        self,
+    ) -> Optional[List[Dict[str, Any]]]:
         return self.result
 
     @property
     def failed_data_rows(  # type: ignore
-            self) -> Optional[List[Dict[str, Any]]]:
+        self,
+    ) -> Optional[List[Dict[str, Any]]]:
         return self.errors
 
     def _download_results_paginated(self) -> PaginatedCollection:
@@ -289,23 +299,23 @@ class DataUpsertTask(Task):
                 """
 
         params = {
-            'taskId': self.uid,
-            'first': page_size,
-            'from': from_cursor,
+            "taskId": self.uid,
+            "first": page_size,
+            "from": from_cursor,
         }
 
         return PaginatedCollection(
             client=self.client,
             query=query_str,
             params=params,
-            dereferencing=['successesfulDataRowImports', 'nodes'],
+            dereferencing=["successesfulDataRowImports", "nodes"],
             obj_class=lambda _, data_row: {
-                'id': data_row.get('id'),
-                'external_id': data_row.get('externalId'),
-                'row_data': data_row.get('rowData'),
-                'global_key': data_row.get('globalKey'),
+                "id": data_row.get("id"),
+                "external_id": data_row.get("externalId"),
+                "row_data": data_row.get("rowData"),
+                "global_key": data_row.get("globalKey"),
             },
-            cursor_path=['successesfulDataRowImports', 'after'],
+            cursor_path=["successesfulDataRowImports", "after"],
         )
 
     def _download_errors_paginated(self) -> PaginatedCollection:
@@ -340,32 +350,33 @@ class DataUpsertTask(Task):
                 """
 
         params = {
-            'taskId': self.uid,
-            'first': page_size,
-            'from': from_cursor,
+            "taskId": self.uid,
+            "first": page_size,
+            "from": from_cursor,
         }
 
         def convert_errors_to_legacy_format(client, data_row):
-            spec = data_row.get('spec', {})
+            spec = data_row.get("spec", {})
             return {
-                'message':
-                    data_row.get('message'),
-                'failedDataRows': [{
-                    'externalId': spec.get('externalId'),
-                    'rowData': spec.get('rowData'),
-                    'globalKey': spec.get('globalKey'),
-                    'metadata': spec.get('metadata', []),
-                    'attachments': spec.get('attachments', []),
-                }]
+                "message": data_row.get("message"),
+                "failedDataRows": [
+                    {
+                        "externalId": spec.get("externalId"),
+                        "rowData": spec.get("rowData"),
+                        "globalKey": spec.get("globalKey"),
+                        "metadata": spec.get("metadata", []),
+                        "attachments": spec.get("attachments", []),
+                    }
+                ],
             }
 
         return PaginatedCollection(
             client=self.client,
             query=query_str,
             params=params,
-            dereferencing=['failedDataRowImports', 'results'],
+            dereferencing=["failedDataRowImports", "results"],
             obj_class=convert_errors_to_legacy_format,
-            cursor_path=['failedDataRowImports', 'after'],
+            cursor_path=["failedDataRowImports", "after"],
         )
 
     def _results_as_list(self) -> Optional[List[Dict[str, Any]]]:

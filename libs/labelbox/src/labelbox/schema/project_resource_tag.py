@@ -3,7 +3,7 @@ from labelbox.orm.model import Field, Relationship
 
 
 class ProjectResourceTag(DbObject, Updateable):
-    """ Project resource tag to associate ProjectResourceTag to Project.
+    """Project resource tag to associate ProjectResourceTag to Project.
 
     Attributes:
         resourceTagId (str)

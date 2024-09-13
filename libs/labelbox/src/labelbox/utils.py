@@ -6,11 +6,17 @@ from dateutil.parser import isoparse as dateutil_parse
 from dateutil.utils import default_tzinfo
 
 from urllib.parse import urlparse
-from pydantic import BaseModel, ConfigDict, model_serializer, AliasGenerator, AliasChoices
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    model_serializer,
+    AliasGenerator,
+    AliasChoices,
+)
 from pydantic.alias_generators import to_camel, to_pascal
 
-UPPERCASE_COMPONENTS = ['uri', 'rgb']
-ISO_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+UPPERCASE_COMPONENTS = ["uri", "rgb"]
+ISO_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 DFLT_TZ = tzoffset("UTC", 0000)
 
 
@@ -26,22 +32,22 @@ def _convert(s, sep, title):
 
 
 def camel_case(s):
-    """ Converts a string in [snake|camel|title]case to camelCase. """
+    """Converts a string in [snake|camel|title]case to camelCase."""
     return _convert(s, "", lambda i: i > 0)
 
 
 def title_case(s):
-    """ Converts a string in [snake|camel|title]case to TitleCase. """
+    """Converts a string in [snake|camel|title]case to TitleCase."""
     return _convert(s, "", lambda i: True)
 
 
 def snake_case(s):
-    """ Converts a string in [snake|camel|title]case to snake_case. """
+    """Converts a string in [snake|camel|title]case to snake_case."""
     return _convert(s, "_", lambda i: False)
 
 
 def sentence_case(s: str) -> str:
-    """ Converts a string in [snake|camel|title]case to Sentence case. """
+    """Converts a string in [snake|camel|title]case to Sentence case."""
     # Replace underscores with spaces and convert to lower case
     sentence_str = s.replace("_", " ").lower()
     # Capitalize the first letter of each word
@@ -62,7 +68,11 @@ def is_valid_uri(uri):
 
 
 class _CamelCaseMixin(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed = True, alias_generator = to_camel, populate_by_name = True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
 
 
 class _NoCoercionMixin:
@@ -72,7 +82,7 @@ class _NoCoercionMixin:
     uninteded behavior.
 
     This mixin uses a class_name discriminator field to prevent pydantic from
-    corecing the type of the object. Add a class_name field to the class you 
+    corecing the type of the object. Add a class_name field to the class you
     want to discrimniate and use this mixin class to remove the discriminator
     when serializing the object.
 
@@ -81,10 +91,11 @@ class _NoCoercionMixin:
             class_name: Literal["ConversationData"] = "ConversationData"
 
     """
+
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         res = handler(self)
-        res.pop('class_name')
+        res.pop("class_name")
         return res
 
 

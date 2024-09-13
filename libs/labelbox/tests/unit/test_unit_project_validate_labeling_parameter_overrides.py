@@ -22,8 +22,11 @@ def test_validate_labeling_parameter_overrides_invalid_data():
 def test_validate_labeling_parameter_overrides_invalid_priority():
     mock_data_row = MagicMock(spec=DataRow)
     mock_data_row.uid = "abc"
-    data = [(mock_data_row, "invalid"), (UniqueId("efg"), 2),
-            (GlobalKey("hij"), 3)]
+    data = [
+        (mock_data_row, "invalid"),
+        (UniqueId("efg"), 2),
+        (GlobalKey("hij"), 3),
+    ]
     with pytest.raises(TypeError):
         validate_labeling_parameter_overrides(data)
 
@@ -31,7 +34,10 @@ def test_validate_labeling_parameter_overrides_invalid_priority():
 def test_validate_labeling_parameter_overrides_invalid_tuple_length():
     mock_data_row = MagicMock(spec=DataRow)
     mock_data_row.uid = "abc"
-    data = [(mock_data_row, "invalid"), (UniqueId("efg"), 2),
-            (GlobalKey("hij"))]
+    data = [
+        (mock_data_row, "invalid"),
+        (UniqueId("efg"), 2),
+        (GlobalKey("hij")),
+    ]
     with pytest.raises(TypeError):
         validate_labeling_parameter_overrides(data)

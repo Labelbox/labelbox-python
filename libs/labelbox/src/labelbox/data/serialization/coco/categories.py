@@ -13,4 +13,5 @@ class Categories(BaseModel):
 
 def hash_category_name(name: str) -> int:
     return int.from_bytes(
-        md5(name.encode('utf-8')).hexdigest().encode('utf-8'), 'little')
+        md5(name.encode("utf-8")).hexdigest().encode("utf-8"), "little"
+    )

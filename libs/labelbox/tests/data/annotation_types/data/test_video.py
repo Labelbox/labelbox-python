@@ -22,7 +22,7 @@ def test_frames():
 
 
 def test_file_path():
-    path = 'tests/integration/media/cat.mp4'
+    path = "tests/integration/media/cat.mp4"
     raster_data = VideoData(file_path=path)
 
     with pytest.raises(ValueError):
@@ -60,11 +60,13 @@ def test_ref():
     }
     metadata = []
     media_attributes = {}
-    data = VideoData(frames=data,
-                     external_id=external_id,
-                     uid=uid,
-                     metadata=metadata,
-                     media_attributes=media_attributes)
+    data = VideoData(
+        frames=data,
+        external_id=external_id,
+        uid=uid,
+        metadata=metadata,
+        media_attributes=media_attributes,
+    )
     assert data.external_id == external_id
     assert data.uid == uid
     assert data.media_attributes == media_attributes

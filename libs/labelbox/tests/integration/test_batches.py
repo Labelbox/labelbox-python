@@ -6,9 +6,9 @@ from labelbox import Project, Dataset
 
 
 def test_create_batches(project: Project, big_dataset_data_row_ids: List[str]):
-    task = project.create_batches("test-batch",
-                                  big_dataset_data_row_ids,
-                                  priority=3)
+    task = project.create_batches(
+        "test-batch", big_dataset_data_row_ids, priority=3
+    )
 
     task.wait_till_done()
     assert task.errors() is None
@@ -26,9 +26,9 @@ def test_create_batches_from_dataset(project: Project, big_dataset: Dataset):
     data_rows = [dr.json["data_row"]["id"] for dr in stream]
     project._wait_until_data_rows_are_processed(data_rows, [], 300)
 
-    task = project.create_batches_from_dataset("test-batch",
-                                               big_dataset.uid,
-                                               priority=3)
+    task = project.create_batches_from_dataset(
+        "test-batch", big_dataset.uid, priority=3
+    )
 
     task.wait_till_done()
     assert task.errors() is None

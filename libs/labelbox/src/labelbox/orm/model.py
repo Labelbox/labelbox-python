@@ -6,13 +6,14 @@ import labelbox
 from labelbox import utils
 from labelbox.exceptions import InvalidAttributeError
 from labelbox.orm.comparison import Comparison
+
 """ Defines Field, Relationship and Entity. These classes are building
 blocks for defining the Labelbox schema, DB object operations and
 queries. """
 
 
 class Field:
-    """ Represents a field in a database table. A Field has a name, a type
+    """Represents a field in a database table. A Field has a name, a type
     (corresponds to server-side GraphQL type) and a server-side name. The
     server-side name is most often just a camelCase version of the client-side
     snake_case name.
@@ -48,7 +49,6 @@ class Field:
         Json = auto()
 
     class EnumType:
-
         def __init__(self, enum_cls: type):
             self.enum_cls = enum_cls
 
@@ -57,7 +57,7 @@ class Field:
             return self.enum_cls.__name__
 
     class ListType:
-        """ Represents Field that is a list of some object.
+        """Represents Field that is a list of some object.
         Args:
             list_cls (type): Type of object that list is made of.
             graphql_type (str): Inner object's graphql type.
@@ -76,7 +76,8 @@ class Field:
             return f"[{self.graphql_type}]"
 
     class Order(Enum):
-        """ Type of sort ordering. """
+        """Type of sort ordering."""
+
         Asc = auto()
         Desc = auto()
 
@@ -116,12 +117,14 @@ class Field:
     def List(list_cls: type, graphql_type=None, **kwargs):
         return Field(Field.ListType(list_cls, graphql_type), **kwargs)
 
-    def __init__(self,
-                 field_type: Union[Type, EnumType, ListType],
-                 name,
-                 graphql_name=None,
-                 result_subquery=None):
-        """ Field init.
+    def __init__(
+        self,
+        field_type: Union[Type, EnumType, ListType],
+        name,
+        graphql_name=None,
+        result_subquery=None,
+    ):
+        """Field init.
         Args:
             field_type (Field.Type): The type of the field.
             name (str): client-side Python attribute name of a database
@@ -140,7 +143,7 @@ class Field:
 
     @property
     def asc(self):
-        """ Property that resolves to tuple (Field, Field.Order).
+        """Property that resolves to tuple (Field, Field.Order).
         Used for easy definition of sort ordering:
             >>> projects_ordered = client.get_projects(order_by=Project.name.asc)
         """
@@ -148,14 +151,14 @@ class Field:
 
     @property
     def desc(self):
-        """ Property that resolves to tuple (Field, Field.Order).
+        """Property that resolves to tuple (Field, Field.Order).
         Used for easy definition of sort ordering:
             >>> projects_ordered = client.get_projects(order_by=Project.name.desc)
         """
         return (self, Field.Order.Desc)
 
     def __eq__(self, other):
-        """ Equality of Fields has two meanings. If comparing to a Field object,
+        """Equality of Fields has two meanings. If comparing to a Field object,
         then a boolean indicator if the fields are identical is returned. If
         comparing to any other type, a Comparison object is created.
         """
@@ -165,7 +168,7 @@ class Field:
         return Comparison.Op.EQ(self, other)
 
     def __ne__(self, other):
-        """ Equality of Fields has two meanings. If comparing to a Field object,
+        """Equality of Fields has two meanings. If comparing to a Field object,
         then a boolean indicator if the fields are identical is returned. If
         comparing to any other type, a Comparison object is created.
         """
@@ -199,7 +202,7 @@ class Field:
 
 
 class Relationship:
-    """ Represents a relationship in a database table.
+    """Represents a relationship in a database table.
 
     Attributes:
         relationship_type (Relationship.Type): Indicator if to-one or to-many
@@ -236,15 +239,17 @@ class Relationship:
     def ToMany(*args, **kwargs):
         return Relationship(Relationship.Type.ToMany, *args, **kwargs)
 
-    def __init__(self,
-                 relationship_type,
-                 destination_type_name,
-                 filter_deleted=True,
-                 name=None,
-                 graphql_name=None,
-                 cache=False,
-                 deprecation_warning=None,
-                 config=Config()):
+    def __init__(
+        self,
+        relationship_type,
+        destination_type_name,
+        filter_deleted=True,
+        name=None,
+        graphql_name=None,
+        cache=False,
+        deprecation_warning=None,
+        config=Config(),
+    ):
         self.relationship_type = relationship_type
         self.destination_type_name = destination_type_name
         self.filter_deleted = filter_deleted
@@ -254,7 +259,8 @@ class Relationship:
 
         if name is None:
             name = utils.snake_case(destination_type_name) + (
-                "s" if relationship_type == Relationship.Type.ToMany else "")
+                "s" if relationship_type == Relationship.Type.ToMany else ""
+            )
         self.name = name
 
         if graphql_name is None:
@@ -273,10 +279,11 @@ class Relationship:
 
 
 class EntityMeta(type):
-    """ Entity metaclass. Registers Entity subclasses as attributes
+    """Entity metaclass. Registers Entity subclasses as attributes
     of the Entity class object so they can be referenced for example like:
         Entity.Project.
     """
+
     # Maps Entity name to Relationships for all currently defined Entities
     relationship_mappings: Dict[str, List[Relationship]] = {}
 
@@ -288,14 +295,16 @@ class EntityMeta(type):
         cls.validate_cached_relationships()
         if clsname != "Entity":
             setattr(Entity, clsname, cls)
-            EntityMeta.relationship_mappings[utils.snake_case(
-                cls.__name__)] = cls.relationships()
+            EntityMeta.relationship_mappings[utils.snake_case(cls.__name__)] = (
+                cls.relationships()
+            )
 
     @staticmethod
     def raise_for_nested_cache(first: str, middle: str, last: List[str]):
         raise TypeError(
             "Cannot cache a relationship to an Entity with its own cached relationship(s). "
-            f"`{first}` caches `{middle}` which caches `{last}`")
+            f"`{first}` caches `{middle}` which caches `{last}`"
+        )
 
     @staticmethod
     def cached_entities(entity_name: str):
@@ -329,8 +338,11 @@ class EntityMeta(type):
         for rel in cached_rels:
             nested = cls.cached_entities(rel.name)
             if nested:
-                cls.raise_for_nested_cache(utils.snake_case(cls.__name__),
-                                           rel.name, list(nested.keys()))
+                cls.raise_for_nested_cache(
+                    utils.snake_case(cls.__name__),
+                    rel.name,
+                    list(nested.keys()),
+                )
 
         # If the current Entity (cls) has any cached relationships (cached_rels)
         #  then no other defined Entity (entities in EntityMeta.relationship_mappings) can cache this Entity.
@@ -347,12 +359,13 @@ class EntityMeta(type):
                     cls.raise_for_nested_cache(
                         utils.snake_case(entity_name),
                         utils.snake_case(cls.__name__),
-                        [entity.name for entity in cached_rels])
+                        [entity.name for entity in cached_rels],
+                    )
 
 
 class Entity(metaclass=EntityMeta):
-    """ An entity that contains fields and relationships. Base class
-    for DbObject (which is base class for concrete schema classes). """
+    """An entity that contains fields and relationships. Base class
+    for DbObject (which is base class for concrete schema classes)."""
 
     # Every Entity has an "id" and a "deleted" field
     # Name the "id" field "uid" in Python to avoid conflict with keyword.
@@ -392,7 +405,7 @@ class Entity(metaclass=EntityMeta):
 
     @classmethod
     def _attributes_of_type(cls, attr_type):
-        """ Yields all the attributes in `cls` of the given `attr_type`. """
+        """Yields all the attributes in `cls` of the given `attr_type`."""
         for attr_name in dir(cls):
             attr = getattr(cls, attr_name)
             if isinstance(attr, attr_type):
@@ -400,7 +413,7 @@ class Entity(metaclass=EntityMeta):
 
     @classmethod
     def fields(cls):
-        """ Returns a generator that yields all the Fields declared in a
+        """Returns a generator that yields all the Fields declared in a
         concrete subclass.
         """
         for attr in cls._attributes_of_type(Field):
@@ -409,14 +422,14 @@ class Entity(metaclass=EntityMeta):
 
     @classmethod
     def relationships(cls):
-        """ Returns a generator that yields all the Relationships declared in
+        """Returns a generator that yields all the Relationships declared in
         a concrete subclass.
         """
         return cls._attributes_of_type(Relationship)
 
     @classmethod
     def field(cls, field_name):
-        """ Returns a Field object for the given name.
+        """Returns a Field object for the given name.
         Args:
             field_name (str): Field name, Python (snake-case) convention.
         Return:
@@ -432,7 +445,7 @@ class Entity(metaclass=EntityMeta):
 
     @classmethod
     def attribute(cls, attribute_name):
-        """ Returns a Field or a Relationship object for the given name.
+        """Returns a Field or a Relationship object for the given name.
         Args:
             attribute_name (str): Field or Relationship name, Python
                 (snake-case) convention.
@@ -449,7 +462,7 @@ class Entity(metaclass=EntityMeta):
 
     @classmethod
     def type_name(cls):
-        """ Returns this DB object type name in TitleCase. For example:
-            Project, DataRow, ...
+        """Returns this DB object type name in TitleCase. For example:
+        Project, DataRow, ...
         """
         return cls.__name__.split(".")[-1]

@@ -13,9 +13,9 @@ else:
 
 
 class CreateBatchesTask:
-
-    def __init__(self, client, project_id: str, batch_ids: List[str],
-                 task_ids: List[str]):
+    def __init__(
+        self, client, project_id: str, batch_ids: List[str], task_ids: List[str]
+    ):
         self.client = client
         self.project_id = project_id
         self.batches = batch_ids

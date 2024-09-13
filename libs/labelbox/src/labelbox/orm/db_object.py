@@ -5,7 +5,11 @@ import logging
 import json
 
 from labelbox import utils
-from labelbox.exceptions import InvalidQueryError, InvalidAttributeError, OperationNotSupportedException
+from labelbox.exceptions import (
+    InvalidQueryError,
+    InvalidAttributeError,
+    OperationNotSupportedException,
+)
 from labelbox.orm import query
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.pagination import PaginatedCollection
@@ -14,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class DbObject(Entity):
-    """ A client-side representation of a database object (row). Intended as
+    """A client-side representation of a database object (row). Intended as
     base class for classes representing concrete database types (for example
     a Project). Exposes support functionalities so that the concrete subclass
     definition be as simple and DRY as possible. It should come down to just
@@ -35,7 +39,7 @@ class DbObject(Entity):
     """
 
     def __init__(self, client, field_values):
-        """ Constructor of a database object. Generally it should only be used
+        """Constructor of a database object. Generally it should only be used
         by library internals and not by the end user.
 
         Args:
@@ -49,12 +53,16 @@ class DbObject(Entity):
             value = field_values.get(utils.camel_case(relationship.name))
             if relationship.cache and value is None:
                 raise KeyError(
-                    f"Expected field  values for {relationship.name}")
-            setattr(self, relationship.name,
-                    RelationshipManager(self, relationship, value))
+                    f"Expected field  values for {relationship.name}"
+                )
+            setattr(
+                self,
+                relationship.name,
+                RelationshipManager(self, relationship, value),
+            )
 
     def _set_field_values(self, field_values):
-        """ Sets field values on this object. Ensures proper value conversions.
+        """Sets field values on this object. Ensures proper value conversions.
         Args:
             field_values (dict): Maps field names (GraphQL variant, snakeCase)
                 to values. *Must* contain all field values for this object's
@@ -69,7 +77,10 @@ class DbObject(Entity):
                 except ValueError:
                     logger.warning(
                         "Failed to convert value '%s' to datetime for "
-                        "field %s", value, field)
+                        "field %s",
+                        value,
+                        field,
+                    )
             elif isinstance(field.field_type, Field.EnumType):
                 value = field.field_type.enum_cls(value)
             elif isinstance(field.field_type, Field.ListType):
@@ -80,7 +91,9 @@ class DbObject(Entity):
                     except ValueError:
                         logger.warning(
                             "Failed to convert value '%s' to metadata for field %s",
-                            value, field)
+                            value,
+                            field,
+                        )
             setattr(self, field.name, value)
 
     def __repr__(self):
@@ -94,29 +107,34 @@ class DbObject(Entity):
         attribute_values = {
             field.name: getattr(self, field.name) for field in self.fields()
         }
-        return "<%s %s>" % (self.type_name().split(".")[-1],
-                            json.dumps(attribute_values, indent=4, default=str))
+        return "<%s %s>" % (
+            self.type_name().split(".")[-1],
+            json.dumps(attribute_values, indent=4, default=str),
+        )
 
     def __eq__(self, other):
-        return (isinstance(other, DbObject) and
-                self.type_name() == other.type_name() and self.uid == other.uid)
+        return (
+            isinstance(other, DbObject)
+            and self.type_name() == other.type_name()
+            and self.uid == other.uid
+        )
 
     def __hash__(self):
         return 7541 * hash(self.type_name()) + hash(self.uid)
 
 
 class RelationshipManager:
-    """ Manages relationships (object fetching and updates) for a `DbObject`
+    """Manages relationships (object fetching and updates) for a `DbObject`
     instance. There is one RelationshipManager for each relationship in
     each `DbObject` instance.
     """
 
     def __init__(self, source, relationship, value=None):
         """Args:
-            source (DbObject subclass instance): The object that's the source
-                of the relationship.
-            relationship (labelbox.schema.Relationship): The relationship
-                schema descriptor object.
+        source (DbObject subclass instance): The object that's the source
+            of the relationship.
+        relationship (labelbox.schema.Relationship): The relationship
+            schema descriptor object.
         """
         self.source = source
         self.relationship = relationship
@@ -127,8 +145,8 @@ class RelationshipManager:
         self.config = relationship.config
 
     def __call__(self, *args, **kwargs):
-        """ Forwards the call to either `_to_many` or `_to_one` methods,
-        depending on relationship type. """
+        """Forwards the call to either `_to_many` or `_to_one` methods,
+        depending on relationship type."""
 
         if self.relationship.deprecation_warning:
             logger.warning(self.relationship.deprecation_warning)
@@ -139,7 +157,7 @@ class RelationshipManager:
             return self._to_one(*args, **kwargs)
 
     def _to_many(self, where=None, order_by=None):
-        """ Returns an iterable over the destination relationship objects.
+        """Returns an iterable over the destination relationship objects.
         Args:
             where (None, Comparison or LogicalExpression): Filtering clause.
             order_by (None or (Field, Field.Order)): Ordering clause.
@@ -149,27 +167,35 @@ class RelationshipManager:
         rel = self.relationship
         if where is not None and not self.supports_filtering:
             raise InvalidQueryError(
-                "Relationship %s.%s doesn't support filtering" %
-                (self.source.type_name(), rel.name))
+                "Relationship %s.%s doesn't support filtering"
+                % (self.source.type_name(), rel.name)
+            )
         if order_by is not None and not self.supports_sorting:
             raise InvalidQueryError(
-                "Relationship %s.%s doesn't support sorting" %
-                (self.source.type_name(), rel.name))
+                "Relationship %s.%s doesn't support sorting"
+                % (self.source.type_name(), rel.name)
+            )
 
         if rel.filter_deleted:
             not_deleted = rel.destination_type.deleted == False
             where = not_deleted if where is None else where & not_deleted
 
         query_string, params = query.relationship(
-            self.source if self.filter_on_id else type(self.source), rel, where,
-            order_by)
+            self.source if self.filter_on_id else type(self.source),
+            rel,
+            where,
+            order_by,
+        )
         return PaginatedCollection(
-            self.source.client, query_string, params,
+            self.source.client,
+            query_string,
+            params,
             [utils.camel_case(self.source.type_name()), rel.graphql_name],
-            rel.destination_type)
+            rel.destination_type,
+        )
 
     def _to_one(self):
-        """ Returns the relationship destination object. """
+        """Returns the relationship destination object."""
         rel = self.relationship
 
         if self.value:
@@ -178,7 +204,8 @@ class RelationshipManager:
         query_string, params = query.relationship(self.source, rel, None, None)
         result = self.source.client.execute(query_string, params)
         result = result and result.get(
-            utils.camel_case(type(self.source).type_name()))
+            utils.camel_case(type(self.source).type_name())
+        )
         result = result and result.get(rel.graphql_name)
         if result is None:
             return None
@@ -186,26 +213,28 @@ class RelationshipManager:
         return rel.destination_type(self.source.client, result)
 
     def connect(self, other):
-        """ Connects source object of this manager to the `other` object. """
+        """Connects source object of this manager to the `other` object."""
         query_string, params = query.update_relationship(
-            self.source, other, self.relationship, "connect")
+            self.source, other, self.relationship, "connect"
+        )
         self.source.client.execute(query_string, params)
 
     def disconnect(self, other):
-        """ Disconnects source object of this manager from the `other` object. """
+        """Disconnects source object of this manager from the `other` object."""
         if not self.config.disconnect_supported:
             raise OperationNotSupportedException(
-                "Disconnect is not supported for this relationship")
+                "Disconnect is not supported for this relationship"
+            )
 
         query_string, params = query.update_relationship(
-            self.source, other, self.relationship, "disconnect")
+            self.source, other, self.relationship, "disconnect"
+        )
         self.source.client.execute(query_string, params)
 
 
 class Updateable:
-
     def update(self, **kwargs):
-        """ Updates this DB object with new values. Values should be
+        """Updates this DB object with new values. Values should be
         passed as key-value arguments with field names as keys:
         >>> db_object.update(name="New name", title="A title")
 
@@ -229,10 +258,10 @@ class Updateable:
 
 
 class Deletable:
-    """ Implements deletion for objects that have a `deleted` attribute. """
+    """Implements deletion for objects that have a `deleted` attribute."""
 
     def delete(self):
-        """ Deletes this DB object from the DB (server side). After
+        """Deletes this DB object from the DB (server side). After
         a call to this you should not use this DB object anymore.
         """
         query_string, params = query.delete(self)
@@ -240,7 +269,7 @@ class Deletable:
 
 
 class BulkDeletable:
-    """ Implements deletion for objects that have a custom, bulk deletion
+    """Implements deletion for objects that have a custom, bulk deletion
     mutation (accepts a list of IDs of objects to be deleted).
 
     A subclass must override the `bulk_delete` static method so it
@@ -263,13 +292,14 @@ class BulkDeletable:
         types = {type(o) for o in objects}
         if len(types) != 1:
             raise InvalidQueryError(
-                "Can't bulk-delete objects of different types: %r" % types)
+                "Can't bulk-delete objects of different types: %r" % types
+            )
 
         query_str, params = query.bulk_delete(objects, use_where_clause)
         objects[0].client.execute(query_str, params)
 
     def delete(self):
-        """ Deletes this DB object from the DB (server side). After
+        """Deletes this DB object from the DB (server side). After
         a call to this you should not use this DB object anymore.
         """
         type(self).bulk_delete([self])
@@ -295,7 +325,8 @@ def experimental(fn):
             else:
                 raise ValueError(
                     f"Static method {fn.__name__} must have a client passed in as the first "
-                    f"argument or as a keyword argument.")
+                    f"argument or as a keyword argument."
+                )
             wrapped_fn = fn.__func__
         else:
             client = args[0].client
@@ -306,7 +337,8 @@ def experimental(fn):
                 f"This function {fn.__name__} relies on a experimental feature in the api. "
                 f"This means that the interface could change. "
                 f"Set `enable_experimental=True` in the client to enable use of "
-                f"experimental functions.")
+                f"experimental functions."
+            )
         return wrapped_fn(*args, **kwargs)
 
     return wrapper

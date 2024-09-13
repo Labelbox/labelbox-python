@@ -35,7 +35,7 @@ members = ["libs/*", "examples"]
 
 [tool.pytest.ini_options]
 # https://github.com/pytest-dev/pytest-rerunfailures/issues/99
-addopts = "-rP -vvv"
+addopts = "-rP -vvv --reruns 1 --reruns-delay 5 --durations=20 -n auto --cov=labelbox --import-mode=importlib --order-group-scope=module"
 markers = """
     slow: marks tests as slow (deselect with '-m "not slow"')
 """

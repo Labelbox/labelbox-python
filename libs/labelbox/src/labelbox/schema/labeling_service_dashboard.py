@@ -64,6 +64,7 @@ class LabelingServiceDashboard(_CamelCaseMixin):
         editor_task_type (EditorTaskType): editor task type of the project
         client (Any): labelbox client
     """
+
     id: str = Field(frozen=True)
     name: str = Field(frozen=True)
     created_at: Optional[datetime] = Field(frozen=True, default=None)
@@ -83,7 +84,8 @@ class LabelingServiceDashboard(_CamelCaseMixin):
         super().__init__(**kwargs)
         if not self.client.enable_experimental:
             raise RuntimeError(
-                "Please enable experimental in client to use LabelingService")
+                "Please enable experimental in client to use LabelingService"
+            )
 
     @property
     def service_type(self):
@@ -96,22 +98,34 @@ class LabelingServiceDashboard(_CamelCaseMixin):
         if self.editor_task_type is None:
             return sentence_case(self.media_type.value)
 
-        if self.editor_task_type == EditorTaskType.OfflineModelChatEvaluation and self.media_type == MediaType.Conversational:
+        if (
+            self.editor_task_type == EditorTaskType.OfflineModelChatEvaluation
+            and self.media_type == MediaType.Conversational
+        ):
             return "Offline chat evaluation"
 
-        if self.editor_task_type == EditorTaskType.ModelChatEvaluation and self.media_type == MediaType.Conversational:
+        if (
+            self.editor_task_type == EditorTaskType.ModelChatEvaluation
+            and self.media_type == MediaType.Conversational
+        ):
             return "Live chat evaluation"
 
-        if self.editor_task_type == EditorTaskType.ResponseCreation and self.media_type == MediaType.Text:
+        if (
+            self.editor_task_type == EditorTaskType.ResponseCreation
+            and self.media_type == MediaType.Text
+        ):
             return "Response creation"
 
-        if self.media_type == MediaType.LLMPromptCreation or self.media_type == MediaType.LLMPromptResponseCreation:
+        if (
+            self.media_type == MediaType.LLMPromptCreation
+            or self.media_type == MediaType.LLMPromptResponseCreation
+        ):
             return "Prompt response creation"
 
         return sentence_case(self.media_type.value)
 
     @classmethod
-    def get(cls, client, project_id: str) -> 'LabelingServiceDashboard':
+    def get(cls, client, project_id: str) -> "LabelingServiceDashboard":
         """
         Returns the labeling service associated with the project.
 
@@ -140,7 +154,6 @@ class LabelingServiceDashboard(_CamelCaseMixin):
         client,
         search_query: Optional[List[SearchFilter]] = None,
     ) -> PaginatedCollection:
-
         if search_query is not None:
             template = Template(
                 """query SearchProjectsPyApi($$first: Int, $$from: String) {
@@ -150,7 +163,8 @@ class LabelingServiceDashboard(_CamelCaseMixin):
                                     pageInfo { endCursor }
                                 }
                             }
-                        """)
+                        """
+            )
         else:
             template = Template(
                 """query SearchProjectsPyApi($$first: Int, $$from: String) {
@@ -160,46 +174,48 @@ class LabelingServiceDashboard(_CamelCaseMixin):
                                     pageInfo { endCursor }
                                 }
                             }
-                        """)
+                        """
+            )
         query_str = template.substitute(
             labeling_dashboard_selections=GRAPHQL_QUERY_SELECTIONS,
             search_query=build_search_filter(search_query)
-            if search_query else None,
+            if search_query
+            else None,
         )
         params: Dict[str, Union[str, int]] = {}
 
         def convert_to_labeling_service_dashboard(client, data):
-            data['client'] = client
+            data["client"] = client
             return LabelingServiceDashboard(**data)
 
         return PaginatedCollection(
             client=client,
             query=query_str,
             params=params,
-            dereferencing=['searchProjects', 'nodes'],
+            dereferencing=["searchProjects", "nodes"],
             obj_class=convert_to_labeling_service_dashboard,
-            cursor_path=['searchProjects', 'pageInfo', 'endCursor'],
+            cursor_path=["searchProjects", "pageInfo", "endCursor"],
             experimental=True,
         )
 
     @root_validator(pre=True)
     def convert_boost_data(cls, data):
-        if 'boostStatus' in data:
-            data['status'] = LabelingServiceStatus(data.pop('boostStatus'))
+        if "boostStatus" in data:
+            data["status"] = LabelingServiceStatus(data.pop("boostStatus"))
 
-        if 'boostRequestedAt' in data:
-            data['created_at'] = data.pop('boostRequestedAt')
+        if "boostRequestedAt" in data:
+            data["created_at"] = data.pop("boostRequestedAt")
 
-        if 'boostUpdatedAt' in data:
-            data['updated_at'] = data.pop('boostUpdatedAt')
+        if "boostUpdatedAt" in data:
+            data["updated_at"] = data.pop("boostUpdatedAt")
 
-        if 'boostRequestedBy' in data:
-            data['created_by_id'] = data.pop('boostRequestedBy')
+        if "boostRequestedBy" in data:
+            data["created_by_id"] = data.pop("boostRequestedBy")
 
         return data
 
     def dict(self, *args, **kwargs):
         row = super().dict(*args, **kwargs)
-        row.pop('client')
-        row['service_type'] = self.service_type
+        row.pop("client")
+        row["service_type"] = self.service_type
         return row

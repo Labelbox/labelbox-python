@@ -2,12 +2,12 @@ from enum import Enum
 
 
 class LabelingServiceStatus(Enum):
-    Accepted = 'ACCEPTED'
-    Calibration = 'CALIBRATION'
-    Complete = 'COMPLETE'
-    Production = 'PRODUCTION'
-    Requested = 'REQUESTED'
-    SetUp = 'SET_UP'
+    Accepted = "ACCEPTED"
+    Calibration = "CALIBRATION"
+    Complete = "COMPLETE"
+    Production = "PRODUCTION"
+    Requested = "REQUESTED"
+    SetUp = "SET_UP"
     Missing = None
 
     @classmethod
@@ -15,10 +15,10 @@ class LabelingServiceStatus(Enum):
         return isinstance(value, cls)
 
     @classmethod
-    def _missing_(cls, value) -> 'LabelingServiceStatus':
+    def _missing_(cls, value) -> "LabelingServiceStatus":
         """Handle missing null new task types
-            Handle upper case names for compatibility with
-            the GraphQL"""
+        Handle upper case names for compatibility with
+        the GraphQL"""
 
         if value is None:
             return cls.Missing
