@@ -17,7 +17,7 @@ class GcpIamIntegrationSettings:
 
 
 class IAMIntegration(DbObject):
-    """ Represents an IAM integration for delegated access
+    """Represents an IAM integration for delegated access
 
     Attributes:
         name (str)
@@ -31,9 +31,9 @@ class IAMIntegration(DbObject):
     """
 
     def __init__(self, client, data):
-        settings = data.pop('settings', None)
+        settings = data.pop("settings", None)
         if settings is not None:
-            type_name = settings.pop('__typename')
+            type_name = settings.pop("__typename")
             settings = {snake_case(k): v for k, v in settings.items()}
             if type_name == "GcpIamIntegrationSettings":
                 self.settings = GcpIamIntegrationSettings(**settings)

@@ -6,7 +6,7 @@ DATAROW_ID = "ckrb1sf1i1g7i0ybcdc6oc8ct"
 
 
 def test_rectangle():
-    with open('tests/data/assets/ndjson/rectangle_import.json', 'r') as file:
+    with open("tests/data/assets/ndjson/rectangle_import.json", "r") as file:
         data = json.load(file)
     res = list(NDJsonConverter.deserialize(data))
     res = list(NDJsonConverter.serialize(res))
@@ -14,7 +14,7 @@ def test_rectangle():
 
 
 def test_rectangle_inverted_start_end_points():
-    with open('tests/data/assets/ndjson/rectangle_import.json', 'r') as file:
+    with open("tests/data/assets/ndjson/rectangle_import.json", "r") as file:
         data = json.load(file)
 
     bbox = lb_types.ObjectAnnotation(
@@ -23,10 +23,10 @@ def test_rectangle_inverted_start_end_points():
             start=lb_types.Point(x=81, y=69),
             end=lb_types.Point(x=38, y=28),
         ),
-        extra={"uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72"})
+        extra={"uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72"},
+    )
 
-    label = lb_types.Label(data={"uid":DATAROW_ID},
-                           annotations=[bbox])
+    label = lb_types.Label(data={"uid": DATAROW_ID}, annotations=[bbox])
 
     res = list(NDJsonConverter.serialize([label]))
     assert res == data
@@ -40,18 +40,20 @@ def test_rectangle_inverted_start_end_points():
         extra={
             "uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72",
             "page": None,
-            "unit": None
-        })
+            "unit": None,
+        },
+    )
 
-    label = lb_types.Label(data={"uid":DATAROW_ID},
-                           annotations=[expected_bbox])
+    label = lb_types.Label(
+        data={"uid": DATAROW_ID}, annotations=[expected_bbox]
+    )
 
     res = list(NDJsonConverter.deserialize(res))
     assert res == [label]
 
 
 def test_rectangle_mixed_start_end_points():
-    with open('tests/data/assets/ndjson/rectangle_import.json', 'r') as file:
+    with open("tests/data/assets/ndjson/rectangle_import.json", "r") as file:
         data = json.load(file)
 
     bbox = lb_types.ObjectAnnotation(
@@ -60,10 +62,10 @@ def test_rectangle_mixed_start_end_points():
             start=lb_types.Point(x=81, y=28),
             end=lb_types.Point(x=38, y=69),
         ),
-        extra={"uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72"})
+        extra={"uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72"},
+    )
 
-    label = lb_types.Label(data={"uid":DATAROW_ID},
-                           annotations=[bbox])
+    label = lb_types.Label(data={"uid": DATAROW_ID}, annotations=[bbox])
 
     res = list(NDJsonConverter.serialize([label]))
     assert res == data
@@ -77,11 +79,11 @@ def test_rectangle_mixed_start_end_points():
         extra={
             "uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72",
             "page": None,
-            "unit": None
-        })
+            "unit": None,
+        },
+    )
 
-    label = lb_types.Label(data={"uid":DATAROW_ID},
-                           annotations=[bbox])
+    label = lb_types.Label(data={"uid": DATAROW_ID}, annotations=[bbox])
 
     res = list(NDJsonConverter.deserialize(res))
     assert res == [label]
@@ -94,13 +96,13 @@ def test_benchmark_reference_label_flag_enabled():
             start=lb_types.Point(x=81, y=28),
             end=lb_types.Point(x=38, y=69),
         ),
-        extra={"uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72"}
+        extra={"uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72"},
     )
 
     label = lb_types.Label(
-        data={"uid":DATAROW_ID},
+        data={"uid": DATAROW_ID},
         annotations=[bbox],
-        is_benchmark_reference=True
+        is_benchmark_reference=True,
     )
 
     res = list(NDJsonConverter.serialize([label]))
@@ -114,13 +116,13 @@ def test_benchmark_reference_label_flag_disabled():
             start=lb_types.Point(x=81, y=28),
             end=lb_types.Point(x=38, y=69),
         ),
-        extra={"uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72"}
+        extra={"uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72"},
     )
 
     label = lb_types.Label(
-        data={"uid":DATAROW_ID},
+        data={"uid": DATAROW_ID},
         annotations=[bbox],
-        is_benchmark_reference=False
+        is_benchmark_reference=False,
     )
 
     res = list(NDJsonConverter.serialize([label]))

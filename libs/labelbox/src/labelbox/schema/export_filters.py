@@ -3,6 +3,7 @@ import sys
 from datetime import datetime, timezone
 from typing import Collection, Dict, Tuple, List, Optional
 from labelbox.typing_imports import Literal
+
 if sys.version_info >= (3, 8):
     from typing import TypedDict
 else:
@@ -47,8 +48,9 @@ class ProjectExportFilters(SharedExportFilters):
     Example:
     >>> ["clgo3lyax0000veeezdbu3ws4"]
     """
-    workflow_status: Optional[Literal["ToLabel", "InReview", "InRework",
-                                      "Done"]]
+    workflow_status: Optional[
+        Literal["ToLabel", "InReview", "InRework", "Done"]
+    ]
     """ Export data rows matching workflow status
     Example:
     >>> "InReview"
@@ -68,7 +70,7 @@ class DatarowExportFilters(BaseExportFilters):
 
 
 def validate_datetime(datetime_str: str) -> bool:
-    """helper function to validate that datetime's format: "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss" 
+    """helper function to validate that datetime's format: "YYYY-MM-DD" or "YYYY-MM-DD hh:mm:ss"
     or ISO 8061 format "YYYY-MM-DDThh:mm:ss±hhmm" (Example: "2023-05-23T14:30:00+0530")"""
     if datetime_str:
         for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", ISO_8061_FORMAT):
@@ -78,8 +80,7 @@ def validate_datetime(datetime_str: str) -> bool:
             except ValueError:
                 pass
         raise ValueError(f"""Incorrect format for: {datetime_str}.
-        Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\" or ISO 8061 format \"YYYY-MM-DDThh:mm:ss±hhmm\""""
-                        )
+        Format must be \"YYYY-MM-DD\" or \"YYYY-MM-DD hh:mm:ss\" or ISO 8061 format \"YYYY-MM-DDThh:mm:ss±hhmm\"""")
     return True
 
 
@@ -96,8 +97,10 @@ def convert_to_utc_if_iso8061(datetime_str: str, timezone_str: Optional[str]):
 
 
 def validate_one_of_data_row_ids_or_global_keys(filters):
-    if filters.get("data_row_ids") is not None and filters.get(
-            "global_keys") is not None:
+    if (
+        filters.get("data_row_ids") is not None
+        and filters.get("global_keys") is not None
+    ):
         raise ValueError(
             "data_rows and global_keys cannot both be present in export filters"
         )
@@ -117,9 +120,11 @@ def build_filters(client, filters):
         tz_res = client.execute(timezone_query_str)
         return tz_res["user"]["timezone"] or "UTC"
 
-    def _build_id_filters(ids: list,
-                          type_name: str,
-                          search_where_limit: int = SEARCH_LIMIT_PER_EXPORT_V2):
+    def _build_id_filters(
+        ids: list,
+        type_name: str,
+        search_where_limit: int = SEARCH_LIMIT_PER_EXPORT_V2,
+    ):
         if not isinstance(ids, list):
             raise ValueError(f"{type_name} filter expects a list.")
         if len(ids) == 0:
@@ -136,85 +141,91 @@ def build_filters(client, filters):
     if last_activity_at:
         timezone = _get_timezone()
         start, end = last_activity_at
-        if (start is not None and end is not None):
+        if start is not None and end is not None:
             [validate_datetime(date) for date in last_activity_at]
             start, timezone = convert_to_utc_if_iso8061(start, timezone)
             end, timezone = convert_to_utc_if_iso8061(end, timezone)
-            search_query.append({
-                "type": "data_row_last_activity_at",
-                "value": {
-                    "operator": "BETWEEN",
-                    "timezone": timezone,
+            search_query.append(
+                {
+                    "type": "data_row_last_activity_at",
                     "value": {
-                        "min": start,
-                        "max": end
-                    }
+                        "operator": "BETWEEN",
+                        "timezone": timezone,
+                        "value": {"min": start, "max": end},
+                    },
                 }
-            })
-        elif (start is not None):
+            )
+        elif start is not None:
             validate_datetime(start)
             start, timezone = convert_to_utc_if_iso8061(start, timezone)
-            search_query.append({
-                "type": "data_row_last_activity_at",
-                "value": {
-                    "operator": "GREATER_THAN_OR_EQUAL",
-                    "timezone": timezone,
-                    "value": start
+            search_query.append(
+                {
+                    "type": "data_row_last_activity_at",
+                    "value": {
+                        "operator": "GREATER_THAN_OR_EQUAL",
+                        "timezone": timezone,
+                        "value": start,
+                    },
                 }
-            })
-        elif (end is not None):
+            )
+        elif end is not None:
             validate_datetime(end)
             end, timezone = convert_to_utc_if_iso8061(end, timezone)
-            search_query.append({
-                "type": "data_row_last_activity_at",
-                "value": {
-                    "operator": "LESS_THAN_OR_EQUAL",
-                    "timezone": timezone,
-                    "value": end
+            search_query.append(
+                {
+                    "type": "data_row_last_activity_at",
+                    "value": {
+                        "operator": "LESS_THAN_OR_EQUAL",
+                        "timezone": timezone,
+                        "value": end,
+                    },
                 }
-            })
+            )
 
     label_created_at = filters.get("label_created_at")
     if label_created_at:
         timezone = _get_timezone()
         start, end = label_created_at
-        if (start is not None and end is not None):
+        if start is not None and end is not None:
             [validate_datetime(date) for date in label_created_at]
             start, timezone = convert_to_utc_if_iso8061(start, timezone)
             end, timezone = convert_to_utc_if_iso8061(end, timezone)
-            search_query.append({
-                "type": "labeled_at",
-                "value": {
-                    "operator": "BETWEEN",
-                    "timezone": timezone,
+            search_query.append(
+                {
+                    "type": "labeled_at",
                     "value": {
-                        "min": start,
-                        "max": end
-                    }
+                        "operator": "BETWEEN",
+                        "timezone": timezone,
+                        "value": {"min": start, "max": end},
+                    },
                 }
-            })
-        elif (start is not None):
+            )
+        elif start is not None:
             validate_datetime(start)
             start, timezone = convert_to_utc_if_iso8061(start, timezone)
-            search_query.append({
-                "type": "labeled_at",
-                "value": {
-                    "operator": "GREATER_THAN_OR_EQUAL",
-                    "timezone": timezone,
-                    "value": start
+            search_query.append(
+                {
+                    "type": "labeled_at",
+                    "value": {
+                        "operator": "GREATER_THAN_OR_EQUAL",
+                        "timezone": timezone,
+                        "value": start,
+                    },
                 }
-            })
-        elif (end is not None):
+            )
+        elif end is not None:
             validate_datetime(end)
             end, timezone = convert_to_utc_if_iso8061(end, timezone)
-            search_query.append({
-                "type": "labeled_at",
-                "value": {
-                    "operator": "LESS_THAN_OR_EQUAL",
-                    "timezone": timezone,
-                    "value": end
+            search_query.append(
+                {
+                    "type": "labeled_at",
+                    "value": {
+                        "operator": "LESS_THAN_OR_EQUAL",
+                        "timezone": timezone,
+                        "value": end,
+                    },
                 }
-            })
+            )
 
     data_row_ids = filters.get("data_row_ids")
     if data_row_ids is not None:
@@ -240,9 +251,8 @@ def build_filters(client, filters):
         if workflow_status == "ToLabel":
             search_query.append({"type": "task_queue_not_exist"})
         else:
-            search_query.append({
-                "type": 'task_queue_status',
-                "status": workflow_status
-            })
+            search_query.append(
+                {"type": "task_queue_status", "status": workflow_status}
+            )
 
     return search_query

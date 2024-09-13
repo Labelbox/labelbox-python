@@ -16,21 +16,23 @@ from ..types import TypedArray
 
 
 class RasterData(BaseModel, ABC):
-    """Represents an image or segmentation mask.
-    """
+    """Represents an image or segmentation mask."""
+
     im_bytes: Optional[bytes] = None
     file_path: Optional[str] = None
     url: Optional[str] = None
     uid: Optional[str] = None
     global_key: Optional[str] = None
-    arr: Optional[TypedArray[Literal['uint8']]] = None
-    
+    arr: Optional[TypedArray[Literal["uint8"]]] = None
+
     model_config = ConfigDict(extra="forbid")
 
     @classmethod
-    def from_2D_arr(cls, arr: Union[TypedArray[Literal['uint8']],
-                                    TypedArray[Literal['int']]],
-                    **kwargs) -> "RasterData":
+    def from_2D_arr(
+        cls,
+        arr: Union[TypedArray[Literal["uint8"]], TypedArray[Literal["int"]]],
+        **kwargs,
+    ) -> "RasterData":
         """Construct from a 2D numpy array
 
         Args:
@@ -117,11 +119,12 @@ class RasterData(BaseModel, ABC):
             raise ValueError("Must set either url, file_path or im_bytes")
 
     def set_fetch_fn(self, fn):
-        object.__setattr__(self, 'fetch_remote', lambda: fn(self))
+        object.__setattr__(self, "fetch_remote", lambda: fn(self))
 
-    @retry.Retry(deadline=15.,
-                 predicate=retry.if_exception_type(ConnectTimeout,
-                                                   InternalServerError))
+    @retry.Retry(
+        deadline=15.0,
+        predicate=retry.if_exception_type(ConnectTimeout, InternalServerError),
+    )
     def fetch_remote(self) -> bytes:
         """
         Method for accessing url.
@@ -135,7 +138,7 @@ class RasterData(BaseModel, ABC):
         response.raise_for_status()
         return response.content
 
-    @retry.Retry(deadline=30.)
+    @retry.Retry(deadline=30.0)
     def create_url(self, signer: Callable[[bytes], str]) -> str:
         """
         Utility for creating a url from any of the other image representations.
@@ -150,13 +153,14 @@ class RasterData(BaseModel, ABC):
         elif self.im_bytes is not None:
             self.url = signer(self.im_bytes)
         elif self.file_path is not None:
-            with open(self.file_path, 'rb') as file:
+            with open(self.file_path, "rb") as file:
                 self.url = signer(file.read())
         elif self.arr is not None:
             self.url = signer(self.np_to_bytes(self.arr))
         else:
             raise ValueError(
-                "One of url, im_bytes, file_path, arr must not be None.")
+                "One of url, im_bytes, file_path, arr must not be None."
+            )
         return self.url
 
     @model_validator(mode="after")
@@ -167,7 +171,10 @@ class RasterData(BaseModel, ABC):
         arr = self.arr
         uid = self.uid
         global_key = self.global_key
-        if uid == file_path == im_bytes == url == global_key == None and arr is None:
+        if (
+            uid == file_path == im_bytes == url == global_key == None
+            and arr is None
+        ):
             raise ValueError(
                 "One of `file_path`, `im_bytes`, `url`, `uid`, `global_key` or `arr` required."
             )
@@ -179,15 +186,18 @@ class RasterData(BaseModel, ABC):
             elif len(arr.shape) != 3:
                 raise ValueError(
                     "unsupported image format. Must be 3D ([H,W,C])."
-                    f"Use {self.__name__}.from_2D_arr to construct from 2D")
+                    f"Use {self.__name__}.from_2D_arr to construct from 2D"
+                )
         return self
 
     def __repr__(self) -> str:
-        symbol_or_none = lambda data: '...' if data is not None else None
-        return f"{self.__class__.__name__}(im_bytes={symbol_or_none(self.im_bytes)}," \
-               f"file_path={self.file_path}," \
-               f"url={self.url}," \
-               f"arr={symbol_or_none(self.arr)})"
+        symbol_or_none = lambda data: "..." if data is not None else None
+        return (
+            f"{self.__class__.__name__}(im_bytes={symbol_or_none(self.im_bytes)},"
+            f"file_path={self.file_path},"
+            f"url={self.url},"
+            f"arr={symbol_or_none(self.arr)})"
+        )
 
 
 class MaskData(RasterData):
@@ -212,5 +222,4 @@ class MaskData(RasterData):
     """
 
 
-class ImageData(RasterData, BaseData):
-    ...
+class ImageData(RasterData, BaseData): ...

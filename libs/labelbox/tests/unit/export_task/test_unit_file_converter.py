@@ -12,7 +12,6 @@ from labelbox.schema.export_task import (
 
 
 class TestFileConverter:
-
     def test_with_correct_ndjson(self, tmp_path, generate_random_ndjson):
         directory = tmp_path / "file-converter"
         directory.mkdir()
@@ -24,8 +23,9 @@ class TestFileConverter:
                 client=MagicMock(),
                 task_id="task-id",
                 stream_type=StreamType.RESULT,
-                metadata_header=_MetadataHeader(total_size=len(file_content),
-                                                total_lines=line_count),
+                metadata_header=_MetadataHeader(
+                    total_size=len(file_content), total_lines=line_count
+                ),
             ),
             file_info=_MetadataFileInfo(
                 offsets=Range(start=0, end=len(file_content) - 1),
@@ -55,8 +55,9 @@ class TestFileConverter:
                 client=MagicMock(),
                 task_id="task-id",
                 stream_type=StreamType.RESULT,
-                metadata_header=_MetadataHeader(total_size=len(file_content),
-                                                total_lines=line_count),
+                metadata_header=_MetadataHeader(
+                    total_size=len(file_content), total_lines=line_count
+                ),
             ),
             file_info=_MetadataFileInfo(
                 offsets=Range(start=0, end=len(file_content) - 1),

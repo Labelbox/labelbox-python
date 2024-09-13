@@ -3,8 +3,11 @@ from collections import defaultdict
 from labelbox.data.annotation_types import feature
 from labelbox.data.annotation_types.metrics import ConfusionMatrixMetric
 from typing import List, Optional, Union
-from ...annotation_types import (Label, ObjectAnnotation,
-                                 ClassificationAnnotation)
+from ...annotation_types import (
+    Label,
+    ObjectAnnotation,
+    ClassificationAnnotation,
+)
 
 from ..group import get_feature_pairs
 from .calculation import confusion_matrix
@@ -12,12 +15,12 @@ from .calculation import feature_confusion_matrix
 import numpy as np
 
 
-def confusion_matrix_metric(ground_truths: List[Union[
-    ObjectAnnotation, ClassificationAnnotation]],
-                            predictions: List[Union[ObjectAnnotation,
-                                                    ClassificationAnnotation]],
-                            include_subclasses=False,
-                            iou=0.5) -> List[ConfusionMatrixMetric]:
+def confusion_matrix_metric(
+    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    include_subclasses=False,
+    iou=0.5,
+) -> List[ConfusionMatrixMetric]:
     """
     Computes confusion matrix metrics between two sets of annotations.
     These annotations should relate to the same data (image/video).
@@ -31,11 +34,12 @@ def confusion_matrix_metric(ground_truths: List[Union[
     Returns:
         Returns a list of ConfusionMatrixMetrics. Will be empty if there were no predictions and labels. Otherwise a single metric will be returned.
     """
-    if not (0. < iou < 1.):
+    if not (0.0 < iou < 1.0):
         raise ValueError("iou must be between 0 and 1")
 
-    value = confusion_matrix(ground_truths, predictions, include_subclasses,
-                             iou)
+    value = confusion_matrix(
+        ground_truths, predictions, include_subclasses, iou
+    )
     # If both gt and preds are empty there is no metric
     if value is None:
         return []
@@ -68,39 +72,45 @@ def feature_confusion_matrix_metric(
     annotation_pairs = get_feature_pairs(ground_truths, predictions)
     metrics = []
     for key in annotation_pairs:
-        value = feature_confusion_matrix(annotation_pairs[key][0],
-                                         annotation_pairs[key][1],
-                                         include_subclasses, iou)
+        value = feature_confusion_matrix(
+            annotation_pairs[key][0],
+            annotation_pairs[key][1],
+            include_subclasses,
+            iou,
+        )
         if value is None:
             continue
 
-        metric_name = _get_metric_name(annotation_pairs[key][0],
-                                       annotation_pairs[key][1], iou)
+        metric_name = _get_metric_name(
+            annotation_pairs[key][0], annotation_pairs[key][1], iou
+        )
         metrics.append(
-            ConfusionMatrixMetric(metric_name=metric_name,
-                                  feature_name=key,
-                                  value=value))
+            ConfusionMatrixMetric(
+                metric_name=metric_name, feature_name=key, value=value
+            )
+        )
     return metrics
 
 
-def _get_metric_name(ground_truths: List[Union[ObjectAnnotation,
-                                               ClassificationAnnotation]],
-                     predictions: List[Union[ObjectAnnotation,
-                                             ClassificationAnnotation]],
-                     iou: float):
-
+def _get_metric_name(
+    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    iou: float,
+):
     if _is_classification(ground_truths, predictions):
         return "classification"
 
     return f"{int(iou*100)}pct_iou"
 
 
-def _is_classification(ground_truths: List[Union[ObjectAnnotation,
-                                                 ClassificationAnnotation]],
-                       predictions: List[Union[ObjectAnnotation,
-                                               ClassificationAnnotation]]):
+def _is_classification(
+    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+):
     # Check if either the prediction or label contains a classification annotation
-    return (len(predictions) and
-            isinstance(predictions[0], ClassificationAnnotation) or
-            len(ground_truths) and
-            isinstance(ground_truths[0], ClassificationAnnotation))
+    return (
+        len(predictions)
+        and isinstance(predictions[0], ClassificationAnnotation)
+        or len(ground_truths)
+        and isinstance(ground_truths[0], ClassificationAnnotation)
+    )

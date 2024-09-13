@@ -4,5 +4,6 @@ from .base_data import BaseData
 
 
 class LlmPromptResponseCreationData(BaseData, _NoCoercionMixin):
-    class_name: Literal[
-        "LlmPromptResponseCreationData"] = "LlmPromptResponseCreationData"
+    class_name: Literal["LlmPromptResponseCreationData"] = (
+        "LlmPromptResponseCreationData"
+    )

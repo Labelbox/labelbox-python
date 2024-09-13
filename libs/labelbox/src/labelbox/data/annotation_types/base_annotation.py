@@ -7,11 +7,11 @@ from pydantic import PrivateAttr, ConfigDict
 
 
 class BaseAnnotation(FeatureSchema, abc.ABC):
-    """ Base annotation class. Shouldn't be directly instantiated
-    """
+    """Base annotation class. Shouldn't be directly instantiated"""
+
     _uuid: Optional[UUID] = PrivateAttr()
     extra: Dict[str, Any] = {}
-    
+
     model_config = ConfigDict(extra="allow")
 
     def __init__(self, **data):

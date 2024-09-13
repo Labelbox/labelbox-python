@@ -30,8 +30,9 @@ def test_where(client, project_to_test_where):
     p_b_name = p_b.name
 
     def get(where=None):
-        date_where = Project.created_at >= min(p_a.created_at, p_b.created_at,
-                                               p_c.created_at)
+        date_where = Project.created_at >= min(
+            p_a.created_at, p_b.created_at, p_c.created_at
+        )
         where = date_where if where is None else where & date_where
         return {p.uid for p in client.get_projects(where)}
 
@@ -47,14 +48,16 @@ def test_where(client, project_to_test_where):
     ge_b = get(Project.name >= p_b_name)
     assert {p_b.uid, p_c.uid}.issubset(ge_b) and p_a.uid not in ge_b
 
+
 def test_unsupported_where(client):
     with pytest.raises(InvalidQueryError):
         client.get_projects(where=(Project.name == "a") & (Project.name == "b"))
 
     # TODO support logical OR and NOT in where
     with pytest.raises(InvalidQueryError):
-        client.get_projects(where=(Project.name == "a") |
-                            (Project.description == "b"))
+        client.get_projects(
+            where=(Project.name == "a") | (Project.description == "b")
+        )
 
     with pytest.raises(InvalidQueryError):
         client.get_projects(where=~(Project.name == "a"))

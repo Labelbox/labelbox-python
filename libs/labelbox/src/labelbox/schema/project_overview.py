@@ -2,9 +2,10 @@ from typing import Dict, List
 from typing_extensions import TypedDict
 from pydantic import BaseModel
 
+
 class ProjectOverview(BaseModel):
     """
-    Class that represents a project summary as displayed in the UI, in Annotate, 
+    Class that represents a project summary as displayed in the UI, in Annotate,
     under the "Overview" tab of a particular project.
 
     All attributes represent the number of data rows in the corresponding state.
@@ -19,7 +20,8 @@ class ProjectOverview(BaseModel):
     The `labeled` attribute represents the number of data rows that have been labeled.
     The `total_data_rows` attribute represents the total number of data rows in the project.
     """
-    to_label: int   
+
+    to_label: int
     in_review: int
     in_rework: int
     skipped: int
@@ -32,16 +34,17 @@ class ProjectOverview(BaseModel):
 class _QueueDetail(TypedDict):
     """
     Class that represents the detailed information of the queues in the project overview.
-    The `data` attribute is a list of dictionaries where the keys are the queue names 
+    The `data` attribute is a list of dictionaries where the keys are the queue names
     and the values are the number of data rows in that queue.
     """
+
     data: List[Dict[str, int]]
     total: int
-    
+
 
 class ProjectOverviewDetailed(BaseModel):
     """
-    Class that represents a project summary as displayed in the UI, in Annotate, 
+    Class that represents a project summary as displayed in the UI, in Annotate,
     under the "Overview" tab of a particular project.
     This class adds the list of task queues for the `in_review` and `in_rework` attributes.
 
@@ -62,7 +65,7 @@ class ProjectOverviewDetailed(BaseModel):
     The `total_data_rows` attribute represents the total number of data rows in the project.
     """
 
-    to_label: int   
+    to_label: int
     in_review: _QueueDetail
     in_rework: _QueueDetail
     skipped: int

@@ -9,18 +9,18 @@ if TYPE_CHECKING:
 
 class Model(DbObject):
     """A model represents a program that has been trained and
-        can make predictions on new data.
-        Attributes:
-            name (str)
-            model_runs (Relationship): `ToMany` relationship to ModelRun
-        """
+    can make predictions on new data.
+    Attributes:
+        name (str)
+        model_runs (Relationship): `ToMany` relationship to ModelRun
+    """
 
     name = Field.String("name")
     ontology_id = Field.String("ontology_id")
     model_runs = Relationship.ToMany("ModelRun", False)
 
     def create_model_run(self, name, config=None) -> "ModelRun":
-        """ Creates a model run belonging to this model.
+        """Creates a model run belonging to this model.
 
         Args:
             name (string): The name for the model run.
@@ -34,17 +34,22 @@ class Model(DbObject):
         ModelRun = Entity.ModelRun
         query_str = """mutation CreateModelRunPyApi($%s: String!, $%s: Json, $%s: ID!) {
             createModelRun(data: {name: $%s, trainingMetadata: $%s, modelId: $%s}) {%s}}""" % (
-            name_param, config_param, model_id_param, name_param, config_param,
-            model_id_param, query.results_query_part(ModelRun))
-        res = self.client.execute(query_str, {
-            name_param: name,
-            config_param: config,
-            model_id_param: self.uid
-        })
+            name_param,
+            config_param,
+            model_id_param,
+            name_param,
+            config_param,
+            model_id_param,
+            query.results_query_part(ModelRun),
+        )
+        res = self.client.execute(
+            query_str,
+            {name_param: name, config_param: config, model_id_param: self.uid},
+        )
         return ModelRun(self.client, res["createModelRun"])
 
     def delete(self) -> None:
-        """ Deletes specified model.
+        """Deletes specified model.
 
         Returns:
             Query execution success.

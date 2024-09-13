@@ -2,7 +2,9 @@ import sys
 
 from typing import Optional, Dict
 
-from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
+from labelbox.schema.conflict_resolution_strategy import (
+    ConflictResolutionStrategy,
+)
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict
@@ -37,21 +39,23 @@ class SendToAnnotateFromCatalogParams(BaseModel):
     predictions_ontology_mapping: Optional[Dict[str, str]] = {}
     annotations_ontology_mapping: Optional[Dict[str, str]] = {}
     exclude_data_rows_in_project: Optional[bool] = False
-    override_existing_annotations_rule: Optional[
-        ConflictResolutionStrategy] = ConflictResolutionStrategy.KeepExisting
+    override_existing_annotations_rule: Optional[ConflictResolutionStrategy] = (
+        ConflictResolutionStrategy.KeepExisting
+    )
     batch_priority: Optional[int] = 5
 
     @model_validator(mode="after")
     def check_project_id_or_model_run_id(self):
         if not self.source_model_run_id and not self.source_project_id:
             raise ValueError(
-                'Either source_project_id or source_model_id are required'
+                "Either source_project_id or source_model_id are required"
             )
         if self.source_model_run_id and self.source_project_id:
             raise ValueError(
-                'Provide only a source_project_id or source_model_id not both'
-            ) 
+                "Provide only a source_project_id or source_model_id not both"
+            )
         return self
+
 
 class SendToAnnotateFromModelParams(TypedDict):
     """
@@ -73,36 +77,35 @@ class SendToAnnotateFromModelParams(TypedDict):
     batch_priority: Optional[int]
 
 
-def build_annotations_input(project_ontology_mapping: Optional[Dict[str, str]],
-                            source_project_id: str):
+def build_annotations_input(
+    project_ontology_mapping: Optional[Dict[str, str]], source_project_id: str
+):
     return {
-        "projectId":
-            source_project_id,
-        "featureSchemaIdsMapping":
-            project_ontology_mapping if project_ontology_mapping else {},
+        "projectId": source_project_id,
+        "featureSchemaIdsMapping": project_ontology_mapping
+        if project_ontology_mapping
+        else {},
     }
 
 
 def build_destination_task_queue_input(task_queue_id: str):
-    destination_task_queue = {
-        "type": "id",
-        "value": task_queue_id
-    } if task_queue_id else {
-        "type": "done"
-    }
+    destination_task_queue = (
+        {"type": "id", "value": task_queue_id}
+        if task_queue_id
+        else {"type": "done"}
+    )
     return destination_task_queue
 
 
-def build_predictions_input(model_run_ontology_mapping: Optional[Dict[str,
-                                                                      str]],
-                            source_model_run_id: str):
+def build_predictions_input(
+    model_run_ontology_mapping: Optional[Dict[str, str]],
+    source_model_run_id: str,
+):
     return {
-        "featureSchemaIdsMapping":
-            model_run_ontology_mapping if model_run_ontology_mapping else {},
-        "modelRunId":
-            source_model_run_id,
-        "minConfidence":
-            0,
-        "maxConfidence":
-            1
+        "featureSchemaIdsMapping": model_run_ontology_mapping
+        if model_run_ontology_mapping
+        else {},
+        "modelRunId": source_model_run_id,
+        "minConfidence": 0,
+        "maxConfidence": 1,
     }

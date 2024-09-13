@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class LabelGenerator(PrefetchGenerator):
     """
-    A container for interacting with a large collection of labels. 
+    A container for interacting with a large collection of labels.
     For a small number of labels, just use a list of Label objects.
     """
 
@@ -26,21 +26,23 @@ class LabelGenerator(PrefetchGenerator):
         super().__init__(data, *args, **kwargs)
 
     def assign_feature_schema_ids(
-            self,
-            ontology_builder: "ontology.OntologyBuilder") -> "LabelGenerator":
-
+        self, ontology_builder: "ontology.OntologyBuilder"
+    ) -> "LabelGenerator":
         def _assign_ids(label: Label):
             label.assign_feature_schema_ids(ontology_builder)
             return label
 
-        warnings.warn("This method is deprecated and will be "
-                      "removed in a future release. Feature schema ids"
-                      " are no longer required for importing.")
-        self._fns['assign_feature_schema_ids'] = _assign_ids
+        warnings.warn(
+            "This method is deprecated and will be "
+            "removed in a future release. Feature schema ids"
+            " are no longer required for importing."
+        )
+        self._fns["assign_feature_schema_ids"] = _assign_ids
         return self
 
-    def add_url_to_data(self, signer: Callable[[bytes],
-                                               str]) -> "LabelGenerator":
+    def add_url_to_data(
+        self, signer: Callable[[bytes], str]
+    ) -> "LabelGenerator":
         """
         Creates signed urls for the data
         Only uploads url if one doesn't already exist.
@@ -55,11 +57,12 @@ class LabelGenerator(PrefetchGenerator):
             label.add_url_to_data(signer)
             return label
 
-        self._fns['add_url_to_data'] = _add_url_to_data
+        self._fns["add_url_to_data"] = _add_url_to_data
         return self
 
-    def add_to_dataset(self, dataset: "Entity.Dataset",
-                       signer: Callable[[bytes], str]) -> "LabelGenerator":
+    def add_to_dataset(
+        self, dataset: "Entity.Dataset", signer: Callable[[bytes], str]
+    ) -> "LabelGenerator":
         """
         Creates data rows from each labels data object and attaches the data to the given dataset.
         Updates the label's data object to have the same external_id and uid as the data row.
@@ -75,11 +78,12 @@ class LabelGenerator(PrefetchGenerator):
             label.create_data_row(dataset, signer)
             return label
 
-        self._fns['assign_datarow_ids'] = _add_to_dataset
+        self._fns["assign_datarow_ids"] = _add_to_dataset
         return self
 
-    def add_url_to_masks(self, signer: Callable[[bytes],
-                                                str]) -> "LabelGenerator":
+    def add_url_to_masks(
+        self, signer: Callable[[bytes], str]
+    ) -> "LabelGenerator":
         """
         Creates signed urls for all masks in the LabelGenerator.
         Multiple masks can reference the same MaskData so this makes sure we only upload that url once.
@@ -97,11 +101,12 @@ class LabelGenerator(PrefetchGenerator):
             label.add_url_to_masks(signer)
             return label
 
-        self._fns['add_url_to_masks'] = _add_url_to_masks
+        self._fns["add_url_to_masks"] = _add_url_to_masks
         return self
 
-    def register_background_fn(self, fn: Callable[[Label], Label],
-                               name: str) -> "LabelGenerator":
+    def register_background_fn(
+        self, fn: Callable[[Label], Label], name: str
+    ) -> "LabelGenerator":
         """
         Allows users to add arbitrary io functions to the generator.
         These functions will be exectuted in parallel and added to a prefetch queue.

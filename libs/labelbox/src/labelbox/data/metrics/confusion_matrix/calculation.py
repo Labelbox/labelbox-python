@@ -2,20 +2,37 @@ from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
-from ..iou.calculation import _get_mask_pairs, _get_vector_pairs, _get_ner_pairs, miou
-from ...annotation_types import (ObjectAnnotation, ClassificationAnnotation,
-                                 Mask, Geometry, Checklist, Radio, TextEntity,
-                                 ScalarMetricValue, ConfusionMatrixMetricValue)
-from ..group import (get_feature_pairs, get_identifying_key, has_no_annotations,
-                     has_no_matching_annotations)
+from ..iou.calculation import (
+    _get_mask_pairs,
+    _get_vector_pairs,
+    _get_ner_pairs,
+    miou,
+)
+from ...annotation_types import (
+    ObjectAnnotation,
+    ClassificationAnnotation,
+    Mask,
+    Geometry,
+    Checklist,
+    Radio,
+    TextEntity,
+    ScalarMetricValue,
+    ConfusionMatrixMetricValue,
+)
+from ..group import (
+    get_feature_pairs,
+    get_identifying_key,
+    has_no_annotations,
+    has_no_matching_annotations,
+)
 
 
-def confusion_matrix(ground_truths: List[Union[ObjectAnnotation,
-                                               ClassificationAnnotation]],
-                     predictions: List[Union[ObjectAnnotation,
-                                             ClassificationAnnotation]],
-                     include_subclasses: bool,
-                     iou: float) -> ConfusionMatrixMetricValue:
+def confusion_matrix(
+    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    include_subclasses: bool,
+    iou: float,
+) -> ConfusionMatrixMetricValue:
     """
     Computes the confusion matrix for an arbitrary set of ground truth and predicted annotations.
     It first computes the confusion matrix for each metric and then sums across all classes
@@ -33,8 +50,9 @@ def confusion_matrix(ground_truths: List[Union[ObjectAnnotation,
 
     annotation_pairs = get_feature_pairs(ground_truths, predictions)
     conf_matrix = [
-        feature_confusion_matrix(annotation_pair[0], annotation_pair[1],
-                                 include_subclasses, iou)
+        feature_confusion_matrix(
+            annotation_pair[0], annotation_pair[1], include_subclasses, iou
+        )
         for annotation_pair in annotation_pairs.values()
     ]
     matrices = [matrix for matrix in conf_matrix if matrix is not None]
@@ -42,10 +60,11 @@ def confusion_matrix(ground_truths: List[Union[ObjectAnnotation,
 
 
 def feature_confusion_matrix(
-        ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-        predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
-        include_subclasses: bool,
-        iou: float) -> Optional[ConfusionMatrixMetricValue]:
+    ground_truths: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    predictions: List[Union[ObjectAnnotation, ClassificationAnnotation]],
+    include_subclasses: bool,
+    iou: float,
+) -> Optional[ConfusionMatrixMetricValue]:
     """
     Computes confusion matrix for all features of the same class.
 
@@ -63,24 +82,28 @@ def feature_confusion_matrix(
     elif has_no_annotations(ground_truths, predictions):
         return None
     elif isinstance(predictions[0].value, Mask):
-        return mask_confusion_matrix(ground_truths, predictions,
-                                     include_subclasses, iou)
+        return mask_confusion_matrix(
+            ground_truths, predictions, include_subclasses, iou
+        )
     elif isinstance(predictions[0].value, Geometry):
-        return vector_confusion_matrix(ground_truths, predictions,
-                                       include_subclasses, iou)
+        return vector_confusion_matrix(
+            ground_truths, predictions, include_subclasses, iou
+        )
     elif isinstance(predictions[0].value, TextEntity):
-        return ner_confusion_matrix(ground_truths, predictions,
-                                    include_subclasses, iou)
+        return ner_confusion_matrix(
+            ground_truths, predictions, include_subclasses, iou
+        )
     elif isinstance(predictions[0], ClassificationAnnotation):
         return classification_confusion_matrix(ground_truths, predictions)
     else:
         raise ValueError(
-            f"Unexpected annotation found. Found {type(predictions[0].value)}")
+            f"Unexpected annotation found. Found {type(predictions[0].value)}"
+        )
 
 
 def classification_confusion_matrix(
-        ground_truths: List[ClassificationAnnotation],
-        predictions: List[ClassificationAnnotation]
+    ground_truths: List[ClassificationAnnotation],
+    predictions: List[ClassificationAnnotation],
 ) -> ConfusionMatrixMetricValue:
     """
     Computes iou score for all features with the same feature schema id.
@@ -97,9 +120,11 @@ def classification_confusion_matrix(
 
     if has_no_matching_annotations(ground_truths, predictions):
         return [0, len(predictions), 0, len(ground_truths)]
-    elif has_no_annotations(
-            ground_truths,
-            predictions) or len(predictions) > 1 or len(ground_truths) > 1:
+    elif (
+        has_no_annotations(ground_truths, predictions)
+        or len(predictions) > 1
+        or len(ground_truths) > 1
+    ):
         # Note that we could return [0,0,0,0] but that will bloat the imports for no reason
         return None
 
@@ -108,7 +133,8 @@ def classification_confusion_matrix(
     if type(prediction) != type(ground_truth):
         raise TypeError(
             "Classification features must be the same type to compute agreement. "
-            f"Found `{type(prediction)}` and `{type(ground_truth)}`")
+            f"Found `{type(prediction)}` and `{type(ground_truth)}`"
+        )
 
     if isinstance(prediction.value, Radio):
         return radio_confusion_matrix(ground_truth.value, prediction.value)
@@ -120,11 +146,13 @@ def classification_confusion_matrix(
         )
 
 
-def vector_confusion_matrix(ground_truths: List[ObjectAnnotation],
-                            predictions: List[ObjectAnnotation],
-                            include_subclasses: bool,
-                            iou: float,
-                            buffer=70.) -> Optional[ConfusionMatrixMetricValue]:
+def vector_confusion_matrix(
+    ground_truths: List[ObjectAnnotation],
+    predictions: List[ObjectAnnotation],
+    include_subclasses: bool,
+    iou: float,
+    buffer=70.0,
+) -> Optional[ConfusionMatrixMetricValue]:
     """
     Computes confusion matrix for any vector class (point, polygon, line, rectangle).
     Ground truths and predictions should all belong to the same class.
@@ -149,11 +177,11 @@ def vector_confusion_matrix(ground_truths: List[ObjectAnnotation],
     return object_pair_confusion_matrix(pairs, include_subclasses, iou)
 
 
-def object_pair_confusion_matrix(pairs: List[Tuple[ObjectAnnotation,
-                                                   ObjectAnnotation,
-                                                   ScalarMetricValue]],
-                                 include_subclasses: bool,
-                                 iou: float) -> ConfusionMatrixMetricValue:
+def object_pair_confusion_matrix(
+    pairs: List[Tuple[ObjectAnnotation, ObjectAnnotation, ScalarMetricValue]],
+    include_subclasses: bool,
+    iou: float,
+) -> ConfusionMatrixMetricValue:
     """
     Computes the confusion matrix for a list of object annotation pairs.
     Performs greedy matching of pairs.
@@ -177,14 +205,22 @@ def object_pair_confusion_matrix(pairs: List[Tuple[ObjectAnnotation,
         prediction_ids.add(prediction_id)
         ground_truth_ids.add(ground_truth_id)
 
-        if agreement > iou and \
-         prediction_id not in matched_predictions and \
-         ground_truth_id not in matched_ground_truths:
-            if include_subclasses and (ground_truth.classifications or
-                                       prediction.classifications):
-                if miou(ground_truth.classifications,
+        if (
+            agreement > iou
+            and prediction_id not in matched_predictions
+            and ground_truth_id not in matched_ground_truths
+        ):
+            if include_subclasses and (
+                ground_truth.classifications or prediction.classifications
+            ):
+                if (
+                    miou(
+                        ground_truth.classifications,
                         prediction.classifications,
-                        include_subclasses=False) < 1.:
+                        include_subclasses=False,
+                    )
+                    < 1.0
+                ):
                     # Incorrect if the subclasses don't 100% agree then there is no match
                     continue
             matched_predictions.add(prediction_id)
@@ -198,8 +234,9 @@ def object_pair_confusion_matrix(pairs: List[Tuple[ObjectAnnotation,
     return [tps, fps, tns, fns]
 
 
-def radio_confusion_matrix(ground_truth: Radio,
-                           prediction: Radio) -> ConfusionMatrixMetricValue:
+def radio_confusion_matrix(
+    ground_truth: Radio, prediction: Radio
+) -> ConfusionMatrixMetricValue:
     """
     Calculates confusion between ground truth and predicted radio values
 
@@ -220,8 +257,8 @@ def radio_confusion_matrix(ground_truth: Radio,
 
 
 def checklist_confusion_matrix(
-        ground_truth: Checklist,
-        prediction: Checklist) -> ConfusionMatrixMetricValue:
+    ground_truth: Checklist, prediction: Checklist
+) -> ConfusionMatrixMetricValue:
     """
     Calculates agreement between ground truth and predicted checklist items:
 
@@ -246,10 +283,12 @@ def checklist_confusion_matrix(
     return [tps, fps, 0, fns]
 
 
-def mask_confusion_matrix(ground_truths: List[ObjectAnnotation],
-                          predictions: List[ObjectAnnotation],
-                          include_subclasses: bool,
-                          iou: float) -> Optional[ScalarMetricValue]:
+def mask_confusion_matrix(
+    ground_truths: List[ObjectAnnotation],
+    predictions: List[ObjectAnnotation],
+    include_subclasses: bool,
+    iou: float,
+) -> Optional[ScalarMetricValue]:
     """
     Computes confusion matrix metric for two masks
 
@@ -269,15 +308,17 @@ def mask_confusion_matrix(ground_truths: List[ObjectAnnotation],
         return None
 
     pairs = _get_mask_pairs(ground_truths, predictions)
-    return object_pair_confusion_matrix(pairs,
-                                        include_subclasses=include_subclasses,
-                                        iou=iou)
+    return object_pair_confusion_matrix(
+        pairs, include_subclasses=include_subclasses, iou=iou
+    )
 
 
-def ner_confusion_matrix(ground_truths: List[ObjectAnnotation],
-                         predictions: List[ObjectAnnotation],
-                         include_subclasses: bool,
-                         iou: float) -> Optional[ConfusionMatrixMetricValue]:
+def ner_confusion_matrix(
+    ground_truths: List[ObjectAnnotation],
+    predictions: List[ObjectAnnotation],
+    include_subclasses: bool,
+    iou: float,
+) -> Optional[ConfusionMatrixMetricValue]:
     """Computes confusion matrix metric between two lists of TextEntity objects
 
     Args:

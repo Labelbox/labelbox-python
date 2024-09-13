@@ -26,7 +26,9 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema import role
-from labelbox.schema.conflict_resolution_strategy import ConflictResolutionStrategy
+from labelbox.schema.conflict_resolution_strategy import (
+    ConflictResolutionStrategy,
+)
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
@@ -38,7 +40,10 @@ from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.identifiables import DataRowIds
 from labelbox.schema.identifiables import GlobalKeys
 from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox.schema.media_type import MediaType, get_media_type_validation_error
+from labelbox.schema.media_type import (
+    MediaType,
+    get_media_type_validation_error,
+)
 from labelbox.schema.model import Model
 from labelbox.schema.model_config import ModelConfig
 from labelbox.schema.model_run import ModelRun
@@ -143,7 +148,9 @@ class Client:
         self._connection: requests.Session = self._init_connection()
 
     def _init_connection(self) -> requests.Session:
-        connection = requests.Session()  # using default connection pool size of 10
+        connection = (
+            requests.Session()
+        )  # using default connection pool size of 10
         connection.headers.update(self._default_headers())
 
         return connection
@@ -163,7 +170,8 @@ class Client:
 
     @retry.Retry(
         predicate=retry.if_exception_type(
-            labelbox.exceptions.InternalServerError, labelbox.exceptions.TimeoutError
+            labelbox.exceptions.InternalServerError,
+            labelbox.exceptions.TimeoutError,
         )
     )
     def execute(
@@ -219,8 +227,12 @@ class Client:
 
         if query is not None:
             if params is not None:
-                params = {key: convert_value(value) for key, value in params.items()}
-            data = json.dumps({"query": query, "variables": params}).encode("utf-8")
+                params = {
+                    key: convert_value(value) for key, value in params.items()
+                }
+            data = json.dumps({"query": query, "variables": params}).encode(
+                "utf-8"
+            )
         elif data is None:
             raise ValueError("query and data cannot both be none")
 
@@ -235,7 +247,6 @@ class Client:
             if files:
                 del headers["Content-Type"]
                 del headers["Accept"]
-
             request = requests.Request(
                 "POST",
                 endpoint,
@@ -250,7 +261,9 @@ class Client:
                 prepped.url, {}, None, None, None
             )
 
-            response = self._connection.send(prepped, timeout=timeout, **settings)
+            response = self._connection.send(
+                prepped, timeout=timeout, **settings
+            )
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise labelbox.exceptions.TimeoutError(str(e))
@@ -278,7 +291,9 @@ class Client:
                 "upstream connect error or disconnect/reset before headers"
                 in response.text
             ):
-                raise labelbox.exceptions.InternalServerError("Connection reset")
+                raise labelbox.exceptions.InternalServerError(
+                    "Connection reset"
+                )
             elif response.status_code == 502:
                 error_502 = "502 Bad Gateway"
                 raise labelbox.exceptions.InternalServerError(error_502)
@@ -306,14 +321,19 @@ class Client:
             except:
                 return 500
 
-        if check_errors(["AUTHENTICATION_ERROR"], "extensions", "code") is not None:
+        if (
+            check_errors(["AUTHENTICATION_ERROR"], "extensions", "code")
+            is not None
+        ):
             raise labelbox.exceptions.AuthenticationError("Invalid API key")
 
         authorization_error = check_errors(
             ["AUTHORIZATION_ERROR"], "extensions", "code"
         )
         if authorization_error is not None:
-            raise labelbox.exceptions.AuthorizationError(authorization_error["message"])
+            raise labelbox.exceptions.AuthorizationError(
+                authorization_error["message"]
+            )
 
         validation_error = check_errors(
             ["GRAPHQL_VALIDATION_FAILED"], "extensions", "code"
@@ -326,9 +346,13 @@ class Client:
             else:
                 raise labelbox.exceptions.InvalidQueryError(message)
 
-        graphql_error = check_errors(["GRAPHQL_PARSE_FAILED"], "extensions", "code")
+        graphql_error = check_errors(
+            ["GRAPHQL_PARSE_FAILED"], "extensions", "code"
+        )
         if graphql_error is not None:
-            raise labelbox.exceptions.InvalidQueryError(graphql_error["message"])
+            raise labelbox.exceptions.InvalidQueryError(
+                graphql_error["message"]
+            )
 
         # Check if API limit was exceeded
         response_msg = r_json.get("message", "")
@@ -403,7 +427,9 @@ class Client:
                     errors,
                 )
             )
-            raise labelbox.exceptions.LabelboxError("Unknown error: %s" % str(messages))
+            raise labelbox.exceptions.LabelboxError(
+                "Unknown error: %s" % str(messages)
+            )
 
         # if we do return a proper error code, and didn't catch this above
         # reraise
@@ -437,7 +463,9 @@ class Client:
             )
 
     @retry.Retry(
-        predicate=retry.if_exception_type(labelbox.exceptions.InternalServerError)
+        predicate=retry.if_exception_type(
+            labelbox.exceptions.InternalServerError
+        )
     )
     def upload_data(
         self,
@@ -486,7 +514,11 @@ class Client:
         headers = self._connection.headers.copy()
         headers.pop("Content-Type", None)
         request = requests.Request(
-            "POST", self.endpoint, headers=headers, data=request_data, files=files
+            "POST",
+            self.endpoint,
+            headers=headers,
+            data=request_data,
+            files=files,
         )
 
         prepped: requests.PreparedRequest = request.prepare()
@@ -511,7 +543,9 @@ class Client:
         if not file_data or not file_data.get("uploadFile", None):
             try:
                 errors = response.json().get("errors", [])
-                error_msg = next(iter(errors), {}).get("message", "Unknown error")
+                error_msg = next(iter(errors), {}).get(
+                    "message", "Unknown error"
+                )
             except Exception as e:
                 error_msg = "Unknown error"
             raise labelbox.exceptions.LabelboxError(
@@ -537,7 +571,9 @@ class Client:
         res = self.execute(query_str, params)
         res = res and res.get(utils.camel_case(db_object_type.type_name()))
         if res is None:
-            raise labelbox.exceptions.ResourceNotFoundError(db_object_type, params)
+            raise labelbox.exceptions.ResourceNotFoundError(
+                db_object_type, params
+            )
         else:
             return db_object_type(self, res)
 
@@ -679,15 +715,17 @@ class Client:
         # Convert string attribute names to Field or Relationship objects.
         # Also convert Labelbox object values to their UIDs.
         data = {
-            db_object_type.attribute(attr) if isinstance(attr, str) else attr: value.uid
-            if isinstance(value, DbObject)
-            else value
+            db_object_type.attribute(attr)
+            if isinstance(attr, str)
+            else attr: value.uid if isinstance(value, DbObject) else value
             for attr, value in data.items()
         }
 
         data = {**data, **extra_params}
         query_string, params = query.create(db_object_type, data)
-        res = self.execute(query_string, params)
+        res = self.execute(
+            query_string, params, raise_return_resource_not_found=True
+        )
 
         if not res:
             raise labelbox.exceptions.LabelboxError(
@@ -748,7 +786,9 @@ class Client:
         params = {"id": id}
         result = self.execute(query, params)
         if not result:
-            raise labelbox.exceptions.ResourceNotFoundError(Entity.ModelConfig, params)
+            raise labelbox.exceptions.ResourceNotFoundError(
+                Entity.ModelConfig, params
+            )
         return result["deleteModelConfig"]["success"]
 
     def create_dataset(
@@ -775,7 +815,9 @@ class Client:
         """
         dataset = self._create(Entity.Dataset, kwargs)
         if iam_integration == IAMIntegration._DEFAULT:
-            iam_integration = self.get_organization().get_default_iam_integration()
+            iam_integration = (
+                self.get_organization().get_default_iam_integration()
+            )
 
         if iam_integration is None:
             return dataset
@@ -787,7 +829,9 @@ class Client:
                 )
 
             if not iam_integration.valid:
-                raise ValueError("Integration is not valid. Please select another.")
+                raise ValueError(
+                    "Integration is not valid. Please select another."
+                )
 
             self.execute(
                 """mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
@@ -985,7 +1029,9 @@ class Client:
             )
 
         if dataset_id and dataset_name:
-            raise ValueError("Only provide a dataset_name or dataset_id, not both.")
+            raise ValueError(
+                "Only provide a dataset_name or dataset_id, not both."
+            )
 
         if data_row_count <= 0:
             raise ValueError("data_row_count must be a positive integer.")
@@ -1036,7 +1082,10 @@ class Client:
     def _create_project(self, **kwargs) -> Project:
         auto_audit_percentage = kwargs.get("auto_audit_percentage")
         auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
-        if auto_audit_percentage is not None or auto_audit_number_of_labels is not None:
+        if (
+            auto_audit_percentage is not None
+            or auto_audit_number_of_labels is not None
+        ):
             raise ValueError(
                 "quality_modes must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
             )
@@ -1100,18 +1149,25 @@ class Client:
         if (
             quality_modes_set is None
             or len(quality_modes_set) == 0
-            or quality_modes_set == {QualityMode.Benchmark, QualityMode.Consensus}
+            or quality_modes_set
+            == {QualityMode.Benchmark, QualityMode.Consensus}
         ):
-            data["auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_number_of_labels"] = (
+                CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+            )
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
             data["is_consensus_enabled"] = True
         elif quality_modes_set == {QualityMode.Benchmark}:
-            data["auto_audit_number_of_labels"] = BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_number_of_labels"] = (
+                BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
+            )
             data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
             data["is_benchmark_enabled"] = True
         elif quality_modes_set == {QualityMode.Consensus}:
-            data["auto_audit_number_of_labels"] = CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+            data["auto_audit_number_of_labels"] = (
+                CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
+            )
             data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
             data["is_consensus_enabled"] = True
         else:
@@ -1124,7 +1180,9 @@ class Client:
             params["media_type"] = media_type_value
 
         extra_params = {
-            Field.String("dataset_name_or_id"): params.pop("dataset_name_or_id", None),
+            Field.String("dataset_name_or_id"): params.pop(
+                "dataset_name_or_id", None
+            ),
             Field.Boolean("append_to_existing_dataset"): params.pop(
                 "append_to_existing_dataset", None
             ),
@@ -1221,7 +1279,9 @@ class Client:
                 }
             }""" % query.results_query_part(Entity.Model)
 
-        result = self.execute(query_str, {"name": name, "ontologyId": ontology_id})
+        result = self.execute(
+            query_str, {"name": name, "ontologyId": ontology_id}
+        )
         return Entity.Model(self, result["createModel"])
 
     def get_data_row_ids_for_external_ids(
@@ -1244,7 +1304,8 @@ class Client:
         result = defaultdict(list)
         for i in range(0, len(external_ids), max_ids_per_request):
             for row in self.execute(
-                query_str, {"externalId_in": external_ids[i : i + max_ids_per_request]}
+                query_str,
+                {"externalId_in": external_ids[i : i + max_ids_per_request]},
             )["externalIdsToDataRowIds"]:
                 result[row["externalId"]].append(row["dataRowId"])
         return result
@@ -1301,7 +1362,8 @@ class Client:
         }""" % query.results_query_part(Entity.FeatureSchema)
 
         res = self.execute(
-            query_str, {"rootSchemaNodeWhere": {"featureSchemaId": feature_schema_id}}
+            query_str,
+            {"rootSchemaNodeWhere": {"featureSchemaId": feature_schema_id}},
         )["rootSchemaNode"]
         res["id"] = res["normalized"]["featureSchemaId"]
         return Entity.FeatureSchema(self, res)
@@ -1373,10 +1435,15 @@ class Client:
                     Tool.Type(tool)
                     tools.append(feature_schema.normalized)
                 except ValueError:
-                    raise ValueError(f"Tool `{tool}` not in list of supported tools.")
+                    raise ValueError(
+                        f"Tool `{tool}` not in list of supported tools."
+                    )
             elif "type" in feature_schema.normalized:
                 classification = feature_schema.normalized["type"]
-                if classification in Classification.Type._value2member_map_.keys():
+                if (
+                    classification
+                    in Classification.Type._value2member_map_.keys()
+                ):
                     Classification.Type(classification)
                     classifications.append(feature_schema.normalized)
                 elif (
@@ -1433,7 +1500,11 @@ class Client:
         Example:
             >>> client.delete_unused_ontology("cleabc1my012ioqvu5anyaabc")
         """
-        endpoint = self.rest_endpoint + "/ontologies/" + urllib.parse.quote(ontology_id)
+        endpoint = (
+            self.rest_endpoint
+            + "/ontologies/"
+            + urllib.parse.quote(ontology_id)
+        )
         response = self._connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
@@ -1709,7 +1780,9 @@ class Client:
         return self._get_single(Entity.ModelRun, model_run_id)
 
     def assign_global_keys_to_data_rows(
-        self, global_key_to_data_row_inputs: List[Dict[str, str]], timeout_seconds=60
+        self,
+        global_key_to_data_row_inputs: List[Dict[str, str]],
+        timeout_seconds=60,
     ) -> Dict[str, Union[str, List[Any]]]:
         """
         Assigns global keys to data rows.
@@ -1814,9 +1887,9 @@ class Client:
                 }}}
         """
         result_params = {
-            "jobId": assign_global_keys_to_data_rows_job["assignGlobalKeysToDataRows"][
-                "jobId"
-            ]
+            "jobId": assign_global_keys_to_data_rows_job[
+                "assignGlobalKeysToDataRows"
+            ]["jobId"]
         }
 
         # Poll job status until finished, then retrieve results
@@ -1824,7 +1897,10 @@ class Client:
         start_time = time.time()
         while True:
             res = self.execute(result_query_str, result_params)
-            if res["assignGlobalKeysToDataRowsResult"]["jobStatus"] == "COMPLETE":
+            if (
+                res["assignGlobalKeysToDataRowsResult"]["jobStatus"]
+                == "COMPLETE"
+            ):
                 results, errors = [], []
                 res = res["assignGlobalKeysToDataRowsResult"]["data"]
                 # Successful assignments
@@ -1869,7 +1945,9 @@ class Client:
                     "results": results,
                     "errors": errors,
                 }
-            elif res["assignGlobalKeysToDataRowsResult"]["jobStatus"] == "FAILED":
+            elif (
+                res["assignGlobalKeysToDataRowsResult"]["jobStatus"] == "FAILED"
+            ):
                 raise labelbox.exceptions.LabelboxError(
                     "Job assign_global_keys_to_data_rows failed."
                 )
@@ -1936,7 +2014,9 @@ class Client:
                 } jobStatus}}
             """
         result_params = {
-            "jobId": data_rows_for_global_keys_job["dataRowsForGlobalKeys"]["jobId"]
+            "jobId": data_rows_for_global_keys_job["dataRowsForGlobalKeys"][
+                "jobId"
+            ]
         }
 
         # Poll job status until finished, then retrieve results
@@ -1955,7 +2035,8 @@ class Client:
                 )
                 errors.extend(
                     _format_failed_rows(
-                        data["accessDeniedGlobalKeys"], "Access denied to Data Row"
+                        data["accessDeniedGlobalKeys"],
+                        "Access denied to Data Row",
                     )
                 )
 
@@ -2035,7 +2116,9 @@ class Client:
                 accessDeniedGlobalKeys
                 } jobStatus}}
             """
-        result_params = {"jobId": clear_global_keys_job["clearGlobalKeys"]["jobId"]}
+        result_params = {
+            "jobId": clear_global_keys_job["clearGlobalKeys"]["jobId"]
+        }
         # Poll job status until finished, then retrieve results
         sleep_time = 2
         start_time = time.time()
@@ -2047,7 +2130,8 @@ class Client:
                 results.extend(data["clearedGlobalKeys"])
                 errors.extend(
                     _format_failed_rows(
-                        data["failedToClearGlobalKeys"], "Clearing global key failed"
+                        data["failedToClearGlobalKeys"],
+                        "Clearing global key failed",
                     )
                 )
                 errors.extend(
@@ -2077,7 +2161,9 @@ class Client:
 
                 return {"status": status, "results": results, "errors": errors}
             elif res["clearGlobalKeysResult"]["jobStatus"] == "FAILED":
-                raise labelbox.exceptions.LabelboxError("Job clearGlobalKeys failed.")
+                raise labelbox.exceptions.LabelboxError(
+                    "Job clearGlobalKeys failed."
+                )
             current_time = time.time()
             if current_time - start_time > timeout_seconds:
                 raise labelbox.exceptions.TimeoutError(
@@ -2125,7 +2211,9 @@ class Client:
         """
 
         ontology_endpoint = (
-            self.rest_endpoint + "/ontologies/" + urllib.parse.quote(ontology_id)
+            self.rest_endpoint
+            + "/ontologies/"
+            + urllib.parse.quote(ontology_id)
         )
         response = self._connection.get(ontology_endpoint)
 
@@ -2148,7 +2236,9 @@ class Client:
                 )
 
         elif response.status_code == 404:
-            raise labelbox.exceptions.ResourceNotFoundError(Ontology, ontology_id)
+            raise labelbox.exceptions.ResourceNotFoundError(
+                Ontology, ontology_id
+            )
         else:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to get the feature schema archived status."
@@ -2177,7 +2267,9 @@ class Client:
         """
         res = self.execute(query_str, {"id": slice_id})
         if res is None or res["getSavedQuery"] is None:
-            raise labelbox.exceptions.ResourceNotFoundError(ModelSlice, slice_id)
+            raise labelbox.exceptions.ResourceNotFoundError(
+                ModelSlice, slice_id
+            )
 
         return Entity.ModelSlice(self, res["getSavedQuery"])
 
@@ -2216,7 +2308,9 @@ class Client:
                     "Feature schema was archived from the ontology because it had associated labels."
                 )
             elif response_json["deleted"] == True:
-                logger.info("Feature schema was successfully removed from the ontology")
+                logger.info(
+                    "Feature schema was successfully removed from the ontology"
+                )
             result = DeleteFeatureFromOntologyResult()
             result.archived = bool(response_json["archived"])
             result.deleted = bool(response_json["deleted"])
@@ -2255,7 +2349,8 @@ class Client:
                 )
         else:
             raise labelbox.exceptions.LabelboxError(
-                "Failed unarchive the feature schema node, message: ", response.text
+                "Failed unarchive the feature schema node, message: ",
+                response.text,
             )
 
     def get_batch(self, project_id: str, batch_id: str) -> Entity.Batch:
@@ -2330,7 +2425,9 @@ class Client:
                           }
         """
 
-        destination_task_queue = build_destination_task_queue_input(task_queue_id)
+        destination_task_queue = build_destination_task_queue_input(
+            task_queue_id
+        )
         data_rows_query = self.build_catalog_query(data_rows)
 
         predictions_input = (
@@ -2409,7 +2506,10 @@ class Client:
         return data_rows_query
 
     def run_foundry_app(
-        self, model_run_name: str, data_rows: Union[DataRowIds, GlobalKeys], app_id: str
+        self,
+        model_run_name: str,
+        data_rows: Union[DataRowIds, GlobalKeys],
+        app_id: str,
     ) -> Task:
         """
         Run a foundry app
@@ -2477,7 +2577,9 @@ class Client:
         for e in embeddings:
             if e.name == name:
                 return e
-        raise labelbox.exceptions.ResourceNotFoundError(Embedding, dict(name=name))
+        raise labelbox.exceptions.ResourceNotFoundError(
+            Embedding, dict(name=name)
+        )
 
     def upsert_label_feedback(
         self, label_id: str, feedback: str, scores: Dict[str, float]
@@ -2518,12 +2620,14 @@ class Client:
             }
         """
         res = self.execute(
-            mutation_str, {"labelId": label_id, "feedback": feedback, "scores": scores}
+            mutation_str,
+            {"labelId": label_id, "feedback": feedback, "scores": scores},
         )
         scores_raw = res["upsertAutoQaLabelFeedback"]["scores"]
 
         return [
-            labelbox.LabelScore(name=x["name"], score=x["score"]) for x in scores_raw
+            labelbox.LabelScore(name=x["name"], score=x["score"])
+            for x in scores_raw
         ]
 
     def get_labeling_service_dashboards(

@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 class User(DbObject):
-    """ A User is a registered Labelbox user (for example you) associated with
+    """A User is a registered Labelbox user (for example you) associated with
     data they create or import and an Organization they belong to.
 
     Attributes:
@@ -43,7 +43,7 @@ class User(DbObject):
     org_role = Relationship.ToOne("OrgRole", False)
 
     def update_org_role(self, role: "Role") -> None:
-        """ Updated the `User`s organization role.
+        """Updated the `User`s organization role.
 
         See client.get_roles() to get all valid roles
         If you a user is converted from project level permissions to org level permissions and then convert back, their permissions will remain for each individual project
@@ -58,23 +58,22 @@ class User(DbObject):
             setOrganizationRole(data: {userId: $userId, roleId: $roleId}) { id name }}
         """ % (user_id_param, role_id_param)
 
-        self.client.execute(query_str, {
-            user_id_param: self.uid,
-            role_id_param: role.uid
-        })
+        self.client.execute(
+            query_str, {user_id_param: self.uid, role_id_param: role.uid}
+        )
 
     def remove_from_project(self, project: "Project") -> None:
-        """ Removes a User from a project. Only used for project based users.
+        """Removes a User from a project. Only used for project based users.
         Project based user means their org role is "NONE"
 
         Args:
             project (Project): Project to remove user from
 
         """
-        self.upsert_project_role(project, self.client.get_roles()['NONE'])
+        self.upsert_project_role(project, self.client.get_roles()["NONE"])
 
     def upsert_project_role(self, project: "Project", role: "Role") -> None:
-        """ Updates or replaces a User's role in a project.
+        """Updates or replaces a User's role in a project.
 
         Args:
             project (Project): The project to update the users permissions for
@@ -82,21 +81,30 @@ class User(DbObject):
 
         """
         org_role = self.org_role()
-        if org_role.name.upper() != 'NONE':
+        if org_role.name.upper() != "NONE":
             raise ValueError(
-                "User is not project based and has access to all projects")
+                "User is not project based and has access to all projects"
+            )
 
         project_id_param = "projectId"
         user_id_param = "userId"
         role_id_param = "roleId"
         query_str = """mutation SetProjectMembershipPyApi($%s: ID!, $%s: ID!, $%s: ID!) {
                 setProjectMembership(data: {%s: $userId, roleId: $%s, projectId: $%s}) {id}}
-        """ % (user_id_param, role_id_param, project_id_param, user_id_param,
-               role_id_param, project_id_param)
+        """ % (
+            user_id_param,
+            role_id_param,
+            project_id_param,
+            user_id_param,
+            role_id_param,
+            project_id_param,
+        )
 
         self.client.execute(
-            query_str, {
+            query_str,
+            {
                 project_id_param: project.uid,
                 user_id_param: self.uid,
-                role_id_param: role.uid
-            })
+                role_id_param: role.uid,
+            },
+        )
