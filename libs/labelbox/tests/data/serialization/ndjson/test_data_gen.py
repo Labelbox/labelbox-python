@@ -7,7 +7,9 @@ def test_serialize_label():
         feature_schema_id="ckrb1sfkn099c0y910wbo0p1a",
         name="test",
         extra={"uuid": "test"},
-        value=lb_types.PromptText(answer="the answer to the text questions right here"),
+        value=lb_types.PromptText(
+            answer="the answer to the text questions right here"
+        ),
     )
 
     prompt_text_ndjson = {
@@ -19,7 +21,8 @@ def test_serialize_label():
     }
 
     data_gen_label = lb_types.Label(
-        data={"uid": "ckrb1sf1i1g7i0ybcdc6oc8ct"}, annotations=[prompt_text_annotation]
+        data={"uid": "ckrb1sf1i1g7i0ybcdc6oc8ct"},
+        annotations=[prompt_text_annotation],
     )
     serialized_label = next(NDJsonConverter().serialize([data_gen_label]))
 

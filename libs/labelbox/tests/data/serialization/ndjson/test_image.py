@@ -38,7 +38,9 @@ def test_image():
             ),
             annotations=[
                 ObjectAnnotation(
-                    custom_metrics=[CustomMetric(name="customMetric1", value=0.4)],
+                    custom_metrics=[
+                        CustomMetric(name="customMetric1", value=0.4)
+                    ],
                     confidence=0.851,
                     feature_schema_id="ckrazcueb16og0z6609jj7y3y",
                     extra={
@@ -50,7 +52,9 @@ def test_image():
                     ),
                 ),
                 ObjectAnnotation(
-                    custom_metrics=[CustomMetric(name="customMetric1", value=0.3)],
+                    custom_metrics=[
+                        CustomMetric(name="customMetric1", value=0.3)
+                    ],
                     confidence=0.834,
                     feature_schema_id="ckrazcuec16ok0z66f956apb7",
                     extra={
@@ -64,7 +68,9 @@ def test_image():
                     ),
                 ),
                 ObjectAnnotation(
-                    custom_metrics=[CustomMetric(name="customMetric1", value=0.9)],
+                    custom_metrics=[
+                        CustomMetric(name="customMetric1", value=0.9)
+                    ],
                     confidence=0.986,
                     feature_schema_id="ckrazcuec16oi0z66dzrd8pfl",
                     extra={
@@ -96,7 +102,9 @@ def test_image():
 
 
 def test_image_with_name_only():
-    with open("tests/data/assets/ndjson/image_import_name_only.json", "r") as file:
+    with open(
+        "tests/data/assets/ndjson/image_import_name_only.json", "r"
+    ) as file:
         data = json.load(file)
 
     labels = [
@@ -106,7 +114,9 @@ def test_image_with_name_only():
             ),
             annotations=[
                 ObjectAnnotation(
-                    custom_metrics=[CustomMetric(name="customMetric1", value=0.4)],
+                    custom_metrics=[
+                        CustomMetric(name="customMetric1", value=0.4)
+                    ],
                     confidence=0.851,
                     name="ckrazcueb16og0z6609jj7y3y",
                     extra={
@@ -118,7 +128,9 @@ def test_image_with_name_only():
                     ),
                 ),
                 ObjectAnnotation(
-                    custom_metrics=[CustomMetric(name="customMetric1", value=0.3)],
+                    custom_metrics=[
+                        CustomMetric(name="customMetric1", value=0.3)
+                    ],
                     confidence=0.834,
                     name="ckrazcuec16ok0z66f956apb7",
                     extra={
@@ -132,7 +144,9 @@ def test_image_with_name_only():
                     ),
                 ),
                 ObjectAnnotation(
-                    custom_metrics=[CustomMetric(name="customMetric1", value=0.9)],
+                    custom_metrics=[
+                        CustomMetric(name="customMetric1", value=0.9)
+                    ],
                     confidence=0.986,
                     name="ckrazcuec16oi0z66dzrd8pfl",
                     extra={
@@ -198,7 +212,9 @@ def test_mask():
             ),
             annotations=[
                 ObjectAnnotation(
-                    custom_metrics=[CustomMetric(name="customMetric1", value=0.4)],
+                    custom_metrics=[
+                        CustomMetric(name="customMetric1", value=0.4)
+                    ],
                     confidence=0.8,
                     feature_schema_id="ckrazcueb16og0z6609jj7y3y",
                     extra={
@@ -238,7 +254,9 @@ def test_mask_from_arr():
         annotations=[
             ObjectAnnotation(
                 feature_schema_id="1" * 25,
-                value=Mask(mask=MaskData.from_2D_arr(arr=mask_arr), color=(1, 1, 1)),
+                value=Mask(
+                    mask=MaskData.from_2D_arr(arr=mask_arr), color=(1, 1, 1)
+                ),
             )
         ],
         data=ImageData(uid="0" * 25),

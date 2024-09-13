@@ -31,7 +31,8 @@ dicom_polyline_annotations = [
 ]
 
 polyline_label = lb_types.Label(
-    data=lb_types.DicomData(uid="test-uid"), annotations=dicom_polyline_annotations
+    data=lb_types.DicomData(uid="test-uid"),
+    annotations=dicom_polyline_annotations,
 )
 
 polyline_annotation_ndjson = {
@@ -62,7 +63,9 @@ polyline_with_global_key = lb_types.Label(
 )
 
 polyline_annotation_ndjson_with_global_key = copy(polyline_annotation_ndjson)
-polyline_annotation_ndjson_with_global_key["dataRow"] = {"globalKey": "test-global-key"}
+polyline_annotation_ndjson_with_global_key["dataRow"] = {
+    "globalKey": "test-global-key"
+}
 """
 Video test data
 """
@@ -79,7 +82,9 @@ instances = [
     lb_types.MaskInstance(color_rgb=(255, 0, 0), name="mask3"),
 ]
 
-video_mask_annotation = lb_types.VideoMaskAnnotation(frames=frames, instances=instances)
+video_mask_annotation = lb_types.VideoMaskAnnotation(
+    frames=frames, instances=instances
+)
 
 video_mask_annotation_ndjson = {
     "dataRow": {"id": "test-uid"},
@@ -96,7 +101,9 @@ video_mask_annotation_ndjson = {
     },
 }
 
-video_mask_annotation_ndjson_with_global_key = copy(video_mask_annotation_ndjson)
+video_mask_annotation_ndjson_with_global_key = copy(
+    video_mask_annotation_ndjson
+)
 video_mask_annotation_ndjson_with_global_key["dataRow"] = {
     "globalKey": "test-global-key"
 }
@@ -131,7 +138,9 @@ dicom_mask_label_with_global_key = lb_types.Label(
 
 dicom_mask_annotation_ndjson = copy(video_mask_annotation_ndjson)
 dicom_mask_annotation_ndjson["groupKey"] = "axial"
-dicom_mask_annotation_ndjson_with_global_key = copy(dicom_mask_annotation_ndjson)
+dicom_mask_annotation_ndjson_with_global_key = copy(
+    dicom_mask_annotation_ndjson
+)
 dicom_mask_annotation_ndjson_with_global_key["dataRow"] = {
     "globalKey": "test-global-key"
 }

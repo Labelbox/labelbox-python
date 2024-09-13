@@ -21,7 +21,9 @@ radio_label = [
             lb_types.ClassificationAnnotation(
                 name="radio",
                 value=lb_types.Radio(
-                    answer=lb_types.ClassificationAnswer(name="first_radio_answer")
+                    answer=lb_types.ClassificationAnswer(
+                        name="first_radio_answer"
+                    )
                 ),
                 message_id="0",
             )
@@ -50,8 +52,12 @@ checklist_label = [
                 message_id="2",
                 value=lb_types.Checklist(
                     answer=[
-                        lb_types.ClassificationAnswer(name="first_checklist_answer"),
-                        lb_types.ClassificationAnswer(name="second_checklist_answer"),
+                        lb_types.ClassificationAnswer(
+                            name="first_checklist_answer"
+                        ),
+                        lb_types.ClassificationAnswer(
+                            name="second_checklist_answer"
+                        ),
                     ]
                 ),
             )
@@ -96,7 +102,9 @@ def test_message_based_radio_classification(label, ndjson):
 
 
 def test_conversation_entity_import():
-    with open("tests/data/assets/ndjson/conversation_entity_import.json", "r") as file:
+    with open(
+        "tests/data/assets/ndjson/conversation_entity_import.json", "r"
+    ) as file:
         data = json.load(file)
 
     label = lb_types.Label(

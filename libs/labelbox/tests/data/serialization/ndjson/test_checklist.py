@@ -20,7 +20,9 @@ def test_serialization_min():
         annotations=[
             ClassificationAnnotation(
                 name="checkbox_question_geo",
-                value=Checklist(answer=[ClassificationAnswer(name="first_answer")]),
+                value=Checklist(
+                    answer=[ClassificationAnswer(name="first_answer")]
+                ),
             )
         ],
     )
@@ -256,7 +258,8 @@ def test_serialization_with_classification_double_nested_2():
                                             ],
                                         ),
                                         ClassificationAnswer(
-                                            name="third_subchk_answer", confidence=0.42
+                                            name="third_subchk_answer",
+                                            confidence=0.42,
                                         ),
                                     ]
                                 ),

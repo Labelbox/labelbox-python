@@ -17,7 +17,9 @@ from labelbox.data.mixins import CustomMetric
 
 
 def test_classification():
-    with open("tests/data/assets/ndjson/classification_import.json", "r") as file:
+    with open(
+        "tests/data/assets/ndjson/classification_import.json", "r"
+    ) as file:
         data = json.load(file)
 
     label = Label(
