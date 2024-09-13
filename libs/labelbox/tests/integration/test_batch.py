@@ -121,11 +121,11 @@ def test_archive_batch(project: Project, small_dataset: Dataset):
     export_task.wait_till_done()
     stream = export_task.get_buffered_stream()
     data_rows = [dr.json["data_row"]["id"] for dr in stream]
-    
+
     batch = project.create_batch("batch to archive", data_rows)
     batch.remove_queued_data_rows()
     overview = project.get_overview()
-    
+
     assert overview.to_label == 0
 
 
@@ -199,27 +199,6 @@ def test_batch_creation_with_processing_timeout(
         project._wait_processing_max_seconds = 0
         project.create_batch("batch to test failed data rows", data_row_ids)
     project._wait_processing_max_seconds = stashed_wait_timeout
-
-
-@pytest.mark.export_v1("export_v1 test remove later")
-def test_export_data_rows(project: Project, dataset: Dataset, image_url: str,
-                          external_id: str):
-    n_data_rows = 2
-    task = dataset.create_data_rows([
-        {
-            "row_data": image_url,
-            "external_id": external_id
-        },
-    ] * n_data_rows)
-    task.wait_till_done()
-
-    data_rows = [dr.uid for dr in list(dataset.export_data_rows())]
-    batch = project.create_batch("batch test", data_rows)
-    result = list(batch.export_data_rows())
-    exported_data_rows = [dr.uid for dr in result]
-
-    assert len(result) == n_data_rows
-    assert set(data_rows) == set(exported_data_rows)
 
 
 def test_list_all_batches(project: Project, client, image_url: str):
