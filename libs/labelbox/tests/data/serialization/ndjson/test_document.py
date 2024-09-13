@@ -1,10 +1,12 @@
 import json
+from labelbox.data.annotation_types.data.generic_data_row_data import (
+    GenericDataRowData,
+)
 from labelbox.data.mixins import CustomMetric
 import labelbox.types as lb_types
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 from labelbox.types import (
     Label,
-    GenericDataRowData,
     ObjectAnnotation,
     RectangleUnit,
     Point,

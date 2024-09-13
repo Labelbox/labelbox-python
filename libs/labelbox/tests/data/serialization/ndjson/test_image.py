@@ -1,4 +1,7 @@
 import json
+from labelbox.data.annotation_types.data.generic_data_row_data import (
+    GenericDataRowData,
+)
 from labelbox.data.mixins import CustomMetric
 import numpy as np
 import cv2
@@ -11,7 +14,7 @@ from labelbox.data.annotation_types import (
     ImageData,
     MaskData,
 )
-from labelbox.types import GenericDataRowData, Rectangle, Polygon, Point
+from labelbox.types import Rectangle, Polygon, Point
 
 
 def round_dict(data):

@@ -1,5 +1,8 @@
 import json
 
+from labelbox.data.annotation_types.data.generic_data_row_data import (
+    GenericDataRowData,
+)
 import pytest
 import labelbox.types as lb_types
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
@@ -108,7 +111,7 @@ def test_conversation_entity_import():
         data = json.load(file)
 
     label = lb_types.Label(
-        data=lb_types.GenericDataRowData(
+        data=GenericDataRowData(
             uid="cl6xnv9h61fv0085yhtoq06ht",
         ),
         annotations=[
@@ -140,7 +143,7 @@ def test_conversation_entity_import_without_confidence():
         data = json.load(file)
     label = lb_types.Label(
         uid=None,
-        data=lb_types.GenericDataRowData(
+        data=GenericDataRowData(
             uid="cl6xnv9h61fv0085yhtoq06ht",
         ),
         annotations=[
