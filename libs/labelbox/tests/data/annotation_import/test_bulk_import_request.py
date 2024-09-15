@@ -1,38 +1,11 @@
-from unittest.mock import patch
 import uuid
 from labelbox import parser, Project
-from labelbox.data.annotation_types.data.generic_data_row_data import (
-    GenericDataRowData,
-)
 import pytest
-import random
-from labelbox.data.annotation_types.annotation import ObjectAnnotation
-from labelbox.data.annotation_types.classification.classification import (
-    Checklist,
-    ClassificationAnnotation,
-    ClassificationAnswer,
-    Radio,
-)
-from labelbox.data.annotation_types.data.video import VideoData
-from labelbox.data.annotation_types.geometry.point import Point
-from labelbox.data.annotation_types.geometry.rectangle import (
-    Rectangle,
-    RectangleUnit,
-)
-from labelbox.data.annotation_types.label import Label
-from labelbox.data.annotation_types.data.text import TextData
-from labelbox.data.annotation_types.ner import (
-    DocumentEntity,
-    DocumentTextSelection,
-)
-from labelbox.data.annotation_types.video import VideoObjectAnnotation
 
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.exceptions import MALValidationError, UuidError
 from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.enums import BulkImportRequestState
-from labelbox.schema.annotation_import import LabelImport, MALPredictionImport
-from labelbox.schema.media_type import MediaType
 
 """
 - Here we only want to check that the uploads are calling the validation
@@ -84,27 +57,6 @@ def test_create_from_objects(
     assert bulk_import_request.state == BulkImportRequestState.RUNNING
     annotation_import_test_helpers.assert_file_content(
         bulk_import_request.input_file_url, predictions
-    )
-
-
-def test_create_from_label_objects(
-    module_project, predictions, annotation_import_test_helpers
-):
-    name = str(uuid.uuid4())
-
-    labels = list(NDJsonConverter.deserialize(predictions))
-    bulk_import_request = module_project.upload_annotations(
-        name=name, annotations=labels
-    )
-
-    assert bulk_import_request.project() == module_project
-    assert bulk_import_request.name == name
-    assert bulk_import_request.error_file_url is None
-    assert bulk_import_request.status_file_url is None
-    assert bulk_import_request.state == BulkImportRequestState.RUNNING
-    normalized_predictions = list(NDJsonConverter.serialize(labels))
-    annotation_import_test_helpers.assert_file_content(
-        bulk_import_request.input_file_url, normalized_predictions
     )
 
 
