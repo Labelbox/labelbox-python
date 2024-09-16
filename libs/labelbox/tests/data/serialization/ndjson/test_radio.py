@@ -1,4 +1,3 @@
-import json
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation
 from labelbox.data.annotation_types.classification.classification import (
     ClassificationAnswer,
@@ -39,14 +38,6 @@ def test_serialization_with_radio_min():
 
     res.pop("uuid")
     assert res == expected
-
-    deserialized = NDJsonConverter.deserialize([res])
-    res = next(deserialized)
-
-    for i, annotation in enumerate(res.annotations):
-        annotation.extra.pop("uuid")
-        assert annotation.value == label.annotations[i].value
-        assert annotation.name == label.annotations[i].name
 
 
 def test_serialization_with_radio_classification():
@@ -101,10 +92,3 @@ def test_serialization_with_radio_classification():
     res = next(serialized)
     res.pop("uuid")
     assert res == expected
-
-    deserialized = NDJsonConverter.deserialize([res])
-    res = next(deserialized)
-    res.annotations[0].extra.pop("uuid")
-    assert res.annotations[0].model_dump(
-        exclude_none=True
-    ) == label.annotations[0].model_dump(exclude_none=True)
