@@ -112,11 +112,14 @@ def configured_project(
 
 
 @pytest.fixture
-def configured_project_with_complex_ontology(client, initial_dataset, rand_gen,
-                                             image_url, teardown_helpers):
-    project = client.create_project(name=rand_gen(str),
-                                    queue_mode=QueueMode.Batch,
-                                    media_type=MediaType.Image)
+def configured_project_with_complex_ontology(
+    client, initial_dataset, rand_gen, image_url, teardown_helpers
+):
+    project = client.create_project(
+        name=rand_gen(str),
+        queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
+    )
     dataset = initial_dataset
     data_row = dataset.create_data_row(row_data=image_url)
     data_row_ids = [data_row.uid]

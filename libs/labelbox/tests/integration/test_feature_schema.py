@@ -59,7 +59,7 @@ def test_throws_an_error_if_feature_schema_to_delete_doesnt_exist(client):
 
 
 def test_updates_a_feature_schema_title(client, feature_schema):
-    feature_schema_id = feature_schema.normalized['featureSchemaId']
+    feature_schema_id = feature_schema.normalized["featureSchemaId"]
     new_title = "new title"
     updated_feature_schema = client.update_feature_schema_title(
         feature_schema_id, new_title
@@ -69,9 +69,10 @@ def test_updates_a_feature_schema_title(client, feature_schema):
 
 
 def test_throws_an_error_when_updating_a_feature_schema_with_empty_title(
-        client, feature_schema):
+    client, feature_schema
+):
     tool = feature_schema
-    feature_schema_id = tool.normalized['featureSchemaId']
+    feature_schema_id = tool.normalized["featureSchemaId"]
 
     with pytest.raises(Exception):
         client.update_feature_schema_title(feature_schema_id, "")
@@ -103,7 +104,7 @@ def test_updates_a_feature_schema(client, feature_schema):
 
 def test_does_not_include_used_feature_schema(client, feature_schema):
     tool = feature_schema
-    feature_schema_id = tool.normalized['featureSchemaId']
+    feature_schema_id = tool.normalized["featureSchemaId"]
     ontology = client.create_ontology_from_feature_schemas(
         name="ontology name",
         feature_schema_ids=[feature_schema_id],

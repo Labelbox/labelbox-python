@@ -13,6 +13,7 @@ from labelbox import Client, Dataset
 from typing import Tuple, Type
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from pytest import FixtureRequest
+
 """
 The main fixtures of this library are configured_project and configured_project_by_global_key. Both fixtures generate data rows with a parametrize media type. They create the amount of data rows equal to the DATA_ROW_COUNT variable below. The data rows are generated with a factory fixture that returns a function that allows you to pass a global key. The ontologies are generated normalized and based on the MediaType given (i.e. only features supported by MediaType are created). This ontology is later used to obtain the correct annotations with the prediction_id_mapping and corresponding inferences. Each data row will have all possible annotations attached supported for the MediaType. 
 """
@@ -740,12 +741,16 @@ def _create_project(
 
 
 @pytest.fixture
-def configured_project(client: Client, rand_gen, data_row_json_by_media_type,
-                       request: FixtureRequest,
-                       normalized_ontology_by_media_type,
-                       export_v2_test_helpers,
-                       llm_prompt_response_creation_dataset_with_data_row,
-                       teardown_helpers):
+def configured_project(
+    client: Client,
+    rand_gen,
+    data_row_json_by_media_type,
+    request: FixtureRequest,
+    normalized_ontology_by_media_type,
+    export_v2_test_helpers,
+    llm_prompt_response_creation_dataset_with_data_row,
+    teardown_helpers,
+):
     """Configure project for test. Request.param will contain the media type if not present will use Image MediaType. The project will have 10 data rows."""
 
     media_type = getattr(request, "param", MediaType.Image)
@@ -789,11 +794,15 @@ def configured_project(client: Client, rand_gen, data_row_json_by_media_type,
 
 
 @pytest.fixture()
-def configured_project_by_global_key(client: Client, rand_gen,
-                                     data_row_json_by_media_type,
-                                     request: FixtureRequest,
-                                     normalized_ontology_by_media_type,
-                                     export_v2_test_helpers, teardown_helpers):
+def configured_project_by_global_key(
+    client: Client,
+    rand_gen,
+    data_row_json_by_media_type,
+    request: FixtureRequest,
+    normalized_ontology_by_media_type,
+    export_v2_test_helpers,
+    teardown_helpers,
+):
     """Does the same thing as configured project but with global keys focus."""
 
     media_type = getattr(request, "param", MediaType.Image)
@@ -836,9 +845,14 @@ def configured_project_by_global_key(client: Client, rand_gen,
 
 
 @pytest.fixture(scope="module")
-def module_project(client: Client, rand_gen, data_row_json_by_media_type,
-                   request: FixtureRequest, normalized_ontology_by_media_type,
-                   module_teardown_helpers):
+def module_project(
+    client: Client,
+    rand_gen,
+    data_row_json_by_media_type,
+    request: FixtureRequest,
+    normalized_ontology_by_media_type,
+    module_teardown_helpers,
+):
     """Generates a image project that scopes to the test module(file). Used to reduce api calls."""
 
     media_type = getattr(request, "param", MediaType.Image)
@@ -872,7 +886,8 @@ def module_project(client: Client, rand_gen, data_row_json_by_media_type,
     yield project
 
     module_teardown_helpers.teardown_project_labels_ontology_feature_schemas(
-        project)
+        project
+    )
 
     if dataset:
         dataset.delete()

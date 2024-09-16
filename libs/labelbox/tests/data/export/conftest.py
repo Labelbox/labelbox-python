@@ -2,7 +2,6 @@ import uuid
 import time
 import pytest
 from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.media_type import MediaType
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 
@@ -241,8 +240,9 @@ def polygon_inference(prediction_id_mapping):
 
 
 @pytest.fixture
-def configured_project_with_ontology(client, initial_dataset, ontology,
-                                     rand_gen, image_url, teardown_helpers):
+def configured_project_with_ontology(
+    client, initial_dataset, ontology, rand_gen, image_url, teardown_helpers
+):
     dataset = initial_dataset
     project = client.create_project(
         name=rand_gen(str),
@@ -267,11 +267,14 @@ def configured_project_with_ontology(client, initial_dataset, ontology,
 
 
 @pytest.fixture
-def configured_project_without_data_rows(client, ontology, rand_gen,
-                                         teardown_helpers):
-    project = client.create_project(name=rand_gen(str),
-                                    description=rand_gen(str),
-                                    queue_mode=QueueMode.Batch)
+def configured_project_without_data_rows(
+    client, ontology, rand_gen, teardown_helpers
+):
+    project = client.create_project(
+        name=rand_gen(str),
+        description=rand_gen(str),
+        queue_mode=QueueMode.Batch,
+    )
     editor = list(
         client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
     )[0]

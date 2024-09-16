@@ -18,8 +18,9 @@ def current_model(client, configured_project_with_label, rand_gen):
     model.delete()
 
 
-def test_model_run(client, configured_project_with_label, current_model,
-                   data_row, rand_gen):
+def test_model_run(
+    client, configured_project_with_label, current_model, data_row, rand_gen
+):
     _, _, _, label = configured_project_with_label
     label_id = label.uid
     model = current_model
