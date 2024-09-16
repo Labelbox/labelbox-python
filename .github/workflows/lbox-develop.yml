@@ -27,7 +27,7 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
-          list-files: "json"
+          list-files: 'json'
           filters: |
             lbox:
               - 'libs/lbox*/**'
@@ -36,16 +36,16 @@ jobs:
         with:
           files-changed: ${{ steps.filter.outputs.lbox_files }}
   build:
-    needs: ["path-filter"]
+    needs: ['path-filter']
     if: ${{ needs.path-filter.outputs.lbox == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        include: ${{ fromJSON(needs.path-filter.outputs.test-matrix) }}
+      matrix: 
+        include: ${{ fromJSON(needs.path-filter.outputs.test-matrix) }}    
     concurrency:
       group: lbox-staging-${{ matrix.python-version }}-${{ matrix.package }}
-      cancel-in-progress: false
+      cancel-in-progress: false  
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,19 +67,19 @@ jobs:
         env:
           LABELBOX_TEST_API_KEY: ${{ secrets[matrix.api-key] }}
           DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
-          LABELBOX_TEST_ENVIRON: "staging"
+          LABELBOX_TEST_ENVIRON: 'staging'
         run: rye run integration
   test-pypi:
     runs-on: ubuntu-latest
-    needs: ["build", "path-filter"]
+    needs: ['build', 'path-filter']
     if: ${{ needs.path-filter.outputs.lbox == 'true' }}
     strategy:
       fail-fast: false
-      matrix:
+      matrix: 
         include: ${{ fromJSON(needs.path-filter.outputs.package-matrix) }}
-    environment:
+    environment: 
       name: Test-PyPI-${{ matrix.package }}
-      url: "https://test.pypi.org/p/${{ matrix.package }}"
+      url: 'https://test.pypi.org/p/${{ matrix.package }}'
     permissions:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
@@ -90,7 +90,7 @@ jobs:
       - uses: ./.github/actions/python-package-shared-setup
         with:
           rye-version: ${{ vars.RYE_VERSION }}
-          python-version: "3.8"
+          python-version: '3.8'
       - name: Create build
         id: create-build
         working-directory: libs/${{ matrix.package }}
@@ -107,11 +107,11 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
   test-container:
     runs-on: ubuntu-latest
-    needs: ["build", "path-filter"]
+    needs: ['build', 'path-filter']
     if: ${{ needs.path-filter.outputs.lbox == 'true' }}
     strategy:
       fail-fast: false
-      matrix:
+      matrix: 
         include: ${{ fromJSON(needs.path-filter.outputs.package-matrix) }}
     permissions:
       # IMPORTANT: this permission is mandatory for trusted publishing
