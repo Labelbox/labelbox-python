@@ -1488,33 +1488,6 @@ class Project(DbObject, Updateable, Deletable):
             "showingPredictionsToLabelers"
         ]
 
-    def bulk_import_requests(self) -> PaginatedCollection:
-        """Returns bulk import request objects which are used in model-assisted labeling.
-        These are returned with the oldest first, and most recent last.
-        """
-
-        id_param = "project_id"
-        query_str = """query ListAllImportRequestsPyApi($%s: ID!) {
-            bulkImportRequests (
-                where: { projectId: $%s }
-                skip: %%d
-                first: %%d
-            ) {
-                %s
-            }
-        }""" % (
-            id_param,
-            id_param,
-            query.results_query_part(Entity.BulkImportRequest),
-        )
-        return PaginatedCollection(
-            self.client,
-            query_str,
-            {id_param: str(self.uid)},
-            ["bulkImportRequests"],
-            Entity.BulkImportRequest,
-        )
-
     def batches(self) -> PaginatedCollection:
         """Fetch all batches that belong to this project
 
