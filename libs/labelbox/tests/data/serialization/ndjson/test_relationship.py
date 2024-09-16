@@ -1,16 +1,135 @@
 import json
-from uuid import uuid4
 
-import pytest
+from labelbox.data.annotation_types.data.generic_data_row_data import (
+    GenericDataRowData,
+)
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
+from labelbox.types import (
+    Label,
+    ObjectAnnotation,
+    Point,
+    Rectangle,
+    RelationshipAnnotation,
+    Relationship,
+)
 
 
 def test_relationship():
     with open("tests/data/assets/ndjson/relationship_import.json", "r") as file:
         data = json.load(file)
 
-    res = list(NDJsonConverter.deserialize(data))
+    res = [
+        Label(
+            data=GenericDataRowData(
+                uid="clf98gj90000qp38ka34yhptl",
+            ),
+            annotations=[
+                ObjectAnnotation(
+                    name="cat",
+                    extra={
+                        "uuid": "d8813907-b15d-4374-bbe6-b9877fb42ccd",
+                    },
+                    value=Rectangle(
+                        start=Point(x=100.0, y=200.0),
+                        end=Point(x=200.0, y=300.0),
+                    ),
+                ),
+                ObjectAnnotation(
+                    name="dog",
+                    extra={
+                        "uuid": "9b1e1249-36b4-4665-b60a-9060e0d18660",
+                    },
+                    value=Rectangle(
+                        start=Point(x=400.0, y=500.0),
+                        end=Point(x=600.0, y=700.0),
+                    ),
+                ),
+                RelationshipAnnotation(
+                    name="is chasing",
+                    extra={"uuid": "0e6354eb-9adb-47e5-8e52-217ed016d948"},
+                    value=Relationship(
+                        source=ObjectAnnotation(
+                            name="dog",
+                            extra={
+                                "uuid": "9b1e1249-36b4-4665-b60a-9060e0d18660",
+                            },
+                            value=Rectangle(
+                                start=Point(x=400.0, y=500.0),
+                                end=Point(x=600.0, y=700.0),
+                            ),
+                        ),
+                        target=ObjectAnnotation(
+                            name="cat",
+                            extra={
+                                "uuid": "d8813907-b15d-4374-bbe6-b9877fb42ccd",
+                            },
+                            value=Rectangle(
+                                extra={},
+                                start=Point(x=100.0, y=200.0),
+                                end=Point(x=200.0, y=300.0),
+                            ),
+                        ),
+                        type=Relationship.Type.UNIDIRECTIONAL,
+                    ),
+                ),
+            ],
+        ),
+        Label(
+            data=GenericDataRowData(
+                uid="clf98gj90000qp38ka34yhptl-DIFFERENT",
+            ),
+            annotations=[
+                ObjectAnnotation(
+                    name="cat",
+                    extra={
+                        "uuid": "d8813907-b15d-4374-bbe6-b9877fb42ccd",
+                    },
+                    value=Rectangle(
+                        start=Point(x=100.0, y=200.0),
+                        end=Point(x=200.0, y=300.0),
+                    ),
+                ),
+                ObjectAnnotation(
+                    name="dog",
+                    extra={
+                        "uuid": "9b1e1249-36b4-4665-b60a-9060e0d18660",
+                    },
+                    value=Rectangle(
+                        start=Point(x=400.0, y=500.0),
+                        end=Point(x=600.0, y=700.0),
+                    ),
+                ),
+                RelationshipAnnotation(
+                    name="is chasing",
+                    extra={"uuid": "0e6354eb-9adb-47e5-8e52-217ed016d948"},
+                    value=Relationship(
+                        source=ObjectAnnotation(
+                            name="dog",
+                            extra={
+                                "uuid": "9b1e1249-36b4-4665-b60a-9060e0d18660",
+                            },
+                            value=Rectangle(
+                                start=Point(x=400.0, y=500.0),
+                                end=Point(x=600.0, y=700.0),
+                            ),
+                        ),
+                        target=ObjectAnnotation(
+                            name="cat",
+                            extra={
+                                "uuid": "d8813907-b15d-4374-bbe6-b9877fb42ccd",
+                            },
+                            value=Rectangle(
+                                start=Point(x=100.0, y=200.0),
+                                end=Point(x=200.0, y=300.0),
+                            ),
+                        ),
+                        type=Relationship.Type.UNIDIRECTIONAL,
+                    ),
+                ),
+            ],
+        ),
+    ]
     res = list(NDJsonConverter.serialize(res))
     assert len(res) == len(data)
 
@@ -44,29 +163,3 @@ def test_relationship():
     assert res_relationship_second_annotation["relationship"]["target"] in [
         annot["uuid"] for annot in res_source_and_target
     ]
-
-
-def test_relationship_nonexistent_object():
-    with open("tests/data/assets/ndjson/relationship_import.json", "r") as file:
-        data = json.load(file)
-
-    relationship_annotation = data[2]
-    source_uuid = relationship_annotation["relationship"]["source"]
-    target_uuid = str(uuid4())
-    relationship_annotation["relationship"]["target"] = target_uuid
-    error_msg = f"Relationship object refers to nonexistent object with UUID '{source_uuid}' and/or '{target_uuid}'"
-
-    with pytest.raises(ValueError, match=error_msg):
-        list(NDJsonConverter.deserialize(data))
-
-
-def test_relationship_duplicate_uuids():
-    with open("tests/data/assets/ndjson/relationship_import.json", "r") as file:
-        data = json.load(file)
-
-    source, target = data[0], data[1]
-    target["uuid"] = source["uuid"]
-    error_msg = f"UUID '{source['uuid']}' is not unique"
-
-    with pytest.raises(AssertionError, match=error_msg):
-        list(NDJsonConverter.deserialize(data))
