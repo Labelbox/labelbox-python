@@ -1,6 +1,10 @@
 import json
+from labelbox.data.annotation_types.data.generic_data_row_data import (
+    GenericDataRowData,
+)
 import labelbox.types as lb_types
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
+from labelbox.types import Label, ObjectAnnotation, Rectangle, Point
 
 DATAROW_ID = "ckrb1sf1i1g7i0ybcdc6oc8ct"
 
@@ -8,8 +12,26 @@ DATAROW_ID = "ckrb1sf1i1g7i0ybcdc6oc8ct"
 def test_rectangle():
     with open("tests/data/assets/ndjson/rectangle_import.json", "r") as file:
         data = json.load(file)
-    res = list(NDJsonConverter.deserialize(data))
-    res = list(NDJsonConverter.serialize(res))
+    labels = [
+        Label(
+            data=GenericDataRowData(
+                uid="ckrb1sf1i1g7i0ybcdc6oc8ct",
+            ),
+            annotations=[
+                ObjectAnnotation(
+                    name="bbox",
+                    extra={
+                        "uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72",
+                    },
+                    value=Rectangle(
+                        start=Point(x=38.0, y=28.0),
+                        end=Point(x=81.0, y=69.0),
+                    ),
+                )
+            ],
+        )
+    ]
+    res = list(NDJsonConverter.serialize(labels))
     assert res == data
 
 
@@ -39,8 +61,6 @@ def test_rectangle_inverted_start_end_points():
         ),
         extra={
             "uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72",
-            "page": None,
-            "unit": None,
         },
     )
 
@@ -48,8 +68,9 @@ def test_rectangle_inverted_start_end_points():
         data={"uid": DATAROW_ID}, annotations=[expected_bbox]
     )
 
-    res = list(NDJsonConverter.deserialize(res))
-    assert res == [label]
+    data = list(NDJsonConverter.serialize([label]))
+
+    assert res == data
 
 
 def test_rectangle_mixed_start_end_points():
@@ -76,17 +97,13 @@ def test_rectangle_mixed_start_end_points():
             start=lb_types.Point(x=38, y=28),
             end=lb_types.Point(x=81, y=69),
         ),
-        extra={
-            "uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72",
-            "page": None,
-            "unit": None,
-        },
+        extra={"uuid": "c1be3a57-597e-48cb-8d8d-a852665f9e72"},
     )
 
     label = lb_types.Label(data={"uid": DATAROW_ID}, annotations=[bbox])
 
-    res = list(NDJsonConverter.deserialize(res))
-    assert res == [label]
+    data = list(NDJsonConverter.serialize([label]))
+    assert res == data
 
 
 def test_benchmark_reference_label_flag_enabled():
