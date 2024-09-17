@@ -6,10 +6,10 @@
 #   features: []
 #   all-features: true
 #   with-sources: false
-#   generate-hashes: false
-#   universal: false
 
 -e file:libs/labelbox
+-e file:libs/lbox-clients
+    # via labelbox
 -e file:libs/lbox-example
 alabaster==0.7.13
     # via sphinx
@@ -74,6 +74,7 @@ gitpython==3.1.43
     # via databooks
 google-api-core==2.19.1
     # via labelbox
+    # via lbox-clients
 google-auth==2.31.0
     # via google-api-core
 googleapis-common-protos==1.63.2
@@ -125,6 +126,7 @@ matplotlib-inline==0.1.7
 mistune==3.0.2
     # via nbconvert
 mypy==1.10.1
+    # via labelbox
 mypy-extensions==1.0.0
     # via black
     # via mypy
@@ -233,6 +235,7 @@ regex==2024.5.15
 requests==2.32.3
     # via google-api-core
     # via labelbox
+    # via lbox-clients
     # via sphinx
 rich==12.6.0
     # via databooks

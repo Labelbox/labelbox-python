@@ -4,42 +4,37 @@ import logging
 import mimetypes
 import os
 import random
-import sys
 import time
 import urllib.parse
 from collections import defaultdict
-from datetime import datetime, timezone
-from typing import Any, List, Dict, Union, Optional, overload, Callable
 from types import MappingProxyType
+from typing import Any, Dict, List, Optional, Union, overload
 
-from labelbox.schema.search_filters import SearchFilter
 import requests
 import requests.exceptions
 from google.api_core import retry
 
 import labelbox.exceptions
-from labelbox import __version__ as SDK_VERSION
 from labelbox import utils
 from labelbox.adv_client import AdvClient
+from labelbox.client import SDK_VERSION
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema import role
-from labelbox.schema.conflict_resolution_strategy import (
-    ConflictResolutionStrategy,
-)
-from labelbox.schema.data_row import DataRow
 from labelbox.schema.catalog import Catalog
+from labelbox.schema.data_row import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.embedding import Embedding
 from labelbox.schema.enums import CollectionJobStatus
 from labelbox.schema.foundry.foundry_client import FoundryClient
 from labelbox.schema.iam_integration import IAMIntegration
-from labelbox.schema.identifiables import DataRowIds
-from labelbox.schema.identifiables import GlobalKeys
+from labelbox.schema.identifiables import DataRowIds, GlobalKeys
+from labelbox.schema.label_score import LabelScore
 from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 from labelbox.schema.media_type import (
     MediaType,
     get_media_type_validation_error,
@@ -47,57 +42,48 @@ from labelbox.schema.media_type import (
 from labelbox.schema.model import Model
 from labelbox.schema.model_config import ModelConfig
 from labelbox.schema.model_run import ModelRun
-from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
 from labelbox.schema.ontology import (
-    Tool,
     Classification,
+    DeleteFeatureFromOntologyResult,
     FeatureSchema,
+    Ontology,
     PromptResponseClassification,
+    Tool,
+)
+from labelbox.schema.ontology_kind import (
+    EditorTaskType,
+    EditorTaskTypeMapper,
+    OntologyKind,
 )
 from labelbox.schema.organization import Organization
 from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import (
-    QualityMode,
     BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS,
     BENCHMARK_AUTO_AUDIT_PERCENTAGE,
     CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS,
     CONSENSUS_AUTO_AUDIT_PERCENTAGE,
+    QualityMode,
 )
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.role import Role
+from labelbox.schema.search_filters import SearchFilter
 from labelbox.schema.send_to_annotate_params import (
     SendToAnnotateFromCatalogParams,
+    build_annotations_input,
     build_destination_task_queue_input,
     build_predictions_input,
-    build_annotations_input,
 )
 from labelbox.schema.slice import CatalogSlice, ModelSlice
-from labelbox.schema.task import Task, DataUpsertTask
+from labelbox.schema.task import DataUpsertTask, Task
 from labelbox.schema.user import User
-from labelbox.schema.label_score import LabelScore
-from labelbox.schema.ontology_kind import (
-    OntologyKind,
-    EditorTaskTypeMapper,
-    EditorTaskType,
-)
-from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 
 logger = logging.getLogger(__name__)
-
-_LABELBOX_API_KEY = "LABELBOX_API_KEY"
-
-
-def python_version_info():
-    version_info = sys.version_info
-
-    return f"{version_info.major}.{version_info.minor}.{version_info.micro}-{version_info.releaselevel}"
 
 
 class Client:
     """A Labelbox client.
 
-    Contains info necessary for connecting to a Labelbox server (URL,
-    authentication key). Provides functions for querying and creating
+    Provides functions for querying and creating
     top-level data objects (Projects, Datasets).
     """
 
@@ -127,53 +113,25 @@ class Client:
                 is provided as an argument or via the environment
                 variable.
         """
-        if api_key is None:
-            if _LABELBOX_API_KEY not in os.environ:
-                raise labelbox.exceptions.AuthenticationError(
-                    "Labelbox API key not provided"
-                )
-            api_key = os.environ[_LABELBOX_API_KEY]
-        self.api_key = api_key
-
-        self.enable_experimental = enable_experimental
-        if enable_experimental:
-            logger.info("Experimental features have been enabled")
-
-        logger.info("Initializing Labelbox client at '%s'", endpoint)
-        self.app_url = app_url
-        self.endpoint = endpoint
-        self.rest_endpoint = rest_endpoint
         self._data_row_metadata_ontology = None
+        self._request_client = RequestClient(
+            api_key,
+            sdk_version=SDK_VERSION,
+            endpoint=endpoint,
+            enable_experimental=enable_experimental,
+            app_url=app_url,
+            rest_endpoint=rest_endpoint,
+        )
         self._adv_client = AdvClient.factory(rest_endpoint, api_key)
-        self._connection: requests.Session = self._init_connection()
-
-    def _init_connection(self) -> requests.Session:
-        connection = (
-            requests.Session()
-        )  # using default connection pool size of 10
-        connection.headers.update(self._default_headers())
-
-        return connection
 
     @property
     def headers(self) -> MappingProxyType:
-        return self._connection.headers
+        return self._request_client.headers
 
-    def _default_headers(self):
-        return {
-            "Authorization": "Bearer %s" % self.api_key,
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "X-User-Agent": f"python-sdk {SDK_VERSION}",
-            "X-Python-Version": f"{python_version_info()}",
-        }
+    @property
+    def connection(self) -> requests.Session:
+        return self._request_client._connection
 
-    @retry.Retry(
-        predicate=retry.if_exception_type(
-            labelbox.exceptions.InternalServerError,
-            labelbox.exceptions.TimeoutError,
-        )
-    )
     def execute(
         self,
         query=None,
@@ -184,258 +142,28 @@ class Client:
         experimental=False,
         error_log_key="message",
         raise_return_resource_not_found=False,
-    ):
-        """Sends a request to the server for the execution of the
-        given query.
-
-        Checks the response for errors and wraps errors
-        in appropriate `labelbox.exceptions.LabelboxError` subtypes.
+    ) -> Dict[str, Any]:
+        """Executes a GraphQL query.
 
         Args:
             query (str): The query to execute.
-            params (dict): Query parameters referenced within the query.
-            data (str): json string containing the query to execute
-            files (dict): file arguments for request
-            timeout (float): Max allowed time for query execution,
-                in seconds.
+            variables (dict): Variables to pass to the query.
+            raise_return_resource_not_found (bool): If True, raise a
+                ResourceNotFoundError if the query returns None.
+
         Returns:
-            dict, parsed JSON response.
-        Raises:
-            labelbox.exceptions.AuthenticationError: If authentication
-                failed.
-            labelbox.exceptions.InvalidQueryError: If `query` is not
-                syntactically or semantically valid (checked server-side).
-            labelbox.exceptions.ApiLimitError: If the server API limit was
-                exceeded. See "How to import data" in the online documentation
-                to see API limits.
-            labelbox.exceptions.TimeoutError: If response was not received
-                in `timeout` seconds.
-            labelbox.exceptions.NetworkError: If an unknown error occurred
-                most likely due to connection issues.
-            labelbox.exceptions.LabelboxError: If an unknown error of any
-                kind occurred.
-            ValueError: If query and data are both None.
+            dict: The response from the server.
         """
-        logger.debug("Query: %s, params: %r, data %r", query, params, data)
-
-        # Convert datetimes to UTC strings.
-        def convert_value(value):
-            if isinstance(value, datetime):
-                value = value.astimezone(timezone.utc)
-                value = value.strftime("%Y-%m-%dT%H:%M:%SZ")
-            return value
-
-        if query is not None:
-            if params is not None:
-                params = {
-                    key: convert_value(value) for key, value in params.items()
-                }
-            data = json.dumps({"query": query, "variables": params}).encode(
-                "utf-8"
-            )
-        elif data is None:
-            raise ValueError("query and data cannot both be none")
-
-        endpoint = (
-            self.endpoint
-            if not experimental
-            else self.endpoint.replace("/graphql", "/_gql")
+        return self._request_client.execute(
+            query,
+            params,
+            data=data,
+            files=files,
+            timeout=timeout,
+            experimental=experimental,
+            error_log_key=error_log_key,
+            raise_return_resource_not_found=raise_return_resource_not_found,
         )
-
-        try:
-            headers = self._connection.headers.copy()
-            if files:
-                del headers["Content-Type"]
-                del headers["Accept"]
-            request = requests.Request(
-                "POST",
-                endpoint,
-                headers=headers,
-                data=data,
-                files=files if files else None,
-            )
-
-            prepped: requests.PreparedRequest = request.prepare()
-
-            response = self._connection.send(prepped, timeout=timeout)
-            logger.debug("Response: %s", response.text)
-        except requests.exceptions.Timeout as e:
-            raise labelbox.exceptions.TimeoutError(str(e))
-        except requests.exceptions.RequestException as e:
-            logger.error("Unknown error: %s", str(e))
-            raise labelbox.exceptions.NetworkError(e)
-        except Exception as e:
-            raise labelbox.exceptions.LabelboxError(
-                "Unknown error during Client.query(): " + str(e), e
-            )
-
-        if (
-            200 <= response.status_code < 300
-            or response.status_code < 500
-            or response.status_code >= 600
-        ):
-            try:
-                r_json = response.json()
-            except Exception:
-                raise labelbox.exceptions.LabelboxError(
-                    "Failed to parse response as JSON: %s" % response.text
-                )
-        else:
-            if (
-                "upstream connect error or disconnect/reset before headers"
-                in response.text
-            ):
-                raise labelbox.exceptions.InternalServerError(
-                    "Connection reset"
-                )
-            elif response.status_code == 502:
-                error_502 = "502 Bad Gateway"
-                raise labelbox.exceptions.InternalServerError(error_502)
-            elif 500 <= response.status_code < 600:
-                error_500 = f"Internal server http error {response.status_code}"
-                raise labelbox.exceptions.InternalServerError(error_500)
-
-        errors = r_json.get("errors", [])
-
-        def check_errors(keywords, *path):
-            """Helper that looks for any of the given `keywords` in any of
-            current errors on paths (like error[path][component][to][keyword]).
-            """
-            for error in errors:
-                obj = error
-                for path_elem in path:
-                    obj = obj.get(path_elem, {})
-                if obj in keywords:
-                    return error
-            return None
-
-        def get_error_status_code(error: dict) -> int:
-            try:
-                return int(error["extensions"].get("exception").get("status"))
-            except:
-                return 500
-
-        if (
-            check_errors(["AUTHENTICATION_ERROR"], "extensions", "code")
-            is not None
-        ):
-            raise labelbox.exceptions.AuthenticationError("Invalid API key")
-
-        authorization_error = check_errors(
-            ["AUTHORIZATION_ERROR"], "extensions", "code"
-        )
-        if authorization_error is not None:
-            raise labelbox.exceptions.AuthorizationError(
-                authorization_error["message"]
-            )
-
-        validation_error = check_errors(
-            ["GRAPHQL_VALIDATION_FAILED"], "extensions", "code"
-        )
-
-        if validation_error is not None:
-            message = validation_error["message"]
-            if message == "Query complexity limit exceeded":
-                raise labelbox.exceptions.ValidationFailedError(message)
-            else:
-                raise labelbox.exceptions.InvalidQueryError(message)
-
-        graphql_error = check_errors(
-            ["GRAPHQL_PARSE_FAILED"], "extensions", "code"
-        )
-        if graphql_error is not None:
-            raise labelbox.exceptions.InvalidQueryError(
-                graphql_error["message"]
-            )
-
-        # Check if API limit was exceeded
-        response_msg = r_json.get("message", "")
-
-        if response_msg.startswith("You have exceeded"):
-            raise labelbox.exceptions.ApiLimitError(response_msg)
-
-        resource_not_found_error = check_errors(
-            ["RESOURCE_NOT_FOUND"], "extensions", "code"
-        )
-        if resource_not_found_error is not None:
-            if raise_return_resource_not_found:
-                raise labelbox.exceptions.ResourceNotFoundError(
-                    message=resource_not_found_error["message"]
-                )
-            else:
-                # Return None and let the caller methods raise an exception
-                # as they already know which resource type and ID was requested
-                return None
-
-        resource_conflict_error = check_errors(
-            ["RESOURCE_CONFLICT"], "extensions", "code"
-        )
-        if resource_conflict_error is not None:
-            raise labelbox.exceptions.ResourceConflict(
-                resource_conflict_error["message"]
-            )
-
-        malformed_request_error = check_errors(
-            ["MALFORMED_REQUEST"], "extensions", "code"
-        )
-        if malformed_request_error is not None:
-            raise labelbox.exceptions.MalformedQueryException(
-                malformed_request_error[error_log_key]
-            )
-
-        # A lot of different error situations are now labeled serverside
-        # as INTERNAL_SERVER_ERROR, when they are actually client errors.
-        # TODO: fix this in the server API
-        internal_server_error = check_errors(
-            ["INTERNAL_SERVER_ERROR"], "extensions", "code"
-        )
-        if internal_server_error is not None:
-            message = internal_server_error.get("message")
-            error_status_code = get_error_status_code(internal_server_error)
-            if error_status_code == 400:
-                raise labelbox.exceptions.InvalidQueryError(message)
-            elif error_status_code == 422:
-                raise labelbox.exceptions.UnprocessableEntityError(message)
-            elif error_status_code == 426:
-                raise labelbox.exceptions.OperationNotAllowedException(message)
-            elif error_status_code == 500:
-                raise labelbox.exceptions.LabelboxError(message)
-            else:
-                raise labelbox.exceptions.InternalServerError(message)
-
-        not_allowed_error = check_errors(
-            ["OPERATION_NOT_ALLOWED"], "extensions", "code"
-        )
-        if not_allowed_error is not None:
-            message = not_allowed_error.get("message")
-            raise labelbox.exceptions.OperationNotAllowedException(message)
-
-        if len(errors) > 0:
-            logger.warning("Unparsed errors on query execution: %r", errors)
-            messages = list(
-                map(
-                    lambda x: {
-                        "message": x["message"],
-                        "code": x["extensions"]["code"],
-                    },
-                    errors,
-                )
-            )
-            raise labelbox.exceptions.LabelboxError(
-                "Unknown error: %s" % str(messages)
-            )
-
-        # if we do return a proper error code, and didn't catch this above
-        # reraise
-        # this mainly catches a 401 for API access disabled for free tier
-        # TODO: need to unify API errors to handle things more uniformly
-        # in the SDK
-        if response.status_code != requests.codes.ok:
-            message = f"{response.status_code} {response.reason}"
-            cause = r_json.get("message")
-            raise labelbox.exceptions.LabelboxError(message, cause)
-
-        return r_json["data"]
 
     def upload_file(self, path: str) -> str:
         """Uploads given path to local file.
@@ -540,7 +268,7 @@ class Client:
                 error_msg = next(iter(errors), {}).get(
                     "message", "Unknown error"
                 )
-            except Exception as e:
+            except Exception:
                 error_msg = "Unknown error"
             raise labelbox.exceptions.LabelboxError(
                 "Failed to upload, message: %s" % error_msg
@@ -842,7 +570,7 @@ class Client:
 
             if not validation_result["validateDataset"]["valid"]:
                 raise labelbox.exceptions.LabelboxError(
-                    f"IAMIntegration was not successfully added to the dataset."
+                    "IAMIntegration was not successfully added to the dataset."
                 )
         except Exception as e:
             dataset.delete()
