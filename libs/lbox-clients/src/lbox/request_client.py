@@ -1,4 +1,3 @@
-# type: ignore
 import json
 import logging
 import os
@@ -6,12 +5,10 @@ import sys
 from datetime import datetime, timezone
 from types import MappingProxyType
 
+import labelbox.exceptions
 import requests
 import requests.exceptions
 from google.api_core import retry
-
-import labelbox.exceptions
-from labelbox import __version__ as SDK_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +30,7 @@ class RequestClient:
 
     def __init__(
         self,
+        sdk_version,
         api_key=None,
         endpoint="https://api.labelbox.com/graphql",
         enable_experimental=False,
@@ -69,6 +67,7 @@ class RequestClient:
         self.endpoint = endpoint
         self.rest_endpoint = rest_endpoint
         self._connection: requests.Session = self._init_connection()
+        self.sdk_version = sdk_version
 
     def _init_connection(self) -> requests.Session:
         connection = (
@@ -87,7 +86,7 @@ class RequestClient:
             "Authorization": "Bearer %s" % self.api_key,
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "X-User-Agent": f"python-sdk {SDK_VERSION}",
+            "X-User-Agent": f"python-sdk {self.sdk_version}",
             "X-Python-Version": f"{python_version_info()}",
         }
 

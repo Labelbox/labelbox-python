@@ -1,21 +1,8 @@
-from labelbox.schema.media_type import MediaType
 import pytest
-
-from pytest_cases import parametrize, fixture_ref
+from pytest_cases import fixture_ref, parametrize
 
 from labelbox.exceptions import MALValidationError
-from labelbox.schema.bulk_import_request import (
-    NDChecklist,
-    NDClassification,
-    NDMask,
-    NDPolygon,
-    NDPolyline,
-    NDRectangle,
-    NDText,
-    NDTextEntity,
-    NDTool,
-    _validate_ndjson,
-)
+from labelbox.schema.media_type import MediaType
 
 """
 - These NDlabels are apart of bulkImportReqeust and should be removed once bulk import request is removed

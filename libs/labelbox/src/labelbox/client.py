@@ -4,7 +4,6 @@ import logging
 import mimetypes
 import os
 import random
-import sys
 import time
 import urllib.parse
 from collections import defaultdict
@@ -18,6 +17,7 @@ from google.api_core import retry
 import labelbox.exceptions
 from labelbox import utils
 from labelbox.adv_client import AdvClient
+from labelbox.client import SDK_VERSION
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
@@ -81,14 +81,6 @@ from .request_client import RequestClient
 
 logger = logging.getLogger(__name__)
 
-_LABELBOX_API_KEY = "LABELBOX_API_KEY"
-
-
-def python_version_info():
-    version_info = sys.version_info
-
-    return f"{version_info.major}.{version_info.minor}.{version_info.micro}-{version_info.releaselevel}"
-
 
 class Client:
     """A Labelbox client.
@@ -126,6 +118,7 @@ class Client:
         self._data_row_metadata_ontology = None
         self._request_client = RequestClient(
             api_key,
+            sdk_version=SDK_VERSION,
             endpoint=endpoint,
             enable_experimental=enable_experimental,
             app_url=app_url,
