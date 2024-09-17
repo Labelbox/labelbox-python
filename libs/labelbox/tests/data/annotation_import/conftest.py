@@ -1,4 +1,3 @@
-import itertools
 import uuid
 
 from labelbox.schema.model_run import ModelRun
@@ -14,7 +13,6 @@ from labelbox import Client, Dataset
 from typing import Tuple, Type
 from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 from pytest import FixtureRequest
-from contextlib import suppress
 
 """
 The main fixtures of this library are configured_project and configured_project_by_global_key. Both fixtures generate data rows with a parametrize media type. They create the amount of data rows equal to the DATA_ROW_COUNT variable below. The data rows are generated with a factory fixture that returns a function that allows you to pass a global key. The ontologies are generated normalized and based on the MediaType given (i.e. only features supported by MediaType are created). This ontology is later used to obtain the correct annotations with the prediction_id_mapping and corresponding inferences. Each data row will have all possible annotations attached supported for the MediaType. 
@@ -719,7 +717,6 @@ def _create_project(
     )
 
     project.connect_ontology(ontology)
-
     data_row_data = []
 
     for _ in range(DATA_ROW_COUNT):
@@ -752,6 +749,7 @@ def configured_project(
     normalized_ontology_by_media_type,
     export_v2_test_helpers,
     llm_prompt_response_creation_dataset_with_data_row,
+    teardown_helpers,
 ):
     """Configure project for test. Request.param will contain the media type if not present will use Image MediaType. The project will have 10 data rows."""
 
@@ -789,12 +787,10 @@ def configured_project(
 
     yield project
 
-    project.delete()
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
 
     if dataset:
         dataset.delete()
-
-    client.delete_unused_ontology(ontology.uid)
 
 
 @pytest.fixture()
@@ -805,6 +801,7 @@ def configured_project_by_global_key(
     request: FixtureRequest,
     normalized_ontology_by_media_type,
     export_v2_test_helpers,
+    teardown_helpers,
 ):
     """Does the same thing as configured project but with global keys focus."""
 
@@ -841,12 +838,10 @@ def configured_project_by_global_key(
 
     yield project
 
-    project.delete()
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
 
     if dataset:
         dataset.delete()
-
-    client.delete_unused_ontology(ontology.uid)
 
 
 @pytest.fixture(scope="module")
@@ -856,6 +851,7 @@ def module_project(
     data_row_json_by_media_type,
     request: FixtureRequest,
     normalized_ontology_by_media_type,
+    module_teardown_helpers,
 ):
     """Generates a image project that scopes to the test module(file). Used to reduce api calls."""
 
@@ -889,12 +885,12 @@ def module_project(
 
     yield project
 
-    project.delete()
+    module_teardown_helpers.teardown_project_labels_ontology_feature_schemas(
+        project
+    )
 
     if dataset:
         dataset.delete()
-
-    client.delete_unused_ontology(ontology.uid)
 
 
 @pytest.fixture
