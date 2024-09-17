@@ -5,36 +5,29 @@ import time
 import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Iterable,
     List,
     Optional,
     Tuple,
-    TypeVar,
     Union,
     overload,
 )
-from urllib.parse import urlparse
 
 from labelbox.schema.labeling_service import (
     LabelingService,
     LabelingServiceStatus,
 )
 from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
-import requests
 
-from labelbox import parser
 from labelbox import utils
 from labelbox.exceptions import error_message_for_unparsed_graphql_error
 from labelbox.exceptions import (
     InvalidQueryError,
     LabelboxError,
     ProcessingWaitTimeout,
-    ResourceConflict,
     ResourceNotFoundError,
 )
 from labelbox.orm import query
@@ -46,7 +39,6 @@ from labelbox.schema.create_batches_task import CreateBatchesTask
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import (
     ProjectExportFilters,
-    validate_datetime,
     build_filters,
 )
 from labelbox.schema.export_params import ProjectExportParams
@@ -63,7 +55,6 @@ from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.ontology_kind import (
     EditorTaskType,
-    OntologyKind,
     UploadType,
 )
 from labelbox.schema.project_overview import (
@@ -72,7 +63,7 @@ from labelbox.schema.project_overview import (
 )
 
 if TYPE_CHECKING:
-    from labelbox import BulkImportRequest
+    pass
 
 
 DataRowPriority = int
@@ -579,7 +570,7 @@ class Project(DbObject, Updateable, Deletable):
 
         if frontend.name != "Editor":
             logger.warning(
-                f"This function has only been tested to work with the Editor front end. Found %s",
+                "This function has only been tested to work with the Editor front end. Found %s",
                 frontend.name,
             )
 
@@ -814,7 +805,7 @@ class Project(DbObject, Updateable, Deletable):
 
         if row_count > 100_000:
             raise ValueError(
-                f"Batch exceeds max size, break into smaller batches"
+                "Batch exceeds max size, break into smaller batches"
             )
         if not row_count:
             raise ValueError("You need at least one data row in a batch")
@@ -1088,7 +1079,7 @@ class Project(DbObject, Updateable, Deletable):
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
             raise LabelboxError(
-                f"Batch was not created successfully: "
+                "Batch was not created successfully: "
                 + json.dumps(task.errors)
             )
 
@@ -1436,7 +1427,7 @@ class Project(DbObject, Updateable, Deletable):
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
             raise LabelboxError(
-                f"Priority was not updated successfully: "
+                "Priority was not updated successfully: "
                 + json.dumps(task.errors)
             )
         return True
@@ -1487,33 +1478,6 @@ class Project(DbObject, Updateable, Deletable):
         return res["project"]["showPredictionsToLabelers"][
             "showingPredictionsToLabelers"
         ]
-
-    def bulk_import_requests(self) -> PaginatedCollection:
-        """Returns bulk import request objects which are used in model-assisted labeling.
-        These are returned with the oldest first, and most recent last.
-        """
-
-        id_param = "project_id"
-        query_str = """query ListAllImportRequestsPyApi($%s: ID!) {
-            bulkImportRequests (
-                where: { projectId: $%s }
-                skip: %%d
-                first: %%d
-            ) {
-                %s
-            }
-        }""" % (
-            id_param,
-            id_param,
-            query.results_query_part(Entity.BulkImportRequest),
-        )
-        return PaginatedCollection(
-            self.client,
-            query_str,
-            {id_param: str(self.uid)},
-            ["bulkImportRequests"],
-            Entity.BulkImportRequest,
-        )
 
     def batches(self) -> PaginatedCollection:
         """Fetch all batches that belong to this project
@@ -1629,7 +1593,7 @@ class Project(DbObject, Updateable, Deletable):
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
             raise LabelboxError(
-                f"Data rows were not moved successfully: "
+                "Data rows were not moved successfully: "
                 + json.dumps(task.errors)
             )
 
@@ -1638,77 +1602,6 @@ class Project(DbObject, Updateable, Deletable):
         task.wait_till_done()
 
         return task
-
-    def upload_annotations(
-        self,
-        name: str,
-        annotations: Union[str, Path, Iterable[Dict]],
-        validate: bool = False,
-    ) -> "BulkImportRequest":  # type: ignore
-        """Uploads annotations to a new Editor project.
-
-        Args:
-            name (str): name of the BulkImportRequest job
-            annotations (str or Path or Iterable):
-                url that is publicly accessible by Labelbox containing an
-                ndjson file
-                OR local path to an ndjson file
-                OR iterable of annotation rows
-            validate (bool):
-                Whether or not to validate the payload before uploading.
-        Returns:
-            BulkImportRequest
-        """
-
-        if isinstance(annotations, str) or isinstance(annotations, Path):
-
-            def _is_url_valid(url: Union[str, Path]) -> bool:
-                """Verifies that the given string is a valid url.
-
-                Args:
-                    url: string to be checked
-                Returns:
-                    True if the given url is valid otherwise False
-
-                """
-                if isinstance(url, Path):
-                    return False
-                parsed = urlparse(url)
-                return bool(parsed.scheme) and bool(parsed.netloc)
-
-            if _is_url_valid(annotations):
-                return Entity.BulkImportRequest.create_from_url(
-                    client=self.client,
-                    project_id=self.uid,
-                    name=name,
-                    url=str(annotations),
-                    validate=validate,
-                )
-            else:
-                path = Path(annotations)
-                if not path.exists():
-                    raise FileNotFoundError(
-                        f"{annotations} is not a valid url nor existing local file"
-                    )
-                return Entity.BulkImportRequest.create_from_local_file(
-                    client=self.client,
-                    project_id=self.uid,
-                    name=name,
-                    file=path,
-                    validate_file=validate,
-                )
-        elif isinstance(annotations, Iterable):
-            return Entity.BulkImportRequest.create_from_objects(
-                client=self.client,
-                project_id=self.uid,
-                name=name,
-                predictions=annotations,  # type: ignore
-                validate=validate,
-            )
-        else:
-            raise ValueError(
-                f"Invalid annotations given of type: {type(annotations)}"
-            )
 
     def _wait_until_data_rows_are_processed(
         self,
