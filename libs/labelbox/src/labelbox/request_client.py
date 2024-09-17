@@ -25,11 +25,10 @@ def python_version_info():
 
 
 class RequestClient:
-    """A Labelbox client.
+    """A Labelbox request client.
 
     Contains info necessary for connecting to a Labelbox server (URL,
-    authentication key). Provides functions for querying and creating
-    top-level data objects (Projects, Datasets).
+    authentication key).
     """
 
     def __init__(
@@ -40,13 +39,8 @@ class RequestClient:
         app_url="https://app.labelbox.com",
         rest_endpoint="https://api.labelbox.com/api/v1",
     ):
-        """Creates and initializes a Labelbox Client.
-
-        Logging is defaulted to level WARNING. To receive more verbose
-        output to console, update `logging.level` to the appropriate level.
-
-        >>> logging.basicConfig(level = logging.INFO)
-        >>> client = Client("<APIKEY>")
+        """Creates and initializes a RequestClient.
+        This class executes graphql and rest requests to the Labelbox server.
 
         Args:
             api_key (str): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.

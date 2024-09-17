@@ -93,8 +93,7 @@ def python_version_info():
 class Client:
     """A Labelbox client.
 
-    Contains info necessary for connecting to a Labelbox server (URL,
-    authentication key). Provides functions for querying and creating
+    Provides functions for querying and creating
     top-level data objects (Projects, Datasets).
     """
 
