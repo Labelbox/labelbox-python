@@ -1,4 +1,14 @@
 # Changelog
+# Version 5.0.0 (2024-09-16)
+## Updated
+* Set tasks_remaining_count to None LabelingServiceDashboard if labeling has not started ([#1817](https://github.com/Labelbox/labelbox-python/pull/1817))
+* Improve error messaging when creating LLM project with invalid dataset id parameter([#1799](https://github.com/Labelbox/labelbox-python/pull/1799))
+## Removed
+* BREAKING CHANGE SDK methods for exports v1([#1800](https://github.com/Labelbox/labelbox-python/pull/1800))
+* BREAKING CHANGE Unused labelbox_v1 serialization package([#1803](https://github.com/Labelbox/labelbox-python/pull/1803))
+## Fixed
+* Cuid dependencies that cause a crash if numpy is not installed ([#1807](https://github.com/Labelbox/labelbox-python/pull/1807))
+
 # Version 4.0.0 (2024-09-10)
 ## Added
 * BREAKING CHANGE for pydantic V1 users: Converted SDK to use pydantic V2([#1738](https://github.com/Labelbox/labelbox-python/pull/1738))
