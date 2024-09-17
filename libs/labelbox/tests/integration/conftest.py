@@ -113,7 +113,7 @@ def configured_project(
 
 @pytest.fixture
 def configured_project_with_complex_ontology(
-    client: Client, initial_dataset, rand_gen, image_url, teardown_helpers
+    client, initial_dataset, rand_gen, image_url, teardown_helpers
 ):
     project = client.create_project(
         name=rand_gen(str),

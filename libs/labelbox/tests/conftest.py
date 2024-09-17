@@ -2,8 +2,17 @@ import json
 import os
 import re
 import time
+<<<<<<< HEAD
 import uuid
 from datetime import datetime
+=======
+from labelbox.schema.project import Project
+import requests
+from labelbox.schema.ontology import Ontology
+import pytest
+from types import SimpleNamespace
+from typing import Type
+>>>>>>> 0bbd7c29 (Vb/fix ontology leaks plt 1379 (#1814))
 from enum import Enum
 from random import randint
 from string import ascii_letters
@@ -1055,7 +1064,7 @@ def project_with_one_feature_ontology(project, client: Client):
 
 @pytest.fixture
 def configured_project_with_complex_ontology(
-    client: Client, initial_dataset, rand_gen, image_url, teardown_helpers
+    client, initial_dataset, rand_gen, image_url, teardown_helpers
 ):
     project = client.create_project(
         name=rand_gen(str),
