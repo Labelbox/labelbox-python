@@ -13,7 +13,7 @@ def test_feature_schema_is_not_archived(client, ontology):
     result = client.is_feature_schema_archived(
         ontology.uid, feature_schema_to_check["featureSchemaId"]
     )
-    assert result == False
+    assert result is False
 
 
 def test_feature_schema_is_archived(client, configured_project_with_label):
@@ -23,10 +23,10 @@ def test_feature_schema_is_archived(client, configured_project_with_label):
     result = client.delete_feature_schema_from_ontology(
         ontology.uid, feature_schema_id
     )
-    assert result.archived == True and result.deleted == False
+    assert result.archived is True and result.deleted is False
     assert (
         client.is_feature_schema_archived(ontology.uid, feature_schema_id)
-        == True
+        is True
     )
 
 
@@ -58,8 +58,8 @@ def test_delete_tool_feature_from_ontology(client, ontology):
     result = client.delete_feature_schema_from_ontology(
         ontology.uid, feature_schema_to_delete["featureSchemaId"]
     )
-    assert result.deleted == True
-    assert result.archived == False
+    assert result.deleted is True
+    assert result.archived is False
     updatedOntology = client.get_ontology(ontology.uid)
     assert len(updatedOntology.normalized["tools"]) == 1
 
@@ -300,7 +300,7 @@ def test_unarchive_feature_schema_node(client, ontology):
     result = client.unarchive_feature_schema_node(
         ontology.uid, feature_schema_to_unarchive["featureSchemaId"]
     )
-    assert result == None
+    assert result is None
 
 
 def test_unarchive_feature_schema_node_for_non_existing_feature_schema(

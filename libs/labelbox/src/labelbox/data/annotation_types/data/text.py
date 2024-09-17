@@ -101,7 +101,7 @@ class TextData(BaseData, _NoCoercionMixin):
         url = self.url
         uid = self.uid
         global_key = self.global_key
-        if uid == file_path == text == url == global_key == None:
+        if uid == file_path == text == url == global_key is None:
             raise ValueError(
                 "One of `file_path`, `text`, `uid`, `global_key` or `url` required."
             )
