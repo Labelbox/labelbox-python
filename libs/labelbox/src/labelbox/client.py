@@ -626,7 +626,7 @@ class Client:
             An iterable of `db_object_type` instances.
         """
         if filter_deleted:
-            not_deleted = db_object_type.deleted == False
+            not_deleted = db_object_type.deleted is False
             where = not_deleted if where is None else where & not_deleted
         query_str, params = query.get_all(db_object_type, where)
 
@@ -2297,11 +2297,11 @@ class Client:
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
-            if response_json["archived"] == True:
+            if response_json["archived"] is True:
                 logger.info(
                     "Feature schema was archived from the ontology because it had associated labels."
                 )
-            elif response_json["deleted"] == True:
+            elif response_json["deleted"] is True:
                 logger.info(
                     "Feature schema was successfully removed from the ontology"
                 )

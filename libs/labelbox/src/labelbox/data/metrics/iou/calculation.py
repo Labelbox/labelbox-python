@@ -209,7 +209,7 @@ def classification_miou(
 
     prediction, ground_truth = predictions[0], ground_truths[0]
 
-    if type(prediction) != type(ground_truth):
+    if type(prediction) is not type(ground_truth):
         raise TypeError(
             "Classification features must be the same type to compute agreement. "
             f"Found `{type(prediction)}` and `{type(ground_truth)}`"
