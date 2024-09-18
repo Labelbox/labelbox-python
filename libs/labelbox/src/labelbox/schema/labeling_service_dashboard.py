@@ -84,7 +84,8 @@ class LabelingServiceDashboard(_CamelCaseMixin):
         super().__init__(**kwargs)
         if not self.client.enable_experimental:
             raise RuntimeError(
-                "Please enable experimental in client to use LabelingService")
+                "Please enable experimental in client to use LabelingService"
+            )
 
     @property
     def service_type(self):
@@ -97,20 +98,28 @@ class LabelingServiceDashboard(_CamelCaseMixin):
         if self.editor_task_type is None:
             return sentence_case(self.media_type.value)
 
-        if (self.editor_task_type == EditorTaskType.OfflineModelChatEvaluation
-                and self.media_type == MediaType.Conversational):
+        if (
+            self.editor_task_type == EditorTaskType.OfflineModelChatEvaluation
+            and self.media_type == MediaType.Conversational
+        ):
             return "Offline chat evaluation"
 
-        if (self.editor_task_type == EditorTaskType.ModelChatEvaluation and
-                self.media_type == MediaType.Conversational):
+        if (
+            self.editor_task_type == EditorTaskType.ModelChatEvaluation
+            and self.media_type == MediaType.Conversational
+        ):
             return "Live chat evaluation"
 
-        if (self.editor_task_type == EditorTaskType.ResponseCreation and
-                self.media_type == MediaType.Text):
+        if (
+            self.editor_task_type == EditorTaskType.ResponseCreation
+            and self.media_type == MediaType.Text
+        ):
             return "Response creation"
 
-        if (self.media_type == MediaType.LLMPromptCreation or
-                self.media_type == MediaType.LLMPromptResponseCreation):
+        if (
+            self.media_type == MediaType.LLMPromptCreation
+            or self.media_type == MediaType.LLMPromptResponseCreation
+        ):
             return "Prompt response creation"
 
         return sentence_case(self.media_type.value)
@@ -154,7 +163,8 @@ class LabelingServiceDashboard(_CamelCaseMixin):
                                     pageInfo { endCursor }
                                 }
                             }
-                        """)
+                        """
+            )
         else:
             template = Template(
                 """query SearchProjectsPyApi($$first: Int, $$from: String) {
@@ -164,11 +174,13 @@ class LabelingServiceDashboard(_CamelCaseMixin):
                                     pageInfo { endCursor }
                                 }
                             }
-                        """)
+                        """
+            )
         query_str = template.substitute(
             labeling_dashboard_selections=GRAPHQL_QUERY_SELECTIONS,
             search_query=build_search_filter(search_query)
-            if search_query else None,
+            if search_query
+            else None,
         )
         params: Dict[str, Union[str, int]] = {}
 
@@ -186,7 +198,7 @@ class LabelingServiceDashboard(_CamelCaseMixin):
             experimental=True,
         )
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     def convert_boost_data(cls, data):
         if "boostStatus" in data:
             data["status"] = LabelingServiceStatus(data.pop("boostStatus"))

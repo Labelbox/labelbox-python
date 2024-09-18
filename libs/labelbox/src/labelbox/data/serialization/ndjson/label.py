@@ -46,7 +46,6 @@ from .mmc import NDMessageTask
 from .relationship import NDRelationship
 from .base import DataRow
 from pydantic import BaseModel, ValidationError
-from .base import subclass_registry, _SubclassRegistryBase
 from pydantic_core import PydanticUndefined
 from contextlib import suppress
 
@@ -67,68 +66,7 @@ AnnotationType = Union[
 
 
 class NDLabel(BaseModel):
-    annotations: List[_SubclassRegistryBase]
-
-    def __init__(self, **kwargs):
-        # NOTE: Deserialization of subclasses in pydantic is difficult, see here https://blog.devgenius.io/deserialize-child-classes-with-pydantic-that-gonna-work-784230e1cf83
-        # Below implements the subclass registry as mentioned in the article. The python dicts we pass in can be missing certain fields
-        # we essentially have to infer the type against all sub classes that have the _SubclasssRegistryBase inheritance.
-        # It works by checking if the keys of our annotations we are missing in matches any required subclass.
-        # More keys are prioritized over less keys (closer match). This is used when importing json to our base models not a lot of customer workflows
-        # depend on this method but this works for all our existing tests with the bonus of added validation. (no subclass found it throws an error)
-
-        for index, annotation in enumerate(kwargs["annotations"]):
-            if isinstance(annotation, dict):
-                item_annotation_keys = annotation.keys()
-                key_subclass_combos = defaultdict(list)
-                for subclass in subclass_registry.values():
-                    # Get all required keys from subclass
-                    annotation_keys = []
-                    for k, field in subclass.model_fields.items():
-                        if field.default == PydanticUndefined and k != "uuid":
-                            if (
-                                hasattr(field, "alias")
-                                and field.alias in item_annotation_keys
-                            ):
-                                annotation_keys.append(field.alias)
-                            elif (
-                                hasattr(field, "validation_alias")
-                                and field.validation_alias
-                                in item_annotation_keys
-                            ):
-                                annotation_keys.append(field.validation_alias)
-                            else:
-                                annotation_keys.append(k)
-
-                    key_subclass_combos[subclass].extend(annotation_keys)
-
-                # Sort by subclass that has the most keys i.e. the one with the most keys that matches is most likely our subclass
-                key_subclass_combos = dict(
-                    sorted(
-                        key_subclass_combos.items(),
-                        key=lambda x: len(x[1]),
-                        reverse=True,
-                    )
-                )
-
-                for subclass, key_subclass_combo in key_subclass_combos.items():
-                    # Choose the keys from our dict we supplied that matches the required keys of a subclass
-                    check_required_keys = all(
-                        key in list(item_annotation_keys)
-                        for key in key_subclass_combo
-                    )
-                    if check_required_keys:
-                        # Keep trying subclasses until we find one that has valid values (does not throw an validation error)
-                        with suppress(ValidationError):
-                            annotation = subclass(**annotation)
-                            break
-                if isinstance(annotation, dict):
-                    raise ValueError(
-                        f"Could not find subclass for fields: {item_annotation_keys}"
-                    )
-
-            kwargs["annotations"][index] = annotation
-        super().__init__(**kwargs)
+    annotations: AnnotationType
 
     class _Relationship(BaseModel):
         """This object holds information about the relationship"""
