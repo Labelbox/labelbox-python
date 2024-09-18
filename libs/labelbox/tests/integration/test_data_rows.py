@@ -1024,9 +1024,9 @@ def test_data_row_bulk_creation_with_same_global_keys(
     task.wait_till_done()
 
     assert task.status == "COMPLETE"
-    assert type(task.failed_data_rows) is list
+    assert isinstance(task.failed_data_rows, list)
     assert len(task.failed_data_rows) == 1
-    assert type(task.created_data_rows) is list
+    assert isinstance(task.created_data_rows, list)
     assert len(task.created_data_rows) == 1
     assert (
         task.failed_data_rows[0]["message"]
