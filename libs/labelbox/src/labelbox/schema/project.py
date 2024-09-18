@@ -1079,8 +1079,7 @@ class Project(DbObject, Updateable, Deletable):
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
             raise LabelboxError(
-                "Batch was not created successfully: "
-                + json.dumps(task.errors)
+                "Batch was not created successfully: " + json.dumps(task.errors)
             )
 
         return self.client.get_batch(self.uid, batch_id)

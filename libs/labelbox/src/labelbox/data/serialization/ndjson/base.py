@@ -8,18 +8,6 @@ import threading
 
 from ....annotated_types import Cuid
 
-subclass_registry = {}
-
-
-class _SubclassRegistryBase(BaseModel):
-    model_config = ConfigDict(extra="allow")
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        if cls.__name__ != "NDAnnotation":
-            with threading.Lock():
-                subclass_registry[cls.__name__] = cls
-
 
 class DataRow(_CamelCaseMixin):
     id: Optional[str] = None
