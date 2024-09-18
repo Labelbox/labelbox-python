@@ -4,7 +4,7 @@ from labelbox.data.annotation_types.classification.classification import (
     ClassificationAnswer,
     Radio,
 )
-from labelbox.data.annotation_types.data.text import TextData
+from labelbox.data.annotation_types.data import GenericDataRowData
 from labelbox.data.annotation_types.label import Label
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
@@ -13,9 +13,8 @@ from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 def test_serialization_min():
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
-        data=TextData(
+        data=GenericDataRowData(
             uid="bkj7z2q0b0000jx6x0q2q7q0d",
-            text="This is a test",
         ),
         annotations=[
             ClassificationAnnotation(
@@ -41,9 +40,8 @@ def test_serialization_min():
 def test_serialization_with_classification():
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
-        data=TextData(
+        data=GenericDataRowData(
             uid="bkj7z2q0b0000jx6x0q2q7q0d",
-            text="This is a test",
         ),
         annotations=[
             ClassificationAnnotation(
@@ -131,9 +129,8 @@ def test_serialization_with_classification():
 def test_serialization_with_classification_double_nested():
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
-        data=TextData(
+        data=GenericDataRowData(
             uid="bkj7z2q0b0000jx6x0q2q7q0d",
-            text="This is a test",
         ),
         annotations=[
             ClassificationAnnotation(
@@ -224,9 +221,8 @@ def test_serialization_with_classification_double_nested():
 def test_serialization_with_classification_double_nested_2():
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
-        data=TextData(
+        data=GenericDataRowData(
             uid="bkj7z2q0b0000jx6x0q2q7q0d",
-            text="This is a test",
         ),
         annotations=[
             ClassificationAnnotation(

@@ -1,6 +1,6 @@
 from typing import Optional, Union, Type
 
-from labelbox.data.annotation_types.data import ImageData, TextData
+from labelbox.data.annotation_types.data import GenericDataRowData
 from labelbox.data.serialization.ndjson.base import DataRow, NDJsonBase
 from labelbox.data.annotation_types.metrics.scalar import (
     ScalarMetric,
@@ -51,7 +51,7 @@ class NDConfusionMatrixMetric(BaseNDMetric):
 
     @classmethod
     def from_common(
-        cls, metric: ConfusionMatrixMetric, data: Union[TextData, ImageData]
+        cls, metric: ConfusionMatrixMetric, data: GenericDataRowData
     ) -> "NDConfusionMatrixMetric":
         return cls(
             uuid=metric.extra.get("uuid"),
@@ -83,7 +83,7 @@ class NDScalarMetric(BaseNDMetric):
 
     @classmethod
     def from_common(
-        cls, metric: ScalarMetric, data: Union[TextData, ImageData]
+        cls, metric: ScalarMetric, data: GenericDataRowData
     ) -> "NDScalarMetric":
         return cls(
             uuid=metric.extra.get("uuid"),
@@ -107,7 +107,7 @@ class NDMetricAnnotation:
     def from_common(
         cls,
         annotation: Union[ScalarMetric, ConfusionMatrixMetric],
-        data: Union[TextData, ImageData],
+        data: GenericDataRowData,
     ) -> Union[NDScalarMetric, NDConfusionMatrixMetric]:
         obj = cls.lookup_object(annotation)
         return obj.from_common(annotation, data)
