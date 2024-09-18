@@ -1,0 +1,10 @@
+[
+    {
+        "uuid": "a22bbf6e-b2da-4abe-9a11-df84759f7672",
+        "aggregation": "ARITHMETIC_MEAN",
+        "dataRow": {
+            "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+        },
+        "metricValue": 0.1
+    }
+]

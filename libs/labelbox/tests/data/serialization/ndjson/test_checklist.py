@@ -36,6 +36,13 @@ def test_serialization_min():
     res.pop("uuid")
     assert res == expected
 
+    deserialized = NDJsonConverter.deserialize([res])
+    res = next(deserialized)
+    for i, annotation in enumerate(res.annotations):
+        annotation.extra.pop("uuid")
+        assert annotation.value == label.annotations[i].value
+        assert annotation.name == label.annotations[i].name
+
 
 def test_serialization_with_classification():
     label = Label(
@@ -124,6 +131,12 @@ def test_serialization_with_classification():
 
     res.pop("uuid")
     assert res == expected
+
+    deserialized = NDJsonConverter.deserialize([res])
+    res = next(deserialized)
+    assert label.model_dump(exclude_none=True) == label.model_dump(
+        exclude_none=True
+    )
 
 
 def test_serialization_with_classification_double_nested():
@@ -217,6 +230,13 @@ def test_serialization_with_classification_double_nested():
     res.pop("uuid")
     assert res == expected
 
+    deserialized = NDJsonConverter.deserialize([res])
+    res = next(deserialized)
+    res.annotations[0].extra.pop("uuid")
+    assert label.model_dump(exclude_none=True) == label.model_dump(
+        exclude_none=True
+    )
+
 
 def test_serialization_with_classification_double_nested_2():
     label = Label(
@@ -306,3 +326,9 @@ def test_serialization_with_classification_double_nested_2():
     res = next(serialized)
     res.pop("uuid")
     assert res == expected
+
+    deserialized = NDJsonConverter.deserialize([res])
+    res = next(deserialized)
+    assert label.model_dump(exclude_none=True) == label.model_dump(
+        exclude_none=True
+    )

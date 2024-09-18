@@ -1,5 +1,6 @@
 from copy import copy
 import pytest
+import base64
 import labelbox.types as lb_types
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.data.serialization.ndjson.objects import (
@@ -182,3 +183,28 @@ def test_serialize_label(label, ndjson):
     if "uuid" in serialized_label:
         serialized_label.pop("uuid")
     assert serialized_label == ndjson
+
+
+@pytest.mark.parametrize("label, ndjson", labels_ndjsons)
+def test_deserialize_label(label, ndjson):
+    deserialized_label = next(NDJsonConverter().deserialize([ndjson]))
+    if hasattr(deserialized_label.annotations[0], "extra"):
+        deserialized_label.annotations[0].extra = {}
+    for i, annotation in enumerate(deserialized_label.annotations):
+        if hasattr(annotation, "frames"):
+            assert annotation.frames == label.annotations[i].frames
+        if hasattr(annotation, "value"):
+            assert annotation.value == label.annotations[i].value
+
+
+@pytest.mark.parametrize("label", labels)
+def test_serialize_deserialize_label(label):
+    serialized = list(NDJsonConverter.serialize([label]))
+    deserialized = list(NDJsonConverter.deserialize(serialized))
+    if hasattr(deserialized[0].annotations[0], "extra"):
+        deserialized[0].annotations[0].extra = {}
+    for i, annotation in enumerate(deserialized[0].annotations):
+        if hasattr(annotation, "frames"):
+            assert annotation.frames == label.annotations[i].frames
+        if hasattr(annotation, "value"):
+            assert annotation.value == label.annotations[i].value

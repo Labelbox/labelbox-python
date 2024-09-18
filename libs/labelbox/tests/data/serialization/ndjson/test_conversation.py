@@ -1,12 +1,8 @@
 import json
 
-from labelbox.data.annotation_types.data.generic_data_row_data import (
-    GenericDataRowData,
-)
 import pytest
 import labelbox.types as lb_types
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
-from labelbox.data.mixins import CustomMetric
 
 radio_ndjson = [
     {
@@ -103,62 +99,25 @@ def test_message_based_radio_classification(label, ndjson):
     serialized_label[0].pop("uuid")
     assert serialized_label == ndjson
 
-
-def test_conversation_entity_import():
-    with open(
-        "tests/data/assets/ndjson/conversation_entity_import.json", "r"
-    ) as file:
-        data = json.load(file)
-
-    label = lb_types.Label(
-        data=GenericDataRowData(
-            uid="cl6xnv9h61fv0085yhtoq06ht",
-        ),
-        annotations=[
-            lb_types.ObjectAnnotation(
-                custom_metrics=[
-                    CustomMetric(name="customMetric1", value=0.5),
-                    CustomMetric(name="customMetric2", value=0.3),
-                ],
-                confidence=0.53,
-                name="some-text-entity",
-                feature_schema_id="cl6xnuwt95lqq07330tbb3mfd",
-                extra={"uuid": "5ad9c52f-058d-49c8-a749-3f20b84f8cd4"},
-                value=lb_types.ConversationEntity(
-                    start=67, end=128, message_id="some-message-id"
-                ),
-            )
-        ],
-    )
-
-    res = list(NDJsonConverter.serialize([label]))
-    assert res == data
+    deserialized_label = list(NDJsonConverter().deserialize(ndjson))
+    deserialized_label[0].annotations[0].extra.pop("uuid")
+    assert deserialized_label[0].model_dump(exclude_none=True) == label[
+        0
+    ].model_dump(exclude_none=True)
 
 
-def test_conversation_entity_import_without_confidence():
-    with open(
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "tests/data/assets/ndjson/conversation_entity_import.json",
         "tests/data/assets/ndjson/conversation_entity_without_confidence_import.json",
-        "r",
-    ) as file:
+    ],
+)
+def test_conversation_entity_import(filename: str):
+    with open(filename, "r") as file:
         data = json.load(file)
-    label = lb_types.Label(
-        uid=None,
-        data=GenericDataRowData(
-            uid="cl6xnv9h61fv0085yhtoq06ht",
-        ),
-        annotations=[
-            lb_types.ObjectAnnotation(
-                name="some-text-entity",
-                feature_schema_id="cl6xnuwt95lqq07330tbb3mfd",
-                extra={"uuid": "5ad9c52f-058d-49c8-a749-3f20b84f8cd4"},
-                value=lb_types.ConversationEntity(
-                    start=67, end=128, extra={}, message_id="some-message-id"
-                ),
-            )
-        ],
-    )
-
-    res = list(NDJsonConverter.serialize([label]))
+    res = list(NDJsonConverter.deserialize(data))
+    res = list(NDJsonConverter.serialize(res))
     assert res == data
 
 
