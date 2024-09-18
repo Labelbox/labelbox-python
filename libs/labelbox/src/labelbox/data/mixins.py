@@ -1,13 +1,10 @@
-from typing import Optional, List
+from typing import List, Optional
 
-from pydantic import BaseModel, field_validator, model_serializer
-
-from labelbox.exceptions import (
+from lbox.exceptions import (
     ConfidenceNotSupportedException,
     CustomMetricsNotSupportedException,
 )
-
-from warnings import warn
+from pydantic import BaseModel, field_validator
 
 
 class ConfidenceMixin(BaseModel):

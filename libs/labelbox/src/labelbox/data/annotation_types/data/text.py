@@ -1,13 +1,14 @@
 from typing import Callable, Optional
 
 import requests
-from requests.exceptions import ConnectTimeout
 from google.api_core import retry
-
+from lbox.exceptions import InternalServerError
 from pydantic import ConfigDict, model_validator
-from labelbox.exceptions import InternalServerError
+from requests.exceptions import ConnectTimeout
+
 from labelbox.typing_imports import Literal
 from labelbox.utils import _NoCoercionMixin
+
 from .base_data import BaseData
 
 

@@ -1,6 +1,8 @@
 from typing import Union
-from labelbox import exceptions
-from labelbox.schema.foundry.app import App, APP_FIELD_NAMES
+
+from lbox import exceptions
+
+from labelbox.schema.foundry.app import APP_FIELD_NAMES, App
 from labelbox.schema.identifiables import DataRowIds, GlobalKeys, IdType
 from labelbox.schema.task import Task
 
@@ -51,7 +53,7 @@ class FoundryClient:
 
         try:
             response = self.client.execute(query_str, params)
-        except exceptions.InvalidQueryError as e:
+        except exceptions.InvalidQueryError:
             raise exceptions.ResourceNotFoundError(App, params)
         except Exception as e:
             raise exceptions.LabelboxError(f"Unable to get app with id {id}", e)

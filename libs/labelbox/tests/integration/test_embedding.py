@@ -2,12 +2,12 @@ import json
 import random
 import threading
 from tempfile import NamedTemporaryFile
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
+import lbox.exceptions
 import pytest
 
-import labelbox.exceptions
-from labelbox import Client, Dataset, DataRow
+from labelbox import Client, DataRow, Dataset
 from labelbox.schema.embedding import Embedding
 
 
@@ -23,7 +23,7 @@ def test_get_embedding_by_id(client: Client, embedding: Embedding):
 
 
 def test_get_embedding_by_name_not_found(client: Client):
-    with pytest.raises(labelbox.exceptions.ResourceNotFoundError):
+    with pytest.raises(lbox.exceptions.ResourceNotFoundError):
         client.get_embedding_by_name("does-not-exist")
 
 

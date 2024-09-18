@@ -1,43 +1,36 @@
-from datetime import datetime
-from random import randint
-from string import ascii_letters
-
 import json
 import os
 import re
-import uuid
 import time
-import requests
-import pytest
-from types import SimpleNamespace
-from typing import Type
+import uuid
+from datetime import datetime
 from enum import Enum
-from typing import Tuple
+from random import randint
+from string import ascii_letters
+from types import SimpleNamespace
+from typing import Tuple, Type
 
-from labelbox import Dataset, DataRow
-from labelbox import MediaType
-from labelbox.orm import query
-from labelbox.pagination import PaginatedCollection
-from labelbox.schema.invite import Invite
-from labelbox.schema.quality_mode import QualityMode
-from labelbox.schema.queue_mode import QueueMode
-from labelbox import Client
+import pytest
+import requests
 
-from labelbox import Dataset, DataRow
-from labelbox import LabelingFrontend
-from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
+from labelbox import (
+    Classification,
+    Client,
+    DataRow,
+    Dataset,
+    LabelingFrontend,
+    MediaType,
+    OntologyBuilder,
+    Option,
+    Tool,
+)
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport
-from labelbox.schema.catalog import Catalog
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.invite import Invite
 from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.user import User
-from labelbox.exceptions import LabelboxError
-from contextlib import suppress
-from labelbox import Client
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
 MASKABLE_IMG_URL = "https://storage.googleapis.com/labelbox-datasets/image_sample_data/2560px-Kitano_Street_Kobe01s5s4110.jpeg"
