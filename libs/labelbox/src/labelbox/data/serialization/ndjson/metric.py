@@ -15,7 +15,6 @@ from labelbox.data.annotation_types.metrics.confusion_matrix import (
     ConfusionMatrixMetricConfidenceValue,
 )
 from pydantic import ConfigDict, model_serializer
-from .base import _SubclassRegistryBase
 
 
 class BaseNDMetric(NDJsonBase):
@@ -33,7 +32,7 @@ class BaseNDMetric(NDJsonBase):
         return res
 
 
-class NDConfusionMatrixMetric(BaseNDMetric, _SubclassRegistryBase):
+class NDConfusionMatrixMetric(BaseNDMetric):
     metric_value: Union[
         ConfusionMatrixMetricValue, ConfusionMatrixMetricConfidenceValue
     ]
@@ -65,7 +64,7 @@ class NDConfusionMatrixMetric(BaseNDMetric, _SubclassRegistryBase):
         )
 
 
-class NDScalarMetric(BaseNDMetric, _SubclassRegistryBase):
+class NDScalarMetric(BaseNDMetric):
     metric_value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
     metric_name: Optional[str] = None
     aggregation: Optional[ScalarMetricAggregation] = (

@@ -1,5 +1,19 @@
 import uuid
 from labelbox import parser
+from labelbox.data.annotation_types.annotation import ObjectAnnotation
+from labelbox.data.annotation_types.classification.classification import (
+    ClassificationAnnotation,
+    ClassificationAnswer,
+    Radio,
+)
+from labelbox.data.annotation_types.data.generic_data_row_data import (
+    GenericDataRowData,
+)
+from labelbox.data.annotation_types.geometry.line import Line
+from labelbox.data.annotation_types.geometry.point import Point
+from labelbox.data.annotation_types.geometry.polygon import Polygon
+from labelbox.data.annotation_types.geometry.rectangle import Rectangle
+from labelbox.data.annotation_types.label import Label
 import pytest
 from labelbox import ModelRun
 
@@ -193,14 +207,60 @@ def test_create_from_label_objects(
     annotation_import_test_helpers,
 ):
     name = str(uuid.uuid4())
-    use_data_row_ids = [
+    use_data_row_id = [
         p["dataRow"]["id"] for p in object_predictions_for_annotation_import
     ]
-    model_run_with_data_rows.upsert_data_rows(use_data_row_ids)
 
-    predictions = list(
-        NDJsonConverter.deserialize(object_predictions_for_annotation_import)
-    )
+    model_run_with_data_rows.upsert_data_rows(use_data_row_id)
+
+    predictions = []
+    for data_row_id in use_data_row_id:
+        predictions.append(
+            Label(
+                data=GenericDataRowData(
+                    uid=data_row_id,
+                ),
+                annotations=[
+                    ObjectAnnotation(
+                        name="polygon",
+                        extra={
+                            "uuid": "6d10fa30-3ea0-4e6c-bbb1-63f5c29fe3e4",
+                        },
+                        value=Polygon(
+                            points=[
+                                Point(x=147.692, y=118.154),
+                                Point(x=142.769, y=104.923),
+                                Point(x=57.846, y=118.769),
+                                Point(x=28.308, y=169.846),
+                                Point(x=147.692, y=118.154),
+                            ],
+                        ),
+                    ),
+                    ObjectAnnotation(
+                        name="bbox",
+                        extra={
+                            "uuid": "15b7138f-4bbc-42c5-ae79-45d87b0a3b2a",
+                        },
+                        value=Rectangle(
+                            start=Point(x=58.0, y=48.0),
+                            end=Point(x=70.0, y=113.0),
+                        ),
+                    ),
+                    ObjectAnnotation(
+                        name="polyline",
+                        extra={
+                            "uuid": "cf4c6df9-c39c-4fbc-9541-470f6622978a",
+                        },
+                        value=Line(
+                            points=[
+                                Point(x=147.692, y=118.154),
+                                Point(x=150.692, y=160.154),
+                            ],
+                        ),
+                    ),
+                ],
+            ),
+        )
 
     annotation_import = model_run_with_data_rows.add_predictions(
         name=name, predictions=predictions

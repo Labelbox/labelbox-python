@@ -30,7 +30,6 @@ from pydantic import (
     model_serializer,
 )
 from pydantic.alias_generators import to_camel
-from .base import _SubclassRegistryBase
 
 
 class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
@@ -224,7 +223,7 @@ class NDPromptTextSubclass(NDAnswer):
 # ====== End of subclasses
 
 
-class NDText(NDAnnotation, NDTextSubclass, _SubclassRegistryBase):
+class NDText(NDAnnotation, NDTextSubclass):
     @classmethod
     def from_common(
         cls,
@@ -249,9 +248,7 @@ class NDText(NDAnnotation, NDTextSubclass, _SubclassRegistryBase):
         )
 
 
-class NDChecklist(
-    NDAnnotation, NDChecklistSubclass, VideoSupported, _SubclassRegistryBase
-):
+class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         res = handler(self)
@@ -298,9 +295,7 @@ class NDChecklist(
         )
 
 
-class NDRadio(
-    NDAnnotation, NDRadioSubclass, VideoSupported, _SubclassRegistryBase
-):
+class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
     @classmethod
     def from_common(
         cls,
@@ -343,7 +338,7 @@ class NDRadio(
         return res
 
 
-class NDPromptText(NDAnnotation, NDPromptTextSubclass, _SubclassRegistryBase):
+class NDPromptText(NDAnnotation, NDPromptTextSubclass):
     @classmethod
     def from_common(
         cls,
