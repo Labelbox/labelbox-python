@@ -10,14 +10,15 @@ from collections import defaultdict
 from types import MappingProxyType
 from typing import Any, Dict, List, Optional, Union, overload
 
+import lbox.exceptions
 import requests
 import requests.exceptions
 from google.api_core import retry
+from lbox.request_client import RequestClient
 
-import labelbox.exceptions
+from labelbox import __version__ as SDK_VERSION
 from labelbox import utils
 from labelbox.adv_client import AdvClient
-from labelbox.client import SDK_VERSION
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
@@ -109,14 +110,14 @@ class Client:
             enable_experimental (bool): Indicates whether or not to use experimental features
             app_url (str) : host url for all links to the web app
         Raises:
-            labelbox.exceptions.AuthenticationError: If no `api_key`
+            lbox.exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
                 variable.
         """
         self._data_row_metadata_ontology = None
         self._request_client = RequestClient(
-            api_key,
             sdk_version=SDK_VERSION,
+            api_key=api_key,
             endpoint=endpoint,
             enable_experimental=enable_experimental,
             app_url=app_url,
@@ -131,6 +132,22 @@ class Client:
     @property
     def connection(self) -> requests.Session:
         return self._request_client._connection
+
+    @property
+    def endpoint(self) -> str:
+        return self._request_client.endpoint
+
+    @property
+    def rest_endpoint(self) -> str:
+        return self._request_client.rest_endpoint
+
+    @property
+    def enable_experimental(self) -> bool:
+        return self._request_client.enable_experimental
+
+    @property
+    def app_url(self) -> str:
+        return self._request_client.app_url
 
     def execute(
         self,
@@ -175,7 +192,7 @@ class Client:
         Returns:
             str, the URL of uploaded data.
         Raises:
-            labelbox.exceptions.LabelboxError: If upload failed.
+            lbox.exceptions.LabelboxError: If upload failed.
         """
         content_type, _ = mimetypes.guess_type(path)
         filename = os.path.basename(path)
@@ -186,7 +203,7 @@ class Client:
 
     @retry.Retry(
         predicate=retry.if_exception_type(
-            labelbox.exceptions.InternalServerError
+            lbox.exceptions.InternalServerError
         )
     )
     def upload_data(
@@ -208,7 +225,7 @@ class Client:
             str, the URL of uploaded data.
 
         Raises:
-            labelbox.exceptions.LabelboxError: If upload failed.
+            lbox.exceptions.LabelboxError: If upload failed.
         """
 
         request_data = {
@@ -233,7 +250,7 @@ class Client:
             if (filename and content_type)
             else content
         }
-        headers = self._connection.headers.copy()
+        headers = self.connection.headers.copy()
         headers.pop("Content-Type", None)
         request = requests.Request(
             "POST",
@@ -245,20 +262,20 @@ class Client:
 
         prepped: requests.PreparedRequest = request.prepare()
 
-        response = self._connection.send(prepped)
+        response = self.connection.send(prepped)
 
         if response.status_code == 502:
             error_502 = "502 Bad Gateway"
-            raise labelbox.exceptions.InternalServerError(error_502)
+            raise lbox.exceptions.InternalServerError(error_502)
         elif response.status_code == 503:
-            raise labelbox.exceptions.InternalServerError(response.text)
+            raise lbox.exceptions.InternalServerError(response.text)
         elif response.status_code == 520:
-            raise labelbox.exceptions.InternalServerError(response.text)
+            raise lbox.exceptions.InternalServerError(response.text)
 
         try:
             file_data = response.json().get("data", None)
         except ValueError as e:  # response is not valid JSON
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed to upload, unknown cause", e
             )
 
@@ -270,7 +287,7 @@ class Client:
                 )
             except Exception:
                 error_msg = "Unknown error"
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed to upload, message: %s" % error_msg
             )
 
@@ -285,7 +302,7 @@ class Client:
         Returns:
             Object of `db_object_type`.
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no object
+            lbox.exceptions.ResourceNotFoundError: If there is no object
                 of the given type for the given ID.
         """
         query_str, params = query.get_single(db_object_type, uid)
@@ -293,7 +310,7 @@ class Client:
         res = self.execute(query_str, params)
         res = res and res.get(utils.camel_case(db_object_type.type_name()))
         if res is None:
-            raise labelbox.exceptions.ResourceNotFoundError(
+            raise lbox.exceptions.ResourceNotFoundError(
                 db_object_type, params
             )
         else:
@@ -309,7 +326,7 @@ class Client:
         Returns:
             The sought Project.
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no
+            lbox.exceptions.ResourceNotFoundError: If there is no
                 Project with the given ID.
         """
         return self._get_single(Entity.Project, project_id)
@@ -324,7 +341,7 @@ class Client:
         Returns:
             The sought Dataset.
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no
+            lbox.exceptions.ResourceNotFoundError: If there is no
                 Dataset with the given ID.
         """
         return self._get_single(Entity.Dataset, dataset_id)
@@ -450,7 +467,7 @@ class Client:
         )
 
         if not res:
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed to create %s" % db_object_type.type_name()
             )
         res = res["create%s" % db_object_type.type_name()]
@@ -508,7 +525,7 @@ class Client:
         params = {"id": id}
         result = self.execute(query, params)
         if not result:
-            raise labelbox.exceptions.ResourceNotFoundError(
+            raise lbox.exceptions.ResourceNotFoundError(
                 Entity.ModelConfig, params
             )
         return result["deleteModelConfig"]["success"]
@@ -569,7 +586,7 @@ class Client:
             )
 
             if not validation_result["validateDataset"]["valid"]:
-                raise labelbox.exceptions.LabelboxError(
+                raise lbox.exceptions.LabelboxError(
                     "IAMIntegration was not successfully added to the dataset."
                 )
         except Exception as e:
@@ -935,7 +952,7 @@ class Client:
         """
         res = self.get_data_row_ids_for_global_keys([global_key])
         if res["status"] != "SUCCESS":
-            raise labelbox.exceptions.ResourceNotFoundError(
+            raise lbox.exceptions.ResourceNotFoundError(
                 Entity.DataRow, {global_key: global_key}
             )
         data_row_id = res["results"][0]
@@ -963,7 +980,7 @@ class Client:
         Returns:
             The sought Model.
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no
+            lbox.exceptions.ResourceNotFoundError: If there is no
                 Model with the given ID.
         """
         return self._get_single(Entity.Model, model_id)
@@ -1206,10 +1223,10 @@ class Client:
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
         )
-        response = self._connection.delete(endpoint)
+        response = self.connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed to delete the feature schema, message: "
                 + str(response.json()["message"])
             )
@@ -1227,10 +1244,10 @@ class Client:
             + "/ontologies/"
             + urllib.parse.quote(ontology_id)
         )
-        response = self._connection.delete(endpoint)
+        response = self.connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed to delete the ontology, message: "
                 + str(response.json()["message"])
             )
@@ -1255,12 +1272,12 @@ class Client:
             + urllib.parse.quote(feature_schema_id)
             + "/definition"
         )
-        response = self._connection.patch(endpoint, json={"title": title})
+        response = self.connection.patch(endpoint, json={"title": title})
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(feature_schema_id)
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed to update the feature schema, message: "
                 + str(response.json()["message"])
             )
@@ -1289,14 +1306,14 @@ class Client:
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
         )
-        response = self._connection.put(
+        response = self.connection.put(
             endpoint, json={"normalized": json.dumps(feature_schema)}
         )
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(response.json()["schemaId"])
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed to upsert the feature schema, message: "
                 + str(response.json()["message"])
             )
@@ -1322,9 +1339,9 @@ class Client:
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
         )
-        response = self._connection.post(endpoint, json={"position": position})
+        response = self.connection.post(endpoint, json={"position": position})
         if response.status_code != requests.codes.created:
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed to insert the feature schema into the ontology, message: "
                 + str(response.json()["message"])
             )
@@ -1344,12 +1361,12 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/ontologies/unused"
-        response = self._connection.get(endpoint, json={"after": after})
+        response = self.connection.get(endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed to get unused ontologies, message: "
                 + str(response.json()["message"])
             )
@@ -1369,12 +1386,12 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/feature-schemas/unused"
-        response = self._connection.get(endpoint, json={"after": after})
+        response = self.connection.get(endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed to get unused feature schemas, message: "
                 + str(response.json()["message"])
             )
@@ -1670,12 +1687,12 @@ class Client:
             elif (
                 res["assignGlobalKeysToDataRowsResult"]["jobStatus"] == "FAILED"
             ):
-                raise labelbox.exceptions.LabelboxError(
+                raise lbox.exceptions.LabelboxError(
                     "Job assign_global_keys_to_data_rows failed."
                 )
             current_time = time.time()
             if current_time - start_time > timeout_seconds:
-                raise labelbox.exceptions.TimeoutError(
+                raise lbox.exceptions.TimeoutError(
                     "Timed out waiting for assign_global_keys_to_data_rows job to complete."
                 )
             time.sleep(sleep_time)
@@ -1779,12 +1796,12 @@ class Client:
 
                 return {"status": status, "results": results, "errors": errors}
             elif res["dataRowsForGlobalKeysResult"]["jobStatus"] == "FAILED":
-                raise labelbox.exceptions.LabelboxError(
+                raise lbox.exceptions.LabelboxError(
                     "Job dataRowsForGlobalKeys failed."
                 )
             current_time = time.time()
             if current_time - start_time > timeout_seconds:
-                raise labelbox.exceptions.TimeoutError(
+                raise lbox.exceptions.TimeoutError(
                     "Timed out waiting for get_data_rows_for_global_keys job to complete."
                 )
             time.sleep(sleep_time)
@@ -1883,12 +1900,12 @@ class Client:
 
                 return {"status": status, "results": results, "errors": errors}
             elif res["clearGlobalKeysResult"]["jobStatus"] == "FAILED":
-                raise labelbox.exceptions.LabelboxError(
+                raise lbox.exceptions.LabelboxError(
                     "Job clearGlobalKeys failed."
                 )
             current_time = time.time()
             if current_time - start_time > timeout_seconds:
-                raise labelbox.exceptions.TimeoutError(
+                raise lbox.exceptions.TimeoutError(
                     "Timed out waiting for clear_global_keys job to complete."
                 )
             time.sleep(sleep_time)
@@ -1937,7 +1954,7 @@ class Client:
             + "/ontologies/"
             + urllib.parse.quote(ontology_id)
         )
-        response = self._connection.get(ontology_endpoint)
+        response = self.connection.get(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             feature_schema_nodes = response.json()["featureSchemaNodes"]
@@ -1953,16 +1970,16 @@ class Client:
             if filtered_feature_schema_nodes:
                 return bool(filtered_feature_schema_nodes[0]["archived"])
             else:
-                raise labelbox.exceptions.LabelboxError(
+                raise lbox.exceptions.LabelboxError(
                     "The specified feature schema was not in the ontology."
                 )
 
         elif response.status_code == 404:
-            raise labelbox.exceptions.ResourceNotFoundError(
+            raise lbox.exceptions.ResourceNotFoundError(
                 Ontology, ontology_id
             )
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed to get the feature schema archived status."
             )
 
@@ -1989,7 +2006,7 @@ class Client:
         """
         res = self.execute(query_str, {"id": slice_id})
         if res is None or res["getSavedQuery"] is None:
-            raise labelbox.exceptions.ResourceNotFoundError(
+            raise lbox.exceptions.ResourceNotFoundError(
                 ModelSlice, slice_id
             )
 
@@ -2021,7 +2038,7 @@ class Client:
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
         )
-        response = self._connection.delete(ontology_endpoint)
+        response = self.connection.delete(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
@@ -2038,7 +2055,7 @@ class Client:
             result.deleted = bool(response_json["deleted"])
             return result
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed to remove feature schema from ontology, message: "
                 + str(response.json()["message"])
             )
@@ -2063,14 +2080,14 @@ class Client:
             + urllib.parse.quote(root_feature_schema_id)
             + "/unarchive"
         )
-        response = self._connection.patch(ontology_endpoint)
+        response = self.connection.patch(ontology_endpoint)
         if response.status_code == requests.codes.ok:
             if not bool(response.json()["unarchived"]):
-                raise labelbox.exceptions.LabelboxError(
+                raise lbox.exceptions.LabelboxError(
                     "Failed unarchive the feature schema."
                 )
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise lbox.exceptions.LabelboxError(
                 "Failed unarchive the feature schema node, message: ",
                 response.text,
             )
@@ -2299,7 +2316,7 @@ class Client:
         for e in embeddings:
             if e.name == name:
                 return e
-        raise labelbox.exceptions.ResourceNotFoundError(
+        raise lbox.exceptions.ResourceNotFoundError(
             Embedding, dict(name=name)
         )
 
@@ -2425,7 +2442,7 @@ class Client:
         result = self.execute(query, {"userId": user.uid, "taskId": task_id})
         data = result.get("user", {}).get("createdTasks", [])
         if not data:
-            raise labelbox.exceptions.ResourceNotFoundError(
+            raise lbox.exceptions.ResourceNotFoundError(
                 message=f"The task {task_id} does not exist."
             )
         task_data = data[0]
