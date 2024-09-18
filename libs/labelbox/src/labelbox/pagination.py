@@ -1,12 +1,20 @@
 # Size of a single page in a paginated query.
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
-
-from typing import TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 if TYPE_CHECKING:
-    from labelbox import Client
     from labelbox.orm.db_object import DbObject
+    from labelbox.request_client import RequestClient
 
 _PAGE_SIZE = 100
 
@@ -22,7 +30,7 @@ class PaginatedCollection:
 
     def __init__(
         self,
-        client: "Client",
+        client: "RequestClient",
         query: str,
         params: Dict[str, Union[str, int]],
         dereferencing: Union[List[str], Dict[str, Any]],
@@ -33,7 +41,7 @@ class PaginatedCollection:
         """Creates a PaginatedCollection.
 
         Args:
-            client (labelbox.Client): the client used for fetching data from DB.
+            client (labelbox.RequestClient): the client used for fetching data from DB.
             query (str): Base query used for pagination. It must contain two
                 '%d' placeholders, the first for pagination 'skip' clause and
                 the second for the 'first' clause.
@@ -113,7 +121,7 @@ class PaginatedCollection:
 class _Pagination(ABC):
     def __init__(
         self,
-        client: "Client",
+        client: "RequestClient",
         obj_class: Type["DbObject"],
         dereferencing: Dict[str, Any],
         query: str,

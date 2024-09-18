@@ -1,18 +1,19 @@
+import json
 import logging
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union, Any
-import json
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 from labelbox.orm import query
 from labelbox.orm.db_object import (
+    BulkDeletable,
     DbObject,
     Updateable,
-    BulkDeletable,
-    experimental,
 )
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.schema.asset_attachment import AttachmentType
-from labelbox.schema.data_row_metadata import DataRowMetadataField  # type: ignore
+from labelbox.schema.data_row_metadata import (
+    DataRowMetadataField,  # type: ignore
+)
 from labelbox.schema.export_filters import (
     DatarowExportFilters,
     build_filters,
@@ -24,6 +25,8 @@ from labelbox.schema.export_params import (
 )
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.task import Task
+
+from ..request_client import RequestClient
 
 if TYPE_CHECKING:
     from labelbox import AssetAttachment, Client
@@ -242,7 +245,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.result
         """
         task, _ = DataRow._export(
-            client, data_rows, global_keys, task_name, params, streamable=True
+            client._request_client, data_rows, global_keys, task_name, params, streamable=True
         )
         return ExportTask(task)
 
@@ -278,7 +281,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.result
         """
         task, is_streamable = DataRow._export(
-            client, data_rows, global_keys, task_name, params
+            client._request_client, data_rows, global_keys, task_name, params
         )
         if is_streamable:
             return ExportTask(task, True)
@@ -286,7 +289,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
     @staticmethod
     def _export(
-        client: "Client",
+        client: "RequestClient",
         data_rows: Optional[List[Union[str, "DataRow"]]] = None,
         global_keys: Optional[List[str]] = None,
         task_name: Optional[str] = None,

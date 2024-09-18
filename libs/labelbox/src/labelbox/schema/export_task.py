@@ -1,11 +1,16 @@
+import json
+import os
+import tempfile
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
 from io import TextIOWrapper
-import json
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
+    Any,
     Callable,
     Generic,
     Iterator,
@@ -14,22 +19,20 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    TYPE_CHECKING,
     overload,
-    Any,
 )
 
 import requests
-import warnings
-import tempfile
-import os
+from pydantic import BaseModel
 
 from labelbox.schema.task import Task
 from labelbox.utils import _CamelCaseMixin
-from pydantic import BaseModel, Field, AliasChoices
+
+from ..client import get_organization
+from ..request_client import RequestClient
 
 if TYPE_CHECKING:
-    from labelbox import Client
+    pass
 
 OutputT = TypeVar("OutputT")
 
@@ -61,7 +64,7 @@ class _MetadataFileInfo(_CamelCaseMixin, BaseModel):  # pylint: disable=too-few-
 
 @dataclass
 class _TaskContext:
-    client: "Client"
+    client: "RequestClient"
     task_id: str
     stream_type: StreamType
     metadata_header: _MetadataHeader
@@ -733,7 +736,7 @@ class ExportTask:
             + "/export-results/"
             + self._task.uid
             + "/"
-            + self._task.client.get_organization().uid
+            + get_organization(self._task.client).uid
         )
 
     @property

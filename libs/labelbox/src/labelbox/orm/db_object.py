@@ -1,17 +1,16 @@
-from dataclasses import dataclass
+import json
+import logging
 from datetime import datetime, timezone
 from functools import wraps
-import logging
-import json
 
 from labelbox import utils
 from labelbox.exceptions import (
-    InvalidQueryError,
     InvalidAttributeError,
+    InvalidQueryError,
     OperationNotSupportedException,
 )
 from labelbox.orm import query
-from labelbox.orm.model import Field, Relationship, Entity
+from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 
 logger = logging.getLogger(__name__)
@@ -43,7 +42,7 @@ class DbObject(Entity):
         by library internals and not by the end user.
 
         Args:
-            client (labelbox.Client): the client used for fetching data from DB.
+            client (labelbox.RequestCliebt): the client used for fetching data from DB.
             field_values (dict): Data obtained from the DB. Maps database object
                 fields (their graphql_name version) to values.
         """

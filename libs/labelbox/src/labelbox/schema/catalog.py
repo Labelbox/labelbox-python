@@ -1,7 +1,6 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
-from labelbox.orm.db_object import experimental
-from labelbox.schema.export_filters import CatalogExportFilters, build_filters
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
+from labelbox.schema.export_filters import CatalogExportFilters, build_filters
 from labelbox.schema.export_params import (
     CatalogExportParams,
     validate_catalog_export_params,
@@ -9,16 +8,14 @@ from labelbox.schema.export_params import (
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.task import Task
 
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from labelbox import Client
+    from labelbox.request_client import RequestClient
 
 
 class Catalog:
-    client: "Client"
+    client: "RequestClient"
 
-    def __init__(self, client: "Client"):
+    def __init__(self, client: "RequestClient"):
         self.client = client
 
     def export_v2(
