@@ -7,19 +7,21 @@ import pytest
 from labelbox.data.annotation_types import (
     LabelGenerator,
     ObjectAnnotation,
-    ImageData,
-    MaskData,
     Line,
     Mask,
     Point,
     Label,
+    GenericDataRowData,
+    MaskData,
 )
 from labelbox import OntologyBuilder, Tool
 
 
 @pytest.fixture
 def list_of_labels():
-    return [Label(data=ImageData(url="http://someurl")) for _ in range(5)]
+    return [
+        Label(data=GenericDataRowData(url="http://someurl")) for _ in range(5)
+    ]
 
 
 @pytest.fixture
@@ -73,7 +75,7 @@ def test_conversion(list_of_labels):
 def test_adding_schema_ids():
     name = "line_feature"
     label = Label(
-        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=GenericDataRowData(uid="123456"),
         annotations=[
             ObjectAnnotation(
                 value=Line(points=[Point(x=1, y=2), Point(x=2, y=2)]),
@@ -93,7 +95,7 @@ def test_adding_schema_ids():
 
 def test_adding_urls(signer):
     label = Label(
-        data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
+        data=GenericDataRowData("12345"),
         annotations=[],
     )
     uuid = str(uuid4())
@@ -106,7 +108,7 @@ def test_adding_urls(signer):
 def test_adding_to_dataset(signer):
     dataset = FakeDataset()
     label = Label(
-        data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
+        data=GenericDataRowData("12345"),
         annotations=[],
     )
     uuid = str(uuid4())
@@ -121,7 +123,7 @@ def test_adding_to_dataset(signer):
 
 def test_adding_to_masks(signer):
     label = Label(
-        data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
+        data=GenericDataRowData("12345"),
         annotations=[
             ObjectAnnotation(
                 name="1234",

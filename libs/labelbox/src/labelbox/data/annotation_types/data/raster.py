@@ -11,7 +11,7 @@ import numpy as np
 
 from pydantic import BaseModel, model_validator, ConfigDict
 from labelbox.exceptions import InternalServerError
-from .base_data import BaseData
+
 from ..types import TypedArray
 
 
@@ -220,6 +220,3 @@ class MaskData(RasterData):
         url: Optional[str] = None
         arr: Optional[TypedArray[Literal['uint8']]] = None
     """
-
-
-class ImageData(RasterData, BaseData): ...

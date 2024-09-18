@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union, Optional
 
-from labelbox.data.annotation_types import ImageData, TextData, VideoData
+from labelbox.data.annotation_types import GenericDataRowData
 from labelbox.data.mixins import (
     ConfidenceMixin,
     CustomMetric,
@@ -232,7 +232,7 @@ class NDText(NDAnnotation, NDTextSubclass):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[TextData, ImageData],
+        data: Union[GenericDataRowData],
         message_id: str,
         confidence: Optional[float] = None,
     ) -> "NDText":
@@ -264,7 +264,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[VideoData, TextData, ImageData],
+        data: Union[GenericDataRowData],
         message_id: str,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
@@ -304,7 +304,7 @@ class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[VideoData, TextData, ImageData],
+        data: GenericDataRowData,
         message_id: str,
         confidence: Optional[float] = None,
     ) -> "NDRadio":
@@ -427,7 +427,7 @@ class NDClassification:
         annotation: Union[
             ClassificationAnnotation, VideoClassificationAnnotation
         ],
-        data: Union[VideoData, TextData, ImageData],
+        data: GenericDataRowData,
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
         classify_obj = cls.lookup_classification(annotation)
         if classify_obj is None:
@@ -475,7 +475,7 @@ class NDPromptClassification:
     def from_common(
         cls,
         annotation: Union[PromptClassificationAnnotation],
-        data: Union[VideoData, TextData, ImageData],
+        data: GenericDataRowData,
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
         return NDPromptText.from_common(
             str(annotation._uuid),

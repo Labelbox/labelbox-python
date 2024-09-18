@@ -14,7 +14,6 @@ from ...annotation_types.video import (
 )
 from ...annotation_types.video import VideoObjectAnnotation, VideoMaskAnnotation
 from ...annotation_types.collection import LabelCollection, LabelGenerator
-from ...annotation_types.data import DicomData, ImageData, TextData, VideoData
 from ...annotation_types.data.generic_data_row_data import GenericDataRowData
 from ...annotation_types.label import Label
 from ...annotation_types.ner import TextEntity, ConversationEntity
@@ -214,45 +213,8 @@ class NDLabel(BaseModel):
 
             yield Label(
                 annotations=annotations,
-                data=self._infer_media_type(group.data_row, annotations),
+                data=GenericDataRowData,
             )
-
-    def _infer_media_type(
-        self,
-        data_row: DataRow,
-        annotations: List[
-            Union[
-                TextEntity,
-                ConversationEntity,
-                VideoClassificationAnnotation,
-                DICOMObjectAnnotation,
-                VideoObjectAnnotation,
-                ObjectAnnotation,
-                ClassificationAnnotation,
-                ScalarMetric,
-                ConfusionMatrixMetric,
-            ]
-        ],
-    ) -> Union[TextData, VideoData, ImageData]:
-        if len(annotations) == 0:
-            raise ValueError("Missing annotations while inferring media type")
-
-        types = {type(annotation) for annotation in annotations}
-        data = GenericDataRowData
-        if (TextEntity in types) or (ConversationEntity in types):
-            data = TextData
-        elif (
-            VideoClassificationAnnotation in types
-            or VideoObjectAnnotation in types
-        ):
-            data = VideoData
-        elif DICOMObjectAnnotation in types:
-            data = DicomData
-
-        if data_row.id:
-            return data(uid=data_row.id)
-        else:
-            return data(global_key=data_row.global_key)
 
     @staticmethod
     def _get_consecutive_frames(

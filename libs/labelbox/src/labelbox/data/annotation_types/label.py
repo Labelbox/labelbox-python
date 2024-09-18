@@ -6,7 +6,6 @@ import labelbox
 from labelbox.data.annotation_types.data.generic_data_row_data import (
     GenericDataRowData,
 )
-from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.schema import ontology
 
 from ...annotated_types import Cuid
@@ -14,19 +13,6 @@ from .annotation import ClassificationAnnotation, ObjectAnnotation
 from .relationship import RelationshipAnnotation
 from .llm_prompt_response.prompt import PromptClassificationAnnotation
 from .classification import ClassificationAnswer
-from .data import (
-    AudioData,
-    ConversationData,
-    DicomData,
-    DocumentData,
-    HTMLData,
-    ImageData,
-    TextData,
-    VideoData,
-    LlmPromptCreationData,
-    LlmPromptResponseCreationData,
-    LlmResponseCreationData,
-)
 from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .video import VideoClassificationAnnotation
@@ -34,22 +20,6 @@ from .video import VideoObjectAnnotation, VideoMaskAnnotation
 from .mmc import MessageEvaluationTaskAnnotation
 from ..ontology import get_feature_schema_lookup
 from pydantic import BaseModel, field_validator, model_serializer
-
-DataType = Union[
-    VideoData,
-    ImageData,
-    TextData,
-    TiledImageData,
-    AudioData,
-    ConversationData,
-    DicomData,
-    DocumentData,
-    HTMLData,
-    LlmPromptCreationData,
-    LlmPromptResponseCreationData,
-    LlmResponseCreationData,
-    GenericDataRowData,
-]
 
 
 class Label(BaseModel):
@@ -67,14 +37,13 @@ class Label(BaseModel):
 
     Args:
         uid: Optional Label Id in Labelbox
-        data: Data of Label, Image, Video, Text or dict with a single key uid | global_key | external_id.
-            Note use of classes as data is deprecated. Use GenericDataRowData or dict with a single key instead.
+        data: GenericDataRowData or dict with a single key uid | global_key | external_id.
         annotations: List of Annotations in the label
         extra: additional context
     """
 
     uid: Optional[Cuid] = None
-    data: DataType
+    data: GenericDataRowData
     annotations: List[
         Union[
             ClassificationAnnotation,
@@ -94,13 +63,6 @@ class Label(BaseModel):
     def validate_data(cls, data):
         if isinstance(data, Dict):
             return GenericDataRowData(**data)
-        elif isinstance(data, GenericDataRowData):
-            return data
-        else:
-            warnings.warn(
-                f"Using {type(data).__name__} class for label.data is deprecated. "
-                "Use a dict or an instance of GenericDataRowData instead."
-            )
         return data
 
     def object_annotations(self) -> List[ObjectAnnotation]:

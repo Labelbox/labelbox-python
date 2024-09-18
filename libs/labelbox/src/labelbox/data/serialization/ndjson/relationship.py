@@ -1,7 +1,7 @@
 from typing import Union
 from pydantic import BaseModel
 from .base import NDAnnotation, DataRow
-from ...annotation_types.data import ImageData, TextData
+from ...annotation_types.data import GenericDataRowData
 from ...annotation_types.relationship import RelationshipAnnotation
 from ...annotation_types.relationship import Relationship
 from .objects import NDObjectType
@@ -40,7 +40,7 @@ class NDRelationship(NDAnnotation):
     def from_common(
         cls,
         annotation: RelationshipAnnotation,
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
     ) -> "NDRelationship":
         relationship = annotation.value
         return cls(
