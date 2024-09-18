@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import Iterable, List
+from typing import Iterable
 
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Updateable
@@ -56,7 +56,7 @@ class Webhook(DbObject, Updateable):
         """Creates a Webhook.
 
         Args:
-            client (Client): The Labelbox client used to connect
+            client (RequestClient): The Labelbox client used to connect
                 to the server.
             topics (list of str): A list of topics this Webhook should
                 get notifications for. Must be one of Webhook.Topic

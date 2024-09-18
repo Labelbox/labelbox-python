@@ -3,33 +3,35 @@ import json
 import logging
 import os
 import time
+from collections import defaultdict
 from typing import (
+    TYPE_CHECKING,
     Any,
     BinaryIO,
     Dict,
     List,
     Optional,
     Union,
-    TYPE_CHECKING,
     cast,
 )
-from collections import defaultdict
 
-from google.api_core import retry
-from labelbox import parser
 import requests
+from google.api_core import retry
 from tqdm import tqdm  # type: ignore
 
 import labelbox
+from labelbox import parser
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-from labelbox.utils import is_exactly_one_set
 from labelbox.schema.confidence_presence_checker import (
     LabelsConfidencePresenceChecker,
 )
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.serialization import serialize_labels
+from labelbox.utils import is_exactly_one_set
+
+from ..request_client import RequestClient
 
 if TYPE_CHECKING:
     from labelbox.types import Label
@@ -260,7 +262,7 @@ class AnnotationImport(DbObject):
     @classmethod
     def from_name(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         parent_id: str,
         name: str,
         as_json: bool = False,
@@ -276,7 +278,7 @@ class CreatableAnnotationImport(AnnotationImport):
     @classmethod
     def create(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         id: str,
         name: str,
         path: Optional[str] = None,
@@ -295,20 +297,20 @@ class CreatableAnnotationImport(AnnotationImport):
 
     @classmethod
     def create_from_url(
-        cls, client: "labelbox.Client", id: str, name: str, url: str
+        cls, client: "RequestClient", id: str, name: str, url: str
     ) -> "AnnotationImport":
         raise NotImplementedError("Inheriting class must override")
 
     @classmethod
     def create_from_file(
-        cls, client: "labelbox.Client", id: str, name: str, path: str
+        cls, client: "RequestClient", id: str, name: str, path: str
     ) -> "AnnotationImport":
         raise NotImplementedError("Inheriting class must override")
 
     @classmethod
     def create_from_objects(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         id: str,
         name: str,
         labels: Union[List[Dict[str, Any]], List["Label"]],
@@ -328,13 +330,13 @@ class MEAPredictionImport(CreatableAnnotationImport):
 
     @classmethod
     def create_from_file(
-        cls, client: "labelbox.Client", model_run_id: str, name: str, path: str
+        cls, client: "RequestClient", model_run_id: str, name: str, path: str
     ) -> "MEAPredictionImport":
         """
         Create an MEA prediction import job from a file of annotations
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             model_run_id: Model run to import labels into
             name: Name of the import job. Can be used to reference the task later
             path: Path to ndjson file containing annotations
@@ -352,7 +354,7 @@ class MEAPredictionImport(CreatableAnnotationImport):
     @classmethod
     def create_from_objects(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         model_run_id: str,
         name,
         predictions: Union[List[Dict[str, Any]], List["Label"]],
@@ -361,7 +363,7 @@ class MEAPredictionImport(CreatableAnnotationImport):
         Create an MEA prediction import job from an in memory dictionary
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             model_run_id: Model run to import labels into
             name: Name of the import job. Can be used to reference the task later
             predictions: List of prediction annotations
@@ -376,14 +378,14 @@ class MEAPredictionImport(CreatableAnnotationImport):
 
     @classmethod
     def create_from_url(
-        cls, client: "labelbox.Client", model_run_id: str, name: str, url: str
+        cls, client: "RequestClient", model_run_id: str, name: str, url: str
     ) -> "MEAPredictionImport":
         """
         Create an MEA prediction import job from a url
         The url must point to a file containing prediction annotations.
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             model_run_id: Model run to import labels into
             name: Name of the import job. Can be used to reference the task later
             url: Url pointing to file to upload
@@ -409,7 +411,7 @@ class MEAPredictionImport(CreatableAnnotationImport):
     @classmethod
     def from_name(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         model_run_id: str,
         name: str,
         as_json: bool = False,
@@ -418,7 +420,7 @@ class MEAPredictionImport(CreatableAnnotationImport):
         Retrieves an MEA import job.
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             model_run_id: ID used for querying import jobs
             name: Name of the import job.
         Returns:
@@ -464,7 +466,7 @@ class MEAPredictionImport(CreatableAnnotationImport):
     @classmethod
     def _create_mea_import_from_bytes(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         model_run_id: str,
         name: str,
         bytes_data: BinaryIO,
@@ -501,7 +503,7 @@ class MEAToMALPredictionImport(AnnotationImport):
     @classmethod
     def create_for_model_run_data_rows(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         model_run_id: str,
         data_row_ids: List[str],
         project_id: str,
@@ -511,7 +513,7 @@ class MEAToMALPredictionImport(AnnotationImport):
         Create an MEA to MAL prediction import job from a list of data row ids of a specific model run
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             data_row_ids: A list of data row ids
             model_run_id: model run id
         Returns:
@@ -534,7 +536,7 @@ class MEAToMALPredictionImport(AnnotationImport):
     @classmethod
     def from_name(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         project_id: str,
         name: str,
         as_json: bool = False,
@@ -543,7 +545,7 @@ class MEAToMALPredictionImport(AnnotationImport):
         Retrieves an MEA to MAL import job.
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             project_id:  ID used for querying import jobs
             name: Name of the import job.
         Returns:
@@ -592,13 +594,13 @@ class MALPredictionImport(CreatableAnnotationImport):
 
     @classmethod
     def create_from_file(
-        cls, client: "labelbox.Client", project_id: str, name: str, path: str
+        cls, client: "RequestClient", project_id: str, name: str, path: str
     ) -> "MALPredictionImport":
         """
         Create an MAL prediction import job from a file of annotations
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             project_id: Project to import labels into
             name: Name of the import job. Can be used to reference the task later
             path: Path to ndjson file containing annotations
@@ -616,7 +618,7 @@ class MALPredictionImport(CreatableAnnotationImport):
     @classmethod
     def create_from_objects(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         project_id: str,
         name: str,
         predictions: Union[List[Dict[str, Any]], List["Label"]],
@@ -625,7 +627,7 @@ class MALPredictionImport(CreatableAnnotationImport):
         Create an MAL prediction import job from an in memory dictionary
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             project_id: Project to import labels into
             name: Name of the import job. Can be used to reference the task later
             predictions: List of prediction annotations
@@ -650,14 +652,14 @@ class MALPredictionImport(CreatableAnnotationImport):
 
     @classmethod
     def create_from_url(
-        cls, client: "labelbox.Client", project_id: str, name: str, url: str
+        cls, client: "RequestClient", project_id: str, name: str, url: str
     ) -> "MALPredictionImport":
         """
         Create an MAL prediction import job from a url
         The url must point to a file containing prediction annotations.
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             project_id: Project to import labels into
             name: Name of the import job. Can be used to reference the task later
             url: Url pointing to file to upload
@@ -683,7 +685,7 @@ class MALPredictionImport(CreatableAnnotationImport):
     @classmethod
     def from_name(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         project_id: str,
         name: str,
         as_json: bool = False,
@@ -692,7 +694,7 @@ class MALPredictionImport(CreatableAnnotationImport):
         Retrieves an MAL import job.
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             project_id:  ID used for querying import jobs
             name: Name of the import job.
         Returns:
@@ -738,7 +740,7 @@ class MALPredictionImport(CreatableAnnotationImport):
     @classmethod
     def _create_mal_import_from_bytes(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         project_id: str,
         name: str,
         bytes_data: BinaryIO,
@@ -770,13 +772,13 @@ class LabelImport(CreatableAnnotationImport):
 
     @classmethod
     def create_from_file(
-        cls, client: "labelbox.Client", project_id: str, name: str, path: str
+        cls, client: "RequestClient", project_id: str, name: str, path: str
     ) -> "LabelImport":
         """
         Create a label import job from a file of annotations
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             project_id: Project to import labels into
             name: Name of the import job. Can be used to reference the task later
             path: Path to ndjson file containing annotations
@@ -794,7 +796,7 @@ class LabelImport(CreatableAnnotationImport):
     @classmethod
     def create_from_objects(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         project_id: str,
         name: str,
         labels: Union[List[Dict[str, Any]], List["Label"]],
@@ -803,7 +805,7 @@ class LabelImport(CreatableAnnotationImport):
         Create a label import job from an in memory dictionary
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             project_id: Project to import labels into
             name: Name of the import job. Can be used to reference the task later
             labels: List of labels
@@ -826,14 +828,14 @@ class LabelImport(CreatableAnnotationImport):
 
     @classmethod
     def create_from_url(
-        cls, client: "labelbox.Client", project_id: str, name: str, url: str
+        cls, client: "RequestClient", project_id: str, name: str, url: str
     ) -> "LabelImport":
         """
         Create a label annotation import job from a url
         The url must point to a file containing label annotations.
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             project_id: Project to import labels into
             name: Name of the import job. Can be used to reference the task later
             url: Url pointing to file to upload
@@ -859,7 +861,7 @@ class LabelImport(CreatableAnnotationImport):
     @classmethod
     def from_name(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         project_id: str,
         name: str,
         as_json: bool = False,
@@ -868,7 +870,7 @@ class LabelImport(CreatableAnnotationImport):
         Retrieves an label import job.
 
         Args:
-            client: Labelbox Client for executing queries
+            client: Labelbox RequestClient for executing queries
             project_id:  ID used for querying import jobs
             name: Name of the import job.
         Returns:
@@ -912,7 +914,7 @@ class LabelImport(CreatableAnnotationImport):
     @classmethod
     def _create_label_import_from_bytes(
         cls,
-        client: "labelbox.Client",
+        client: "RequestClient",
         project_id: str,
         name: str,
         bytes_data: BinaryIO,

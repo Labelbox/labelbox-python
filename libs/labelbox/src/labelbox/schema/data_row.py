@@ -29,7 +29,7 @@ from labelbox.schema.task import Task
 from ..request_client import RequestClient
 
 if TYPE_CHECKING:
-    from labelbox import AssetAttachment, Client
+    from labelbox import AssetAttachment, RequestClient
 
 logger = logging.getLogger(__name__)
 
@@ -216,7 +216,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
 
     @staticmethod
     def export(
-        client: "Client",
+        client: "RequestClient",
         data_rows: Optional[List[Union[str, "DataRow"]]] = None,
         global_keys: Optional[List[str]] = None,
         task_name: Optional[str] = None,
@@ -225,7 +225,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         """
         Creates a data rows export task with the given list, params and returns the task.
         Args:
-            client (Client): client to use to make the export request
+            client (RequestClient): client to use to make the export request
             data_rows (list of DataRow or str): list of data row objects or data row ids to export
             task_name (str): name of remote task
             params (CatalogExportParams): export params
@@ -245,13 +245,13 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.result
         """
         task, _ = DataRow._export(
-            client._request_client, data_rows, global_keys, task_name, params, streamable=True
+            client, data_rows, global_keys, task_name, params, streamable=True
         )
         return ExportTask(task)
 
     @staticmethod
     def export_v2(
-        client: "Client",
+        client: "RequestClient",
         data_rows: Optional[List[Union[str, "DataRow"]]] = None,
         global_keys: Optional[List[str]] = None,
         task_name: Optional[str] = None,
@@ -260,7 +260,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         """
         Creates a data rows export task with the given list, params and returns the task.
         Args:
-            client (Client): client to use to make the export request
+            client (RequestClient): client to use to make the export request
             data_rows (list of DataRow or str): list of data row objects or data row ids to export
             task_name (str): name of remote task
             params (CatalogExportParams): export params
@@ -281,7 +281,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.result
         """
         task, is_streamable = DataRow._export(
-            client._request_client, data_rows, global_keys, task_name, params
+            client, data_rows, global_keys, task_name, params
         )
         if is_streamable:
             return ExportTask(task, True)

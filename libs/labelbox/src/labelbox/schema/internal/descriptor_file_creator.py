@@ -1,28 +1,22 @@
 import json
 import os
-import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import TYPE_CHECKING, Generator, Iterable, List
 
-from typing import Iterable, List, Generator
-
-from labelbox.exceptions import InvalidQueryError
-from labelbox.exceptions import InvalidAttributeError
-from labelbox.exceptions import MalformedQueryException
-from labelbox.orm.model import Entity
-from labelbox.orm.model import Field
+from labelbox.exceptions import InvalidAttributeError, InvalidQueryError
+from labelbox.orm.model import Entity, Field
 from labelbox.schema.embedding import EmbeddingVector
+from labelbox.schema.internal.data_row_upsert_item import (
+    DataRowItemBase,
+)
 from labelbox.schema.internal.datarow_upload_constants import (
     FILE_UPLOAD_THREAD_COUNT,
 )
-from labelbox.schema.internal.data_row_upsert_item import (
-    DataRowItemBase,
-    DataRowUpsertItem,
-)
 
-from typing import TYPE_CHECKING
+from ...data_uploader import DataUploader
 
 if TYPE_CHECKING:
-    from labelbox import Client
+    from labelbox.request_client import RequestClient
 
 
 class DescriptorFileCreator:
@@ -32,12 +26,12 @@ class DescriptorFileCreator:
         upload the files to gcs in parallel, and return a list of urls
 
     Args:
-        client (Client): The client object
+        client (RequestClient): The client object
         max_chunk_size_bytes (int): The maximum size of the file in bytes
     """
 
-    def __init__(self, client: "Client"):
-        self.client = client
+    def __init__(self, client: "RequestClient"):
+        self.data_uploader = DataUploader(client)
 
     def create(self, items, max_chunk_size_bytes=None) -> List[str]:
         is_upsert = True  # This class will only support upsert use cases
@@ -46,7 +40,7 @@ class DescriptorFileCreator:
         with ThreadPoolExecutor(FILE_UPLOAD_THREAD_COUNT) as executor:
             futures = [
                 executor.submit(
-                    self.client.upload_data,
+                    self.data_uploader.upload_data,
                     chunk,
                     "application/json",
                     "json_import.json",
@@ -61,7 +55,7 @@ class DescriptorFileCreator:
         )
         # Prepare and upload the descriptor file
         data = json.dumps(items)
-        return self.client.upload_data(
+        return self.data_uploader.upload_data(
             data, content_type="application/json", filename="json_import.json"
         )
 
@@ -115,7 +109,7 @@ class DescriptorFileCreator:
                 return item
             row_data = item["row_data"]
             if isinstance(row_data, str) and os.path.exists(row_data):
-                item_url = self.client.upload_file(row_data)
+                item_url = self.data_uploader.upload_file(row_data)
                 item["row_data"] = item_url
                 if "external_id" not in item:
                     # Default `external_id` to local file name
@@ -161,7 +155,7 @@ class DescriptorFileCreator:
                     ]
                 )
                 for key in message.keys():
-                    if not key in accepted_message_keys:
+                    if key not in accepted_message_keys:
                         raise KeyError(
                             f"Invalid {key} key found! Accepted keys in messages list is {accepted_message_keys}"
                         )
@@ -178,7 +172,7 @@ class DescriptorFileCreator:
         def parse_metadata_fields(item):
             metadata_fields = item.get("metadata_fields")
             if metadata_fields:
-                mdo = self.client.get_data_row_metadata_ontology()
+                mdo = self.data_uploader.get_data_row_metadata_ontology()
                 item["metadata_fields"] = mdo.parse_upsert_metadata(
                     metadata_fields
                 )

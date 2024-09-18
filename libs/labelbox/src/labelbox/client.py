@@ -1,8 +1,6 @@
 # type: ignore
 import json
 import logging
-import mimetypes
-import os
 import random
 import time
 import urllib.parse
@@ -78,6 +76,7 @@ from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.task import DataUpsertTask, Task
 from labelbox.schema.user import User
 
+from .data_uploader import DataUploader
 from .request_client import RequestClient
 
 logger = logging.getLogger(__name__)
@@ -124,6 +123,7 @@ def get_organization(request_client: RequestClient) -> Organization:
     >>> organization = client.get_organization()
     """
     return get_single(request_client, Entity.Organization, None)
+
 
 
 class Client:
@@ -195,12 +195,7 @@ class Client:
         Raises:
             labelbox.exceptions.LabelboxError: If upload failed.
         """
-        content_type, _ = mimetypes.guess_type(path)
-        filename = os.path.basename(path)
-        with open(path, "rb") as f:
-            return self.upload_data(
-                content=f.read(), filename=filename, content_type=content_type
-            )
+        return DataUploader(self._request_client).upload_file(path)
 
     @retry.Retry(
         predicate=retry.if_exception_type(
@@ -228,71 +223,9 @@ class Client:
         Raises:
             labelbox.exceptions.LabelboxError: If upload failed.
         """
-
-        request_data = {
-            "operations": json.dumps(
-                {
-                    "variables": {
-                        "file": None,
-                        "contentLength": len(content),
-                        "sign": sign,
-                    },
-                    "query": """mutation UploadFile($file: Upload!, $contentLength: Int!,
-                                            $sign: Boolean) {
-                            uploadFile(file: $file, contentLength: $contentLength,
-                                       sign: $sign) {url filename} } """,
-                }
-            ),
-            "map": (None, json.dumps({"1": ["variables.file"]})),
-        }
-
-        files = {
-            "1": (filename, content, content_type)
-            if (filename and content_type)
-            else content
-        }
-        headers = self.connection.headers.copy()
-        headers.pop("Content-Type", None)
-        request = requests.Request(
-            "POST",
-            self.endpoint,
-            headers=headers,
-            data=request_data,
-            files=files,
+        return DataUploader(self._request_client).upload_data(
+            content, filename, content_type, sign
         )
-
-        prepped: requests.PreparedRequest = request.prepare()
-
-        response = self.connection.send(prepped)
-
-        if response.status_code == 502:
-            error_502 = "502 Bad Gateway"
-            raise labelbox.exceptions.InternalServerError(error_502)
-        elif response.status_code == 503:
-            raise labelbox.exceptions.InternalServerError(response.text)
-        elif response.status_code == 520:
-            raise labelbox.exceptions.InternalServerError(response.text)
-
-        try:
-            file_data = response.json().get("data", None)
-        except ValueError as e:  # response is not valid JSON
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, unknown cause", e
-            )
-
-        if not file_data or not file_data.get("uploadFile", None):
-            try:
-                errors = response.json().get("errors", [])
-                error_msg = next(iter(errors), {}).get(
-                    "message", "Unknown error"
-                )
-            except Exception:
-                error_msg = "Unknown error"
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, message: %s" % error_msg
-            )
-
-        return file_data["uploadFile"]["url"]
 
     def _get_single(self, db_object_type, uid):
         """Fetches a single object of the given type, for the given ID.
@@ -2455,3 +2388,4 @@ class Client:
 
         task._user = user
         return task
+

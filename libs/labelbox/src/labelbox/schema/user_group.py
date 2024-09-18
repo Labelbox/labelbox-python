@@ -1,20 +1,22 @@
-from enum import Enum
-from typing import Set, Iterator
 from collections import defaultdict
+from enum import Enum
+from typing import Iterator, Set
 
-from labelbox import Client
-from labelbox.exceptions import ResourceCreationError
-from labelbox.schema.user import User
-from labelbox.schema.project import Project
-from labelbox.exceptions import (
-    UnprocessableEntityError,
-    MalformedQueryException,
-    ResourceNotFoundError,
-)
-from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.ontology_kind import EditorTaskType
-from labelbox.schema.media_type import MediaType
 from pydantic import BaseModel, ConfigDict
+
+from labelbox.exceptions import (
+    MalformedQueryException,
+    ResourceCreationError,
+    ResourceNotFoundError,
+    UnprocessableEntityError,
+)
+from labelbox.schema.media_type import MediaType
+from labelbox.schema.ontology_kind import EditorTaskType
+from labelbox.schema.project import Project
+from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.user import User
+
+from ..request_client import RequestClient
 
 
 class UserGroupColor(Enum):
@@ -54,15 +56,15 @@ class UserGroup(BaseModel):
         color (UserGroupColor): The color of the user group.
         users (Set[UserGroupUser]): The set of users in the user group.
         projects (Set[UserGroupProject]): The set of projects associated with the user group.
-        client (Client): The Labelbox client object.
+        client (RequestClient): The Labelbox client object.
 
     Methods:
-        __init__(self, client: Client)
+        __init__(self, client: RequestClient)
         get(self) -> "UserGroup"
         update(self) -> "UserGroup"
         create(self) -> "UserGroup"
         delete(self) -> bool
-        get_user_groups(client: Client) -> Iterator["UserGroup"]
+        get_user_groups(client: RequestClient) -> Iterator["UserGroup"]
     """
 
     id: str
@@ -70,12 +72,12 @@ class UserGroup(BaseModel):
     color: UserGroupColor
     users: Set[User]
     projects: Set[Project]
-    client: Client
+    client: RequestClient
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(
         self,
-        client: Client,
+        client: RequestClient,
         id: str = "",
         name: str = "",
         color: UserGroupColor = UserGroupColor.BLUE,
@@ -86,7 +88,7 @@ class UserGroup(BaseModel):
         Initializes a UserGroup object.
 
         Args:
-            client (Client): The Labelbox client object.
+            client (RequestClient): The Labelbox client object.
             id (str, optional): The ID of the user group. Defaults to an empty string.
             name (str, optional): The name of the user group. Defaults to an empty string.
             color (UserGroupColor, optional): The color of the user group. Defaults to UserGroupColor.BLUE.
@@ -329,7 +331,7 @@ class UserGroup(BaseModel):
         Gets all user groups in Labelbox.
 
         Args:
-            client (Client): The Labelbox client.
+            client (RequestClient): The Labelbox client.
 
         Returns:
             Iterator[UserGroup]: An iterator over the user groups.
