@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from functools import wraps
 
 from labelbox import utils
+from labelbox.client import get_data_row_metadata_ontology
 from labelbox.exceptions import (
     InvalidAttributeError,
     InvalidQueryError,
@@ -84,7 +85,7 @@ class DbObject(Entity):
                 value = field.field_type.enum_cls(value)
             elif isinstance(field.field_type, Field.ListType):
                 if field.field_type.list_cls.__name__ == "DataRowMetadataField":
-                    mdo = self.client.get_data_row_metadata_ontology()
+                    mdo = get_data_row_metadata_ontology()
                     try:
                         value = mdo.parse_metadata_fields(value)
                     except ValueError:

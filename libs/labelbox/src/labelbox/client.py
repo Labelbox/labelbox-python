@@ -117,6 +117,30 @@ def get_single(request_client: RequestClient, db_object_type, uid):
         return db_object_type(request_client, res)
 
 
+def get_all(request_client, db_object_type, where, filter_deleted=True):
+    """Fetches all the objects of the given type the user has access to.
+
+    Args:
+        db_object_type (type): DbObject subclass.
+        where (Comparison, LogicalOperation or None): The `where` clause
+            for filtering.
+    Returns:
+        An iterable of `db_object_type` instances.
+    """
+    if filter_deleted:
+        not_deleted = db_object_type.deleted == False
+        where = not_deleted if where is None else where & not_deleted
+    query_str, params = query.get_all(db_object_type, where)
+
+    return PaginatedCollection(
+        request_client,
+        query_str,
+        params,
+        [utils.camel_case(db_object_type.type_name()) + "s"],
+        db_object_type,
+    )
+
+
 def get_organization(request_client: RequestClient) -> Organization:
     """Gets the Organization DB object of the current user.
 
@@ -124,6 +148,125 @@ def get_organization(request_client: RequestClient) -> Organization:
     """
     return get_single(request_client, Entity.Organization, None)
 
+
+def get_data_row(request_client: RequestClient, data_row_id):
+    """
+
+    Returns:
+        DataRow: returns a single data row given the data row id
+    """
+    return get_single(request_client, Entity.DataRow, data_row_id)
+
+
+def get_user(request_client: RequestClient) -> User:
+    """
+    Gets the current User database object.
+    """
+    return get_single(request_client, Entity.User, None)
+
+
+def get_project(request_client: RequestClient, project_id) -> Project:
+    """Gets a single Project with the given ID.
+
+    Args:
+        request_client (RequestClient): The request client to use for the query
+        project_id (str): Unique ID of the Project.
+    Returns:
+        The sought Project.
+    Raises:
+        labelbox.exceptions.ResourceNotFoundError: If there is no
+            Project with the given ID.
+    """
+    return get_single(request_client, Entity.Project, project_id)
+
+
+def get_roles(request_client: RequestClient) -> List[Role]:
+    """
+    Returns:
+        Roles: Provides information on available roles within an organization.
+        Roles are used for user management.
+    """
+    return role.get_roles(request_client)
+
+
+def create_entity(request_client, db_object_type, data, extra_params={}):
+    """Creates an object on the server. Attribute values are
+        passed as keyword arguments:
+
+    Args:
+        db_object_type (type): A DbObjectType subtype.
+        data (dict): Keys are attributes or their names (in Python,
+            snake-case convention) and values are desired attribute values.
+        extra_params (dict): Additional parameters to pass to GraphQL.
+            These have to be Field(...): value pairs.
+    Returns:
+        A new object of the given DB object type.
+    Raises:
+        InvalidAttributeError: If the DB object type does not contain
+            any of the attribute names given in `data`.
+    """
+    # Convert string attribute names to Field or Relationship objects.
+    # Also convert Labelbox object values to their UIDs.
+    data = {
+        db_object_type.attribute(attr)
+        if isinstance(attr, str)
+        else attr: value.uid if isinstance(value, DbObject) else value
+        for attr, value in data.items()
+    }
+
+    data = {**data, **extra_params}
+    query_string, params = query.create(db_object_type, data)
+    res = request_client.execute(
+        query_string, params, raise_return_resource_not_found=True
+    )
+
+    if not res:
+        raise labelbox.exceptions.LabelboxError(
+            "Failed to create %s" % db_object_type.type_name()
+        )
+    res = res["create%s" % db_object_type.type_name()]
+
+    return db_object_type(request_client, res)
+
+
+def get_labeling_frontends(request_client, where=None) -> List[LabelingFrontend]:
+    """Fetches all the labeling frontends.
+
+    >>> frontend = client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
+
+    Args:
+        where (Comparison, LogicalOperation or None): The `where` clause
+            for filtering.
+    Returns:
+        An iterable of LabelingFrontends (typically a PaginatedCollection).
+    """
+    return get_all(request_client, Entity.LabelingFrontend, where)
+
+
+def get_batch(request_client: RequestClient, project_id: str, batch_id: str) -> Entity.Batch:
+    # obtain batch entity to return
+    get_batch_str = """query %s($projectId: ID!, $batchId: ID!) {
+                        project(where: {id: $projectId}) {
+                            batches(where: {id: $batchId}) {
+                            nodes {
+                                %s
+                            }
+                            }
+                    }
+                }
+                """ % (
+        "getProjectBatchPyApi",
+        query.results_query_part(Entity.Batch),
+    )
+
+    batch = request_client.execute(
+        get_batch_str,
+        {"projectId": project_id, "batchId": batch_id},
+        timeout=180.0,
+        experimental=True,
+    )["project"]["batches"]["nodes"][0]
+
+    return Entity.Batch(request_client, project_id, batch)
 
 
 class Client:

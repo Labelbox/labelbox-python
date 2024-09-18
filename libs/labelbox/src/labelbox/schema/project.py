@@ -1,10 +1,10 @@
 import json
 import logging
-from string import Template
 import time
 import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
+from string import Template
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,19 +16,13 @@ from typing import (
     overload,
 )
 
-from labelbox.schema.labeling_service import (
-    LabelingService,
-    LabelingServiceStatus,
-)
-from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
-
 from labelbox import utils
-from labelbox.exceptions import error_message_for_unparsed_graphql_error
 from labelbox.exceptions import (
     InvalidQueryError,
     LabelboxError,
     ProcessingWaitTimeout,
     ResourceNotFoundError,
+    error_message_for_unparsed_graphql_error,
 )
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
@@ -46,21 +40,28 @@ from labelbox.schema.export_task import ExportTask
 from labelbox.schema.id_type import IdType
 from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
+from labelbox.schema.labeling_service import (
+    LabelingService,
+    LabelingServiceStatus,
+)
+from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.model_config import ModelConfig
-from labelbox.schema.project_model_config import ProjectModelConfig
-from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.resource_tag import ResourceTag
-from labelbox.schema.task import Task
-from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.ontology_kind import (
     EditorTaskType,
     UploadType,
 )
+from labelbox.schema.project_model_config import ProjectModelConfig
 from labelbox.schema.project_overview import (
     ProjectOverview,
     ProjectOverviewDetailed,
 )
+from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.task import Task
+from labelbox.schema.task_queue import TaskQueue
+
+from ..client import get_batch, get_labeling_frontends
 
 if TYPE_CHECKING:
     pass
@@ -729,7 +730,7 @@ class Project(DbObject, Updateable, Deletable):
         ):  # Chat evaluation projects are automatically set up via the same api that creates a project
             warnings.warn("Connecting default labeling editor for the project.")
             labeling_frontend = next(
-                self.client.get_labeling_frontends(
+                get_labeling_frontends(self.client,
                     where=Entity.LabelingFrontend.name == "Editor"
                 )
             )
@@ -1083,7 +1084,7 @@ class Project(DbObject, Updateable, Deletable):
                 + json.dumps(task.errors)
             )
 
-        return self.client.get_batch(self.uid, batch_id)
+        return get_batch(self.client, self.uid, batch_id)
 
     def _update_queue_mode(self, mode: "QueueMode") -> "QueueMode":
         """

@@ -2,25 +2,22 @@
 import logging
 import os
 import time
-import warnings
 from enum import Enum
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
+    Any,
     Dict,
     Iterable,
-    Union,
-    Tuple,
     List,
     Optional,
-    Any,
+    Tuple,
+    Union,
 )
 
-import requests
-
-from labelbox import parser
+from labelbox.client import Client
 from labelbox.orm.db_object import DbObject, experimental
-from labelbox.orm.model import Field, Relationship, Entity
+from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm.query import results_query_part
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.conflict_resolution_strategy import (
@@ -28,7 +25,7 @@ from labelbox.schema.conflict_resolution_strategy import (
 )
 from labelbox.schema.export_params import ModelRunExportParams
 from labelbox.schema.export_task import ExportTask
-from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds
+from labelbox.schema.identifiables import DataRowIds, GlobalKeys
 from labelbox.schema.send_to_annotate_params import (
     SendToAnnotateFromModelParams,
     build_destination_task_queue_input,
@@ -200,7 +197,7 @@ class ModelRun(DbObject):
             if res["status"] == "COMPLETE":
                 return True
             elif res["status"] == "FAILED":
-                raise Exception(f"Job failed.")
+                raise Exception("Job failed.")
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
                 raise TimeoutError(
@@ -633,7 +630,7 @@ class ModelRun(DbObject):
         destination_task_queue = build_destination_task_queue_input(
             task_queue_id
         )
-        data_rows_query = self.client.build_catalog_query(data_rows)
+        data_rows_query = Client.build_catalog_query(data_rows)
 
         predictions_ontology_mapping = params.get(
             "predictions_ontology_mapping", None

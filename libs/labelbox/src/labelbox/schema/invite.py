@@ -4,6 +4,8 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
 from labelbox.schema.role import ProjectRole, format_role
 
+from ..client import get_project, get_roles
+
 
 @dataclass
 class InviteLimit:
@@ -33,8 +35,8 @@ class Invite(DbObject):
 
         self.project_roles = [
             ProjectRole(
-                project=client.get_project(r["projectId"]),
-                role=client.get_roles()[format_role(r["projectRoleName"])],
+                project=get_project(self.client, r["projectId"]),
+                role=get_roles(self.client)[format_role(r["projectRoleName"])],
             )
             for r in project_roles
         ]

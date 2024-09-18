@@ -1,8 +1,12 @@
 from typing import TYPE_CHECKING
 
+from libs.labelbox.src.labelbox import request_client
+
 from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
+from labelbox.orm.db_object import BulkDeletable, DbObject, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
+
+from ..client import create_entity
 
 if TYPE_CHECKING:
     from labelbox import Benchmark, Review
@@ -61,7 +65,7 @@ class Label(DbObject, Updateable, BulkDeletable):
         """
         kwargs[Entity.Review.label.name] = self
         kwargs[Entity.Review.project.name] = self.project()
-        return self.client._create(Entity.Review, kwargs)
+        return create_entity(request_client, Entity.Review, kwargs)
 
     def create_benchmark(self) -> "Benchmark":
         """Creates a Benchmark for this Label.

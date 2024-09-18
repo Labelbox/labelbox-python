@@ -39,6 +39,8 @@ from labelbox.schema.internal.datarow_upload_constants import (
 )
 from labelbox.schema.task import DataUpsertTask, Task
 
+from ..client import get_data_row, get_user
+
 if TYPE_CHECKING:
     pass
 
@@ -166,7 +168,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 f"Data row upload did not complete, task status {completed_task.status} task id {completed_task.uid}"
             )
 
-        return self.client.get_data_row(res[0]["id"])
+        return get_data_row(self.client, res[0]["id"])
 
     def create_data_rows_sync(
         self, items, file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
@@ -571,7 +573,7 @@ class Dataset(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {"manifestUri": manifest_uri})
         res = res["upsertDataRows"]
         task = DataUpsertTask(self.client, res)
-        task._user = self.client.get_user()
+        task._user = get_user(self.client)
         return task
 
     def add_iam_integration(
