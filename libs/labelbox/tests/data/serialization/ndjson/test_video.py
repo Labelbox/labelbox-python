@@ -1,4 +1,6 @@
 import json
+from operator import itemgetter
+
 from labelbox.data.annotation_types.classification.classification import (
     Checklist,
     ClassificationAnnotation,
@@ -10,15 +12,12 @@ from labelbox.data.annotation_types.data import GenericDataRowData
 from labelbox.data.annotation_types.geometry.line import Line
 from labelbox.data.annotation_types.geometry.point import Point
 from labelbox.data.annotation_types.geometry.rectangle import Rectangle
-
 from labelbox.data.annotation_types.label import Label
 from labelbox.data.annotation_types.video import (
     VideoClassificationAnnotation,
     VideoObjectAnnotation,
 )
-
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
-from operator import itemgetter
 
 
 def test_video():
