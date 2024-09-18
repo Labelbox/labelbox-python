@@ -1,8 +1,24 @@
+from labelbox.schema.media_type import MediaType
+from labelbox.schema.project import Project
 import pytest
-from pytest_cases import fixture_ref, parametrize
+
+from labelbox import parser
+from pytest_cases import parametrize, fixture_ref
 
 from labelbox.exceptions import MALValidationError
-from labelbox.schema.media_type import MediaType
+from labelbox.schema.bulk_import_request import (
+    NDChecklist,
+    NDClassification,
+    NDMask,
+    NDPolygon,
+    NDPolyline,
+    NDRadio,
+    NDRectangle,
+    NDText,
+    NDTextEntity,
+    NDTool,
+    _validate_ndjson,
+)
 
 """
 - These NDlabels are apart of bulkImportReqeust and should be removed once bulk import request is removed
@@ -173,6 +189,39 @@ def test_missing_feature_schema(module_project, rectangle_inference):
     del pred["name"]
     with pytest.raises(MALValidationError):
         _validate_ndjson([pred], module_project)
+
+
+def test_validate_ndjson(tmp_path, configured_project):
+    file_name = f"broken.ndjson"
+    file_path = tmp_path / file_name
+    with file_path.open("w") as f:
+        f.write("test")
+
+    with pytest.raises(ValueError):
+        configured_project.upload_annotations(
+            name="name", annotations=str(file_path), validate=True
+        )
+
+
+def test_validate_ndjson_uuid(tmp_path, configured_project, predictions):
+    file_name = f"repeat_uuid.ndjson"
+    file_path = tmp_path / file_name
+    repeat_uuid = predictions.copy()
+    repeat_uuid[0]["uuid"] = "test_uuid"
+    repeat_uuid[1]["uuid"] = "test_uuid"
+
+    with file_path.open("w") as f:
+        parser.dump(repeat_uuid, f)
+
+    with pytest.raises(MALValidationError):
+        configured_project.upload_annotations(
+            name="name", validate=True, annotations=str(file_path)
+        )
+
+    with pytest.raises(MALValidationError):
+        configured_project.upload_annotations(
+            name="name", validate=True, annotations=repeat_uuid
+        )
 
 
 @pytest.mark.parametrize("configured_project", [MediaType.Video], indirect=True)

@@ -1,0 +1,25 @@
+[{
+    "location": {
+        "start": 67,
+        "end": 128
+    },
+    "messageId": "some-message-id",
+    "uuid": "5ad9c52f-058d-49c8-a749-3f20b84f8cd4",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "name": "some-text-entity",
+    "schemaId": "cl6xnuwt95lqq07330tbb3mfd",
+    "classifications": [],
+    "confidence": 0.53,
+    "customMetrics": [
+        {
+            "name": "customMetric1",
+            "value": 0.5
+        },
+        {
+            "name": "customMetric2",
+            "value": 0.3
+        }
+    ]
+}]

@@ -3,33 +3,41 @@
         "uuid": "b862c586-8614-483c-b5e6-82810f70cac0",
         "schemaId": "ckrazcueb16og0z6609jj7y3y",
         "dataRow": {
-            "id": "ckrazctum0z8a0ybc0b0o0g0v"
+            "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
         },
         "confidence": 0.851,
-        "customMetrics": [
-            {
-              "name": "customMetric1",
-              "value": 0.4
-            }
-        ],
         "bbox": {
             "top": 1352,
             "left": 2275,
             "height": 350,
             "width": 139
-        }
+        },
+        "customMetrics": [
+            {
+                "name": "customMetric1",
+                "value": 0.5
+            },
+            {
+                "name": "customMetric2",
+                "value": 0.3
+            }
+        ]
     },
     {
         "uuid": "751fc725-f7b6-48ed-89b0-dd7d94d08af6",
         "schemaId": "ckrazcuec16ok0z66f956apb7",
         "dataRow": {
-            "id": "ckrazctum0z8a0ybc0b0o0g0v"
+            "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
         },
         "confidence": 0.834,
         "customMetrics": [
             {
-              "name": "customMetric1",
-              "value": 0.3
+                "name": "customMetric1",
+                "value": 0.5
+            },
+            {
+                "name": "customMetric2",
+                "value": 0.3
             }
         ],
         "mask": {
@@ -45,13 +53,17 @@
         "uuid": "43d719ac-5d7f-4aea-be00-2ebfca0900fd",
         "schemaId": "ckrazcuec16oi0z66dzrd8pfl",
         "dataRow": {
-            "id": "ckrazctum0z8a0ybc0b0o0g0v"
+            "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
         },
         "confidence": 0.986,
         "customMetrics": [
             {
-              "name": "customMetric1",
-              "value": 0.9
+                "name": "customMetric1",
+                "value": 0.5
+            },
+            {
+                "name": "customMetric2",
+                "value": 0.3
             }
         ],
         "polygon": [
@@ -801,7 +813,7 @@
         "uuid": "b98f3a45-3328-41a0-9077-373a8177ebf2",
         "schemaId": "ckrazcuec16om0z66bhhh4tp7",
         "dataRow": {
-            "id": "ckrazctum0z8a0ybc0b0o0g0v"
+            "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
         },
         "point": {
             "x": 2122,

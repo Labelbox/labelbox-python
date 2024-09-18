@@ -6,6 +6,7 @@ from labelbox.client import Client
 from labelbox.schema.project import Project
 from labelbox.schema.model import Model
 from labelbox.schema.model_config import ModelConfig
+from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.annotation_import import (
     MALPredictionImport,
     MEAPredictionImport,
