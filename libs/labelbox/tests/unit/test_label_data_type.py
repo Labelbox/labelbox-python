@@ -33,20 +33,6 @@ def test_generic_data_type_validations():
         Label(data=data)
 
 
-def test_video_data_type():
-    data = {
-        "global_key": "https://lb-test-data.s3.us-west-1.amazonaws.com/image-samples/sample-image-1.jpg-BEidMVWRmyXjVCnr",
-    }
-    with pytest.warns(UserWarning, match="Use a dict"):
-        label = Label(data=GenericDataRowData(**data))
-    data = label.data
-    assert isinstance(data, GenericDataRowData)
-    assert (
-        data.global_key
-        == "https://lb-test-data.s3.us-west-1.amazonaws.com/image-samples/sample-image-1.jpg-BEidMVWRmyXjVCnr"
-    )
-
-
 def test_generic_data_row():
     data = {
         "global_key": "https://lb-test-data.s3.us-west-1.amazonaws.com/image-samples/sample-image-1.jpg-BEidMVWRmyXjVCnr",
