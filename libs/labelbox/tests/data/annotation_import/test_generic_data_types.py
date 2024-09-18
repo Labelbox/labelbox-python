@@ -45,6 +45,7 @@ def validate_iso_format(date_string: str):
         ),
         (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
         (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation),
+        (OntologyKind.ModelEvaluation, OntologyKind.ModelEvaluation),
     ],
     indirect=["configured_project"],
 )
@@ -121,6 +122,7 @@ def test_import_media_types(
         (MediaType.Document, MediaType.Document),
         (MediaType.Dicom, MediaType.Dicom),
         (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation),
+        (OntologyKind.ModelEvaluation, OntologyKind.ModelEvaluation),
     ],
     indirect=["configured_project_by_global_key"],
 )
@@ -205,6 +207,7 @@ def test_import_media_types_by_global_key(
         ),
         (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
         (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation),
+        (OntologyKind.ModelEvaluation, OntologyKind.ModelEvaluation),
     ],
     indirect=["configured_project"],
 )
@@ -239,6 +242,7 @@ def test_import_mal_annotations(
         (MediaType.Document, MediaType.Document),
         (MediaType.Dicom, MediaType.Dicom),
         (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation),
+        (OntologyKind.ModelEvaluation, OntologyKind.ModelEvaluation),
     ],
     indirect=["configured_project_by_global_key"],
 )
