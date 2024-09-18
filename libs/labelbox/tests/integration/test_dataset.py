@@ -1,9 +1,10 @@
+from unittest.mock import MagicMock
+
 import pytest
 import requests
-from unittest.mock import MagicMock
-from labelbox import Dataset
-from labelbox.exceptions import ResourceNotFoundError, ResourceCreationError
+from lbox.exceptions import ResourceCreationError, ResourceNotFoundError
 
+from labelbox import Dataset
 from labelbox.schema.internal.descriptor_file_creator import (
     DescriptorFileCreator,
 )

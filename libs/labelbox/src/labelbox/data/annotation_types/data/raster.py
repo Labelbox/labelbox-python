@@ -1,18 +1,18 @@
 from abc import ABC
 from io import BytesIO
 from typing import Callable, Optional, Union
+
+import numpy as np
+import requests
+from google.api_core import retry
+from lbox.exceptions import InternalServerError
+from PIL import Image
+from pydantic import BaseModel, ConfigDict, model_validator
+from requests.exceptions import ConnectTimeout
 from typing_extensions import Literal
 
-from PIL import Image
-from google.api_core import retry
-from requests.exceptions import ConnectTimeout
-import requests
-import numpy as np
-
-from pydantic import BaseModel, model_validator, ConfigDict
-from labelbox.exceptions import InternalServerError
-from .base_data import BaseData
 from ..types import TypedArray
+from .base_data import BaseData
 
 
 class RasterData(BaseModel, ABC):

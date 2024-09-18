@@ -1,10 +1,10 @@
 import json
 import logging
-from string import Template
 import time
 import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
+from string import Template
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,20 +16,15 @@ from typing import (
     overload,
 )
 
-from labelbox.schema.labeling_service import (
-    LabelingService,
-    LabelingServiceStatus,
-)
-from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
-
-from labelbox import utils
-from labelbox.exceptions import error_message_for_unparsed_graphql_error
-from labelbox.exceptions import (
+from lbox.exceptions import (
     InvalidQueryError,
     LabelboxError,
     ProcessingWaitTimeout,
     ResourceNotFoundError,
+    error_message_for_unparsed_graphql_error,
 )
+
+from labelbox import utils
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -46,21 +41,26 @@ from labelbox.schema.export_task import ExportTask
 from labelbox.schema.id_type import IdType
 from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
+from labelbox.schema.labeling_service import (
+    LabelingService,
+    LabelingServiceStatus,
+)
+from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.model_config import ModelConfig
-from labelbox.schema.project_model_config import ProjectModelConfig
-from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.resource_tag import ResourceTag
-from labelbox.schema.task import Task
-from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.ontology_kind import (
     EditorTaskType,
     UploadType,
 )
+from labelbox.schema.project_model_config import ProjectModelConfig
 from labelbox.schema.project_overview import (
     ProjectOverview,
     ProjectOverviewDetailed,
 )
+from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.task import Task
+from labelbox.schema.task_queue import TaskQueue
 
 if TYPE_CHECKING:
     pass
@@ -773,7 +773,7 @@ class Project(DbObject, Updateable, Deletable):
         Returns: the created batch
 
         Raises:
-            labelbox.exceptions.ValueError if a project is not batch mode, if the project is auto data generation, if the batch exceeds 100k data rows
+            lbox.exceptions.ValueError if a project is not batch mode, if the project is auto data generation, if the batch exceeds 100k data rows
         """
         # @TODO: make this automatic?
         if self.queue_mode != QueueMode.Batch:

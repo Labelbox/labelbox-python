@@ -1,12 +1,13 @@
-from multiprocessing.dummy import Pool
 import os
 import time
+from multiprocessing.dummy import Pool
+
+import lbox.exceptions
 import pytest
 from google.api_core.exceptions import RetryError
 
-from labelbox import Project, Dataset, User
 import labelbox.client
-import labelbox.exceptions
+from labelbox import Project, User
 
 
 def test_missing_api_key():
@@ -14,7 +15,7 @@ def test_missing_api_key():
     if key is not None:
         del os.environ[labelbox.client._LABELBOX_API_KEY]
 
-    with pytest.raises(labelbox.exceptions.AuthenticationError) as excinfo:
+    with pytest.raises(lbox.exceptions.AuthenticationError) as excinfo:
         labelbox.client.Client()
 
     assert excinfo.value.message == "Labelbox API key not provided"
@@ -27,18 +28,18 @@ def test_bad_key(rand_gen):
     bad_key = "BAD_KEY_" + rand_gen(str)
     client = labelbox.client.Client(api_key=bad_key)
 
-    with pytest.raises(labelbox.exceptions.AuthenticationError) as excinfo:
+    with pytest.raises(lbox.exceptions.AuthenticationError) as excinfo:
         client.create_project(name=rand_gen(str))
 
 
 def test_syntax_error(client):
-    with pytest.raises(labelbox.exceptions.InvalidQueryError) as excinfo:
+    with pytest.raises(lbox.exceptions.InvalidQueryError) as excinfo:
         client.execute("asda", check_naming=False)
     assert excinfo.value.message.startswith("Syntax Error:")
 
 
 def test_semantic_error(client):
-    with pytest.raises(labelbox.exceptions.InvalidQueryError) as excinfo:
+    with pytest.raises(lbox.exceptions.InvalidQueryError) as excinfo:
         client.execute("query {bbb {id}}", check_naming=False)
     assert excinfo.value.message.startswith('Cannot query field "bbb"')
 
@@ -58,7 +59,7 @@ def test_timeout_error(client, project):
 
 
 def test_query_complexity_error(client):
-    with pytest.raises(labelbox.exceptions.ValidationFailedError) as excinfo:
+    with pytest.raises(lbox.exceptions.ValidationFailedError) as excinfo:
         client.execute(
             "{projects {datasets {dataRows {labels {id}}}}}", check_naming=False
         )
@@ -66,7 +67,7 @@ def test_query_complexity_error(client):
 
 
 def test_resource_not_found_error(client):
-    with pytest.raises(labelbox.exceptions.ResourceNotFoundError):
+    with pytest.raises(lbox.exceptions.ResourceNotFoundError):
         client.get_project("invalid project ID")
 
 
@@ -75,7 +76,7 @@ def test_network_error(client):
         api_key=client.api_key, endpoint="not_a_valid_URL"
     )
 
-    with pytest.raises(labelbox.exceptions.NetworkError) as excinfo:
+    with pytest.raises(lbox.exceptions.NetworkError) as excinfo:
         client.create_project(name="Project name")
 
 
@@ -84,20 +85,20 @@ def test_invalid_attribute_error(
     rand_gen,
 ):
     # Creation
-    with pytest.raises(labelbox.exceptions.InvalidAttributeError) as excinfo:
+    with pytest.raises(lbox.exceptions.InvalidAttributeError) as excinfo:
         client.create_project(name="Name", invalid_field="Whatever")
     assert excinfo.value.db_object_type == Project
     assert excinfo.value.field == "invalid_field"
 
     # Update
     project = client.create_project(name=rand_gen(str))
-    with pytest.raises(labelbox.exceptions.InvalidAttributeError) as excinfo:
+    with pytest.raises(lbox.exceptions.InvalidAttributeError) as excinfo:
         project.update(invalid_field="Whatever")
     assert excinfo.value.db_object_type == Project
     assert excinfo.value.field == "invalid_field"
 
     # Top-level-fetch
-    with pytest.raises(labelbox.exceptions.InvalidAttributeError) as excinfo:
+    with pytest.raises(lbox.exceptions.InvalidAttributeError) as excinfo:
         client.get_projects(where=User.email == "email")
     assert excinfo.value.db_object_type == Project
     assert excinfo.value.field == {User.email}
@@ -108,7 +109,7 @@ def test_api_limit_error(client):
     def get(arg):
         try:
             return client.get_user()
-        except labelbox.exceptions.ApiLimitError as e:
+        except lbox.exceptions.ApiLimitError as e:
             return e
 
     # Rate limited at 1500 + buffer
@@ -120,7 +121,7 @@ def test_api_limit_error(client):
         elapsed = time.time() - start
 
     assert elapsed < 60, "Didn't finish fast enough"
-    assert labelbox.exceptions.ApiLimitError in {type(r) for r in results}
+    assert lbox.exceptions.ApiLimitError in {type(r) for r in results}
 
     # Sleep at the end of this test to allow other tests to execute.
     time.sleep(60)

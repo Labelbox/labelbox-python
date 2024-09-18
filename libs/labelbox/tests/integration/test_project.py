@@ -1,11 +1,12 @@
-import time
 import os
+import time
 import uuid
+
 import pytest
 import requests
+from lbox.exceptions import InvalidQueryError
 
-from labelbox import Project, LabelingFrontend, Dataset
-from labelbox.exceptions import InvalidQueryError
+from labelbox import Dataset, LabelingFrontend, Project
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode

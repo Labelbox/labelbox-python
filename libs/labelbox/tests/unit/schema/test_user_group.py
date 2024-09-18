@@ -1,20 +1,22 @@
-import pytest
 from collections import defaultdict
 from unittest.mock import MagicMock
-from labelbox import Client
-from labelbox.exceptions import (
+
+import pytest
+from lbox.exceptions import (
+    MalformedQueryException,
     ResourceConflict,
     ResourceCreationError,
     ResourceNotFoundError,
-    MalformedQueryException,
     UnprocessableEntityError,
 )
+
+from labelbox import Client
+from labelbox.schema.media_type import MediaType
+from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.project import Project
+from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
 from labelbox.schema.user_group import UserGroup, UserGroupColor
-from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.ontology_kind import EditorTaskType
-from labelbox.schema.media_type import MediaType
 
 
 @pytest.fixture

@@ -1,12 +1,12 @@
 import io
 import json
 import logging
-from typing import Dict, Any, Optional, List, Callable
+from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import urlparse
-from labelbox.exceptions import LabelboxError
 
 import requests
-from requests import Session, Response
+from lbox.exceptions import LabelboxError
+from requests import Response, Session
 
 logger = logging.getLogger(__name__)
 

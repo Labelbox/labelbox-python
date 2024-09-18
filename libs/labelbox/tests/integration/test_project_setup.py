@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta, timezone
 import json
 import time
+from datetime import datetime, timedelta, timezone
 
 import pytest
+from lbox.exceptions import InvalidQueryError
 
 from labelbox import LabelingFrontend
-from labelbox.exceptions import InvalidQueryError, ResourceConflict
 
 
 def simple_ontology():

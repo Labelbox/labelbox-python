@@ -1,9 +1,10 @@
-from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field, Relationship
-from labelbox.exceptions import (
+from lbox.exceptions import (
     LabelboxError,
     error_message_for_unparsed_graphql_error,
 )
+
+from labelbox.orm.db_object import DbObject
+from labelbox.orm.model import Field, Relationship
 
 
 class ProjectModelConfig(DbObject):

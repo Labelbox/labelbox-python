@@ -1,13 +1,13 @@
-import pytest
-import faker
 from uuid import uuid4
-from labelbox import Client
-from labelbox.schema.user_group import UserGroup, UserGroupColor
-from labelbox.exceptions import (
-    ResourceNotFoundError,
+
+import faker
+import pytest
+from lbox.exceptions import (
     ResourceCreationError,
-    UnprocessableEntityError,
+    ResourceNotFoundError,
 )
+
+from labelbox.schema.user_group import UserGroup, UserGroupColor
 
 data = faker.Faker()
 

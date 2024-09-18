@@ -1,13 +1,13 @@
-from datetime import datetime, timezone
 import uuid
+from datetime import datetime, timezone
 
 import pytest
+from lbox.exceptions import MalformedQueryException
 
-from labelbox import DataRow, Dataset, Client, DataRowMetadataOntology
-from labelbox.exceptions import MalformedQueryException
+from labelbox import Client, DataRow, DataRowMetadataOntology, Dataset
 from labelbox.schema.data_row_metadata import (
-    DataRowMetadataField,
     DataRowMetadata,
+    DataRowMetadataField,
     DataRowMetadataKind,
     DeleteDataRowMetadata,
 )
