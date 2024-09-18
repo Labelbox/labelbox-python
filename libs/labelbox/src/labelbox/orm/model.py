@@ -386,6 +386,7 @@ class Entity(metaclass=EntityMeta):
         Review: Type[labelbox.Review]
         User: Type[labelbox.User]
         LabelingFrontend: Type[labelbox.LabelingFrontend]
+        BulkImportRequest: Type[labelbox.BulkImportRequest]
         Benchmark: Type[labelbox.Benchmark]
         IAMIntegration: Type[labelbox.IAMIntegration]
         LabelingFrontendOptions: Type[labelbox.LabelingFrontendOptions]

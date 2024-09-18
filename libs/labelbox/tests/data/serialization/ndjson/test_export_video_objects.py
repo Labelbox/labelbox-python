@@ -9,6 +9,8 @@ def video_bbox_label():
         uid="cl1z52xwh00050fhcmfgczqvn",
         data=VideoData(
             uid="cklr9mr4m5iao0rb6cvxu4qbn",
+            file_path=None,
+            frames=None,
             url="https://storage.labelbox.com/ckcz6bubudyfi0855o1dt1g9s%2F26403a22-604a-a38c-eeff-c2ed481fb40a-cat.mp4?Expires=1651677421050&KeyName=labelbox-assets-key-3&Signature=vF7gMyfHzgZdfbB8BHgd88Ws-Ms",
         ),
         annotations=[
@@ -20,7 +22,6 @@ def video_bbox_label():
                     "instanceURI": None,
                     "color": "#1CE6FF",
                     "feature_id": "cl1z52xw700000fhcayaqy0ev",
-                    "uuid": "b24e672b-8f79-4d96-bf5e-b552ca0820d5",
                 },
                 value=Rectangle(
                     extra={},
@@ -587,4 +588,31 @@ def test_serialize_video_objects():
     serialized_labels = NDJsonConverter.serialize([label])
     label = next(serialized_labels)
 
-    assert label == video_serialized_bbox_label()
+    manual_label = video_serialized_bbox_label()
+
+    for key in label.keys():
+        # ignore uuid because we randomize if there was none
+        if key != "uuid":
+            assert label[key] == manual_label[key]
+
+    assert len(label["segments"]) == 2
+    assert len(label["segments"][0]["keyframes"]) == 2
+    assert len(label["segments"][1]["keyframes"]) == 4
+
+    # #converts back only the keyframes. should be the sum of all prev segments
+    deserialized_labels = NDJsonConverter.deserialize([label])
+    label = next(deserialized_labels)
+    assert len(label.annotations) == 6
+
+
+def test_confidence_is_ignored():
+    label = video_bbox_label()
+    serialized_labels = NDJsonConverter.serialize([label])
+    label = next(serialized_labels)
+    label["confidence"] = 0.453
+    label["segments"][0]["confidence"] = 0.453
+
+    deserialized_labels = NDJsonConverter.deserialize([label])
+    label = next(deserialized_labels)
+    for annotation in label.annotations:
+        assert annotation.confidence is None

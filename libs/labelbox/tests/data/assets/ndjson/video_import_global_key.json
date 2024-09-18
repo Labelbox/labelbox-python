@@ -1,0 +1,166 @@
+[{
+    "answer": {
+        "schemaId": "ckrb1sfl8099g0y91cxbd5ftb"
+    },
+    "schemaId": "ckrb1sfjx099a0y914hl319ie",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "uuid": "f6879f59-d2b5-49c2-aceb-d9e8dc478673",
+    "frames": [{
+        "start": 30,
+        "end": 35
+    }, {
+        "start": 50,
+        "end": 51
+    }]
+}, {
+    "answer": [{
+        "schemaId": "ckrb1sfl8099e0y919v260awv"
+    }],
+    "schemaId": "ckrb1sfkn099c0y910wbo0p1a",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "uuid": "d009925d-91a3-4f67-abd9-753453f5a584",
+    "frames": [{
+        "start": 0,
+        "end": 5
+    }]
+}, {
+    "answer": "a value",
+    "schemaId": "ckrb1sfkn099c0y910wbo0p1a",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "uuid": "3b302706-37ec-4f72-ab2e-757d8bd302b9"
+}, {
+    "classifications": [],
+    "schemaId":
+        "cl5islwg200gfci6g0oitaypu",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "uuid":
+        "6f7c835a-0139-4896-b73f-66a6baa89e94",
+    "segments": [{
+        "keyframes": [{
+            "frame": 1,
+            "line": [{
+                "x": 10.0,
+                "y": 10.0
+            }, {
+                "x": 100.0,
+                "y": 100.0
+            }, {
+                "x": 50.0,
+                "y": 30.0
+            }],
+            "classifications": []
+        }, {
+            "frame": 5,
+            "line": [{
+                "x": 15.0,
+                "y": 10.0
+            }, {
+                "x": 50.0,
+                "y": 100.0
+            }, {
+                "x": 50.0,
+                "y": 30.0
+            }],
+            "classifications": []
+        }]
+    }, {
+        "keyframes": [{
+            "frame": 8,
+            "line": [{
+                "x": 100.0,
+                "y": 10.0
+            }, {
+                "x": 50.0,
+                "y": 100.0
+            }, {
+                "x": 50.0,
+                "y": 30.0
+            }],
+            "classifications": []
+        }]
+    }]
+}, {
+    "classifications": [],
+    "schemaId":
+        "cl5it7ktp00i5ci6gf80b1ysd",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "uuid":
+        "f963be22-227b-4efe-9be4-2738ed822216",
+    "segments": [{
+        "keyframes": [{
+            "frame": 1,
+            "point": {
+                "x": 10.0,
+                "y": 10.0
+            },
+            "classifications": []
+        }]
+    }, {
+        "keyframes": [{
+            "frame": 5,
+            "point": {
+                "x": 50.0,
+                "y": 50.0
+            },
+            "classifications": []
+        }, {
+            "frame": 10,
+            "point": {
+                "x": 10.0,
+                "y": 50.0
+            },
+            "classifications": []
+        }]
+    }]
+}, {
+    "classifications": [],
+    "schemaId":
+        "cl5iw0roz00lwci6g5jni62vs",
+    "dataRow": {
+        "globalKey": "05e8ee85-072e-4eb2-b30a-501dee9b0d9d"
+    },
+    "uuid":
+        "13b2ee0e-2355-4336-8b83-d74d09e3b1e7",
+    "segments": [{
+        "keyframes": [{
+            "frame": 1,
+            "bbox": {
+                "top": 10.0,
+                "left": 5.0,
+                "height": 100.0,
+                "width": 150.0
+            },
+            "classifications": []
+        }, {
+            "frame": 5,
+            "bbox": {
+                "top": 30.0,
+                "left": 5.0,
+                "height": 50.0,
+                "width": 150.0
+            },
+            "classifications": []
+        }]
+    }, {
+        "keyframes": [{
+            "frame": 10,
+            "bbox": {
+                "top": 300.0,
+                "left": 200.0,
+                "height": 400.0,
+                "width": 150.0
+            },
+            "classifications": []
+        }]
+    }]
+}]
