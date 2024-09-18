@@ -7,6 +7,7 @@ import random
 import time
 import urllib.parse
 from collections import defaultdict
+from functools import cache
 from types import MappingProxyType
 from typing import Any, Dict, List, Optional, Union, overload
 
@@ -82,6 +83,49 @@ from .request_client import RequestClient
 logger = logging.getLogger(__name__)
 
 
+@cache
+def get_data_row_metadata_ontology(
+    client: RequestClient,
+) -> DataRowMetadataOntology:
+    """
+
+    Returns:
+        DataRowMetadataOntology: The ontology for Data Row Metadata for an organization
+
+    """
+    return DataRowMetadataOntology(client)
+
+
+def get_single(request_client: RequestClient, db_object_type, uid):
+    """Fetches a single object of the given type, for the given ID.
+
+    Args:
+        db_object_type (type): DbObject subclass.
+        uid (str): Unique ID of the row.
+    Returns:
+        Object of `db_object_type`.
+    Raises:
+        labelbox.exceptions.ResourceNotFoundError: If there is no object
+            of the given type for the given ID.
+    """
+    query_str, params = query.get_single(db_object_type, uid)
+
+    res = request_client.execute(query_str, params)
+    res = res and res.get(utils.camel_case(db_object_type.type_name()))
+    if res is None:
+        raise labelbox.exceptions.ResourceNotFoundError(db_object_type, params)
+    else:
+        return db_object_type(request_client, res)
+
+
+def get_organization(request_client: RequestClient) -> Organization:
+    """Gets the Organization DB object of the current user.
+
+    >>> organization = client.get_organization()
+    """
+    return get_single(request_client, Entity.Organization, None)
+
+
 class Client:
     """A Labelbox client.
 
@@ -126,6 +170,11 @@ class Client:
         )
         self._adv_client = AdvClient.factory(rest_endpoint, api_key)
 
+    """
+    Ideally we should not access connection and headers directly as it breaks encapsulation for the RequestClient.
+    TODO: Remove this properties and provide either client-facing methods or ways to encapsulate this logic in the request client
+    """
+
     @property
     def headers(self) -> MappingProxyType:
         return self._request_client.headers
@@ -133,39 +182,6 @@ class Client:
     @property
     def connection(self) -> requests.Session:
         return self._request_client._connection
-
-    def execute(
-        self,
-        query=None,
-        params=None,
-        data=None,
-        files=None,
-        timeout=60.0,
-        experimental=False,
-        error_log_key="message",
-        raise_return_resource_not_found=False,
-    ) -> Dict[str, Any]:
-        """Executes a GraphQL query.
-
-        Args:
-            query (str): The query to execute.
-            variables (dict): Variables to pass to the query.
-            raise_return_resource_not_found (bool): If True, raise a
-                ResourceNotFoundError if the query returns None.
-
-        Returns:
-            dict: The response from the server.
-        """
-        return self._request_client.execute(
-            query,
-            params,
-            data=data,
-            files=files,
-            timeout=timeout,
-            experimental=experimental,
-            error_log_key=error_log_key,
-            raise_return_resource_not_found=raise_return_resource_not_found,
-        )
 
     def upload_file(self, path: str) -> str:
         """Uploads given path to local file.
@@ -235,7 +251,7 @@ class Client:
             if (filename and content_type)
             else content
         }
-        headers = self._connection.headers.copy()
+        headers = self.connection.headers.copy()
         headers.pop("Content-Type", None)
         request = requests.Request(
             "POST",
@@ -247,7 +263,7 @@ class Client:
 
         prepped: requests.PreparedRequest = request.prepare()
 
-        response = self._connection.send(prepped)
+        response = self.connection.send(prepped)
 
         if response.status_code == 502:
             error_502 = "502 Bad Gateway"
@@ -290,16 +306,7 @@ class Client:
             labelbox.exceptions.ResourceNotFoundError: If there is no object
                 of the given type for the given ID.
         """
-        query_str, params = query.get_single(db_object_type, uid)
-
-        res = self.execute(query_str, params)
-        res = res and res.get(utils.camel_case(db_object_type.type_name()))
-        if res is None:
-            raise labelbox.exceptions.ResourceNotFoundError(
-                db_object_type, params
-            )
-        else:
-            return db_object_type(self, res)
+        return get_single(self._request_client, db_object_type, uid)
 
     def get_project(self, project_id) -> Project:
         """Gets a single Project with the given ID.
@@ -343,7 +350,7 @@ class Client:
 
         >>> organization = client.get_organization()
         """
-        return self._get_single(Entity.Organization, None)
+        return get_organization(self._request_client)
 
     def _get_all(self, db_object_type, where, filter_deleted=True):
         """Fetches all the objects of the given type the user has access to.
@@ -361,7 +368,7 @@ class Client:
         query_str, params = query.get_all(db_object_type, where)
 
         return PaginatedCollection(
-            self,
+            self._request_client,
             query_str,
             params,
             [utils.camel_case(db_object_type.type_name()) + "s"],
@@ -447,7 +454,7 @@ class Client:
 
         data = {**data, **extra_params}
         query_string, params = query.create(db_object_type, data)
-        res = self.execute(
+        res = self._request_client.execute(
             query_string, params, raise_return_resource_not_found=True
         )
 
@@ -457,7 +464,7 @@ class Client:
             )
         res = res["create%s" % db_object_type.type_name()]
 
-        return db_object_type(self, res)
+        return db_object_type(self._request_client, res)
 
     def create_model_config(
         self, name: str, model_id: str, inference_params: dict
@@ -489,8 +496,8 @@ class Client:
             "inferenceParams": inference_params,
             "name": name,
         }
-        result = self.execute(query, params)
-        return ModelConfig(self, result["createModelConfig"])
+        result = self._request_client.execute(query, params)
+        return ModelConfig(self._request_client, result["createModelConfig"])
 
     def delete_model_config(self, id: str) -> bool:
         """Deletes an existing model config with the given id
@@ -508,7 +515,7 @@ class Client:
                     }
                 }"""
         params = {"id": id}
-        result = self.execute(query, params)
+        result = self._request_client.execute(query, params)
         if not result:
             raise labelbox.exceptions.ResourceNotFoundError(
                 Entity.ModelConfig, params
@@ -557,13 +564,13 @@ class Client:
                     "Integration is not valid. Please select another."
                 )
 
-            self.execute(
+            self._request_client.execute(
                 """mutation setSignerForDatasetPyApi($signerId: ID!, $datasetId: ID!) {
                     setSignerForDataset(data: { signerId: $signerId}, where: {id: $datasetId}){id}}
                 """,
                 {"signerId": iam_integration.uid, "datasetId": dataset.uid},
             )
-            validation_result = self.execute(
+            validation_result = self._request_client.execute(
                 """mutation validateDatasetPyApi($id: ID!){validateDataset(where: {id : $id}){
                     valid checks{name, success}}}
                 """,
@@ -920,7 +927,7 @@ class Client:
             Roles: Provides information on available roles within an organization.
             Roles are used for user management.
         """
-        return role.get_roles(self)
+        return role.get_roles(self._request_client)
 
     def get_data_row(self, data_row_id):
         """
@@ -951,9 +958,7 @@ class Client:
             DataRowMetadataOntology: The ontology for Data Row Metadata for an organization
 
         """
-        if self._data_row_metadata_ontology is None:
-            self._data_row_metadata_ontology = DataRowMetadataOntology(self)
-        return self._data_row_metadata_ontology
+        return get_data_row_metadata_ontology(self._request_client)
 
     def get_model(self, model_id) -> Model:
         """Gets a single Model with the given ID.
@@ -1003,10 +1008,10 @@ class Client:
                 }
             }""" % query.results_query_part(Entity.Model)
 
-        result = self.execute(
+        result = self._request_client.execute(
             query_str, {"name": name, "ontologyId": ontology_id}
         )
-        return Entity.Model(self, result["createModel"])
+        return Entity.Model(self._request_client, result["createModel"])
 
     def get_data_row_ids_for_external_ids(
         self, external_ids: List[str]
@@ -1027,7 +1032,7 @@ class Client:
         max_ids_per_request = 100
         result = defaultdict(list)
         for i in range(0, len(external_ids), max_ids_per_request):
-            for row in self.execute(
+            for row in self._request_client.execute(
                 query_str,
                 {"externalId_in": external_ids[i : i + max_ids_per_request]},
             )["externalIdsToDataRowIds"]:
@@ -1063,7 +1068,7 @@ class Client:
         """ % query.results_query_part(Entity.Ontology)
         params = {"search": name_contains, "filter": {"status": "ALL"}}
         return PaginatedCollection(
-            self,
+            self._request_client,
             query_str,
             params,
             ["ontologies", "nodes"],
@@ -1085,7 +1090,7 @@ class Client:
               rootSchemaNode(where: $rootSchemaNodeWhere){%s}
         }""" % query.results_query_part(Entity.FeatureSchema)
 
-        res = self.execute(
+        res = self._request_client.execute(
             query_str,
             {"rootSchemaNodeWhere": {"featureSchemaId": feature_schema_id}},
         )["rootSchemaNode"]
@@ -1119,7 +1124,7 @@ class Client:
             return Entity.FeatureSchema(client, payload)
 
         return PaginatedCollection(
-            self,
+            self._request_client,
             query_str,
             params,
             ["rootSchemaNodes", "nodes"],
@@ -1204,11 +1209,11 @@ class Client:
         """
 
         endpoint = (
-            self.rest_endpoint
+            self._request_client.rest_endpoint
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
         )
-        response = self._connection.delete(endpoint)
+        response = self.connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
             raise labelbox.exceptions.LabelboxError(
@@ -1225,11 +1230,11 @@ class Client:
             >>> client.delete_unused_ontology("cleabc1my012ioqvu5anyaabc")
         """
         endpoint = (
-            self.rest_endpoint
+            self._request_client.rest_endpoint
             + "/ontologies/"
             + urllib.parse.quote(ontology_id)
         )
-        response = self._connection.delete(endpoint)
+        response = self.connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
             raise labelbox.exceptions.LabelboxError(
@@ -1252,12 +1257,12 @@ class Client:
         """
 
         endpoint = (
-            self.rest_endpoint
+            self._request_client.rest_endpoint
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
             + "/definition"
         )
-        response = self._connection.patch(endpoint, json={"title": title})
+        response = self.connection.patch(endpoint, json={"title": title})
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(feature_schema_id)
@@ -1287,11 +1292,11 @@ class Client:
             feature_schema.get("featureSchemaId") or "new_feature_schema_id"
         )
         endpoint = (
-            self.rest_endpoint
+            self._request_client.rest_endpoint
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
         )
-        response = self._connection.put(
+        response = self.connection.put(
             endpoint, json={"normalized": json.dumps(feature_schema)}
         )
 
@@ -1318,13 +1323,13 @@ class Client:
         """
 
         endpoint = (
-            self.rest_endpoint
+            self._request_client.rest_endpoint
             + "/ontologies/"
             + urllib.parse.quote(ontology_id)
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
         )
-        response = self._connection.post(endpoint, json={"position": position})
+        response = self.connection.post(endpoint, json={"position": position})
         if response.status_code != requests.codes.created:
             raise labelbox.exceptions.LabelboxError(
                 "Failed to insert the feature schema into the ontology, message: "
@@ -1345,8 +1350,8 @@ class Client:
             >>> client.get_unused_ontologies("cleabc1my012ioqvu5anyaabc")
         """
 
-        endpoint = self.rest_endpoint + "/ontologies/unused"
-        response = self._connection.get(endpoint, json={"after": after})
+        endpoint = self._request_client.rest_endpoint + "/ontologies/unused"
+        response = self.connection.get(endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
@@ -1370,8 +1375,10 @@ class Client:
             >>> client.get_unused_feature_schemas("cleabc1my012ioqvu5anyaabc")
         """
 
-        endpoint = self.rest_endpoint + "/feature-schemas/unused"
-        response = self._connection.get(endpoint, json={"after": after})
+        endpoint = (
+            self._request_client.rest_endpoint + "/feature-schemas/unused"
+        )
+        response = self.connection.get(endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
@@ -1446,8 +1453,8 @@ class Client:
         if editor_task_type_value:
             params["data"]["editorTaskType"] = editor_task_type_value
 
-        res = self.execute(query_str, params)
-        return Entity.Ontology(self, res["upsertOntology"])
+        res = self._request_client.execute(query_str, params)
+        return Entity.Ontology(self._request_client, res["upsertOntology"])
 
     def create_feature_schema(self, normalized):
         """
@@ -1485,11 +1492,13 @@ class Client:
         } """ % query.results_query_part(Entity.FeatureSchema)
         normalized = {k: v for k, v in normalized.items() if v}
         params = {"data": {"normalized": json.dumps(normalized)}}
-        res = self.execute(query_str, params)["upsertRootSchemaNode"]
+        res = self._request_client.execute(query_str, params)[
+            "upsertRootSchemaNode"
+        ]
         # Technically we are querying for a Schema Node.
         # But the features are the same so we just grab the feature schema id
         res["id"] = res["normalized"]["featureSchemaId"]
-        return Entity.FeatureSchema(self, res)
+        return Entity.FeatureSchema(self._request_client, res)
 
     def get_model_run(self, model_run_id: str) -> ModelRun:
         """Gets a single ModelRun with the given ID.
@@ -1585,7 +1594,9 @@ class Client:
                 for input in global_key_to_data_row_inputs
             ]
         }
-        assign_global_keys_to_data_rows_job = self.execute(query_str, params)
+        assign_global_keys_to_data_rows_job = self._request_client.execute(
+            query_str, params
+        )
 
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query assignGlobalKeysToDataRowsResultPyApi($jobId: ID!) {
@@ -1620,7 +1631,7 @@ class Client:
         sleep_time = 2
         start_time = time.time()
         while True:
-            res = self.execute(result_query_str, result_params)
+            res = self._request_client.execute(result_query_str, result_params)
             if (
                 res["assignGlobalKeysToDataRowsResult"]["jobStatus"]
                 == "COMPLETE"
@@ -1727,7 +1738,9 @@ class Client:
             dataRowsForGlobalKeys(where: {ids: $globalKeys}) { jobId}}
             """
         params = {"globalKeys": global_keys}
-        data_rows_for_global_keys_job = self.execute(query_str, params)
+        data_rows_for_global_keys_job = self._request_client.execute(
+            query_str, params
+        )
 
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query getDataRowsForGlobalKeysResultPyApi($jobId: ID!) {
@@ -1747,7 +1760,7 @@ class Client:
         sleep_time = 2
         start_time = time.time()
         while True:
-            res = self.execute(result_query_str, result_params)
+            res = self._request_client.execute(result_query_str, result_params)
             if res["dataRowsForGlobalKeysResult"]["jobStatus"] == "COMPLETE":
                 data = res["dataRowsForGlobalKeysResult"]["data"]
                 results, errors = [], []
@@ -1829,7 +1842,7 @@ class Client:
             clearGlobalKeys(where: {ids: $globalKeys}) { jobId}}
             """
         params = {"globalKeys": global_keys}
-        clear_global_keys_job = self.execute(query_str, params)
+        clear_global_keys_job = self._request_client.execute(query_str, params)
 
         # Query string for retrieving job status and result, if job is done
         result_query_str = """query clearGlobalKeysResultPyApi($jobId: ID!) {
@@ -1847,7 +1860,7 @@ class Client:
         sleep_time = 2
         start_time = time.time()
         while True:
-            res = self.execute(result_query_str, result_params)
+            res = self._request_client.execute(result_query_str, result_params)
             if res["clearGlobalKeysResult"]["jobStatus"] == "COMPLETE":
                 data = res["clearGlobalKeysResult"]["data"]
                 results, errors = [], []
@@ -1896,7 +1909,7 @@ class Client:
             time.sleep(sleep_time)
 
     def get_catalog(self) -> Catalog:
-        return Catalog(client=self)
+        return Catalog(client=self._request_client)
 
     def get_catalog_slice(self, slice_id) -> CatalogSlice:
         """
@@ -1918,8 +1931,8 @@ class Client:
                 }
             }
         """
-        res = self.execute(query_str, {"id": slice_id})
-        return Entity.CatalogSlice(self, res["getSavedQuery"])
+        res = self._request_client.execute(query_str, {"id": slice_id})
+        return Entity.CatalogSlice(self._request_client, res["getSavedQuery"])
 
     def is_feature_schema_archived(
         self, ontology_id: str, feature_schema_id: str
@@ -1935,11 +1948,11 @@ class Client:
         """
 
         ontology_endpoint = (
-            self.rest_endpoint
+            self._request_client.rest_endpoint
             + "/ontologies/"
             + urllib.parse.quote(ontology_id)
         )
-        response = self._connection.get(ontology_endpoint)
+        response = self.connection.get(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             feature_schema_nodes = response.json()["featureSchemaNodes"]
@@ -1989,13 +2002,13 @@ class Client:
                 }
             }
         """
-        res = self.execute(query_str, {"id": slice_id})
+        res = self._request_client.execute(query_str, {"id": slice_id})
         if res is None or res["getSavedQuery"] is None:
             raise labelbox.exceptions.ResourceNotFoundError(
                 ModelSlice, slice_id
             )
 
-        return Entity.ModelSlice(self, res["getSavedQuery"])
+        return Entity.ModelSlice(self._request_client, res["getSavedQuery"])
 
     def delete_feature_schema_from_ontology(
         self, ontology_id: str, feature_schema_id: str
@@ -2017,13 +2030,13 @@ class Client:
             >>> client.delete_feature_schema_from_ontology(<ontology_id>, <feature_schema_id>)
         """
         ontology_endpoint = (
-            self.rest_endpoint
+            self._request_client.rest_endpoint
             + "/ontologies/"
             + urllib.parse.quote(ontology_id)
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
         )
-        response = self._connection.delete(ontology_endpoint)
+        response = self.connection.delete(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
@@ -2058,14 +2071,14 @@ class Client:
             None
         """
         ontology_endpoint = (
-            self.rest_endpoint
+            self._request_client.rest_endpoint
             + "/ontologies/"
             + urllib.parse.quote(ontology_id)
             + "/feature-schemas/"
             + urllib.parse.quote(root_feature_schema_id)
             + "/unarchive"
         )
-        response = self._connection.patch(ontology_endpoint)
+        response = self.connection.patch(ontology_endpoint)
         if response.status_code == requests.codes.ok:
             if not bool(response.json()["unarchived"]):
                 raise labelbox.exceptions.LabelboxError(
@@ -2093,14 +2106,14 @@ class Client:
             query.results_query_part(Entity.Batch),
         )
 
-        batch = self.execute(
+        batch = self._request_client.execute(
             get_batch_str,
             {"projectId": project_id, "batchId": batch_id},
             timeout=180.0,
             experimental=True,
         )["project"]["batches"]["nodes"][0]
 
-        return Entity.Batch(self, project_id, batch)
+        return Entity.Batch(self._request_client, project_id, batch)
 
     def send_to_annotate_from_catalog(
         self,
@@ -2172,7 +2185,7 @@ class Client:
             else None
         )
 
-        res = self.execute(
+        res = self._request_client.execute(
             mutation_str,
             {
                 "input": {
@@ -2198,7 +2211,7 @@ class Client:
             },
         )["sendToAnnotateFromCatalog"]
 
-        return Entity.Task.get_task(self, res["taskId"])
+        return Entity.Task.get_task(self._request_client, res["taskId"])
 
     @staticmethod
     def build_catalog_query(data_rows: Union[DataRowIds, GlobalKeys]):
@@ -2243,7 +2256,7 @@ class Client:
             data_rows (DataRowIds or GlobalKeys): Data row identifiers to run predictions on
             app_id (str): Foundry app to run predictions with
         """
-        foundry_client = FoundryClient(self)
+        foundry_client = FoundryClient(self._request_client)
         return foundry_client.run_app(model_run_name, data_rows, app_id)
 
     def create_embedding(self, name: str, dims: int) -> Embedding:
@@ -2343,7 +2356,7 @@ class Client:
             }
             }
         """
-        res = self.execute(
+        res = self._request_client.execute(
             mutation_str,
             {"labelId": label_id, "feedback": feedback, "scores": scores},
         )
@@ -2388,7 +2401,9 @@ class Client:
 
             See libs/labelbox/src/labelbox/schema/search_filters.py and libs/labelbox/tests/unit/test_unit_search_filters.py for more examples.
         """
-        return LabelingServiceDashboard.get_all(self, search_query=search_query)
+        return LabelingServiceDashboard.get_all(
+            self._request_client, search_query=search_query
+        )
 
     def get_task_by_id(self, task_id: str) -> Union[Task, DataUpsertTask]:
         """
@@ -2424,7 +2439,9 @@ class Client:
             }
         }
         """
-        result = self.execute(query, {"userId": user.uid, "taskId": task_id})
+        result = self._request_client.execute(
+            query, {"userId": user.uid, "taskId": task_id}
+        )
         data = result.get("user", {}).get("createdTasks", [])
         if not data:
             raise labelbox.exceptions.ResourceNotFoundError(
@@ -2432,9 +2449,9 @@ class Client:
             )
         task_data = data[0]
         if task_data["type"].lower() == "adv-upsert-data-rows":
-            task = DataUpsertTask(self, task_data)
+            task = DataUpsertTask(self._request_client, task_data)
         else:
-            task = Task(self, task_data)
+            task = Task(self._request_client, task_data)
 
         task._user = user
         return task
