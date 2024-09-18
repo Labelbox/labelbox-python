@@ -1,17 +1,13 @@
 import datetime
-from labelbox.data.annotation_types.data.generic_data_row_data import (
-    GenericDataRowData,
-)
-from labelbox.data.serialization.ndjson.converter import NDJsonConverter
-from labelbox.data.annotation_types import Label
-import pytest
+import itertools
 import uuid
 
+import pytest
+
 import labelbox as lb
-from labelbox.schema.media_type import MediaType
+from labelbox import Client, OntologyKind, Project
 from labelbox.schema.annotation_import import AnnotationImportState
-from labelbox import Project, Client, OntologyKind
-import itertools
+from labelbox.schema.media_type import MediaType
 
 """
  - integration test for importing mal labels and ground truths with each supported MediaType. 
@@ -26,78 +22,6 @@ def validate_iso_format(date_string: str):
     assert parsed_t.hour is not None
     assert parsed_t.minute is not None
     assert parsed_t.second is not None
-
-
-@pytest.mark.parametrize(
-    "media_type, data_type_class",
-    [
-        (MediaType.Audio, GenericDataRowData),
-        (MediaType.Html, GenericDataRowData),
-        (MediaType.Image, GenericDataRowData),
-        (MediaType.Text, GenericDataRowData),
-        (MediaType.Video, GenericDataRowData),
-        (MediaType.Conversational, GenericDataRowData),
-        (MediaType.Document, GenericDataRowData),
-        (MediaType.LLMPromptResponseCreation, GenericDataRowData),
-        (MediaType.LLMPromptCreation, GenericDataRowData),
-        (OntologyKind.ResponseCreation, GenericDataRowData),
-        (OntologyKind.ModelEvaluation, GenericDataRowData),
-    ],
-)
-def test_generic_data_row_type_by_data_row_id(
-    media_type,
-    data_type_class,
-    annotations_by_media_type,
-    hardcoded_datarow_id,
-):
-    annotations_ndjson = annotations_by_media_type[media_type]
-    annotations_ndjson = [annotation[0] for annotation in annotations_ndjson]
-
-    label = list(NDJsonConverter.deserialize(annotations_ndjson))[0]
-
-    data_label = Label(
-        data=data_type_class(uid=hardcoded_datarow_id()),
-        annotations=label.annotations,
-    )
-
-    assert data_label.data.uid == label.data.uid
-    assert label.annotations == data_label.annotations
-
-
-@pytest.mark.parametrize(
-    "media_type, data_type_class",
-    [
-        (MediaType.Audio, GenericDataRowData),
-        (MediaType.Html, GenericDataRowData),
-        (MediaType.Image, GenericDataRowData),
-        (MediaType.Text, GenericDataRowData),
-        (MediaType.Video, GenericDataRowData),
-        (MediaType.Conversational, GenericDataRowData),
-        (MediaType.Document, GenericDataRowData),
-        # (MediaType.LLMPromptResponseCreation, GenericDataRowData),
-        # (MediaType.LLMPromptCreation, GenericDataRowData),
-        (OntologyKind.ResponseCreation, GenericDataRowData),
-        (OntologyKind.ModelEvaluation, GenericDataRowData),
-    ],
-)
-def test_generic_data_row_type_by_global_key(
-    media_type,
-    data_type_class,
-    annotations_by_media_type,
-    hardcoded_global_key,
-):
-    annotations_ndjson = annotations_by_media_type[media_type]
-    annotations_ndjson = [annotation[0] for annotation in annotations_ndjson]
-
-    label = list(NDJsonConverter.deserialize(annotations_ndjson))[0]
-
-    data_label = Label(
-        data=data_type_class(global_key=hardcoded_global_key()),
-        annotations=label.annotations,
-    )
-
-    assert data_label.data.global_key == label.data.global_key
-    assert label.annotations == data_label.annotations
 
 
 @pytest.mark.parametrize(

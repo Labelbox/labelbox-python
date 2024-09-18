@@ -2,9 +2,9 @@ name: Labelbox Python SDK Staging (Develop)
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, v6]
   pull_request:
-    branches: [develop]
+    branches: [develop, v6]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
