@@ -5,10 +5,10 @@ import sys
 from datetime import datetime, timezone
 from types import MappingProxyType
 
-import labelbox.exceptions
 import requests
 import requests.exceptions
 from google.api_core import retry
+from lbox import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +46,13 @@ class RequestClient:
             enable_experimental (bool): Indicates whether or not to use experimental features
             app_url (str) : host url for all links to the web app
         Raises:
-            labelbox.exceptions.AuthenticationError: If no `api_key`
+            exceptions.AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
                 variable.
         """
         if api_key is None:
             if _LABELBOX_API_KEY not in os.environ:
-                raise labelbox.exceptions.AuthenticationError(
+                raise exceptions.AuthenticationError(
                     "Labelbox API key not provided"
                 )
             api_key = os.environ[_LABELBOX_API_KEY]
@@ -66,8 +66,8 @@ class RequestClient:
         self.app_url = app_url
         self.endpoint = endpoint
         self.rest_endpoint = rest_endpoint
-        self._connection: requests.Session = self._init_connection()
         self.sdk_version = sdk_version
+        self._connection: requests.Session = self._init_connection()
 
     def _init_connection(self) -> requests.Session:
         connection = (
@@ -92,8 +92,8 @@ class RequestClient:
 
     @retry.Retry(
         predicate=retry.if_exception_type(
-            labelbox.exceptions.InternalServerError,
-            labelbox.exceptions.TimeoutError,
+            exceptions.InternalServerError,
+            exceptions.TimeoutError,
         )
     )
     def execute(
@@ -111,7 +111,7 @@ class RequestClient:
         given query.
 
         Checks the response for errors and wraps errors
-        in appropriate `labelbox.exceptions.LabelboxError` subtypes.
+        in appropriate `exceptions.LabelboxError` subtypes.
 
         Args:
             query (str): The query to execute.
@@ -123,18 +123,18 @@ class RequestClient:
         Returns:
             dict, parsed JSON response.
         Raises:
-            labelbox.exceptions.AuthenticationError: If authentication
+            exceptions.AuthenticationError: If authentication
                 failed.
-            labelbox.exceptions.InvalidQueryError: If `query` is not
+            exceptions.InvalidQueryError: If `query` is not
                 syntactically or semantically valid (checked server-side).
-            labelbox.exceptions.ApiLimitError: If the server API limit was
+            exceptions.ApiLimitError: If the server API limit was
                 exceeded. See "How to import data" in the online documentation
                 to see API limits.
-            labelbox.exceptions.TimeoutError: If response was not received
+            exceptions.TimeoutError: If response was not received
                 in `timeout` seconds.
-            labelbox.exceptions.NetworkError: If an unknown error occurred
+            exceptions.NetworkError: If an unknown error occurred
                 most likely due to connection issues.
-            labelbox.exceptions.LabelboxError: If an unknown error of any
+            exceptions.LabelboxError: If an unknown error of any
                 kind occurred.
             ValueError: If query and data are both None.
         """
@@ -182,12 +182,12 @@ class RequestClient:
             response = self._connection.send(prepped, timeout=timeout)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
-            raise labelbox.exceptions.TimeoutError(str(e))
+            raise exceptions.TimeoutError(str(e))
         except requests.exceptions.RequestException as e:
             logger.error("Unknown error: %s", str(e))
-            raise labelbox.exceptions.NetworkError(e)
+            raise exceptions.NetworkError(e)
         except Exception as e:
-            raise labelbox.exceptions.LabelboxError(
+            raise exceptions.LabelboxError(
                 "Unknown error during Client.query(): " + str(e), e
             )
 
@@ -199,7 +199,7 @@ class RequestClient:
             try:
                 r_json = response.json()
             except Exception:
-                raise labelbox.exceptions.LabelboxError(
+                raise exceptions.LabelboxError(
                     "Failed to parse response as JSON: %s" % response.text
                 )
         else:
@@ -207,15 +207,15 @@ class RequestClient:
                 "upstream connect error or disconnect/reset before headers"
                 in response.text
             ):
-                raise labelbox.exceptions.InternalServerError(
+                raise exceptions.InternalServerError(
                     "Connection reset"
                 )
             elif response.status_code == 502:
                 error_502 = "502 Bad Gateway"
-                raise labelbox.exceptions.InternalServerError(error_502)
+                raise exceptions.InternalServerError(error_502)
             elif 500 <= response.status_code < 600:
                 error_500 = f"Internal server http error {response.status_code}"
-                raise labelbox.exceptions.InternalServerError(error_500)
+                raise exceptions.InternalServerError(error_500)
 
         errors = r_json.get("errors", [])
 
@@ -241,13 +241,13 @@ class RequestClient:
             check_errors(["AUTHENTICATION_ERROR"], "extensions", "code")
             is not None
         ):
-            raise labelbox.exceptions.AuthenticationError("Invalid API key")
+            raise exceptions.AuthenticationError("Invalid API key")
 
         authorization_error = check_errors(
             ["AUTHORIZATION_ERROR"], "extensions", "code"
         )
         if authorization_error is not None:
-            raise labelbox.exceptions.AuthorizationError(
+            raise exceptions.AuthorizationError(
                 authorization_error["message"]
             )
 
@@ -258,15 +258,15 @@ class RequestClient:
         if validation_error is not None:
             message = validation_error["message"]
             if message == "Query complexity limit exceeded":
-                raise labelbox.exceptions.ValidationFailedError(message)
+                raise exceptions.ValidationFailedError(message)
             else:
-                raise labelbox.exceptions.InvalidQueryError(message)
+                raise exceptions.InvalidQueryError(message)
 
         graphql_error = check_errors(
             ["GRAPHQL_PARSE_FAILED"], "extensions", "code"
         )
         if graphql_error is not None:
-            raise labelbox.exceptions.InvalidQueryError(
+            raise exceptions.InvalidQueryError(
                 graphql_error["message"]
             )
 
@@ -274,14 +274,14 @@ class RequestClient:
         response_msg = r_json.get("message", "")
 
         if response_msg.startswith("You have exceeded"):
-            raise labelbox.exceptions.ApiLimitError(response_msg)
+            raise exceptions.ApiLimitError(response_msg)
 
         resource_not_found_error = check_errors(
             ["RESOURCE_NOT_FOUND"], "extensions", "code"
         )
         if resource_not_found_error is not None:
             if raise_return_resource_not_found:
-                raise labelbox.exceptions.ResourceNotFoundError(
+                raise exceptions.ResourceNotFoundError(
                     message=resource_not_found_error["message"]
                 )
             else:
@@ -293,7 +293,7 @@ class RequestClient:
             ["RESOURCE_CONFLICT"], "extensions", "code"
         )
         if resource_conflict_error is not None:
-            raise labelbox.exceptions.ResourceConflict(
+            raise exceptions.ResourceConflict(
                 resource_conflict_error["message"]
             )
 
@@ -301,7 +301,7 @@ class RequestClient:
             ["MALFORMED_REQUEST"], "extensions", "code"
         )
         if malformed_request_error is not None:
-            raise labelbox.exceptions.MalformedQueryException(
+            raise exceptions.MalformedQueryException(
                 malformed_request_error[error_log_key]
             )
 
@@ -315,22 +315,22 @@ class RequestClient:
             message = internal_server_error.get("message")
             error_status_code = get_error_status_code(internal_server_error)
             if error_status_code == 400:
-                raise labelbox.exceptions.InvalidQueryError(message)
+                raise exceptions.InvalidQueryError(message)
             elif error_status_code == 422:
-                raise labelbox.exceptions.UnprocessableEntityError(message)
+                raise exceptions.UnprocessableEntityError(message)
             elif error_status_code == 426:
-                raise labelbox.exceptions.OperationNotAllowedException(message)
+                raise exceptions.OperationNotAllowedException(message)
             elif error_status_code == 500:
-                raise labelbox.exceptions.LabelboxError(message)
+                raise exceptions.LabelboxError(message)
             else:
-                raise labelbox.exceptions.InternalServerError(message)
+                raise exceptions.InternalServerError(message)
 
         not_allowed_error = check_errors(
             ["OPERATION_NOT_ALLOWED"], "extensions", "code"
         )
         if not_allowed_error is not None:
             message = not_allowed_error.get("message")
-            raise labelbox.exceptions.OperationNotAllowedException(message)
+            raise exceptions.OperationNotAllowedException(message)
 
         if len(errors) > 0:
             logger.warning("Unparsed errors on query execution: %r", errors)
@@ -343,7 +343,7 @@ class RequestClient:
                     errors,
                 )
             )
-            raise labelbox.exceptions.LabelboxError(
+            raise exceptions.LabelboxError(
                 "Unknown error: %s" % str(messages)
             )
 
@@ -355,6 +355,6 @@ class RequestClient:
         if response.status_code != requests.codes.ok:
             message = f"{response.status_code} {response.reason}"
             cause = r_json.get("message")
-            raise labelbox.exceptions.LabelboxError(message, cause)
+            raise exceptions.LabelboxError(message, cause)
 
         return r_json["data"]

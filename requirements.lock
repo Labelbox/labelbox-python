@@ -6,10 +6,10 @@
 #   features: []
 #   all-features: true
 #   with-sources: false
-#   generate-hashes: false
-#   universal: false
 
 -e file:libs/labelbox
+-e file:libs/lbox-clients
+    # via labelbox
 -e file:libs/lbox-example
 alabaster==0.7.13
     # via sphinx
@@ -33,6 +33,7 @@ geojson==3.1.0
     # via labelbox
 google-api-core==2.19.1
     # via labelbox
+    # via lbox-clients
 google-auth==2.31.0
     # via google-api-core
 googleapis-common-protos==1.63.2
@@ -87,6 +88,7 @@ pytz==2024.1
 requests==2.32.3
     # via google-api-core
     # via labelbox
+    # via lbox-clients
     # via sphinx
 rsa==4.9
     # via google-auth

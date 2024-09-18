@@ -77,8 +77,6 @@ from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.task import DataUpsertTask, Task
 from labelbox.schema.user import User
 
-from .request_client import RequestClient
-
 logger = logging.getLogger(__name__)
 
 
