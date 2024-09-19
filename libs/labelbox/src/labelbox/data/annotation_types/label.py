@@ -90,19 +90,6 @@ class Label(BaseModel):
                 frame_dict[annotation.frame].append(annotation)
         return frame_dict
 
-    def add_url_to_data(self, signer) -> "Label":
-        """
-        Creates signed urls for the data
-        Only uploads url if one doesn't already exist.
-
-        Args:
-            signer: A function that accepts bytes and returns a signed url.
-        Returns:
-            Label with updated references to new data url
-        """
-        self.data.create_url(signer)
-        return self
-
     def add_url_to_masks(self, signer) -> "Label":
         """
         Creates signed urls for all masks in the Label.
