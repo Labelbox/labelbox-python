@@ -20,7 +20,7 @@ from labelbox import OntologyBuilder, Tool
 @pytest.fixture
 def list_of_labels():
     return [
-        Label(data=GenericDataRowData(url="http://someurl")) for _ in range(5)
+        Label(data=GenericDataRowData(uid="http://someurl")) for _ in range(5)
     ]
 
 
