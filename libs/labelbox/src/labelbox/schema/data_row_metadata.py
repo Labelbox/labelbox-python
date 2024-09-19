@@ -954,7 +954,7 @@ class DataRowMetadataOntology:
 
 
 def _batch_items(iterable: List[Any], size: int) -> Generator[Any, None, None]:
-    for ndx in range(0, l, size):
+    for ndx in range(0, len(iterable), size):
         yield iterable[ndx : min(ndx + size, len(iterable))]
 
 
