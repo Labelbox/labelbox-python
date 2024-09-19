@@ -41,6 +41,7 @@ Labelbox Python SDK Documentation
     project
     project-model-config
     quality-mode
+    request-client
     resource-tag
     review
     search-filters
