@@ -113,7 +113,7 @@ def configured_project(
 
 @pytest.fixture
 def configured_project_with_complex_ontology(
-    client, initial_dataset, rand_gen, image_url
+    client, initial_dataset, rand_gen, image_url, teardown_helpers
 ):
     project = client.create_project(
         name=rand_gen(str),
@@ -178,7 +178,7 @@ def configured_project_with_complex_ontology(
     project.setup(editor, ontology.asdict())
 
     yield [project, data_row]
-    project.delete()
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
 
 
 @pytest.fixture
