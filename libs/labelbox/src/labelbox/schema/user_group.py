@@ -7,7 +7,7 @@ from lbox.exceptions import (
     ResourceCreationError,
     ResourceNotFoundError,
     UnprocessableEntityError,
-)  # type: ignore
+)
 from pydantic import BaseModel, ConfigDict
 
 from labelbox import Client

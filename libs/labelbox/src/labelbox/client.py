@@ -202,9 +202,7 @@ class Client:
             )
 
     @retry.Retry(
-        predicate=retry.if_exception_type(
-            lbox.exceptions.InternalServerError
-        )
+        predicate=retry.if_exception_type(lbox.exceptions.InternalServerError)
     )
     def upload_data(
         self,
@@ -310,9 +308,7 @@ class Client:
         res = self.execute(query_str, params)
         res = res and res.get(utils.camel_case(db_object_type.type_name()))
         if res is None:
-            raise lbox.exceptions.ResourceNotFoundError(
-                db_object_type, params
-            )
+            raise lbox.exceptions.ResourceNotFoundError(db_object_type, params)
         else:
             return db_object_type(self, res)
 
@@ -1975,9 +1971,7 @@ class Client:
                 )
 
         elif response.status_code == 404:
-            raise lbox.exceptions.ResourceNotFoundError(
-                Ontology, ontology_id
-            )
+            raise lbox.exceptions.ResourceNotFoundError(Ontology, ontology_id)
         else:
             raise lbox.exceptions.LabelboxError(
                 "Failed to get the feature schema archived status."
@@ -2006,9 +2000,7 @@ class Client:
         """
         res = self.execute(query_str, {"id": slice_id})
         if res is None or res["getSavedQuery"] is None:
-            raise lbox.exceptions.ResourceNotFoundError(
-                ModelSlice, slice_id
-            )
+            raise lbox.exceptions.ResourceNotFoundError(ModelSlice, slice_id)
 
         return Entity.ModelSlice(self, res["getSavedQuery"])
 
@@ -2316,9 +2308,7 @@ class Client:
         for e in embeddings:
             if e.name == name:
                 return e
-        raise lbox.exceptions.ResourceNotFoundError(
-            Embedding, dict(name=name)
-        )
+        raise lbox.exceptions.ResourceNotFoundError(Embedding, dict(name=name))
 
     def upsert_label_feedback(
         self, label_id: str, feedback: str, scores: Dict[str, float]
@@ -2365,8 +2355,7 @@ class Client:
         scores_raw = res["upsertAutoQaLabelFeedback"]["scores"]
 
         return [
-            labelbox.LabelScore(name=x["name"], score=x["score"])
-            for x in scores_raw
+            LabelScore(name=x["name"], score=x["score"]) for x in scores_raw
         ]
 
     def get_labeling_service_dashboards(

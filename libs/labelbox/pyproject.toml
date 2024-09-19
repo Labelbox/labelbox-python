@@ -91,6 +91,7 @@ unit = "pytest tests/unit"
 integration = { cmd = "pytest tests/integration" }
 data = { cmd = "pytest tests/data" }
 rye-fmt-check = "rye fmt --check"
+MYPYPATH="../lbox-clients/src/"
 mypy-lint = "mypy src --pretty --show-error-codes --non-interactive --install-types"
 lint = { chain = ["mypy-lint", "rye-fmt-check"] }
 test = { chain = ["lint", "unit", "integration"] }

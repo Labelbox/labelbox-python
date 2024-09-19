@@ -15,9 +15,9 @@ from typing import (
     cast,
 )
 
-import lbox.exceptions
 import requests
 from google.api_core import retry
+from lbox.exceptions import ApiLimitError, NetworkError, ResourceNotFoundError
 from tqdm import tqdm  # type: ignore
 
 import labelbox
@@ -141,9 +141,9 @@ class AnnotationImport(DbObject):
 
     @retry.Retry(
         predicate=retry.if_exception_type(
-            lbox.exceptions.ApiLimitError,
-            lbox.exceptions.TimeoutError,
-            lbox.exceptions.NetworkError,
+            ApiLimitError,
+            TimeoutError,
+            NetworkError,
         )
     )
     def __backoff_refresh(self) -> None:
@@ -436,9 +436,7 @@ class MEAPredictionImport(CreatableAnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise lbox.exceptions.ResourceNotFoundError(
-                MEAPredictionImport, params
-            )
+            raise ResourceNotFoundError(MEAPredictionImport, params)
         response = response["modelErrorAnalysisPredictionImport"]
         if as_json:
             return response
@@ -561,9 +559,7 @@ class MEAToMALPredictionImport(AnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise lbox.exceptions.ResourceNotFoundError(
-                MALPredictionImport, params
-            )
+            raise ResourceNotFoundError(MALPredictionImport, params)
         response = response["meaToMalPredictionImport"]
         if as_json:
             return response
@@ -710,9 +706,7 @@ class MALPredictionImport(CreatableAnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise lbox.exceptions.ResourceNotFoundError(
-                MALPredictionImport, params
-            )
+            raise ResourceNotFoundError(MALPredictionImport, params)
         response = response["modelAssistedLabelingPredictionImport"]
         if as_json:
             return response
@@ -886,7 +880,7 @@ class LabelImport(CreatableAnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise lbox.exceptions.ResourceNotFoundError(LabelImport, params)
+            raise ResourceNotFoundError(LabelImport, params)
         response = response["labelImport"]
         if as_json:
             return response

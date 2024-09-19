@@ -11,9 +11,9 @@ from labelbox import Project, User
 
 
 def test_missing_api_key():
-    key = os.environ.get(labelbox.client._LABELBOX_API_KEY, None)
+    key = os.environ.get(lbox.request_client._LABELBOX_API_KEY, None)
     if key is not None:
-        del os.environ[labelbox.client._LABELBOX_API_KEY]
+        del os.environ[lbox.request_client._LABELBOX_API_KEY]
 
     with pytest.raises(lbox.exceptions.AuthenticationError) as excinfo:
         labelbox.client.Client()
@@ -21,7 +21,7 @@ def test_missing_api_key():
     assert excinfo.value.message == "Labelbox API key not provided"
 
     if key is not None:
-        os.environ[labelbox.client._LABELBOX_API_KEY] = key
+        os.environ[lbox.request_client._LABELBOX_API_KEY] = key
 
 
 def test_bad_key(rand_gen):
@@ -73,7 +73,7 @@ def test_resource_not_found_error(client):
 
 def test_network_error(client):
     client = labelbox.client.Client(
-        api_key=client.api_key, endpoint="not_a_valid_URL"
+        api_key=client._request_client.api_key, endpoint="not_a_valid_URL"
     )
 
     with pytest.raises(lbox.exceptions.NetworkError) as excinfo:
