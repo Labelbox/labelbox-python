@@ -22,7 +22,7 @@ from lbox.exceptions import (
     ProcessingWaitTimeout,
     ResourceNotFoundError,
     error_message_for_unparsed_graphql_error,
-)
+)  # type: ignore
 
 from labelbox import utils
 from labelbox.orm import query

@@ -4,11 +4,12 @@ import os
 import sys
 from datetime import datetime, timezone
 from types import MappingProxyType
+from typing import Callable, Dict, Optional
 
 import requests
 import requests.exceptions
 from google.api_core import retry
-from lbox import exceptions
+from lbox import exceptions  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +53,7 @@ class RequestClient:
         """
         if api_key is None:
             if _LABELBOX_API_KEY not in os.environ:
-                raise exceptions.AuthenticationError(
-                    "Labelbox API key not provided"
-                )
+                raise exceptions.AuthenticationError("Labelbox API key not provided")
             api_key = os.environ[_LABELBOX_API_KEY]
         self.api_key = api_key
 
@@ -70,9 +69,7 @@ class RequestClient:
         self._connection: requests.Session = self._init_connection()
 
     def _init_connection(self) -> requests.Session:
-        connection = (
-            requests.Session()
-        )  # using default connection pool size of 10
+        connection = requests.Session()  # using default connection pool size of 10
         connection.headers.update(self._default_headers())
 
         return connection
@@ -106,6 +103,9 @@ class RequestClient:
         experimental=False,
         error_log_key="message",
         raise_return_resource_not_found=False,
+        error_handlers: Optional[
+            Dict[str, Callable[[requests.models.Response], None]]
+        ] = None,
     ):
         """Sends a request to the server for the execution of the
         given query.
@@ -120,6 +120,27 @@ class RequestClient:
             files (dict): file arguments for request
             timeout (float): Max allowed time for query execution,
                 in seconds.
+            raise_return_resource_not_found: By default the client relies on the caller to raise the correct exception when a resource is not found.
+                If this is set to True, the client will raise a ResourceNotFoundError exception automatically.
+                This simplifies processing.
+                We recommend to use it only of api returns a clear and well-formed error when a resource not found for a given query.
+            error_handlers (dict): A dictionary mapping graphql error code to handler functions.
+                Allows a caller to handle specific errors reporting in a custom way or produce more user-friendly readable messages.
+
+        Example - custom error handler:
+            >>>     def _raise_readable_errors(self, response):
+            >>>         errors = response.json().get('errors', [])
+            >>>         if errors:
+            >>>             message = errors[0].get(
+            >>>             'message', json.dumps([{
+            >>>                 "errorMessage": "Unknown error"
+            >>>             }]))
+            >>>             errors = json.loads(message)
+            >>>             error_messages = [error['errorMessage'] for error in errors]
+            >>>         else:
+            >>>             error_messages = ["Uknown error"]
+            >>>         raise LabelboxError(". ".join(error_messages))
+
         Returns:
             dict, parsed JSON response.
         Raises:
@@ -149,12 +170,8 @@ class RequestClient:
 
         if query is not None:
             if params is not None:
-                params = {
-                    key: convert_value(value) for key, value in params.items()
-                }
-            data = json.dumps({"query": query, "variables": params}).encode(
-                "utf-8"
-            )
+                params = {key: convert_value(value) for key, value in params.items()}
+            data = json.dumps({"query": query, "variables": params}).encode("utf-8")
         elif data is None:
             raise ValueError("query and data cannot both be none")
 
@@ -207,9 +224,7 @@ class RequestClient:
                 "upstream connect error or disconnect/reset before headers"
                 in response.text
             ):
-                raise exceptions.InternalServerError(
-                    "Connection reset"
-                )
+                raise exceptions.InternalServerError("Connection reset")
             elif response.status_code == 502:
                 error_502 = "502 Bad Gateway"
                 raise exceptions.InternalServerError(error_502)
@@ -234,22 +249,17 @@ class RequestClient:
         def get_error_status_code(error: dict) -> int:
             try:
                 return int(error["extensions"].get("exception").get("status"))
-            except:
+            except Exception:
                 return 500
 
-        if (
-            check_errors(["AUTHENTICATION_ERROR"], "extensions", "code")
-            is not None
-        ):
+        if check_errors(["AUTHENTICATION_ERROR"], "extensions", "code") is not None:
             raise exceptions.AuthenticationError("Invalid API key")
 
         authorization_error = check_errors(
             ["AUTHORIZATION_ERROR"], "extensions", "code"
         )
         if authorization_error is not None:
-            raise exceptions.AuthorizationError(
-                authorization_error["message"]
-            )
+            raise exceptions.AuthorizationError(authorization_error["message"])
 
         validation_error = check_errors(
             ["GRAPHQL_VALIDATION_FAILED"], "extensions", "code"
@@ -262,13 +272,9 @@ class RequestClient:
             else:
                 raise exceptions.InvalidQueryError(message)
 
-        graphql_error = check_errors(
-            ["GRAPHQL_PARSE_FAILED"], "extensions", "code"
-        )
+        graphql_error = check_errors(["GRAPHQL_PARSE_FAILED"], "extensions", "code")
         if graphql_error is not None:
-            raise exceptions.InvalidQueryError(
-                graphql_error["message"]
-            )
+            raise exceptions.InvalidQueryError(graphql_error["message"])
 
         # Check if API limit was exceeded
         response_msg = r_json.get("message", "")
@@ -293,9 +299,7 @@ class RequestClient:
             ["RESOURCE_CONFLICT"], "extensions", "code"
         )
         if resource_conflict_error is not None:
-            raise exceptions.ResourceConflict(
-                resource_conflict_error["message"]
-            )
+            raise exceptions.ResourceConflict(resource_conflict_error["message"])
 
         malformed_request_error = check_errors(
             ["MALFORMED_REQUEST"], "extensions", "code"
@@ -311,7 +315,13 @@ class RequestClient:
         internal_server_error = check_errors(
             ["INTERNAL_SERVER_ERROR"], "extensions", "code"
         )
+        error_code = "INTERNAL_SERVER_ERROR"
+
         if internal_server_error is not None:
+            if error_handlers and error_code in error_handlers:
+                handler = error_handlers[error_code]
+                handler(response)
+                return None
             message = internal_server_error.get("message")
             error_status_code = get_error_status_code(internal_server_error)
             if error_status_code == 400:
@@ -343,9 +353,7 @@ class RequestClient:
                     errors,
                 )
             )
-            raise exceptions.LabelboxError(
-                "Unknown error: %s" % str(messages)
-            )
+            raise exceptions.LabelboxError("Unknown error: %s" % str(messages))
 
         # if we do return a proper error code, and didn't catch this above
         # reraise

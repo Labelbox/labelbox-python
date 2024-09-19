@@ -12,7 +12,7 @@ from lbox.exceptions import (
     LabelboxError,
     ResourceCreationError,
     ResourceNotFoundError,
-)
+)  # type: ignore
 
 import labelbox.schema.internal.data_row_uploader as data_row_uploader
 from labelbox.orm import query

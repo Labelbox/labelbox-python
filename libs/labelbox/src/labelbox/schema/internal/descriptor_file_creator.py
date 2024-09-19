@@ -3,7 +3,10 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Generator, Iterable, List
 
-from lbox.exceptions import InvalidAttributeError, InvalidQueryError
+from lbox.exceptions import (
+    InvalidAttributeError,
+    InvalidQueryError,
+)  # type: ignore
 
 from labelbox.orm.model import Entity, Field
 from labelbox.schema.embedding import EmbeddingVector

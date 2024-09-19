@@ -1,6 +1,6 @@
 from typing import Union
 
-from lbox import exceptions
+from lbox import exceptions  # type: ignore
 
 from labelbox.schema.foundry.app import APP_FIELD_NAMES, App
 from labelbox.schema.identifiables import DataRowIds, GlobalKeys, IdType
