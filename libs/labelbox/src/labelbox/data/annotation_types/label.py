@@ -3,9 +3,7 @@ from typing import Any, Callable, Dict, List, Union, Optional, get_args
 import warnings
 
 import labelbox
-from labelbox.data.annotation_types.data.generic_data_row_data import (
-    GenericDataRowData,
-)
+from labelbox.data.annotation_types.data import GenericDataRowData, MaskData
 from labelbox.schema import ontology
 
 from ...annotated_types import Cuid
@@ -19,7 +17,7 @@ from .video import VideoClassificationAnnotation
 from .video import VideoObjectAnnotation, VideoMaskAnnotation
 from .mmc import MessageEvaluationTaskAnnotation
 from ..ontology import get_feature_schema_lookup
-from pydantic import BaseModel, field_validator, model_serializer
+from pydantic import BaseModel, field_validator
 
 
 class Label(BaseModel):
@@ -43,7 +41,7 @@ class Label(BaseModel):
     """
 
     uid: Optional[Cuid] = None
-    data: GenericDataRowData
+    data: Union[GenericDataRowData, MaskData]
     annotations: List[
         Union[
             ClassificationAnnotation,
