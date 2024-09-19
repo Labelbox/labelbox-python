@@ -8,7 +8,11 @@ from labelbox.data.annotation_types.metrics import (
     ConfusionMatrixMetric,
     ScalarMetric,
 )
-from labelbox.data.annotation_types import ScalarMetric, Label, ImageData
+from labelbox.data.annotation_types import (
+    ScalarMetric,
+    Label,
+    GenericDataRowData,
+)
 from labelbox.data.annotation_types.metrics.scalar import RESERVED_METRIC_NAMES
 from pydantic import ValidationError
 
@@ -19,7 +23,8 @@ def test_legacy_scalar_metric():
     assert metric.value == value
 
     label = Label(
-        data=ImageData(uid="ckrmd9q8g000009mg6vej7hzg"), annotations=[metric]
+        data=GenericDataRowData(uid="ckrmd9q8g000009mg6vej7hzg"),
+        annotations=[metric],
     )
     expected = {
         "data": {
@@ -72,7 +77,8 @@ def test_custom_scalar_metric(feature_name, subclass_name, aggregation, value):
     assert metric.value == value
 
     label = Label(
-        data=ImageData(uid="ckrmd9q8g000009mg6vej7hzg"), annotations=[metric]
+        data=GenericDataRowData(uid="ckrmd9q8g000009mg6vej7hzg"),
+        annotations=[metric],
     )
     expected = {
         "data": {
@@ -134,7 +140,8 @@ def test_custom_confusison_matrix_metric(
     assert metric.value == value
 
     label = Label(
-        data=ImageData(uid="ckrmd9q8g000009mg6vej7hzg"), annotations=[metric]
+        data=GenericDataRowData(uid="ckrmd9q8g000009mg6vej7hzg"),
+        annotations=[metric],
     )
     expected = {
         "data": {

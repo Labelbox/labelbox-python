@@ -19,7 +19,7 @@ radio_ndjson = [
 
 radio_label = [
     lb_types.Label(
-        data=lb_types.ConversationData(global_key="my_global_key"),
+        data=lb_types.GenericDataRowData(global_key="my_global_key"),
         annotations=[
             lb_types.ClassificationAnnotation(
                 name="radio",
@@ -48,7 +48,7 @@ checklist_ndjson = [
 
 checklist_label = [
     lb_types.Label(
-        data=lb_types.ConversationData(global_key="my_global_key"),
+        data=lb_types.GenericDataRowData(global_key="my_global_key"),
         annotations=[
             lb_types.ClassificationAnnotation(
                 name="checklist",
@@ -78,7 +78,7 @@ free_text_ndjson = [
 ]
 free_text_label = [
     lb_types.Label(
-        data=lb_types.ConversationData(global_key="my_global_key"),
+        data=lb_types.GenericDataRowData(global_key="my_global_key"),
         annotations=[
             lb_types.ClassificationAnnotation(
                 name="free_text",
@@ -164,7 +164,7 @@ def test_conversation_entity_import_without_confidence():
 
 def test_benchmark_reference_label_flag_enabled():
     label = lb_types.Label(
-        data=lb_types.ConversationData(global_key="my_global_key"),
+        data=lb_types.GenericDataRowData(global_key="my_global_key"),
         annotations=[
             lb_types.ClassificationAnnotation(
                 name="free_text",
@@ -181,7 +181,7 @@ def test_benchmark_reference_label_flag_enabled():
 
 def test_benchmark_reference_label_flag_disabled():
     label = lb_types.Label(
-        data=lb_types.ConversationData(global_key="my_global_key"),
+        data=lb_types.GenericDataRowData(global_key="my_global_key"),
         annotations=[
             lb_types.ClassificationAnnotation(
                 name="free_text",

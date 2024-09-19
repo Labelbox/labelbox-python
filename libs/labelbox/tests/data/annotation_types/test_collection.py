@@ -93,20 +93,6 @@ def test_adding_schema_ids():
     assert next(generator).annotations[0].feature_schema_id == feature_schema_id
 
 
-def test_adding_to_dataset(signer):
-    dataset = FakeDataset()
-    label = Label(
-        data=GenericDataRowData(uid="12345"),
-        annotations=[],
-    )
-    uuid = str(uuid4())
-    generator = LabelGenerator([label]).add_to_dataset(dataset, signer(uuid))
-    generated_label = next(generator)
-    assert generated_label.data.external_id != None
-    assert generated_label.data.uid == dataset.uid
-    assert label.data.url == uuid
-
-
 def test_adding_to_masks(signer):
     label = Label(
         data=GenericDataRowData(uid="12345"),

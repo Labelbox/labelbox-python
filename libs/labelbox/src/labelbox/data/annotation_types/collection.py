@@ -40,27 +40,6 @@ class LabelGenerator(PrefetchGenerator):
         self._fns["assign_feature_schema_ids"] = _assign_ids
         return self
 
-    def add_to_dataset(
-        self, dataset: "Entity.Dataset", signer: Callable[[bytes], str]
-    ) -> "LabelGenerator":
-        """
-        Creates data rows from each labels data object and attaches the data to the given dataset.
-        Updates the label's data object to have the same external_id and uid as the data row.
-
-        Args:
-            dataset: labelbox dataset object to add the new data row to
-            signer: A function that accepts bytes and returns a signed url.
-        Returns:
-            LabelGenerator that updates references to the new data rows as data is accessed
-        """
-
-        def _add_to_dataset(label: Label):
-            label.create_data_row(dataset, signer)
-            return label
-
-        self._fns["assign_datarow_ids"] = _add_to_dataset
-        return self
-
     def add_url_to_masks(
         self, signer: Callable[[bytes], str]
     ) -> "LabelGenerator":
