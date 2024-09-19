@@ -7,7 +7,9 @@ import os
 import re
 import uuid
 import time
+from labelbox.schema.project import Project
 import requests
+from labelbox.schema.ontology import Ontology
 import pytest
 from types import SimpleNamespace
 from typing import Type
@@ -23,21 +25,11 @@ from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode
 from labelbox import Client
 
-from labelbox import Dataset, DataRow
 from labelbox import LabelingFrontend
-from labelbox import OntologyBuilder, Tool, Option, Classification, MediaType
-from labelbox.orm import query
-from labelbox.pagination import PaginatedCollection
+from labelbox import OntologyBuilder, Tool, Option, Classification
 from labelbox.schema.annotation_import import LabelImport
-from labelbox.schema.catalog import Catalog
 from labelbox.schema.enums import AnnotationImportState
-from labelbox.schema.invite import Invite
-from labelbox.schema.quality_mode import QualityMode
-from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.user import User
 from labelbox.exceptions import LabelboxError
-from contextlib import suppress
-from labelbox import Client
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
 MASKABLE_IMG_URL = "https://storage.googleapis.com/labelbox-datasets/image_sample_data/2560px-Kitano_Street_Kobe01s5s4110.jpeg"
@@ -638,17 +630,22 @@ def organization(client):
 def configured_project_with_label(
     client,
     rand_gen,
-    image_url,
-    project,
     dataset,
     data_row,
     wait_for_label_processing,
+    teardown_helpers,
 ):
     """Project with a connected dataset, having one datarow
+
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
     One label is already created and yielded when using fixture
     """
+    project = client.create_project(
+        name=rand_gen(str),
+        queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
+    )
     project._wait_until_data_rows_are_processed(
         data_row_ids=[data_row.uid],
         wait_processing_max_seconds=DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS,
@@ -666,8 +663,7 @@ def configured_project_with_label(
     )
     yield [project, dataset, data_row, label]
 
-    for label in project.labels():
-        label.delete()
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
 
 
 def _create_label(project, data_row, ontology, wait_for_label_processing):
@@ -736,13 +732,23 @@ def big_dataset(dataset: Dataset):
 
 @pytest.fixture
 def configured_batch_project_with_label(
-    project, dataset, data_row, wait_for_label_processing
+    client,
+    dataset,
+    data_row,
+    wait_for_label_processing,
+    rand_gen,
+    teardown_helpers,
 ):
     """Project with a batch having one datarow
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
     One label is already created and yielded when using fixture
     """
+    project = client.create_project(
+        name=rand_gen(str),
+        queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
+    )
     data_rows = [dr.uid for dr in list(dataset.data_rows())]
     project._wait_until_data_rows_are_processed(
         data_row_ids=data_rows, sleep_interval=3
@@ -757,18 +763,27 @@ def configured_batch_project_with_label(
 
     yield [project, dataset, data_row, label]
 
-    for label in project.labels():
-        label.delete()
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
 
 
 @pytest.fixture
 def configured_batch_project_with_multiple_datarows(
-    project, dataset, data_rows, wait_for_label_processing
+    client,
+    dataset,
+    data_rows,
+    wait_for_label_processing,
+    rand_gen,
+    teardown_helpers,
 ):
     """Project with a batch having multiple datarows
     Project contains an ontology with 1 bbox tool
     Additionally includes a create_label method for any needed extra labels
     """
+    project = client.create_project(
+        name=rand_gen(str),
+        queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
+    )
     global_keys = [dr.global_key for dr in data_rows]
 
     batch_name = f"batch {uuid.uuid4()}"
@@ -780,26 +795,7 @@ def configured_batch_project_with_multiple_datarows(
 
     yield [project, dataset, data_rows]
 
-    for label in project.labels():
-        label.delete()
-
-
-@pytest.fixture
-def configured_batch_project_for_labeling_service(
-    project, data_row_and_global_key
-):
-    """Project with a batch having multiple datarows
-    Project contains an ontology with 1 bbox tool
-    Additionally includes a create_label method for any needed extra labels
-    """
-    global_keys = [data_row_and_global_key[1]]
-
-    batch_name = f"batch {uuid.uuid4()}"
-    project.create_batch(batch_name, global_keys=global_keys)
-
-    _setup_ontology(project)
-
-    yield project
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
 
 
 # NOTE this is nice heuristics, also there is this logic _wait_until_data_rows_are_processed in Project
@@ -1062,7 +1058,7 @@ def project_with_empty_ontology(project):
 
 @pytest.fixture
 def configured_project_with_complex_ontology(
-    client, initial_dataset, rand_gen, image_url
+    client, initial_dataset, rand_gen, image_url, teardown_helpers
 ):
     project = client.create_project(
         name=rand_gen(str),
@@ -1127,7 +1123,7 @@ def configured_project_with_complex_ontology(
     project.setup(editor, ontology.asdict())
 
     yield [project, data_row]
-    project.delete()
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
 
 
 @pytest.fixture
@@ -1147,12 +1143,13 @@ def valid_model_id():
 
 @pytest.fixture
 def requested_labeling_service(
-    rand_gen,
-    live_chat_evaluation_project_with_new_dataset,
-    chat_evaluation_ontology,
-    model_config,
+    rand_gen, client, chat_evaluation_ontology, model_config, teardown_helpers
 ):
-    project = live_chat_evaluation_project_with_new_dataset
+    project_name = f"test-model-evaluation-project-{rand_gen(str)}"
+    dataset_name = f"test-model-evaluation-dataset-{rand_gen(str)}"
+    project = client.create_model_evaluation_project(
+        name=project_name, dataset_name=dataset_name, data_row_count=1
+    )
     project.connect_ontology(chat_evaluation_ontology)
 
     project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
@@ -1164,3 +1161,105 @@ def requested_labeling_service(
     labeling_service.request()
 
     yield project, project.get_labeling_service()
+
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
+
+
+class TearDownHelpers:
+    @staticmethod
+    def teardown_project_labels_ontology_feature_schemas(project: Project):
+        """
+        Call this function to release project, labels, ontology and feature schemas in fixture teardown
+
+        NOTE: exception handling is not required as this is a fixture teardown
+        """
+        ontology = project.ontology()
+        ontology_id = ontology.uid
+        client = project.client
+        classification_feature_schema_ids = [
+            feature["featureSchemaId"]
+            for feature in ontology.normalized["classifications"]
+        ]
+        tool_feature_schema_ids = [
+            feature["featureSchemaId"]
+            for feature in ontology.normalized["tools"]
+        ]
+
+        feature_schema_ids = (
+            classification_feature_schema_ids + tool_feature_schema_ids
+        )
+        labels = list(project.labels())
+        for label in labels:
+            label.delete()
+
+        project.delete()
+        client.delete_unused_ontology(ontology_id)
+        for feature_schema_id in feature_schema_ids:
+            try:
+                project.client.delete_unused_feature_schema(feature_schema_id)
+            except LabelboxError as e:
+                print(
+                    f"Failed to delete feature schema {feature_schema_id}: {e}"
+                )
+
+    @staticmethod
+    def teardown_ontology_feature_schemas(ontology: Ontology):
+        """
+        Call this function to release project, labels, ontology and feature schemas in fixture teardown
+
+        NOTE: exception handling is not required as this is a fixture teardown
+        """
+        ontology_id = ontology.uid
+        client = ontology.client
+        classification_feature_schema_ids = [
+            feature["featureSchemaId"]
+            for feature in ontology.normalized["classifications"]
+        ] + [
+            option["featureSchemaId"]
+            for feature in ontology.normalized["classifications"]
+            for option in feature.get("options", [])
+        ]
+
+        tool_feature_schema_ids = (
+            [
+                feature["featureSchemaId"]
+                for feature in ontology.normalized["tools"]
+            ]
+            + [
+                classification["featureSchemaId"]
+                for tool in ontology.normalized["tools"]
+                for classification in tool.get("classifications", [])
+            ]
+            + [
+                option["featureSchemaId"]
+                for tool in ontology.normalized["tools"]
+                for classification in tool.get("classifications", [])
+                for option in classification.get("options", [])
+            ]
+        )
+
+        feature_schema_ids = (
+            classification_feature_schema_ids + tool_feature_schema_ids
+        )
+
+        client.delete_unused_ontology(ontology_id)
+        for feature_schema_id in feature_schema_ids:
+            try:
+                project.client.delete_unused_feature_schema(feature_schema_id)
+            except LabelboxError as e:
+                print(
+                    f"Failed to delete feature schema {feature_schema_id}: {e}"
+                )
+
+
+class ModuleTearDownHelpers(TearDownHelpers): ...
+
+
+@pytest.fixture
+def teardown_helpers():
+    return TearDownHelpers()
+
+
+@pytest.fixture(scope="module")
+def module_teardown_helpers():
+    return TearDownHelpers()
