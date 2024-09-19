@@ -5,7 +5,7 @@ from labelbox.data.annotation_types.classification.classification import (
     Radio,
     Text,
 )
-from labelbox.data.annotation_types.data.text import TextData
+from labelbox.data.annotation_types.data import GenericDataRowData
 from labelbox.data.annotation_types.label import Label
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
@@ -14,7 +14,7 @@ from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 def test_serialization():
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
-        data=TextData(
+        data=GenericDataRowData(
             uid="bkj7z2q0b0000jx6x0q2q7q0d",
             text="This is a test",
         ),
@@ -38,7 +38,7 @@ def test_serialization():
 def test_nested_serialization():
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
-        data=TextData(
+        data=GenericDataRowData(
             uid="bkj7z2q0b0000jx6x0q2q7q0d",
             text="This is a test",
         ),
