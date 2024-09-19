@@ -177,8 +177,8 @@ class RelationshipManager:
             )
 
         if rel.filter_deleted:
-            not_deleted = rel.destination_type.deleted is False
-            where = (not_deleted if where is None else where) and not_deleted
+            not_deleted = rel.destination_type.deleted == False  # noqa: E712 <Gabefire> Needed for bit operator to combine comparisons
+            where = not_deleted if where is None else where & not_deleted
 
         query_string, params = query.relationship(
             self.source if self.filter_on_id else type(self.source),

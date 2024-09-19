@@ -626,8 +626,8 @@ class Client:
             An iterable of `db_object_type` instances.
         """
         if filter_deleted:
-            not_deleted = db_object_type.deleted is False
-            where = (not_deleted if where is None else where) and not_deleted
+            not_deleted = db_object_type.deleted == False  # noqa: E712 <Gabefire> Needed for bit operator to combine comparisons
+            where = not_deleted if where is None else where & not_deleted
         query_str, params = query.get_all(db_object_type, where)
 
         return PaginatedCollection(
