@@ -40,26 +40,6 @@ class LabelGenerator(PrefetchGenerator):
         self._fns["assign_feature_schema_ids"] = _assign_ids
         return self
 
-    def add_url_to_data(
-        self, signer: Callable[[bytes], str]
-    ) -> "LabelGenerator":
-        """
-        Creates signed urls for the data
-        Only uploads url if one doesn't already exist.
-
-        Args:
-            signer: A function that accepts bytes and returns a signed url.
-        Returns:
-            LabelGenerator that signs urls as data is accessed
-        """
-
-        def _add_url_to_data(label: Label):
-            label.add_url_to_data(signer)
-            return label
-
-        self._fns["add_url_to_data"] = _add_url_to_data
-        return self
-
     def add_to_dataset(
         self, dataset: "Entity.Dataset", signer: Callable[[bytes], str]
     ) -> "LabelGenerator":
