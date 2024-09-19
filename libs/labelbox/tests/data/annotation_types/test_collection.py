@@ -95,7 +95,7 @@ def test_adding_schema_ids():
 
 def test_adding_urls(signer):
     label = Label(
-        data=GenericDataRowData("12345"),
+        data=GenericDataRowData(uid="12345"),
         annotations=[],
     )
     uuid = str(uuid4())
@@ -108,7 +108,7 @@ def test_adding_urls(signer):
 def test_adding_to_dataset(signer):
     dataset = FakeDataset()
     label = Label(
-        data=GenericDataRowData("12345"),
+        data=GenericDataRowData(uid="12345"),
         annotations=[],
     )
     uuid = str(uuid4())
@@ -123,7 +123,7 @@ def test_adding_to_dataset(signer):
 
 def test_adding_to_masks(signer):
     label = Label(
-        data=GenericDataRowData("12345"),
+        data=GenericDataRowData(uid="12345"),
         annotations=[
             ObjectAnnotation(
                 name="1234",
