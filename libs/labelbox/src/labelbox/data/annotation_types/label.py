@@ -1,6 +1,8 @@
-from collections import defaultdict
-from typing import Any, Callable, Dict, List, Union, Optional, get_args
 import warnings
+from collections import defaultdict
+from typing import Any, Callable, Dict, List, Optional, Union, get_args
+
+from pydantic import BaseModel, field_validator
 
 import labelbox
 from labelbox.data.annotation_types.data.generic_data_row_data import (
@@ -10,9 +12,8 @@ from labelbox.data.annotation_types.data.tiled_image import TiledImageData
 from labelbox.schema import ontology
 
 from ...annotated_types import Cuid
+from ..ontology import get_feature_schema_lookup
 from .annotation import ClassificationAnnotation, ObjectAnnotation
-from .relationship import RelationshipAnnotation
-from .llm_prompt_response.prompt import PromptClassificationAnnotation
 from .classification import ClassificationAnswer
 from .data import (
     AudioData,
@@ -21,19 +22,22 @@ from .data import (
     DocumentData,
     HTMLData,
     ImageData,
-    TextData,
-    VideoData,
     LlmPromptCreationData,
     LlmPromptResponseCreationData,
     LlmResponseCreationData,
+    TextData,
+    VideoData,
 )
 from .geometry import Mask
-from .metrics import ScalarMetric, ConfusionMatrixMetric
-from .video import VideoClassificationAnnotation
-from .video import VideoObjectAnnotation, VideoMaskAnnotation
+from .llm_prompt_response.prompt import PromptClassificationAnnotation
+from .metrics import ConfusionMatrixMetric, ScalarMetric
 from .mmc import MessageEvaluationTaskAnnotation
-from ..ontology import get_feature_schema_lookup
-from pydantic import BaseModel, field_validator, model_serializer
+from .relationship import RelationshipAnnotation
+from .video import (
+    VideoClassificationAnnotation,
+    VideoMaskAnnotation,
+    VideoObjectAnnotation,
+)
 
 DataType = Union[
     VideoData,
@@ -275,6 +279,6 @@ class Label(BaseModel):
                 prompt_count += 1
                 if prompt_count > 1:
                     raise TypeError(
-                        f"Only one prompt annotation is allowed per label"
+                        "Only one prompt annotation is allowed per label"
                     )
         return value

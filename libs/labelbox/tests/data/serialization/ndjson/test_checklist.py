@@ -6,7 +6,6 @@ from labelbox.data.annotation_types.classification.classification import (
 )
 from labelbox.data.annotation_types.data.text import TextData
 from labelbox.data.annotation_types.label import Label
-
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 
 

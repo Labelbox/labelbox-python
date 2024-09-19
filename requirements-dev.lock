@@ -8,6 +8,8 @@
 #   with-sources: false
 
 -e file:libs/labelbox
+-e file:libs/lbox-annotations
+    # via labelbox
 -e file:libs/lbox-clients
     # via labelbox
 -e file:libs/lbox-example
@@ -191,6 +193,7 @@ pyasn1-modules==0.4.0
 pydantic==2.8.2
     # via databooks
     # via labelbox
+    # via lbox-annotations
 pydantic-core==2.20.1
     # via pydantic
 pygeotile==1.0.6
