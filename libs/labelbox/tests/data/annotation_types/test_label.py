@@ -17,7 +17,7 @@ from labelbox.data.annotation_types import (
     ObjectAnnotation,
     Point,
     Line,
-    ImageData,
+    MaskData,
     Label,
 )
 import pytest
@@ -26,7 +26,9 @@ import pytest
 def test_schema_assignment_geometry():
     name = "line_feature"
     label = Label(
-        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=MaskData(
+            arr=np.ones((32, 32, 3), dtype=np.uint8), global_key="test"
+        ),
         annotations=[
             ObjectAnnotation(
                 value=Line(points=[Point(x=1, y=2), Point(x=2, y=2)]),
@@ -51,7 +53,7 @@ def test_schema_assignment_classification():
     option_name = "my_option"
 
     label = Label(
-        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=MaskData(arr=np.ones((32, 32, 3), dtype=np.uint8), uid="test"),
         annotations=[
             ClassificationAnnotation(
                 value=Radio(answer=ClassificationAnswer(name=option_name)),
@@ -102,7 +104,7 @@ def test_schema_assignment_subclass():
         value=Radio(answer=ClassificationAnswer(name=option_name)),
     )
     label = Label(
-        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=MaskData(arr=np.ones((32, 32, 3), dtype=np.uint8), uid="test"),
         annotations=[
             ObjectAnnotation(
                 value=Line(points=[Point(x=1, y=2), Point(x=2, y=2)]),
@@ -167,7 +169,9 @@ def test_highly_nested():
         ],
     )
     label = Label(
-        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=MaskData(
+            arr=np.ones((32, 32, 3), dtype=np.uint8), global_key="test"
+        ),
         annotations=[
             ObjectAnnotation(
                 value=Line(points=[Point(x=1, y=2), Point(x=2, y=2)]),
@@ -230,7 +234,7 @@ def test_highly_nested():
 def test_schema_assignment_confidence():
     name = "line_feature"
     label = Label(
-        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=MaskData(arr=np.ones((32, 32, 3), dtype=np.uint8), uid="test"),
         annotations=[
             ObjectAnnotation(
                 value=Line(
@@ -252,10 +256,10 @@ def test_initialize_label_no_coercion():
         value=lb_types.ConversationEntity(start=0, end=8, message_id="4"),
     )
     label = Label(
-        data=lb_types.ConversationData(global_key=global_key),
+        data=lb_types.GenericDataRowData(global_key=global_key),
         annotations=[ner_annotation],
     )
-    assert isinstance(label.data, lb_types.ConversationData)
+    assert isinstance(label.data, lb_types.GenericDataRowData)
     assert label.data.global_key == global_key
 
 
