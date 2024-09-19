@@ -12,7 +12,7 @@ dependencies = [
     "tqdm>=4.66.2",
     "geojson>=3.1.0",
     "mypy==1.10.1",
-    "lbox-clients==0.1.0",
+    "lbox-clients==1.0.0",
 ]
 readme = "README.md"
 requires-python = ">=3.8"
