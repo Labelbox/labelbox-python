@@ -1,6 +1,6 @@
-Exceptions
+Request Client
 ===============================================================================================
 
-.. automodule:: lbox.exceptions
+.. automodule:: lbox.request_client
    :members:
    :show-inheritance:

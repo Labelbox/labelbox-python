@@ -12,6 +12,7 @@ dependencies = [
     "tqdm>=4.66.2",
     "geojson>=3.1.0",
     "mypy==1.10.1",
+    "lbox-clients==1.0.0",
 ]
 readme = "README.md"
 requires-python = ">=3.8"
@@ -95,6 +96,7 @@ integration = { cmd = "pytest tests/integration" }
 data = { cmd = "pytest tests/data" }
 rye-lint = "rye lint"
 rye-fmt-check = "rye fmt --check"
+MYPYPATH="../lbox-clients/src/"
 mypy-lint = "mypy src --pretty --show-error-codes --non-interactive --install-types"
 lint = { chain = ["rye-fmt-check", "mypy-lint", "rye-lint"] }
 test = { chain = ["lint", "unit", "integration"] }

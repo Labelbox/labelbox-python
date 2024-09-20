@@ -1,7 +1,8 @@
-import labelbox as lb
 import pytest
-from labelbox.schema.foundry.app import App
+from lbox.exceptions import LabelboxError, ResourceNotFoundError
 
+import labelbox as lb
+from labelbox.schema.foundry.app import App
 from labelbox.schema.foundry.foundry_client import FoundryClient
 
 # Yolo object detection model id
@@ -97,7 +98,7 @@ def test_get_app(foundry_client, app):
 
 
 def test_get_app_with_invalid_id(foundry_client):
-    with pytest.raises(lb.exceptions.ResourceNotFoundError):
+    with pytest.raises(ResourceNotFoundError):
         foundry_client._get_app("invalid-id")
 
 
@@ -144,7 +145,7 @@ def test_run_foundry_app_returns_model_run_id(
 def test_run_foundry_with_invalid_data_row_id(foundry_client, app, random_str):
     invalid_datarow_id = "invalid-global-key"
     data_rows = lb.GlobalKeys([invalid_datarow_id])
-    with pytest.raises(lb.exceptions.LabelboxError) as exception:
+    with pytest.raises(LabelboxError) as exception:
         foundry_client.run_app(
             model_run_name=f"test-app-with-invalid-datarow-id-{random_str}",
             data_rows=data_rows,
@@ -156,7 +157,7 @@ def test_run_foundry_with_invalid_data_row_id(foundry_client, app, random_str):
 def test_run_foundry_with_invalid_global_key(foundry_client, app, random_str):
     invalid_global_key = "invalid-global-key"
     data_rows = lb.GlobalKeys([invalid_global_key])
-    with pytest.raises(lb.exceptions.LabelboxError) as exception:
+    with pytest.raises(LabelboxError) as exception:
         foundry_client.run_app(
             model_run_name=f"test-app-with-invalid-global-key-{random_str}",
             data_rows=data_rows,

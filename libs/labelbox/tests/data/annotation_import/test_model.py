@@ -1,7 +1,7 @@
 import pytest
+from lbox.exceptions import ResourceNotFoundError
 
 from labelbox import Model
-from labelbox.exceptions import ResourceNotFoundError
 
 
 def test_model(client, configured_project, rand_gen):

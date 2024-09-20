@@ -16,14 +16,15 @@ from typing import (
     overload,
 )
 
-from labelbox import utils
-from labelbox.exceptions import (
+from lbox.exceptions import (
     InvalidQueryError,
     LabelboxError,
     ProcessingWaitTimeout,
     ResourceNotFoundError,
     error_message_for_unparsed_graphql_error,
-)
+)  # type: ignore
+
+from labelbox import utils
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -772,7 +773,7 @@ class Project(DbObject, Updateable, Deletable):
         Returns: the created batch
 
         Raises:
-            labelbox.exceptions.ValueError if a project is not batch mode, if the project is auto data generation, if the batch exceeds 100k data rows
+            lbox.exceptions.ValueError if a project is not batch mode, if the project is auto data generation, if the batch exceeds 100k data rows
         """
         # @TODO: make this automatic?
         if self.queue_mode != QueueMode.Batch:

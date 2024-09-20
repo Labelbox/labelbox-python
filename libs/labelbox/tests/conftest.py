@@ -24,7 +24,6 @@ from labelbox import (
     Option,
     Tool,
 )
-from labelbox.exceptions import LabelboxError
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport

@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from labelbox import MediaType

@@ -7,13 +7,14 @@ from itertools import islice
 from string import Template
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import labelbox.schema.internal.data_row_uploader as data_row_uploader
-from labelbox.exceptions import (
+from lbox.exceptions import (
     InvalidQueryError,
     LabelboxError,
     ResourceCreationError,
     ResourceNotFoundError,
-)
+)  # type: ignore
+
+import labelbox.schema.internal.data_row_uploader as data_row_uploader
 from labelbox.orm import query
 from labelbox.orm.comparison import Comparison
 from labelbox.orm.db_object import DbObject, Deletable, Updateable
@@ -310,7 +311,7 @@ class Dataset(DbObject, Updateable, Deletable):
             A list of `DataRow` with the given ID.
 
         Raises:
-         labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
+         lbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
@@ -336,7 +337,7 @@ class Dataset(DbObject, Updateable, Deletable):
             A single `DataRow` with the given ID.
 
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
+            lbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """

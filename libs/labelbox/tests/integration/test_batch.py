@@ -1,15 +1,15 @@
-import time
 from typing import List
 from uuid import uuid4
+
 import pytest
+from lbox.exceptions import (
+    LabelboxError,
+    MalformedQueryException,
+    ProcessingWaitTimeout,
+    ResourceConflict,
+)
 
 from labelbox import Dataset, Project
-from labelbox.exceptions import (
-    ProcessingWaitTimeout,
-    MalformedQueryException,
-    ResourceConflict,
-    LabelboxError,
-)
 
 
 def get_data_row_ids(ds: Dataset):

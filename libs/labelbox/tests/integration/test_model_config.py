@@ -1,5 +1,5 @@
 import pytest
-from labelbox.exceptions import ResourceNotFoundError
+from lbox.exceptions import ResourceNotFoundError
 
 
 def test_create_model_config(client, valid_model_id):

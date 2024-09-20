@@ -1,14 +1,14 @@
 import json
 import logging
-import requests
 import time
-from typing import TYPE_CHECKING, Callable, Optional, Dict, Any, List, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
+
+import requests
+from lbox.exceptions import ResourceNotFoundError
+
 from labelbox import parser
-
-from labelbox.exceptions import ResourceNotFoundError
 from labelbox.orm.db_object import DbObject
-from labelbox.orm.model import Field, Relationship, Entity
-
+from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.internal.datarow_upload_constants import (
     DOWNLOAD_RESULT_PAGE_SIZE,

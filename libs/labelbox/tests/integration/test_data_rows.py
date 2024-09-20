@@ -7,13 +7,13 @@ from unittest.mock import patch
 
 import pytest
 import requests
-
-from labelbox import AssetAttachment, DataRow
-from labelbox.exceptions import (
+from lbox.exceptions import (
     InvalidQueryError,
     MalformedQueryException,
     ResourceCreationError,
 )
+
+from labelbox import AssetAttachment, DataRow
 from labelbox.schema.data_row_metadata import (
     DataRowMetadataField,
     DataRowMetadataKind,
