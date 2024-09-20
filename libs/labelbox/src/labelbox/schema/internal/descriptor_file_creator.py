@@ -161,7 +161,7 @@ class DescriptorFileCreator:
                     ]
                 )
                 for key in message.keys():
-                    if not key in accepted_message_keys:
+                    if key not in accepted_message_keys:
                         raise KeyError(
                             f"Invalid {key} key found! Accepted keys in messages list is {accepted_message_keys}"
                         )

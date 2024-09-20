@@ -803,13 +803,13 @@ class DataRowMetadataOntology:
             if isinstance(metadata_field, DataRowMetadataField):
                 return metadata_field
             elif isinstance(metadata_field, dict):
-                if not "value" in metadata_field:
+                if "value" not in metadata_field:
                     raise ValueError(
                         f"Custom metadata field '{metadata_field}' must have a 'value' key"
                     )
                 if (
-                    not "schema_id" in metadata_field
-                    and not "name" in metadata_field
+                    "schema_id" not in metadata_field
+                    and "name" not in metadata_field
                 ):
                     raise ValueError(
                         f"Custom metadata field '{metadata_field}' must have either 'schema_id' or 'name' key"
@@ -954,9 +954,8 @@ class DataRowMetadataOntology:
 
 
 def _batch_items(iterable: List[Any], size: int) -> Generator[Any, None, None]:
-    l = len(iterable)
-    for ndx in range(0, l, size):
-        yield iterable[ndx : min(ndx + size, l)]
+    for ndx in range(0, len(iterable), size):
+        yield iterable[ndx : min(ndx + size, len(iterable))]
 
 
 def _batch_operations(
