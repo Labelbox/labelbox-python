@@ -8,7 +8,7 @@ import time
 import urllib.parse
 from collections import defaultdict
 from types import MappingProxyType
-from typing import Any, Dict, List, Optional, Union, overload
+from typing import Any, Callable, Dict, List, Optional, Union, overload
 
 import lbox.exceptions
 import requests
@@ -159,6 +159,9 @@ class Client:
         experimental=False,
         error_log_key="message",
         raise_return_resource_not_found=False,
+        error_handlers: Optional[
+            Dict[str, Callable[[requests.models.Response], None]]
+        ] = None,
     ) -> Dict[str, Any]:
         """Executes a GraphQL query.
 
@@ -167,6 +170,8 @@ class Client:
             variables (dict): Variables to pass to the query.
             raise_return_resource_not_found (bool): If True, raise a
                 ResourceNotFoundError if the query returns None.
+            error_handlers (dict): A dictionary mapping graphql error code to handler functions.
+                Allows a caller to handle specific errors reporting in a custom way or produce more user-friendly readable messages
 
         Returns:
             dict: The response from the server.
@@ -180,6 +185,7 @@ class Client:
             experimental=experimental,
             error_log_key=error_log_key,
             raise_return_resource_not_found=raise_return_resource_not_found,
+            error_handlers=error_handlers,
         )
 
     def upload_file(self, path: str) -> str:
