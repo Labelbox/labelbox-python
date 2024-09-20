@@ -1,21 +1,21 @@
-import json
-from typing import TYPE_CHECKING, List, Optional, Dict
+from typing import TYPE_CHECKING, Dict, List, Optional
 
-from labelbox.exceptions import LabelboxError
+from lbox.exceptions import LabelboxError
+
 from labelbox import utils
-from labelbox.orm.db_object import DbObject, query, Entity
+from labelbox.orm.db_object import DbObject, Entity, query
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.invite import InviteLimit
 from labelbox.schema.resource_tag import ResourceTag
 
 if TYPE_CHECKING:
     from labelbox import (
-        Role,
-        User,
-        ProjectRole,
+        IAMIntegration,
         Invite,
         InviteLimit,
-        IAMIntegration,
+        ProjectRole,
+        Role,
+        User,
     )
 
 

@@ -1,6 +1,5 @@
 import pytest
-
-from labelbox.exceptions import error_message_for_unparsed_graphql_error
+from lbox.exceptions import error_message_for_unparsed_graphql_error
 
 
 @pytest.mark.parametrize(

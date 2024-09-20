@@ -1,14 +1,15 @@
 from itertools import chain
 from typing import Any, Dict
 
-from labelbox import utils
-from labelbox.exceptions import (
-    InvalidQueryError,
+from lbox.exceptions import (
     InvalidAttributeError,
+    InvalidQueryError,
     MalformedQueryException,
 )
-from labelbox.orm.comparison import LogicalExpression, Comparison
-from labelbox.orm.model import Field, Relationship, Entity
+
+from labelbox import utils
+from labelbox.orm.comparison import Comparison, LogicalExpression
+from labelbox.orm.model import Entity, Field, Relationship
 
 """ Common query creation functionality. """
 

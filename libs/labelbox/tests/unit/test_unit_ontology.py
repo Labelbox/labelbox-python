@@ -1,8 +1,9 @@
-import pytest
-
-from labelbox.exceptions import InconsistentOntologyException
-from labelbox import Tool, Classification, Option, OntologyBuilder
 from itertools import product
+
+import pytest
+from lbox.exceptions import InconsistentOntologyException
+
+from labelbox import Classification, OntologyBuilder, Option, Tool
 
 _SAMPLE_ONTOLOGY = {
     "tools": [

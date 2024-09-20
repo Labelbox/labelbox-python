@@ -1,18 +1,20 @@
 import pytest
+from lbox.exceptions import ConfidenceNotSupportedException
+from pydantic import ValidationError
 
 from labelbox.data.annotation_types import (
-    Text,
-    Point,
-    Line,
     ClassificationAnnotation,
+    Line,
     ObjectAnnotation,
+    Point,
+    Text,
     TextEntity,
 )
-from labelbox.data.annotation_types.video import VideoObjectAnnotation
 from labelbox.data.annotation_types.geometry.rectangle import Rectangle
-from labelbox.data.annotation_types.video import VideoClassificationAnnotation
-from labelbox.exceptions import ConfidenceNotSupportedException
-from pydantic import ValidationError
+from labelbox.data.annotation_types.video import (
+    VideoClassificationAnnotation,
+    VideoObjectAnnotation,
+)
 
 
 def test_annotation():

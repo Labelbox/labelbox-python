@@ -1,5 +1,5 @@
 import pytest
-from labelbox.exceptions import ResourceNotFoundError
+from lbox.exceptions import ResourceNotFoundError
 
 
 def test_add_single_model_config(
