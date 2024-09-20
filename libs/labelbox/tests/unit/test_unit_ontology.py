@@ -197,7 +197,7 @@ def test_add_ontology_tool() -> None:
     assert len(o.tools) == 2
 
     for tool in o.tools:
-        assert type(tool) == Tool
+        assert type(tool) is Tool
 
     with pytest.raises(InconsistentOntologyException) as exc:
         o.add_tool(Tool(tool=Tool.Type.BBOX, name="bounding box"))
@@ -217,7 +217,7 @@ def test_add_ontology_classification() -> None:
     assert len(o.classifications) == 2
 
     for classification in o.classifications:
-        assert type(classification) == Classification
+        assert type(classification) is Classification
 
     with pytest.raises(InconsistentOntologyException) as exc:
         o.add_classification(
