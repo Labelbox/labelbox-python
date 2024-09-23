@@ -9,6 +9,7 @@ from ...annotation_types.mmc import (
     MessageRankingTask,
     MessageEvaluationTaskAnnotation,
 )
+from ...annotation_types import GenericDataRowData
 
 
 class MessageTaskData(_CamelCaseMixin):
@@ -35,7 +36,7 @@ class NDMessageTask(NDAnnotation):
     def from_common(
         cls,
         annotation: MessageEvaluationTaskAnnotation,
-        data: Any,  # Union[ImageData, TextData],
+        data: GenericDataRowData,
     ) -> "NDMessageTask":
         return cls(
             uuid=str(annotation._uuid),

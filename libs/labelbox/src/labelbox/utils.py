@@ -87,8 +87,8 @@ class _NoCoercionMixin:
     when serializing the object.
 
     Example:
-        class ConversationData(BaseData, _NoCoercionMixin):
-            class_name: Literal["ConversationData"] = "ConversationData"
+        class GenericDataRowData(BaseData, _NoCoercionMixin):
+            class_name: Literal["GenericDataRowData"] = "GenericDataRowData"
 
     """
 

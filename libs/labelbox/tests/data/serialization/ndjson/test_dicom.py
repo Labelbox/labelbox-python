@@ -31,7 +31,7 @@ dicom_polyline_annotations = [
 ]
 
 polyline_label = lb_types.Label(
-    data=lb_types.DicomData(uid="test-uid"),
+    data=lb_types.GenericDataRowData(uid="test-uid"),
     annotations=dicom_polyline_annotations,
 )
 
@@ -58,7 +58,7 @@ polyline_annotation_ndjson = {
 }
 
 polyline_with_global_key = lb_types.Label(
-    data=lb_types.DicomData(global_key="test-global-key"),
+    data=lb_types.GenericDataRowData(global_key="test-global-key"),
     annotations=dicom_polyline_annotations,
 )
 
@@ -109,11 +109,12 @@ video_mask_annotation_ndjson_with_global_key["dataRow"] = {
 }
 
 video_mask_label = lb_types.Label(
-    data=lb_types.VideoData(uid="test-uid"), annotations=[video_mask_annotation]
+    data=lb_types.GenericDataRowData(uid="test-uid"),
+    annotations=[video_mask_annotation],
 )
 
 video_mask_label_with_global_key = lb_types.Label(
-    data=lb_types.VideoData(global_key="test-global-key"),
+    data=lb_types.GenericDataRowData(global_key="test-global-key"),
     annotations=[video_mask_annotation],
 )
 """
@@ -128,11 +129,12 @@ dicom_mask_annotation = lb_types.DICOMMaskAnnotation(
 )
 
 dicom_mask_label = lb_types.Label(
-    data=lb_types.DicomData(uid="test-uid"), annotations=[dicom_mask_annotation]
+    data=lb_types.GenericDataRowData(uid="test-uid"),
+    annotations=[dicom_mask_annotation],
 )
 
 dicom_mask_label_with_global_key = lb_types.Label(
-    data=lb_types.DicomData(global_key="test-global-key"),
+    data=lb_types.GenericDataRowData(global_key="test-global-key"),
     annotations=[dicom_mask_annotation],
 )
 

@@ -26,7 +26,7 @@ bbox_annotation = lb_types.ObjectAnnotation(
 )
 bbox_labels = [
     lb_types.Label(
-        data=lb_types.DocumentData(global_key="test-global-key"),
+        data=lb_types.GenericDataRowData(global_key="test-global-key"),
         annotations=[bbox_annotation],
     )
 ]
