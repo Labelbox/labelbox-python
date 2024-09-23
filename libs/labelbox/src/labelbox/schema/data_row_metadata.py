@@ -27,6 +27,7 @@ from pydantic import (
     conlist,
     ConfigDict,
     model_serializer,
+    AfterValidator,
 )
 
 from labelbox.schema.ontology import SchemaId
@@ -35,6 +36,12 @@ from labelbox.utils import (
     format_iso_datetime,
     format_iso_from_string,
 )
+
+Name = Annotated[
+    str,
+    AfterValidator(lambda x: str.strip(str(x))),
+    Field(min_length=1, max_length=100),
+]
 
 
 class DataRowMetadataKind(Enum):
@@ -49,7 +56,7 @@ class DataRowMetadataKind(Enum):
 # Metadata schema
 class DataRowMetadataSchema(BaseModel):
     uid: SchemaId
-    name: str = Field(strip_whitespace=True, min_length=1, max_length=100)
+    name: Name
     reserved: bool
     kind: DataRowMetadataKind
     options: Optional[List["DataRowMetadataSchema"]] = None

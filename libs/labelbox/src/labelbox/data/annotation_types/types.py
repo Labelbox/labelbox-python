@@ -5,7 +5,8 @@ from typing_extensions import Annotated
 from packaging import version
 import numpy as np
 
-from pydantic import StringConstraints, Field
+from pydantic import StringConstraints, Field, ConfigDict
+from pydantic_core import core_schema
 
 DType = TypeVar("DType")
 DShape = TypeVar("DShape")
@@ -13,11 +14,13 @@ DShape = TypeVar("DShape")
 
 class _TypedArray(np.ndarray, Generic[DType, DShape]):
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, _source_type: type, _model: type
+    ) -> core_schema.CoreSchema:
+        return core_schema.no_info_plain_validator_function(cls.validate)
 
     @classmethod
-    def validate(cls, val, field: Field):
+    def validate(cls, val):
         if not isinstance(val, np.ndarray):
             raise TypeError(f"Expected numpy array. Found {type(val)}")
         return val
