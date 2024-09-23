@@ -232,7 +232,7 @@ class NDText(NDAnnotation, NDTextSubclass):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[GenericDataRowData],
+        data: GenericDataRowData,
         message_id: str,
         confidence: Optional[float] = None,
     ) -> "NDText":
@@ -264,7 +264,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[GenericDataRowData],
+        data: GenericDataRowData,
         message_id: str,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
