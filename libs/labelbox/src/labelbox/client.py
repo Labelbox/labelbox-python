@@ -7,10 +7,10 @@ import random
 import time
 import urllib.parse
 from collections import defaultdict
+from datetime import datetime, timezone
 from types import MappingProxyType
-from typing import Any, Callable, Dict, List, Optional, Union, overload
+from typing import Any, Dict, List, Optional, Union, overload
 
-import lbox.exceptions
 import requests
 import requests.exceptions
 from google.api_core import retry
@@ -588,7 +588,7 @@ class Client:
             )
 
             if not validation_result["validateDataset"]["valid"]:
-                raise lbox.exceptions.LabelboxError(
+                raise labelbox.exceptions.LabelboxError(
                     "IAMIntegration was not successfully added to the dataset."
                 )
         except Exception as e:

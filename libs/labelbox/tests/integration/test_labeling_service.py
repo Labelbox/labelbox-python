@@ -1,6 +1,10 @@
 import pytest
 from lbox.exceptions import LabelboxError, ResourceNotFoundError
 
+from labelbox.exceptions import (
+    MalformedQueryException,
+    ResourceNotFoundError,
+)
 from labelbox.schema.labeling_service import LabelingServiceStatus
 
 
@@ -51,7 +55,7 @@ def test_request_labeling_service_moe_project(
 
     labeling_service = project.get_labeling_service()
     with pytest.raises(
-        LabelboxError,
+        MalformedQueryException,
         match='[{"errorType":"PROJECT_MODEL_CONFIG","errorMessage":"Project model config is not completed"}]',
     ):
         labeling_service.request()
@@ -73,5 +77,5 @@ def test_request_labeling_service_incomplete_requirements(ontology, project):
     ):  # No labeling service by default
         labeling_service.request()
     project.connect_ontology(ontology)
-    with pytest.raises(LabelboxError):
+    with pytest.raises(MalformedQueryException):
         labeling_service.request()
