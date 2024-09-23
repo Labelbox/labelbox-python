@@ -9,10 +9,9 @@ import time
 import urllib.parse
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, List, Dict, Union, Optional, overload, Callable
 from types import MappingProxyType
+from typing import Any, Dict, List, Optional, Union, overload
 
-from labelbox.schema.search_filters import SearchFilter
 import requests
 import requests.exceptions
 from google.api_core import retry
@@ -26,20 +25,18 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema import role
-from labelbox.schema.conflict_resolution_strategy import (
-    ConflictResolutionStrategy,
-)
-from labelbox.schema.data_row import DataRow
 from labelbox.schema.catalog import Catalog
+from labelbox.schema.data_row import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.embedding import Embedding
 from labelbox.schema.enums import CollectionJobStatus
 from labelbox.schema.foundry.foundry_client import FoundryClient
 from labelbox.schema.iam_integration import IAMIntegration
-from labelbox.schema.identifiables import DataRowIds
-from labelbox.schema.identifiables import GlobalKeys
+from labelbox.schema.identifiables import DataRowIds, GlobalKeys
+from labelbox.schema.label_score import LabelScore
 from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 from labelbox.schema.media_type import (
     MediaType,
     get_media_type_validation_error,
@@ -47,40 +44,40 @@ from labelbox.schema.media_type import (
 from labelbox.schema.model import Model
 from labelbox.schema.model_config import ModelConfig
 from labelbox.schema.model_run import ModelRun
-from labelbox.schema.ontology import Ontology, DeleteFeatureFromOntologyResult
 from labelbox.schema.ontology import (
-    Tool,
     Classification,
+    DeleteFeatureFromOntologyResult,
     FeatureSchema,
+    Ontology,
     PromptResponseClassification,
+    Tool,
+)
+from labelbox.schema.ontology_kind import (
+    EditorTaskType,
+    EditorTaskTypeMapper,
+    OntologyKind,
 )
 from labelbox.schema.organization import Organization
 from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import (
-    QualityMode,
     BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS,
     BENCHMARK_AUTO_AUDIT_PERCENTAGE,
     CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS,
     CONSENSUS_AUTO_AUDIT_PERCENTAGE,
+    QualityMode,
 )
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.role import Role
+from labelbox.schema.search_filters import SearchFilter
 from labelbox.schema.send_to_annotate_params import (
     SendToAnnotateFromCatalogParams,
+    build_annotations_input,
     build_destination_task_queue_input,
     build_predictions_input,
-    build_annotations_input,
 )
 from labelbox.schema.slice import CatalogSlice, ModelSlice
-from labelbox.schema.task import Task, DataUpsertTask
+from labelbox.schema.task import DataUpsertTask, Task
 from labelbox.schema.user import User
-from labelbox.schema.label_score import LabelScore
-from labelbox.schema.ontology_kind import (
-    OntologyKind,
-    EditorTaskTypeMapper,
-    EditorTaskType,
-)
-from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 
 logger = logging.getLogger(__name__)
 
@@ -540,7 +537,7 @@ class Client:
                 error_msg = next(iter(errors), {}).get(
                     "message", "Unknown error"
                 )
-            except Exception as e:
+            except Exception:
                 error_msg = "Unknown error"
             raise labelbox.exceptions.LabelboxError(
                 "Failed to upload, message: %s" % error_msg
@@ -842,7 +839,7 @@ class Client:
 
             if not validation_result["validateDataset"]["valid"]:
                 raise labelbox.exceptions.LabelboxError(
-                    f"IAMIntegration was not successfully added to the dataset."
+                    "IAMIntegration was not successfully added to the dataset."
                 )
         except Exception as e:
             dataset.delete()
