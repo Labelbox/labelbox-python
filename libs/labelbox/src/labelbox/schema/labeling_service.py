@@ -1,7 +1,8 @@
+import json
 from datetime import datetime
 from typing import Any
 
-from lbox.exceptions import ResourceNotFoundError
+from lbox.exceptions import LabelboxError, ResourceNotFoundError
 
 from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
@@ -105,11 +106,23 @@ class LabelingService(_CamelCaseMixin):
             query_str,
             {"projectId": self.project_id},
             raise_return_resource_not_found=True,
+            error_handlers={"MALFORMED_REQUEST": self._raise_readable_errors},
         )
         success = result["validateAndRequestProjectBoostWorkforce"]["success"]
         if not success:
             raise Exception("Failed to start labeling service")
         return LabelingService.get(self.client, self.project_id)
+
+    def _raise_readable_errors(self, response):
+        errors = response.json().get("errors", [])
+        if errors:
+            message = errors[0].get(
+                "errors", json.dumps([{"error": "Unknown error"}])
+            )
+            error_messages = [error["error"] for error in message]
+        else:
+            error_messages = ["Uknown error"]
+        raise LabelboxError(". ".join(error_messages))
 
     @classmethod
     def getOrCreate(cls, client, project_id: Cuid) -> "LabelingService":
