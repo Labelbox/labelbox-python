@@ -17,6 +17,9 @@ _LABELBOX_API_KEY = "LABELBOX_API_KEY"
 
 
 def python_version_info():
+    """
+    test
+    """
     version_info = sys.version_info
 
     return f"{version_info.major}.{version_info.minor}.{version_info.micro}-{version_info.releaselevel}"
