@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 def test_validate_schema():
     with pytest.raises(ValidationError):
-        GenericDataRowData()
+        MaskData()
 
 
 def test_im_bytes():
@@ -24,15 +24,9 @@ def test_im_bytes():
 
 
 def test_im_url():
-    raster_data = GenericDataRowData(url="https://picsum.photos/id/829/200/300")
-    data_ = raster_data.value
-    assert data_.shape == (300, 200, 3)
-
-
-def test_im_path():
-    img_path = "/tmp/img.jpg"
-    urllib.request.urlretrieve("https://picsum.photos/id/829/200/300", img_path)
-    raster_data = GenericDataRowData(file_path=img_path)
+    raster_data = MaskData(
+        uid="test", url="https://picsum.photos/id/829/200/300"
+    )
     data_ = raster_data.value
     assert data_.shape == (300, 200, 3)
 
@@ -43,12 +37,10 @@ def test_ref():
     metadata = []
     media_attributes = {}
     data = GenericDataRowData(
-        external_id=external_id,
         uid=uid,
         metadata=metadata,
         media_attributes=media_attributes,
     )
-    assert data.external_id == external_id
     assert data.uid == uid
     assert data.media_attributes == media_attributes
     assert data.metadata == metadata
