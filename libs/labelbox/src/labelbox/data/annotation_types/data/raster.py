@@ -11,8 +11,9 @@ from pydantic import BaseModel, ConfigDict, model_validator
 from requests.exceptions import ConnectTimeout
 from typing_extensions import Literal
 
+from pydantic import BaseModel, model_validator, ConfigDict
+
 from ..types import TypedArray
-from .base_data import BaseData
 
 
 class RasterData(BaseModel, ABC):
@@ -222,6 +223,3 @@ class MaskData(RasterData):
         url: Optional[str] = None
         arr: Optional[TypedArray[Literal['uint8']]] = None
     """
-
-
-class ImageData(RasterData, BaseData): ...

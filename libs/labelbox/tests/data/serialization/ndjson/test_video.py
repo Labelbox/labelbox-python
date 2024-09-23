@@ -6,11 +6,10 @@ from labelbox.data.annotation_types.classification.classification import (
     Radio,
     Text,
 )
-from labelbox.data.annotation_types.data.video import VideoData
+from labelbox.data.annotation_types.data import GenericDataRowData
 from labelbox.data.annotation_types.geometry.line import Line
 from labelbox.data.annotation_types.geometry.point import Point
 from labelbox.data.annotation_types.geometry.rectangle import Rectangle
-from labelbox.data.annotation_types.geometry.point import Point
 
 from labelbox.data.annotation_types.label import Label
 from labelbox.data.annotation_types.video import (
@@ -28,7 +27,7 @@ def test_video():
 
     labels = [
         Label(
-            data=VideoData(uid="ckrb1sf1i1g7i0ybcdc6oc8ct"),
+            data=GenericDataRowData(uid="ckrb1sf1i1g7i0ybcdc6oc8ct"),
             annotations=[
                 VideoClassificationAnnotation(
                     feature_schema_id="ckrb1sfjx099a0y914hl319ie",
@@ -304,7 +303,7 @@ def test_video_name_only():
         data = json.load(file)
     labels = [
         Label(
-            data=VideoData(uid="ckrb1sf1i1g7i0ybcdc6oc8ct"),
+            data=GenericDataRowData(uid="ckrb1sf1i1g7i0ybcdc6oc8ct"),
             annotations=[
                 VideoClassificationAnnotation(
                     name="question 1",
@@ -574,7 +573,7 @@ def test_video_name_only():
 
 def test_video_classification_global_subclassifications():
     label = Label(
-        data=VideoData(
+        data=GenericDataRowData(
             global_key="sample-video-4.mp4",
         ),
         annotations=[
@@ -790,7 +789,7 @@ def test_video_classification_nesting_bbox():
     ]
 
     label = Label(
-        data=VideoData(
+        data=GenericDataRowData(
             global_key="sample-video-4.mp4",
         ),
         annotations=bbox_annotation,
@@ -940,7 +939,7 @@ def test_video_classification_point():
     ]
 
     label = Label(
-        data=VideoData(
+        data=GenericDataRowData(
             global_key="sample-video-4.mp4",
         ),
         annotations=bbox_annotation,
@@ -1108,7 +1107,7 @@ def test_video_classification_frameline():
     ]
 
     label = Label(
-        data=VideoData(
+        data=GenericDataRowData(
             global_key="sample-video-4.mp4",
         ),
         annotations=bbox_annotation,

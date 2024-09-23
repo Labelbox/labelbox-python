@@ -1,13 +1,13 @@
 from labelbox.data.annotation_types import Label, VideoObjectAnnotation
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 from labelbox.data.annotation_types.geometry import Rectangle, Point
-from labelbox.data.annotation_types import VideoData
+from labelbox.data.annotation_types.data import GenericDataRowData
 
 
 def video_bbox_label():
     return Label(
         uid="cl1z52xwh00050fhcmfgczqvn",
-        data=VideoData(
+        data=GenericDataRowData(
             uid="cklr9mr4m5iao0rb6cvxu4qbn",
             url="https://storage.labelbox.com/ckcz6bubudyfi0855o1dt1g9s%2F26403a22-604a-a38c-eeff-c2ed481fb40a-cat.mp4?Expires=1651677421050&KeyName=labelbox-assets-key-3&Signature=vF7gMyfHzgZdfbB8BHgd88Ws-Ms",
         ),
