@@ -6,6 +6,8 @@ from labelbox.data.annotation_types.geometry.rectangle import Rectangle
 from labelbox.data.annotation_types.data.tiled_image import (
     EPSG,
     TiledBounds,
+    TileLayer,
+    TiledImageData,
     EPSGTransformer,
 )
 from pydantic import ValidationError
@@ -33,6 +35,27 @@ def test_tiled_bounds_same(epsg):
         tiled_bounds = TiledBounds(
             epsg=epsg, bounds=[single_bound, single_bound]
         )
+
+
+def test_create_tiled_image_data():
+    bounds_points = [Point(x=0, y=0), Point(x=5, y=5)]
+    url = (
+        "https://labelbox.s3-us-west-2.amazonaws.com/pathology/{z}/{x}/{y}.png"
+    )
+    zoom_levels = (1, 10)
+
+    tile_layer = TileLayer(url=url, name="slippy map tile")
+    tile_bounds = TiledBounds(epsg=EPSG.EPSG4326, bounds=bounds_points)
+    tiled_image_data = TiledImageData(
+        tile_layer=tile_layer,
+        tile_bounds=tile_bounds,
+        zoom_levels=zoom_levels,
+        version=2,
+    )
+    assert isinstance(tiled_image_data, TiledImageData)
+    assert tiled_image_data.tile_bounds.bounds == bounds_points
+    assert tiled_image_data.tile_layer.url == url
+    assert tiled_image_data.zoom_levels == zoom_levels
 
 
 def test_epsg_point_projections():
