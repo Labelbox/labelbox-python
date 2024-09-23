@@ -11,7 +11,6 @@ from labelbox.data.annotation_types import (
     Mask,
     Label,
     ObjectAnnotation,
-    ImageData,
     MaskData,
 )
 from labelbox.types import Rectangle, Polygon, Point
@@ -262,7 +261,7 @@ def test_mask_from_arr():
                 ),
             )
         ],
-        data=ImageData(uid="0" * 25),
+        data=GenericDataRowData(uid="0" * 25),
     )
     res = next(NDJsonConverter.serialize([label]))
     res.pop("uuid")

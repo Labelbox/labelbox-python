@@ -2,6 +2,7 @@ from io import BytesIO
 from typing import Any, Dict, List, Tuple, Union, Optional
 import base64
 
+from labelbox.data.annotation_types.data.raster import MaskData
 from labelbox.data.annotation_types.ner.conversation_entity import (
     ConversationEntity,
 )
@@ -21,9 +22,9 @@ import numpy as np
 from PIL import Image
 from labelbox.data.annotation_types import feature
 
-from labelbox.data.annotation_types.data.video import VideoData
+from labelbox.data.annotation_types.data import GenericDataRowData
 
-from ...annotation_types.data import ImageData, TextData, MaskData
+from ...annotation_types.data import GenericDataRowData
 from ...annotation_types.ner import (
     DocumentEntity,
     DocumentTextSelection,
@@ -96,7 +97,7 @@ class NDPoint(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDPoint":
@@ -161,7 +162,7 @@ class NDLine(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDLine":
@@ -245,7 +246,7 @@ class NDPolygon(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDPolygon":
@@ -282,7 +283,7 @@ class NDRectangle(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDRectangle":
@@ -329,7 +330,7 @@ class NDDocumentRectangle(NDRectangle):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDRectangle":
@@ -508,7 +509,7 @@ class NDSegments(NDBaseObject):
     def from_common(
         cls,
         segments: List[VideoObjectAnnotation],
-        data: VideoData,
+        data: GenericDataRowData,
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
@@ -545,7 +546,7 @@ class NDDicomSegments(NDBaseObject, DicomSupported):
     def from_common(
         cls,
         segments: List[DICOMObjectAnnotation],
-        data: VideoData,
+        data: GenericDataRowData,
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
@@ -601,7 +602,7 @@ class NDMask(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDMask":
@@ -706,7 +707,7 @@ class NDTextEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDTextEntity":
@@ -743,7 +744,7 @@ class NDDocumentEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDDocumentEntity":
@@ -778,7 +779,7 @@ class NDConversationEntity(NDTextEntity):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDConversationEntity":
@@ -836,7 +837,7 @@ class NDObject:
             List[List[VideoObjectAnnotation]],
             VideoMaskAnnotation,
         ],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
     ) -> Union[
         NDLine,
         NDPoint,

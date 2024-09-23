@@ -7,19 +7,21 @@ import pytest
 from labelbox.data.annotation_types import (
     LabelGenerator,
     ObjectAnnotation,
-    ImageData,
-    MaskData,
     Line,
     Mask,
     Point,
     Label,
+    GenericDataRowData,
+    MaskData,
 )
 from labelbox import OntologyBuilder, Tool
 
 
 @pytest.fixture
 def list_of_labels():
-    return [Label(data=ImageData(url="http://someurl")) for _ in range(5)]
+    return [
+        Label(data=GenericDataRowData(uid="http://someurl")) for _ in range(5)
+    ]
 
 
 @pytest.fixture
@@ -73,7 +75,7 @@ def test_conversion(list_of_labels):
 def test_adding_schema_ids():
     name = "line_feature"
     label = Label(
-        data=ImageData(arr=np.ones((32, 32, 3), dtype=np.uint8)),
+        data=GenericDataRowData(uid="123456"),
         annotations=[
             ObjectAnnotation(
                 value=Line(points=[Point(x=1, y=2), Point(x=2, y=2)]),
@@ -91,37 +93,9 @@ def test_adding_schema_ids():
     assert next(generator).annotations[0].feature_schema_id == feature_schema_id
 
 
-def test_adding_urls(signer):
-    label = Label(
-        data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
-        annotations=[],
-    )
-    uuid = str(uuid4())
-    generator = LabelGenerator([label]).add_url_to_data(signer(uuid))
-    assert label.data.url != uuid
-    assert next(generator).data.url == uuid
-    assert label.data.url == uuid
-
-
-def test_adding_to_dataset(signer):
-    dataset = FakeDataset()
-    label = Label(
-        data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
-        annotations=[],
-    )
-    uuid = str(uuid4())
-    generator = LabelGenerator([label]).add_to_dataset(dataset, signer(uuid))
-    assert label.data.url != uuid
-    generated_label = next(generator)
-    assert generated_label.data.url == uuid
-    assert generated_label.data.external_id is not None
-    assert generated_label.data.uid == dataset.uid
-    assert label.data.url == uuid
-
-
 def test_adding_to_masks(signer):
     label = Label(
-        data=ImageData(arr=np.random.random((32, 32, 3)).astype(np.uint8)),
+        data=GenericDataRowData(uid="12345"),
         annotations=[
             ObjectAnnotation(
                 name="1234",

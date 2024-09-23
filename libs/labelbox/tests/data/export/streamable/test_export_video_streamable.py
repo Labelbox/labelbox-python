@@ -4,7 +4,7 @@ import pytest
 
 import labelbox as lb
 import labelbox.types as lb_types
-from labelbox.data.annotation_types.data.video import VideoData
+from labelbox.data.annotation_types.data import GenericDataRowData
 from labelbox.schema.annotation_import import AnnotationImportState
 from labelbox.schema.export_task import ExportTask, StreamType
 
@@ -41,7 +41,7 @@ class TestExportVideo:
         for data_row_uid in data_row_uids:
             labels = [
                 lb_types.Label(
-                    data=VideoData(uid=data_row_uid),
+                    data=GenericDataRowData(uid=data_row_uid),
                     annotations=bbox_video_annotation_objects,
                 )
             ]
