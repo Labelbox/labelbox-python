@@ -27,7 +27,7 @@ from pydantic import (
     conlist,
     ConfigDict,
     model_serializer,
-    AfterValidator,
+    BeforeValidator,
 )
 
 from labelbox.schema.ontology import SchemaId
@@ -39,7 +39,7 @@ from labelbox.utils import (
 
 Name = Annotated[
     str,
-    AfterValidator(lambda x: str.strip(str(x))),
+    BeforeValidator(lambda x: str.strip(str(x))),
     Field(min_length=1, max_length=100),
 ]
 
