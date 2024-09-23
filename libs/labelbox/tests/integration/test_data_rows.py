@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from tempfile import NamedTemporaryFile
 from unittest.mock import patch
 
@@ -95,7 +95,7 @@ def tile_content():
 
 def make_metadata_fields():
     msg = "A message"
-    time = datetime.utcnow()
+    time = datetime.now(timezone.utc)
 
     fields = [
         DataRowMetadataField(schema_id=SPLIT_SCHEMA_ID, value=TEST_SPLIT_ID),
@@ -107,7 +107,7 @@ def make_metadata_fields():
 
 def make_metadata_fields_dict():
     msg = "A message"
-    time = datetime.utcnow()
+    time = datetime.now(timezone.utc)
 
     fields = [
         {"schema_id": SPLIT_SCHEMA_ID, "value": TEST_SPLIT_ID},
