@@ -1,18 +1,18 @@
+import uuid
 from datetime import datetime
 
 import pytest
-import uuid
+from lbox.exceptions import MalformedQueryException
 
 from labelbox import Dataset
-from labelbox.exceptions import MalformedQueryException
-from labelbox.schema.identifiables import GlobalKeys, UniqueIds
 from labelbox.schema.data_row_metadata import (
-    DataRowMetadataField,
     DataRowMetadata,
+    DataRowMetadataField,
     DataRowMetadataKind,
     DataRowMetadataOntology,
     _parse_metadata_schema,
 )
+from labelbox.schema.identifiables import GlobalKeys, UniqueIds
 
 INVALID_SCHEMA_ID = "1" * 25
 FAKE_SCHEMA_ID = "0" * 25

@@ -1,13 +1,11 @@
 from datetime import datetime
 from typing import Any
-from typing_extensions import Annotated
 
-from pydantic import BaseModel, Field
+from lbox.exceptions import ResourceNotFoundError
 
-from labelbox.exceptions import ResourceNotFoundError
-from labelbox.utils import _CamelCaseMixin
 from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
+from labelbox.utils import _CamelCaseMixin
 
 from ..annotated_types import Cuid
 

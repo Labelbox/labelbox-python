@@ -1,25 +1,25 @@
-from tempfile import NamedTemporaryFile
+import json
+import os
 import uuid
 from datetime import datetime
-import json
-import requests
-import os
-
+from tempfile import NamedTemporaryFile
 from unittest.mock import patch
-import pytest
 
-from labelbox.schema.media_type import MediaType
-from labelbox import DataRow, AssetAttachment
-from labelbox.exceptions import (
+import pytest
+import requests
+from lbox.exceptions import (
+    InvalidQueryError,
     MalformedQueryException,
     ResourceCreationError,
-    InvalidQueryError,
 )
-from labelbox.schema.task import Task, DataUpsertTask
+
+from labelbox import AssetAttachment, DataRow
 from labelbox.schema.data_row_metadata import (
     DataRowMetadataField,
     DataRowMetadataKind,
 )
+from labelbox.schema.media_type import MediaType
+from labelbox.schema.task import Task
 
 SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
 TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
@@ -120,7 +120,7 @@ def make_metadata_fields_dict():
 def test_get_data_row_by_global_key(data_row_and_global_key, client, rand_gen):
     _, global_key = data_row_and_global_key
     data_row = client.get_data_row_by_global_key(global_key)
-    assert type(data_row) == DataRow
+    assert type(data_row) is DataRow
     assert data_row.global_key == global_key
 
 
@@ -677,9 +677,10 @@ def test_data_row_update(
     pdf_url = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
     tileLayerUrl = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483-lb-textlayer.json"
     data_row.update(row_data={"pdfUrl": pdf_url, "tileLayerUrl": tileLayerUrl})
-    custom_check = (
-        lambda data_row: data_row.row_data and "pdfUrl" not in data_row.row_data
-    )
+
+    def custom_check(data_row):
+        return data_row.row_data and "pdfUrl" not in data_row.row_data
+
     data_row = wait_for_data_row_processing(
         client, data_row, custom_check=custom_check
     )
@@ -1023,9 +1024,9 @@ def test_data_row_bulk_creation_with_same_global_keys(
     task.wait_till_done()
 
     assert task.status == "COMPLETE"
-    assert type(task.failed_data_rows) is list
+    assert isinstance(task.failed_data_rows, list)
     assert len(task.failed_data_rows) == 1
-    assert type(task.created_data_rows) is list
+    assert isinstance(task.created_data_rows, list)
     assert len(task.created_data_rows) == 1
     assert (
         task.failed_data_rows[0]["message"]

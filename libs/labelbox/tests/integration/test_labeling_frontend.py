@@ -1,7 +1,7 @@
 import pytest
+from lbox.exceptions import OperationNotSupportedException
 
 from labelbox import LabelingFrontend
-from labelbox.exceptions import OperationNotSupportedException
 
 
 def test_get_labeling_frontends(client):

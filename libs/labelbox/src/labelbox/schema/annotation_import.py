@@ -3,33 +3,34 @@ import json
 import logging
 import os
 import time
+from collections import defaultdict
 from typing import (
+    TYPE_CHECKING,
     Any,
     BinaryIO,
     Dict,
     List,
     Optional,
     Union,
-    TYPE_CHECKING,
     cast,
 )
-from collections import defaultdict
 
-from google.api_core import retry
-from labelbox import parser
 import requests
+from google.api_core import retry
+from lbox.exceptions import ApiLimitError, NetworkError, ResourceNotFoundError
 from tqdm import tqdm  # type: ignore
 
 import labelbox
+from labelbox import parser
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-from labelbox.utils import is_exactly_one_set
 from labelbox.schema.confidence_presence_checker import (
     LabelsConfidencePresenceChecker,
 )
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.serialization import serialize_labels
+from labelbox.utils import is_exactly_one_set
 
 if TYPE_CHECKING:
     from labelbox.types import Label
@@ -140,9 +141,9 @@ class AnnotationImport(DbObject):
 
     @retry.Retry(
         predicate=retry.if_exception_type(
-            labelbox.exceptions.ApiLimitError,
-            labelbox.exceptions.TimeoutError,
-            labelbox.exceptions.NetworkError,
+            ApiLimitError,
+            TimeoutError,
+            NetworkError,
         )
     )
     def __backoff_refresh(self) -> None:
@@ -435,9 +436,7 @@ class MEAPredictionImport(CreatableAnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise labelbox.exceptions.ResourceNotFoundError(
-                MEAPredictionImport, params
-            )
+            raise ResourceNotFoundError(MEAPredictionImport, params)
         response = response["modelErrorAnalysisPredictionImport"]
         if as_json:
             return response
@@ -560,9 +559,7 @@ class MEAToMALPredictionImport(AnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise labelbox.exceptions.ResourceNotFoundError(
-                MALPredictionImport, params
-            )
+            raise ResourceNotFoundError(MALPredictionImport, params)
         response = response["meaToMalPredictionImport"]
         if as_json:
             return response
@@ -709,9 +706,7 @@ class MALPredictionImport(CreatableAnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise labelbox.exceptions.ResourceNotFoundError(
-                MALPredictionImport, params
-            )
+            raise ResourceNotFoundError(MALPredictionImport, params)
         response = response["modelAssistedLabelingPredictionImport"]
         if as_json:
             return response
@@ -885,7 +880,7 @@ class LabelImport(CreatableAnnotationImport):
         }
         response = client.execute(query_str, params)
         if response is None:
-            raise labelbox.exceptions.ResourceNotFoundError(LabelImport, params)
+            raise ResourceNotFoundError(LabelImport, params)
         response = response["labelImport"]
         if as_json:
             return response

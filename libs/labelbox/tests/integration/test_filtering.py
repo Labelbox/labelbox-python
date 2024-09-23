@@ -1,7 +1,7 @@
 import pytest
+from lbox.exceptions import InvalidQueryError
 
 from labelbox import Project
-from labelbox.exceptions import InvalidQueryError
 from labelbox.schema.queue_mode import QueueMode
 
 

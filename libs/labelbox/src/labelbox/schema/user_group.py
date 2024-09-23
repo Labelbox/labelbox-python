@@ -1,20 +1,21 @@
-from enum import Enum
-from typing import Set, Iterator
 from collections import defaultdict
+from enum import Enum
+from typing import Iterator, Set
+
+from lbox.exceptions import (
+    MalformedQueryException,
+    ResourceCreationError,
+    ResourceNotFoundError,
+    UnprocessableEntityError,
+)
+from pydantic import BaseModel, ConfigDict
 
 from labelbox import Client
-from labelbox.exceptions import ResourceCreationError
-from labelbox.schema.user import User
-from labelbox.schema.project import Project
-from labelbox.exceptions import (
-    UnprocessableEntityError,
-    MalformedQueryException,
-    ResourceNotFoundError,
-)
-from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.media_type import MediaType
-from pydantic import BaseModel, ConfigDict
+from labelbox.schema.ontology_kind import EditorTaskType
+from labelbox.schema.project import Project
+from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.user import User
 
 
 class UserGroupColor(Enum):

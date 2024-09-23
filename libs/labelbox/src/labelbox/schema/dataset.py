@@ -1,57 +1,44 @@
-from datetime import datetime
-from typing import Dict, Generator, List, Optional, Any, Final, Tuple, Union
-import os
 import json
 import logging
-from collections.abc import Iterable
-from string import Template
-import time
+import os
 import warnings
-
-from labelbox import parser
-from itertools import islice
-
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from io import StringIO
-import requests
+from itertools import islice
+from string import Template
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from labelbox.exceptions import (
+from lbox.exceptions import (
     InvalidQueryError,
     LabelboxError,
-    ResourceNotFoundError,
     ResourceCreationError,
-)
-from labelbox.orm.comparison import Comparison
-from labelbox.orm.db_object import DbObject, Updateable, Deletable, experimental
-from labelbox.orm.model import Entity, Field, Relationship
+    ResourceNotFoundError,
+)  # type: ignore
+
+import labelbox.schema.internal.data_row_uploader as data_row_uploader
 from labelbox.orm import query
-from labelbox.exceptions import MalformedQueryException
+from labelbox.orm.comparison import Comparison
+from labelbox.orm.db_object import DbObject, Deletable, Updateable
+from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.data_row import DataRow
-from labelbox.schema.embedding import EmbeddingVector
 from labelbox.schema.export_filters import DatasetExportFilters, build_filters
 from labelbox.schema.export_params import (
     CatalogExportParams,
     validate_catalog_export_params,
 )
 from labelbox.schema.export_task import ExportTask
-from labelbox.schema.identifiable import UniqueId, GlobalKey
-from labelbox.schema.task import Task, DataUpsertTask
-from labelbox.schema.user import User
 from labelbox.schema.iam_integration import IAMIntegration
+from labelbox.schema.identifiable import GlobalKey, UniqueId
 from labelbox.schema.internal.data_row_upsert_item import (
+    DataRowCreateItem,
     DataRowItemBase,
     DataRowUpsertItem,
-    DataRowCreateItem,
-)
-import labelbox.schema.internal.data_row_uploader as data_row_uploader
-from labelbox.schema.internal.descriptor_file_creator import (
-    DescriptorFileCreator,
 )
 from labelbox.schema.internal.datarow_upload_constants import (
     FILE_UPLOAD_THREAD_COUNT,
     UPSERT_CHUNK_SIZE_BYTES,
 )
+from labelbox.schema.task import DataUpsertTask, Task
 
 logger = logging.getLogger(__name__)
 
@@ -324,7 +311,7 @@ class Dataset(DbObject, Updateable, Deletable):
             A list of `DataRow` with the given ID.
 
         Raises:
-         labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
+         lbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
@@ -350,7 +337,7 @@ class Dataset(DbObject, Updateable, Deletable):
             A single `DataRow` with the given ID.
 
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
+            lbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
@@ -359,7 +346,7 @@ class Dataset(DbObject, Updateable, Deletable):
         )
         if len(data_rows) > 1:
             logger.warning(
-                f"More than one data_row has the provided external_id : `%s`. Use function data_rows_for_external_id to fetch all",
+                "More than one data_row has the provided external_id : `%s`. Use function data_rows_for_external_id to fetch all",
                 external_id,
             )
         return data_rows[0]

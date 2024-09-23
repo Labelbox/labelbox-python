@@ -1,6 +1,5 @@
 import pytest
-
-from labelbox.exceptions import LabelboxError, OperationNotAllowedException
+from lbox.exceptions import LabelboxError, OperationNotAllowedException
 
 
 def test_live_chat_evaluation_project(

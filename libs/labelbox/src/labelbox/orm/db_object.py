@@ -1,17 +1,17 @@
-from dataclasses import dataclass
+import json
+import logging
 from datetime import datetime, timezone
 from functools import wraps
-import logging
-import json
 
-from labelbox import utils
-from labelbox.exceptions import (
-    InvalidQueryError,
+from lbox.exceptions import (
     InvalidAttributeError,
+    InvalidQueryError,
     OperationNotSupportedException,
 )
+
+from labelbox import utils
 from labelbox.orm import query
-from labelbox.orm.model import Field, Relationship, Entity
+from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 
 logger = logging.getLogger(__name__)
@@ -177,7 +177,7 @@ class RelationshipManager:
             )
 
         if rel.filter_deleted:
-            not_deleted = rel.destination_type.deleted == False
+            not_deleted = rel.destination_type.deleted == False  # noqa: E712 <Gabefire> Needed for bit operator to combine comparisons
             where = not_deleted if where is None else where & not_deleted
 
         query_string, params = query.relationship(

@@ -1,13 +1,14 @@
 from typing import Callable, Optional
 
 import requests
-from requests.exceptions import ConnectTimeout
 from google.api_core import retry
-
+from lbox.exceptions import InternalServerError
 from pydantic import ConfigDict, model_validator
-from labelbox.exceptions import InternalServerError
+from requests.exceptions import ConnectTimeout
+
 from labelbox.typing_imports import Literal
 from labelbox.utils import _NoCoercionMixin
+
 from .base_data import BaseData
 
 
@@ -101,7 +102,7 @@ class TextData(BaseData, _NoCoercionMixin):
         url = self.url
         uid = self.uid
         global_key = self.global_key
-        if uid == file_path == text == url == global_key == None:
+        if uid == file_path == text == url == global_key is None:
             raise ValueError(
                 "One of `file_path`, `text`, `uid`, `global_key` or `url` required."
             )

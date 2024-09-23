@@ -12,6 +12,7 @@ dependencies = [
     "tqdm>=4.66.2",
     "geojson>=3.1.0",
     "mypy==1.10.1",
+    "lbox-clients==1.0.0",
 ]
 readme = "README.md"
 requires-python = ">=3.8"
@@ -74,6 +75,10 @@ dev-dependencies = [
 [tool.ruff]
 line-length = 80
 
+[tool.ruff.lint]
+ignore = ["F", "E722"]
+exclude = ["**/__init__.py"]
+
 [tool.rye.scripts]
 unit = "pytest tests/unit"
 # https://github.com/Labelbox/labelbox-python/blob/7c84fdffbc14fd1f69d2a6abdcc0087dc557fa4e/Makefile
@@ -89,9 +94,11 @@ unit = "pytest tests/unit"
 # LABELBOX_TEST_BASE_URL="http://host.docker.internal:8080" \
 integration = { cmd = "pytest tests/integration" }
 data = { cmd = "pytest tests/data" }
+rye-lint = "rye lint"
 rye-fmt-check = "rye fmt --check"
+MYPYPATH="../lbox-clients/src/"
 mypy-lint = "mypy src --pretty --show-error-codes --non-interactive --install-types"
-lint = { chain = ["mypy-lint", "rye-fmt-check"] }
+lint = { chain = ["rye-fmt-check", "mypy-lint", "rye-lint"] }
 test = { chain = ["lint", "unit", "integration"] }
 
 [tool.hatch.metadata]
