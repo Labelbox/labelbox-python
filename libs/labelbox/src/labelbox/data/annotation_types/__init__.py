@@ -48,6 +48,8 @@ from .metrics import ConfusionMatrixMetricValue
 from .data.tiled_image import EPSG
 from .data.tiled_image import EPSGTransformer
 from .data.tiled_image import TiledBounds
+from .data.tiled_image import TiledImageData
+from .data.tiled_image import TileLayer
 
 from .llm_prompt_response.prompt import PromptText
 from .llm_prompt_response.prompt import PromptClassificationAnnotation
