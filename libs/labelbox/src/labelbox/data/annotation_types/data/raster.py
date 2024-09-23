@@ -12,7 +12,6 @@ from requests.exceptions import ConnectTimeout
 from typing_extensions import Literal
 
 from pydantic import BaseModel, model_validator, ConfigDict
-from labelbox.exceptions import InternalServerError
 
 from ..types import TypedArray
 
