@@ -304,7 +304,13 @@ class RequestClient:
         malformed_request_error = check_errors(
             ["MALFORMED_REQUEST"], "extensions", "code"
         )
+
+        error_code = "MALFORMED_REQUEST"
         if malformed_request_error is not None:
+            if error_handlers and error_code in error_handlers:
+                handler = error_handlers[error_code]
+                handler(response)
+                return None
             raise exceptions.MalformedQueryException(
                 malformed_request_error[error_log_key]
             )
