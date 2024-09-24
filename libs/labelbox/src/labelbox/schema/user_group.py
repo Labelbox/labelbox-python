@@ -93,9 +93,6 @@ class UserGroup(BaseModel):
             color (UserGroupColor, optional): The color of the user group. Defaults to UserGroupColor.BLUE.
             users (Set[User], optional): The set of users in the user group. Defaults to an empty set.
             projects (Set[Project], optional): The set of projects associated with the user group. Defaults to an empty set.
-
-        Raises:
-            RuntimeError: If the experimental feature is not enabled in the client.
         """
         super().__init__(
             client=client,
@@ -105,10 +102,6 @@ class UserGroup(BaseModel):
             users=users,
             projects=projects,
         )
-        if not self.client.enable_experimental:
-            raise RuntimeError(
-                "Please enable experimental in client to use UserGroups"
-            )
 
     def get(self) -> "UserGroup":
         """
