@@ -71,9 +71,8 @@ class TestExportVideo:
             export_task.get_total_file_size(stream_type=StreamType.RESULT) > 0
         )
 
-        export_data = json.loads(
-            list(export_task.get_buffered_stream())[0].json
-        )
+        export_data = list(export_task.get_buffered_stream())[0].json
+
         data_row_export = export_data["data_row"]
         assert data_row_export["global_key"] == video_data_row["global_key"]
         assert data_row_export["row_data"] == video_data_row["row_data"]
