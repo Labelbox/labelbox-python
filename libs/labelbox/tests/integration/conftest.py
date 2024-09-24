@@ -80,14 +80,12 @@ def project_pack(client):
 
 
 @pytest.fixture
-def project_with_empty_ontology(project):
-    editor = list(
-        project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"
-        )
-    )[0]
+def project_with_empty_ontology(project, client):
     empty_ontology = {"tools": [], "classifications": []}
-    project.setup(editor, empty_ontology)
+    ontology = client.create_ontology(
+        "empty ontology", MediaType.Image, empty_ontology
+    )
+    project.connect_ontology(ontology)
     yield project
 
 
@@ -131,19 +129,12 @@ def configured_project_with_complex_ontology(
     )
     project.data_row_ids = data_row_ids
 
-    editor = list(
-        project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"
-        )
-    )[0]
-
     ontology = OntologyBuilder()
     tools = [
         Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
         Tool(tool=Tool.Type.LINE, name="test-line-class"),
         Tool(tool=Tool.Type.POINT, name="test-point-class"),
         Tool(tool=Tool.Type.POLYGON, name="test-polygon-class"),
-        Tool(tool=Tool.Type.NER, name="test-ner-class"),
     ]
 
     options = [
@@ -175,7 +166,10 @@ def configured_project_with_complex_ontology(
     for c in classifications:
         ontology.add_classification(c)
 
-    project.setup(editor, ontology.asdict())
+    ontology = client.create_ontology(
+        "image ontology", MediaType.Image, ontology.asdict()
+    )
+    project.connect_ontology(ontology)
 
     yield [project, data_row]
     teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)

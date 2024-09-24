@@ -562,14 +562,18 @@ class OntologyBuilder:
     There are no required instantiation arguments.
 
     To create an ontology, use the asdict() method after fully building your
-    ontology within this class, and inserting it into project.setup() as the
+    ontology within this class, and inserting it into client.create_ontology() as the
     "labeling_frontend_options" parameter.
 
     Example:
-        builder = OntologyBuilder()
-        ...
-        frontend = list(client.get_labeling_frontends())[0]
-        project.setup(frontend, builder.asdict())
+        >>> builder = OntologyBuilder()
+        >>> ...
+        >>> ontology = client.create_ontology(
+        >>>    "Ontology from new features",
+        >>>    ontology_builder.asdict(),
+        >>>    media_type=lb.MediaType.Image,
+        >>> )
+        >>> project.connect_ontology(ontology)
 
     attributes:
         tools: (list)

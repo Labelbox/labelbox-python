@@ -1,5 +1,6 @@
 import uuid
 import time
+from labelbox.schema.media_type import MediaType
 import pytest
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.labeling_frontend import LabelingFrontend
@@ -7,7 +8,7 @@ from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 
 
 @pytest.fixture
-def ontology():
+def ontology(client):
     bbox_tool_with_nested_text = {
         "required": False,
         "name": "bbox_tool_with_nested_text",
@@ -193,13 +194,6 @@ def ontology():
             },
         ],
     }
-    named_entity = {
-        "tool": "named-entity",
-        "name": "named-entity",
-        "required": False,
-        "color": "#A30059",
-        "classifications": [],
-    }
 
     tools = [
         bbox_tool,
@@ -207,19 +201,20 @@ def ontology():
         polygon_tool,
         polyline_tool,
         point_tool,
-        entity_tool,
         segmentation_tool,
         raster_segmentation_tool,
-        named_entity,
     ]
     classifications = [
         checklist,
-        checklist_index,
         free_form_text,
-        free_form_text_index,
         radio,
     ]
-    return {"tools": tools, "classifications": classifications}
+    ontology = client.create_ontology(
+        "image ontology",
+        MediaType.Image,
+        {"tools": tools, "classifications": classifications},
+    )
+    return ontology
 
 
 @pytest.fixture
@@ -246,15 +241,16 @@ def configured_project_with_ontology(
     dataset = initial_dataset
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
     )
-    editor = list(
-        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
-    )[0]
-    project.setup(editor, ontology)
+    project.connect_ontology(ontology)
     data_row_ids = []
 
-    for _ in range(len(ontology["tools"]) + len(ontology["classifications"])):
+    normalized_ontology = ontology.normalized()
+
+    for _ in range(
+        len(normalized_ontology["tools"])
+        + len(normalized_ontology["classifications"])
+    ):
         data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
     project.create_batch(
         rand_gen(str),
@@ -273,12 +269,9 @@ def configured_project_without_data_rows(
     project = client.create_project(
         name=rand_gen(str),
         description=rand_gen(str),
-        queue_mode=QueueMode.Batch,
     )
-    editor = list(
-        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
-    )[0]
-    project.setup(editor, ontology)
+
+    project.connect_ontology(ontology)
     yield project
     teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
 

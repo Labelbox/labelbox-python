@@ -703,20 +703,19 @@ def _create_label(project, data_row, ontology, wait_for_label_processing):
     return label
 
 
-def _setup_ontology(project):
-    editor = list(
-        project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"
-        )
-    )[0]
+def _setup_ontology(project: Project, client: Client):
     ontology_builder = OntologyBuilder(
         tools=[
             Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
         ]
     )
-    project.setup(editor, ontology_builder.asdict())
-    # TODO: ontology may not be synchronous after setup. remove sleep when api is more consistent
-    time.sleep(2)
+    ontology = client.create_ontology(
+        name="ontology with features",
+        media_type=MediaType.Image,
+        normalized=ontology_builder.asdict(),
+    )
+    project.connect_ontology(ontology)
+
     return OntologyBuilder.from_project(project)
 
 
@@ -749,7 +748,6 @@ def configured_batch_project_with_label(
     """
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     data_rows = [dr.uid for dr in list(dataset.data_rows())]
@@ -784,7 +782,6 @@ def configured_batch_project_with_multiple_datarows(
     """
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     global_keys = [dr.global_key for dr in data_rows]
@@ -1048,14 +1045,12 @@ def configured_project(
 
 
 @pytest.fixture
-def project_with_empty_ontology(project):
-    editor = list(
-        project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"
-        )
-    )[0]
+def project_with_empty_ontology(project, client):
     empty_ontology = {"tools": [], "classifications": []}
-    project.setup(editor, empty_ontology)
+    ontology = client.create_ontology(
+        "empty ontology", MediaType.Image, empty_ontology
+    )
+    project.connect_ontology(ontology)
     yield project
 
 
@@ -1065,7 +1060,6 @@ def configured_project_with_complex_ontology(
 ):
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     dataset = initial_dataset
@@ -1091,7 +1085,6 @@ def configured_project_with_complex_ontology(
         Tool(tool=Tool.Type.LINE, name="test-line-class"),
         Tool(tool=Tool.Type.POINT, name="test-point-class"),
         Tool(tool=Tool.Type.POLYGON, name="test-polygon-class"),
-        Tool(tool=Tool.Type.NER, name="test-ner-class"),
     ]
 
     options = [
@@ -1123,7 +1116,11 @@ def configured_project_with_complex_ontology(
     for c in classifications:
         ontology.add_classification(c)
 
-    project.setup(editor, ontology.asdict())
+    ontology = client.create_ontology(
+        "complex image ontology", MediaType.Image, ontology.asdict()
+    )
+
+    project.connect_ontology(ontology)
 
     yield [project, data_row]
     teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)

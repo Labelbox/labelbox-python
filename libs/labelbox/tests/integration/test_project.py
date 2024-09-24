@@ -2,6 +2,7 @@ import os
 import time
 import uuid
 
+from labelbox.schema.ontology import OntologyBuilder, Tool
 import pytest
 import requests
 from lbox.exceptions import InvalidQueryError
@@ -140,10 +141,6 @@ def test_extend_reservations(project):
         project.extend_reservations("InvalidQueueType")
 
 
-@pytest.mark.skipif(
-    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem",
-    reason="new mutation does not work for onprem",
-)
 def test_attach_instructions(client, project):
     with pytest.raises(ValueError) as execinfo:
         project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
@@ -151,11 +148,17 @@ def test_attach_instructions(client, project):
         str(execinfo.value)
         == "Cannot attach instructions to a project that has not been set up."
     )
-    editor = list(
-        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
-    )[0]
-    empty_ontology = {"tools": [], "classifications": []}
-    project.setup(editor, empty_ontology)
+    ontology_builder = OntologyBuilder(
+        tools=[
+            Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
+        ]
+    )
+    ontology = client.create_ontology(
+        name="ontology with features",
+        media_type=MediaType.Image,
+        normalized=ontology_builder.asdict(),
+    )
+    project.connect_ontology(ontology)
 
     project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
     time.sleep(3)
