@@ -80,13 +80,15 @@ def project_pack(client):
 
 
 @pytest.fixture
-def project_with_empty_ontology(project, client):
+def project_with_empty_ontology(project, client: Client):
     tools = [
         Tool(tool=Tool.Type.BBOX, name="test-bbox-class").asdict(),
     ]
     empty_ontology = {"tools": tools, "classifications": []}
     ontology = client.create_ontology(
-        "empty ontology", MediaType.Image, empty_ontology
+        "empty ontology",
+        empty_ontology,
+        MediaType.Image,
     )
     project.connect_ontology(ontology)
     yield project

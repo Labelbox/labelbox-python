@@ -1045,13 +1045,13 @@ def configured_project(
 
 
 @pytest.fixture
-def project_with_empty_ontology(project, client):
+def project_with_empty_ontology(project, client: Client):
     tools = [
         Tool(tool=Tool.Type.BBOX, name="test-bbox-class").asdict(),
     ]
     empty_ontology = {"tools": tools, "classifications": []}
     ontology = client.create_ontology(
-        "empty ontology", MediaType.Image, empty_ontology
+        "empty ontology", empty_ontology, MediaType.Image
     )
     project.connect_ontology(ontology)
     yield project
@@ -1059,7 +1059,7 @@ def project_with_empty_ontology(project, client):
 
 @pytest.fixture
 def configured_project_with_complex_ontology(
-    client, initial_dataset, rand_gen, image_url, teardown_helpers
+    client: Client, initial_dataset, rand_gen, image_url, teardown_helpers
 ):
     project = client.create_project(
         name=rand_gen(str),
@@ -1075,12 +1075,6 @@ def configured_project_with_complex_ontology(
         5,  # priority between 1(Highest) - 5(lowest)
     )
     project.data_row_ids = data_row_ids
-
-    editor = list(
-        project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"
-        )
-    )[0]
 
     ontology = OntologyBuilder()
     tools = [
@@ -1120,7 +1114,7 @@ def configured_project_with_complex_ontology(
         ontology.add_classification(c)
 
     ontology = client.create_ontology(
-        "complex image ontology", MediaType.Image, ontology.asdict()
+        "complex image ontology", ontology.asdict(), MediaType.Image
     )
 
     project.connect_ontology(ontology)
