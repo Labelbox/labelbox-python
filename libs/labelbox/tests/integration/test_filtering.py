@@ -1,7 +1,9 @@
 import pytest
 from lbox.exceptions import InvalidQueryError
+from libs.labelbox.src.labelbox.schema.media_type import MediaType
 
 from labelbox import Project
+from labelbox.schema import media_type
 from labelbox.schema.queue_mode import QueueMode
 
 
@@ -11,9 +13,9 @@ def project_to_test_where(client, rand_gen):
     p_b_name = f"b-{rand_gen(str)}"
     p_c_name = f"c-{rand_gen(str)}"
 
-    p_a = client.create_project(name=p_a_name, queue_mode=QueueMode.Batch)
-    p_b = client.create_project(name=p_b_name, queue_mode=QueueMode.Batch)
-    p_c = client.create_project(name=p_c_name, queue_mode=QueueMode.Batch)
+    p_a = client.create_project(name=p_a_name, media_type=MediaType.Image)
+    p_b = client.create_project(name=p_b_name, media_type=MediaType.Image)
+    p_c = client.create_project(name=p_c_name, media_type=MediaType.Image)
 
     yield p_a, p_b, p_c
 

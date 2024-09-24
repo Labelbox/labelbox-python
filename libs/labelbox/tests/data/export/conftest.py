@@ -1,9 +1,12 @@
-import uuid
 import time
+import uuid
+
 import pytest
-from labelbox.schema.queue_mode import QueueMode
+
+from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
 from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
+from labelbox.schema.media_type import MediaType
+from labelbox.schema.queue_mode import QueueMode
 
 
 @pytest.fixture
@@ -247,6 +250,7 @@ def configured_project_with_ontology(
     project = client.create_project(
         name=rand_gen(str),
         queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
     )
     editor = list(
         client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
@@ -274,6 +278,7 @@ def configured_project_without_data_rows(
         name=rand_gen(str),
         description=rand_gen(str),
         queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
     )
     editor = list(
         client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
