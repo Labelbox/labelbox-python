@@ -1046,7 +1046,10 @@ def configured_project(
 
 @pytest.fixture
 def project_with_empty_ontology(project, client):
-    empty_ontology = {"tools": [], "classifications": []}
+    tools = [
+        Tool(tool=Tool.Type.BBOX, name="test-bbox-class").asdict(),
+    ]
+    empty_ontology = {"tools": tools, "classifications": []}
     ontology = client.create_ontology(
         "empty ontology", MediaType.Image, empty_ontology
     )
