@@ -660,7 +660,7 @@ def configured_project_with_label(
         [data_row.uid],  # sample of data row objects
         5,  # priority between 1(Highest) - 5(lowest)
     )
-    ontology = _setup_ontology(project)
+    ontology = _setup_ontology(project, client)
     label = _create_label(
         project, data_row, ontology, wait_for_label_processing
     )
@@ -757,7 +757,7 @@ def configured_batch_project_with_label(
     project.create_batch("test-batch", data_rows)
     project.data_row_ids = data_rows
 
-    ontology = _setup_ontology(project)
+    ontology = _setup_ontology(project, client)
     label = _create_label(
         project, data_row, ontology, wait_for_label_processing
     )
@@ -789,7 +789,7 @@ def configured_batch_project_with_multiple_datarows(
     batch_name = f"batch {uuid.uuid4()}"
     project.create_batch(batch_name, global_keys=global_keys)
 
-    ontology = _setup_ontology(project)
+    ontology = _setup_ontology(project, client)
     for datarow in data_rows:
         _create_label(project, datarow, ontology, wait_for_label_processing)
 
