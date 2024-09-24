@@ -56,8 +56,8 @@ class TestExportProject:
         )
         assert export_task.get_total_lines(stream_type=StreamType.RESULT) > 0
 
-        for data in export_task.get_stream():
-            obj = json.loads(data.json_str)
+        for data in export_task.get_buffered_stream():
+            obj = data.json
             task_media_attributes = obj["media_attributes"]
             task_project = obj["projects"][project.uid]
             task_project_label_ids_set = set(
@@ -139,8 +139,8 @@ class TestExportProject:
         )
         assert export_task.get_total_lines(stream_type=StreamType.RESULT) > 0
 
-        for data in export_task.get_stream():
-            obj = json.loads(data.json_str)
+        for data in export_task.get_buffered_stream():
+            obj = data.json
             task_project = obj["projects"][project.uid]
             task_project_label_ids_set = set(
                 map(lambda prediction: prediction["id"], task_project["labels"])
@@ -181,9 +181,9 @@ class TestExportProject:
         assert export_task.get_total_lines(stream_type=StreamType.RESULT) > 0
         assert (
             label_id
-            == json.loads(list(export_task.get_stream())[0].json_str)[
-                "projects"
-            ][project.uid]["labels"][0]["id"]
+            == export_task.get_buffered_stream()[0].json["projects"][
+                project.uid
+            ]["labels"][0]["id"]
         )
 
     def test_with_iso_date_filters_no_start_date(
@@ -207,9 +207,9 @@ class TestExportProject:
         assert export_task.get_total_lines(stream_type=StreamType.RESULT) > 0
         assert (
             label_id
-            == json.loads(list(export_task.get_stream())[0].json_str)[
-                "projects"
-            ][project.uid]["labels"][0]["id"]
+            == export_task.get_buffered_stream()[0].json["projects"][
+                project.uid
+            ]["labels"][0]["id"]
         )
 
     def test_with_iso_date_filters_and_future_start_date(
@@ -270,8 +270,8 @@ class TestExportProject:
         )
         data_row_ids = list(
             map(
-                lambda x: json.loads(x.json_str)["data_row"]["id"],
-                export_task.get_stream(),
+                lambda x: x.json["data_row"]["id"],
+                export_task.get_buffered_stream(),
             )
         )
         assert data_row_ids.sort() == expected_data_row_ids.sort()
@@ -310,8 +310,8 @@ class TestExportProject:
         )
         global_keys = list(
             map(
-                lambda x: json.loads(x.json_str)["data_row"]["global_key"],
-                export_task.get_stream(),
+                lambda x: x.json["data_row"]["global_key"],
+                export_task.get_buffered_stream(),
             )
         )
         assert global_keys.sort() == expected_global_keys.sort()

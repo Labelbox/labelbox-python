@@ -27,8 +27,8 @@ class TestExportModelRun:
             stream_type=StreamType.RESULT
         ) == len(expected_data_rows)
 
-        for data in export_task.get_stream():
-            obj = json.loads(data.json_str)
+        for data in export_task.get_buffered_stream():
+            obj = data.json
             assert (
                 "media_attributes" in obj
                 and obj["media_attributes"] is not None
