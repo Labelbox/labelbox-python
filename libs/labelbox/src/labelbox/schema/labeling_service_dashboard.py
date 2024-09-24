@@ -13,9 +13,6 @@ from labelbox.utils import _CamelCaseMixin, sentence_case
 
 from .ontology_kind import EditorTaskType
 
-if TYPE_CHECKING:
-    from labelbox import Client
-
 GRAPHQL_QUERY_SELECTIONS = """
                 id
                 name
@@ -82,7 +79,7 @@ class LabelingServiceDashboard(_CamelCaseMixin):
     editor_task_type: EditorTaskType = Field(frozen=True, default=None)
     tags: List[LabelingServiceDashboardTags] = Field(frozen=True, default=None)
 
-    client: "Client"
+    client: Any
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -224,9 +221,9 @@ class LabelingServiceDashboard(_CamelCaseMixin):
 
         return data
 
-    @model_serializer(mode="wrap")
-    def ser_model(self, handler):
-        row = handler(self)
+    @model_serializer()
+    def ser_model(self):
+        row = self
         row.pop("client")
         row["service_type"] = self.service_type
         return row
