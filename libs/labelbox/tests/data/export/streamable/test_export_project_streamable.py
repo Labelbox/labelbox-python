@@ -181,7 +181,7 @@ class TestExportProject:
         assert export_task.get_total_lines(stream_type=StreamType.RESULT) > 0
         assert (
             label_id
-            == export_task.get_buffered_stream()[0].json["projects"][
+            == list(export_task.get_buffered_stream())[0].json["projects"][
                 project.uid
             ]["labels"][0]["id"]
         )
@@ -207,7 +207,7 @@ class TestExportProject:
         assert export_task.get_total_lines(stream_type=StreamType.RESULT) > 0
         assert (
             label_id
-            == export_task.get_buffered_stream()[0].json["projects"][
+            == list(export_task.get_buffered_stream())[0].json["projects"][
                 project.uid
             ]["labels"][0]["id"]
         )
