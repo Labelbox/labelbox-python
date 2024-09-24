@@ -23,6 +23,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
+from labelbox.project_validation import _CoreProjectInput
 from labelbox.schema import role
 from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row import DataRow
@@ -632,7 +633,8 @@ class Client:
         kwargs.pop("append_to_existing_dataset", None)
         kwargs.pop("data_row_count", None)
         kwargs.pop("editor_task_type", None)
-        return self._create_project(**kwargs)
+        input = _CoreProjectInput(**kwargs)
+        return self._create_project(input)
 
     @overload
     def create_model_evaluation_project(
@@ -820,103 +822,10 @@ class Client:
 
         return self._create_project(**kwargs)
 
-    def _create_project(self, **kwargs) -> Project:
-        auto_audit_percentage = kwargs.get("auto_audit_percentage")
-        auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
-        if (
-            auto_audit_percentage is not None
-            or auto_audit_number_of_labels is not None
-        ):
-            raise ValueError(
-                "quality_modes must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
-            )
+    def _create_project(self, input: _CoreProjectInput) -> Project:
+        media_type_value = input.media_type.value
 
-        name = kwargs.get("name")
-        if name is None or not name.strip():
-            raise ValueError("project name must be a valid string.")
-
-        queue_mode = kwargs.get("queue_mode")
-        if queue_mode is QueueMode.Dataset:
-            raise ValueError(
-                "Dataset queue mode is deprecated. Please prefer Batch queue mode."
-            )
-        elif queue_mode is QueueMode.Batch:
-            logger.warning(
-                "Passing a queue mode of batch is redundant and will soon no longer be supported."
-            )
-
-        media_type = kwargs.get("media_type")
-        if media_type and MediaType.is_supported(media_type):
-            media_type_value = media_type.value
-        elif media_type:
-            raise TypeError(
-                f"{media_type} is not a valid media type. Use"
-                f" any of {MediaType.get_supported_members()}"
-                " from MediaType. Example: MediaType.Image."
-            )
-        else:
-            logger.warning(
-                "Creating a project without specifying media_type"
-                " through this method will soon no longer be supported."
-            )
-            media_type_value = None
-
-        quality_modes = kwargs.get("quality_modes")
-        quality_mode = kwargs.get("quality_mode")
-        if quality_mode:
-            logger.warning(
-                "Passing quality_mode is deprecated and will soon no longer be supported. Use quality_modes instead."
-            )
-
-        if quality_modes and quality_mode:
-            raise ValueError(
-                "Cannot use both quality_modes and quality_mode at the same time. Use one or the other."
-            )
-
-        if not quality_modes and not quality_mode:
-            logger.info("Defaulting quality modes to Benchmark and Consensus.")
-
-        data = kwargs
-        data.pop("quality_modes", None)
-        data.pop("quality_mode", None)
-
-        # check if quality_modes is a set, if not, convert to set
-        quality_modes_set = quality_modes
-        if quality_modes and not isinstance(quality_modes, set):
-            quality_modes_set = set(quality_modes)
-        if quality_mode:
-            quality_modes_set = {quality_mode}
-
-        if (
-            quality_modes_set is None
-            or len(quality_modes_set) == 0
-            or quality_modes_set
-            == {QualityMode.Benchmark, QualityMode.Consensus}
-        ):
-            data["auto_audit_number_of_labels"] = (
-                CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
-            )
-            data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
-            data["is_benchmark_enabled"] = True
-            data["is_consensus_enabled"] = True
-        elif quality_modes_set == {QualityMode.Benchmark}:
-            data["auto_audit_number_of_labels"] = (
-                BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
-            )
-            data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
-            data["is_benchmark_enabled"] = True
-        elif quality_modes_set == {QualityMode.Consensus}:
-            data["auto_audit_number_of_labels"] = (
-                CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
-            )
-            data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
-            data["is_consensus_enabled"] = True
-        else:
-            raise ValueError(
-                f"{quality_modes_set} is not a valid quality modes set. Allowed values are [Benchmark, Consensus]"
-            )
-
-        params = {**data}
+        params = input.model_dump(exclude_none=True)
         if media_type_value:
             params["media_type"] = media_type_value
 

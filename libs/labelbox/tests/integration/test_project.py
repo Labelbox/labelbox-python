@@ -7,6 +7,7 @@ import requests
 from lbox.exceptions import InvalidQueryError
 
 from labelbox import Dataset, LabelingFrontend, Project
+from labelbox.schema import media_type
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.queue_mode import QueueMode
@@ -51,7 +52,7 @@ def data_for_project_test(client, rand_gen):
     def _create_project(name: str = None):
         if name is None:
             name = rand_gen(str)
-        project = client.create_project(name=name)
+        project = client.create_project(name=name, media_type=MediaType.Image)
         projects.append(project)
         return project
 
@@ -140,10 +141,6 @@ def test_extend_reservations(project):
         project.extend_reservations("InvalidQueueType")
 
 
-@pytest.mark.skipif(
-    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem",
-    reason="new mutation does not work for onprem",
-)
 def test_attach_instructions(client, project):
     with pytest.raises(ValueError) as execinfo:
         project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
@@ -248,9 +245,11 @@ def test_media_type(client, project: Project, rand_gen):
     assert isinstance(project.media_type, MediaType)
 
     # Update test
-    project = client.create_project(name=rand_gen(str))
-    project.update(media_type=MediaType.Image)
-    assert project.media_type == MediaType.Image
+    project = client.create_project(
+        name=rand_gen(str), media_type=MediaType.Image
+    )
+    project.update(media_type=MediaType.Text)
+    assert project.media_type == MediaType.Text
     project.delete()
 
     for media_type in MediaType.get_supported_members():
@@ -271,13 +270,16 @@ def test_media_type(client, project: Project, rand_gen):
 
 def test_queue_mode(client, rand_gen):
     project = client.create_project(
-        name=rand_gen(str)
+        name=rand_gen(str),
+        media_type=MediaType.Image,
     )  # defaults to benchmark and consensus
     assert project.auto_audit_number_of_labels == 3
     assert project.auto_audit_percentage == 0
 
     project = client.create_project(
-        name=rand_gen(str), quality_modes=[QualityMode.Benchmark]
+        name=rand_gen(str),
+        quality_modes=[QualityMode.Benchmark],
+        media_type=MediaType.Image,
     )
     assert project.auto_audit_number_of_labels == 1
     assert project.auto_audit_percentage == 1
@@ -285,13 +287,16 @@ def test_queue_mode(client, rand_gen):
     project = client.create_project(
         name=rand_gen(str),
         quality_modes=[QualityMode.Benchmark, QualityMode.Consensus],
+        media_type=MediaType.Image,
     )
     assert project.auto_audit_number_of_labels == 3
     assert project.auto_audit_percentage == 0
 
 
 def test_label_count(client, configured_batch_project_with_label):
-    project = client.create_project(name="test label count")
+    project = client.create_project(
+        name="test label count", media_type=MediaType.Image
+    )
     assert project.get_label_count() == 0
     project.delete()
 
