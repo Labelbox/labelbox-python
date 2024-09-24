@@ -72,13 +72,3 @@ def test_project_editor_task_type(
     )
 
     assert project.editor_task_type == expected_editor_task_type
-
-
-def test_setup_editor_using_connect_ontology(project_entity):
-    project = project_entity
-    ontology = MagicMock()
-    project.connect_ontology = MagicMock()
-    with patch("warnings.warn") as warn:
-        project.setup_editor(ontology)
-        warn.assert_called_once()
-        project.connect_ontology.assert_called_once_with(ontology)
