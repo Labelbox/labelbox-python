@@ -657,16 +657,6 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["reviewMetrics"]["labelAggregate"]["count"]
 
-    def setup_editor(self, ontology) -> None:
-        """
-        Sets up the project using the Pictor editor.
-
-        Args:
-            ontology (Ontology): The ontology to attach to the project
-        """
-        warnings.warn("This method is deprecated use connect_ontology instead.")
-        self.connect_ontology(ontology)
-
     def connect_ontology(self, ontology) -> None:
         """
         Connects the ontology to the project. If an editor is not setup, it will be connected as well.
