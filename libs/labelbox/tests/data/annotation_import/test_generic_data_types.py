@@ -1,17 +1,18 @@
 import datetime
+import itertools
+import uuid
+
+import pytest
+
+import labelbox as lb
+from labelbox import Client, OntologyKind, Project
+from labelbox.data.annotation_types import Label
 from labelbox.data.annotation_types.data.generic_data_row_data import (
     GenericDataRowData,
 )
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
-from labelbox.data.annotation_types import Label
-import pytest
-import uuid
-
-import labelbox as lb
-from labelbox.schema.media_type import MediaType
 from labelbox.schema.annotation_import import AnnotationImportState
-from labelbox import Project, Client, OntologyKind
-import itertools
+from labelbox.schema.media_type import MediaType
 
 """
  - integration test for importing mal labels and ground truths with each supported MediaType. 
@@ -129,6 +130,7 @@ def test_import_media_types(
     export_v2_test_helpers,
     helpers,
     media_type,
+    wait_for_label_processing,
 ):
     annotations_ndjson = list(
         itertools.chain.from_iterable(annotations_by_media_type[media_type])
@@ -144,6 +146,8 @@ def test_import_media_types(
 
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
+
+    wait_for_label_processing(configured_project)[0]
 
     result = export_v2_test_helpers.run_project_export_v2_task(
         configured_project
