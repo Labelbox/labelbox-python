@@ -8,7 +8,7 @@ import time
 import urllib.parse
 from collections import defaultdict
 from types import MappingProxyType
-from typing import Any, Callable, Dict, List, Optional, Union, overload
+from typing import Any, Callable, Dict, List, Optional, Set, Union, overload
 
 import lbox.exceptions
 import requests
@@ -597,7 +597,20 @@ class Client:
             raise e
         return dataset
 
-    def create_project(self, **kwargs) -> Project:
+    def create_project(
+        self,
+        name: str,
+        media_type: MediaType,
+        description: Optional[str] = None,
+        auto_audit_percentage: Optional[float] = None,
+        auto_audit_number_of_labels: Optional[int] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
+    ) -> Project:
         """Creates a Project object on the server.
 
         Attribute values are passed as keyword arguments.
@@ -628,40 +641,33 @@ class Client:
             dataset_name_or_id, append_to_existing_dataset, data_row_count, editor_task_type
             They are not used for general projects and not supported in this method
         """
-        #  The following arguments are not supported for general projects, only for chat model evaluation projects
-        kwargs.pop("dataset_name_or_id", None)
-        kwargs.pop("append_to_existing_dataset", None)
-        kwargs.pop("data_row_count", None)
-        kwargs.pop("editor_task_type", None)
-        input = _CoreProjectInput(**kwargs)
-        return self._create_project(input)
-
-    @overload
-    def create_model_evaluation_project(
-        self,
-        dataset_name: str,
-        dataset_id: str = None,
-        data_row_count: int = 100,
-        **kwargs,
-    ) -> Project:
-        pass
-
-    @overload
-    def create_model_evaluation_project(
-        self,
-        dataset_id: str,
-        dataset_name: str = None,
-        data_row_count: int = 100,
-        **kwargs,
-    ) -> Project:
-        pass
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": media_type,
+            "auto_audit_percentage": auto_audit_percentage,
+            "auto_audit_number_of_labels": auto_audit_number_of_labels,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
     def create_model_evaluation_project(
         self,
+        name: str,
+        description: Optional[str] = None,
+        auto_audit_percentage: Optional[float] = None,
+        auto_audit_number_of_labels: Optional[int] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
         dataset_id: Optional[str] = None,
         dataset_name: Optional[str] = None,
         data_row_count: int = 100,
-        **kwargs,
     ) -> Project:
         """
         Use this method exclusively to create a chat model evaluation project.
@@ -692,8 +698,6 @@ class Client:
             raise ValueError(
                 "dataset_name or data_set_id must be present and not be an empty string."
             )
-        if data_row_count <= 0:
-            raise ValueError("data_row_count must be a positive integer.")
 
         if dataset_id:
             append_to_existing_dataset = True
@@ -702,15 +706,38 @@ class Client:
             append_to_existing_dataset = False
             dataset_name_or_id = dataset_name
 
-        kwargs["media_type"] = MediaType.Conversational
-        kwargs["dataset_name_or_id"] = dataset_name_or_id
-        kwargs["append_to_existing_dataset"] = append_to_existing_dataset
-        kwargs["data_row_count"] = data_row_count
-        kwargs["editor_task_type"] = EditorTaskType.ModelChatEvaluation.value
+        media_type = MediaType.Conversational
+        editor_task_type = EditorTaskType.ModelChatEvaluation
 
-        return self._create_project(**kwargs)
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": media_type,
+            "auto_audit_percentage": auto_audit_percentage,
+            "auto_audit_number_of_labels": auto_audit_number_of_labels,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+            "dataset_name_or_id": dataset_name_or_id,
+            "append_to_existing_dataset": append_to_existing_dataset,
+            "data_row_count": data_row_count,
+            "editor_task_type": editor_task_type,
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
-    def create_offline_model_evaluation_project(self, **kwargs) -> Project:
+    def create_offline_model_evaluation_project(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        auto_audit_percentage: Optional[float] = None,
+        auto_audit_number_of_labels: Optional[int] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
+    ) -> Project:
         """
         Creates a project for offline model evaluation.
         Args:
@@ -718,26 +745,35 @@ class Client:
         Returns:
             Project: The created project
         """
-        kwargs["media_type"] = (
-            MediaType.Conversational
-        )  # Only Conversational is supported
-        kwargs["editor_task_type"] = (
-            EditorTaskType.OfflineModelChatEvaluation.value
-        )  # Special editor task type for offline model evaluation
-
-        # The following arguments are not supported for offline model evaluation
-        kwargs.pop("dataset_name_or_id", None)
-        kwargs.pop("append_to_existing_dataset", None)
-        kwargs.pop("data_row_count", None)
-
-        return self._create_project(**kwargs)
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": MediaType.Conversational,
+            "auto_audit_percentage": auto_audit_percentage,
+            "auto_audit_number_of_labels": auto_audit_number_of_labels,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+            "editor_task_type": EditorTaskType.OfflineModelChatEvaluation,
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
     def create_prompt_response_generation_project(
         self,
+        name: str,
+        media_type: MediaType,
+        description: Optional[str] = None,
+        auto_audit_percentage: Optional[float] = None,
+        auto_audit_number_of_labels: Optional[int] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
         dataset_id: Optional[str] = None,
         dataset_name: Optional[str] = None,
         data_row_count: int = 100,
-        **kwargs,
     ) -> Project:
         """
         Use this method exclusively to create a prompt and response generation project.
@@ -776,9 +812,6 @@ class Client:
                 "Only provide a dataset_name or dataset_id, not both."
             )
 
-        if data_row_count <= 0:
-            raise ValueError("data_row_count must be a positive integer.")
-
         if dataset_id:
             append_to_existing_dataset = True
             dataset_name_or_id = dataset_id
@@ -786,7 +819,7 @@ class Client:
             append_to_existing_dataset = False
             dataset_name_or_id = dataset_name
 
-        if "media_type" in kwargs and kwargs.get("media_type") not in [
+        if media_type not in [
             MediaType.LLMPromptCreation,
             MediaType.LLMPromptResponseCreation,
         ]:
@@ -794,15 +827,34 @@ class Client:
                 "media_type must be either LLMPromptCreation or LLMPromptResponseCreation"
             )
 
-        kwargs["dataset_name_or_id"] = dataset_name_or_id
-        kwargs["append_to_existing_dataset"] = append_to_existing_dataset
-        kwargs["data_row_count"] = data_row_count
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": media_type,
+            "auto_audit_percentage": auto_audit_percentage,
+            "auto_audit_number_of_labels": auto_audit_number_of_labels,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+            "dataset_name_or_id": dataset_name_or_id,
+            "append_to_existing_dataset": append_to_existing_dataset,
+            "data_row_count": data_row_count,
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
-        kwargs.pop("editor_task_type", None)
-
-        return self._create_project(**kwargs)
-
-    def create_response_creation_project(self, **kwargs) -> Project:
+    def create_response_creation_project(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        auto_audit_percentage: Optional[float] = None,
+        auto_audit_number_of_labels: Optional[int] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
+    ) -> Project:
         """
         Creates a project for response creation.
         Args:
@@ -810,17 +862,18 @@ class Client:
         Returns:
             Project: The created project
         """
-        kwargs["media_type"] = MediaType.Text  # Only Text is supported
-        kwargs["editor_task_type"] = (
-            EditorTaskType.ResponseCreation.value
-        )  # Special editor task type for response creation projects
-
-        # The following arguments are not supported for response creation projects
-        kwargs.pop("dataset_name_or_id", None)
-        kwargs.pop("append_to_existing_dataset", None)
-        kwargs.pop("data_row_count", None)
-
-        return self._create_project(**kwargs)
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": MediaType.Text,  # Only Text is supported
+            "auto_audit_percentage": auto_audit_percentage,
+            "auto_audit_number_of_labels": auto_audit_number_of_labels,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+            "editor_task_type": EditorTaskType.ResponseCreation.value,  # Special editor task type for response creation projects
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
     def _create_project(self, input: _CoreProjectInput) -> Project:
         media_type_value = input.media_type.value

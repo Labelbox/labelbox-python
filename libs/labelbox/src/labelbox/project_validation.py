@@ -1,8 +1,10 @@
 from typing import Optional, Set
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import Annotated
 
 from labelbox.schema.media_type import MediaType
+from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.quality_mode import (
     BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS,
     BENCHMARK_AUTO_AUDIT_PERCENTAGE,
@@ -11,6 +13,8 @@ from labelbox.schema.quality_mode import (
     QualityMode,
 )
 from labelbox.schema.queue_mode import QueueMode
+
+PositiveInt = Annotated[int, Field(gt=0)]
 
 
 class _CoreProjectInput(BaseModel):
@@ -27,6 +31,8 @@ class _CoreProjectInput(BaseModel):
     is_consensus_enabled: Optional[bool] = None
     dataset_name_or_id: Optional[str] = None
     append_to_existing_dataset: Optional[bool] = None
+    data_row_count: Optional[PositiveInt] = None
+    editor_task_type: Optional[EditorTaskType] = None
 
     model_config = ConfigDict(extra="forbid")
 
