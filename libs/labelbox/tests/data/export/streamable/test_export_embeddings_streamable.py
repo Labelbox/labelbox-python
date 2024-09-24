@@ -1,7 +1,7 @@
 import json
 import random
 
-from labelbox import StreamType, JsonConverter
+from labelbox import StreamType
 
 
 class TestExportEmbeddings:
