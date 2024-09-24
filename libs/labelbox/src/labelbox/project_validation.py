@@ -40,7 +40,7 @@ class _CoreProjectInput(BaseModel):
     def validate_fields(self):
         if (
             self.auto_audit_percentage is not None
-            and self.auto_audit_number_of_labels is not None
+            or self.auto_audit_number_of_labels is not None
         ):
             raise ValueError(
                 "quality_modes must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
@@ -67,9 +67,8 @@ class _CoreProjectInput(BaseModel):
             )
         elif self.quality_modes == {QualityMode.Consensus}:
             self._set_quality_mode_attributes(
-                data,
-                CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS,
-                CONSENSUS_AUTO_AUDIT_PERCENTAGE,
+                number_of_labels=CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS,
+                percentage=CONSENSUS_AUTO_AUDIT_PERCENTAGE,
                 is_consensus_enabled=True,
             )
 

@@ -10,14 +10,12 @@ from labelbox import Dataset, LabelingFrontend, Project
 from labelbox.schema import media_type
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.quality_mode import QualityMode
-from labelbox.schema.queue_mode import QueueMode
 
 
 def test_project(client, rand_gen):
     data = {
         "name": rand_gen(str),
         "description": rand_gen(str),
-        "queue_mode": QueueMode.Batch.Batch,
         "media_type": MediaType.Image,
     }
     project = client.create_project(**data)

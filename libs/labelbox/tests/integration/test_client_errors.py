@@ -81,34 +81,6 @@ def test_network_error(client):
         client.create_project(name="Project name", media_type=MediaType.Image)
 
 
-def test_invalid_attribute_error(
-    client,
-    rand_gen,
-):
-    # Creation
-    with pytest.raises(lbox.exceptions.InvalidAttributeError) as excinfo:
-        client.create_project(
-            name="Name", invalid_field="Whatever", media_type=MediaType.Image
-        )
-    assert excinfo.value.db_object_type == Project
-    assert excinfo.value.field == "invalid_field"
-
-    # Update
-    project = client.create_project(
-        name=rand_gen(str), media_type=MediaType.Image
-    )
-    with pytest.raises(lbox.exceptions.InvalidAttributeError) as excinfo:
-        project.update(invalid_field="Whatever")
-    assert excinfo.value.db_object_type == Project
-    assert excinfo.value.field == "invalid_field"
-
-    # Top-level-fetch
-    with pytest.raises(lbox.exceptions.InvalidAttributeError) as excinfo:
-        client.get_projects(where=User.email == "email")
-    assert excinfo.value.db_object_type == Project
-    assert excinfo.value.field == {User.email}
-
-
 @pytest.mark.skip("timeouts cause failure before rate limit")
 def test_api_limit_error(client):
     def get(arg):

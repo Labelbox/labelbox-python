@@ -1,10 +1,8 @@
 import pytest
 from lbox.exceptions import InvalidQueryError
-from libs.labelbox.src.labelbox.schema.media_type import MediaType
 
 from labelbox import Project
-from labelbox.schema import media_type
-from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.media_type import MediaType
 
 
 @pytest.fixture
