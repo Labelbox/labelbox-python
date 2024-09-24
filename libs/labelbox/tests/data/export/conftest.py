@@ -1,6 +1,6 @@
 import uuid
 import time
-from labelbox.schema.media_type import MediaType
+from labelbox import MediaType, Client
 import pytest
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.labeling_frontend import LabelingFrontend
@@ -8,7 +8,7 @@ from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
 
 
 @pytest.fixture
-def ontology(client):
+def ontology(client: Client):
     bbox_tool_with_nested_text = {
         "required": False,
         "name": "bbox_tool_with_nested_text",
@@ -124,13 +124,6 @@ def ontology(client):
         "color": "#006FA6",
         "classifications": [],
     }
-    segmentation_tool = {
-        "required": False,
-        "name": "segmentation--",
-        "tool": "superpixel",
-        "color": "#A30059",
-        "classifications": [],
-    }
     raster_segmentation_tool = {
         "required": False,
         "name": "segmentation_mask",
@@ -149,18 +142,7 @@ def ontology(client):
             {"label": "optionN", "value": "optionn"},
         ],
     }
-    checklist_index = {
-        "required": False,
-        "instructions": "checklist_index",
-        "name": "checklist_index",
-        "type": "checklist",
-        "scope": "index",
-        "options": [
-            {"label": "option1_index", "value": "option1_index"},
-            {"label": "option2_index", "value": "option2_index"},
-            {"label": "optionN_index", "value": "optionn_index"},
-        ],
-    }
+
     free_form_text = {
         "required": False,
         "instructions": "text",
@@ -168,14 +150,7 @@ def ontology(client):
         "type": "text",
         "options": [],
     }
-    free_form_text_index = {
-        "required": False,
-        "instructions": "text_index",
-        "name": "text_index",
-        "type": "text",
-        "scope": "index",
-        "options": [],
-    }
+
     radio = {
         "required": False,
         "instructions": "radio",
@@ -201,7 +176,6 @@ def ontology(client):
         polygon_tool,
         polyline_tool,
         point_tool,
-        segmentation_tool,
         raster_segmentation_tool,
     ]
     classifications = [
@@ -211,8 +185,8 @@ def ontology(client):
     ]
     ontology = client.create_ontology(
         "image ontology",
-        MediaType.Image,
         {"tools": tools, "classifications": classifications},
+        MediaType.Image,
     )
     return ontology
 
