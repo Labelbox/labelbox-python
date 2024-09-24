@@ -1,6 +1,6 @@
 from datetime import datetime
 from string import Template
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Union
 
 from lbox.exceptions import ResourceNotFoundError
 from pydantic import BaseModel, Field, model_validator, model_serializer
@@ -79,7 +79,7 @@ class LabelingServiceDashboard(_CamelCaseMixin):
     editor_task_type: EditorTaskType = Field(frozen=True, default=None)
     tags: List[LabelingServiceDashboardTags] = Field(frozen=True, default=None)
 
-    client: Any
+    client: Any  # type Any to avoid circular import from client
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
