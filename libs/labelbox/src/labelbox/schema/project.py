@@ -661,7 +661,7 @@ class Project(DbObject, Updateable, Deletable):
         """
         Connects the ontology to the project. If an editor is not setup, it will be connected as well.
 
-        Note: For live chat model evaluation projects, the editor setup is skipped becase it is automatically setup when the project is created.
+        Note: For live chat model evaluation projects, the editor setup is skipped because it is automatically setup when the project is created.
 
         Args:
             ontology (Ontology): The ontology to attach to the project
