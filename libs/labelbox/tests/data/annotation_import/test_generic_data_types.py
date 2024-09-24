@@ -41,6 +41,7 @@ def validate_iso_format(date_string: str):
         (MediaType.LLMPromptResponseCreation, GenericDataRowData),
         (MediaType.LLMPromptCreation, GenericDataRowData),
         (OntologyKind.ResponseCreation, GenericDataRowData),
+        (OntologyKind.ModelEvaluation, GenericDataRowData),
     ],
 )
 def test_generic_data_row_type_by_data_row_id(
@@ -76,6 +77,7 @@ def test_generic_data_row_type_by_data_row_id(
         # (MediaType.LLMPromptResponseCreation, GenericDataRowData),
         # (MediaType.LLMPromptCreation, GenericDataRowData),
         (OntologyKind.ResponseCreation, GenericDataRowData),
+        (OntologyKind.ModelEvaluation, GenericDataRowData),
     ],
 )
 def test_generic_data_row_type_by_global_key(
@@ -115,6 +117,7 @@ def test_generic_data_row_type_by_global_key(
         ),
         (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
         (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation),
+        (OntologyKind.ModelEvaluation, OntologyKind.ModelEvaluation),
     ],
     indirect=["configured_project"],
 )
@@ -191,6 +194,7 @@ def test_import_media_types(
         (MediaType.Document, MediaType.Document),
         (MediaType.Dicom, MediaType.Dicom),
         (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation),
+        (OntologyKind.ModelEvaluation, OntologyKind.ModelEvaluation),
     ],
     indirect=["configured_project_by_global_key"],
 )
@@ -275,6 +279,7 @@ def test_import_media_types_by_global_key(
         ),
         (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
         (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation),
+        (OntologyKind.ModelEvaluation, OntologyKind.ModelEvaluation),
     ],
     indirect=["configured_project"],
 )
@@ -309,6 +314,7 @@ def test_import_mal_annotations(
         (MediaType.Document, MediaType.Document),
         (MediaType.Dicom, MediaType.Dicom),
         (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation),
+        (OntologyKind.ModelEvaluation, OntologyKind.ModelEvaluation),
     ],
     indirect=["configured_project_by_global_key"],
 )

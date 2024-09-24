@@ -4,13 +4,13 @@ from typing import Any, Dict, List, Optional, Union
 
 from labelbox.exceptions import ResourceNotFoundError
 from labelbox.pagination import PaginatedCollection
-from pydantic import BaseModel, root_validator, Field
+from pydantic import BaseModel, model_validator, Field
 from labelbox.schema.search_filters import SearchFilter, build_search_filter
 from labelbox.utils import _CamelCaseMixin
 from .ontology_kind import EditorTaskType
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
-from labelbox.utils import _CamelCaseMixin, sentence_case
+from labelbox.utils import sentence_case
 
 GRAPHQL_QUERY_SELECTIONS = """
                 id
@@ -58,7 +58,7 @@ class LabelingServiceDashboard(_CamelCaseMixin):
         status (LabelingServiceStatus): status of the labeling service
         data_rows_count (int): total number of data rows batched in the project
         tasks_completed_count (int): number of tasks completed (in the Done queue)
-        tasks_remaining_count (int): number of tasks remaining (in a queue other then Done)
+        tasks_remaining_count (int): number of tasks remaining (i.e. tasks in progress), None if labeling has not started
         tags (List[LabelingServiceDashboardTags]): tags associated with the project
         media_type (MediaType): media type of the project
         editor_task_type (EditorTaskType): editor task type of the project
@@ -73,7 +73,7 @@ class LabelingServiceDashboard(_CamelCaseMixin):
     status: LabelingServiceStatus = Field(frozen=True, default=None)
     data_rows_count: int = Field(frozen=True)
     tasks_completed_count: int = Field(frozen=True)
-    tasks_remaining_count: int = Field(frozen=True)
+    tasks_remaining_count: Optional[int] = Field(frozen=True, default=None)
     media_type: Optional[MediaType] = Field(frozen=True, default=None)
     editor_task_type: EditorTaskType = Field(frozen=True, default=None)
     tags: List[LabelingServiceDashboardTags] = Field(frozen=True, default=None)
@@ -198,7 +198,7 @@ class LabelingServiceDashboard(_CamelCaseMixin):
             experimental=True,
         )
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def convert_boost_data(cls, data):
         if "boostStatus" in data:
             data["status"] = LabelingServiceStatus(data.pop("boostStatus"))
@@ -211,6 +211,12 @@ class LabelingServiceDashboard(_CamelCaseMixin):
 
         if "boostRequestedBy" in data:
             data["created_by_id"] = data.pop("boostRequestedBy")
+
+        tasks_remaining_count = data.get("tasksRemainingCount", 0)
+        tasks_total_count = data.get("tasksTotalCount", 0)
+        # to avoid confusion, setting tasks_completed_count to None if none of tasks has even completed an none are in flight
+        if tasks_total_count == 0 and tasks_remaining_count == 0:
+            data.pop("tasksRemainingCount")
 
         return data
 
