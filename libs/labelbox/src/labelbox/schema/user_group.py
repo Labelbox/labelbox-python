@@ -278,7 +278,7 @@ class UserGroup(BaseModel):
         except Exception as e:
             error = e
         if not result or error:
-            # this is client side only, server doesn't have an equivalent error
+            # This is client side only, server doesn't have an equivalent error
             raise ResourceCreationError(
                 f"Failed to create user group, either user group name is in use currently, or provided user or projects don't exist server error: {error}"
             )
