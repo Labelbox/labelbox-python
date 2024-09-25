@@ -5,7 +5,7 @@ from pydantic import PlainSerializer, BaseModel, Field
 
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
 from labelbox.utils import format_iso_datetime
 
@@ -15,8 +15,7 @@ class BaseSearchFilter(BaseModel):
     Shared code for all search filters
     """
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class OperationTypeEnum(Enum):
