@@ -32,7 +32,6 @@ from labelbox.schema.invite import Invite
 from labelbox.schema.ontology import Ontology
 from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import QualityMode
-from labelbox.schema.queue_mode import QueueMode
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
 MASKABLE_IMG_URL = "https://storage.googleapis.com/labelbox-datasets/image_sample_data/2560px-Kitano_Street_Kobe01s5s4110.jpeg"
@@ -444,7 +443,6 @@ def conversation_entity_data_row(client, rand_gen):
 def project(client, rand_gen):
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     yield project
@@ -455,8 +453,7 @@ def project(client, rand_gen):
 def consensus_project(client, rand_gen):
     project = client.create_project(
         name=rand_gen(str),
-        quality_mode=QualityMode.Consensus,
-        queue_mode=QueueMode.Batch,
+        quality_modes={QualityMode.Consensus},
         media_type=MediaType.Image,
     )
     yield project
@@ -646,7 +643,6 @@ def configured_project_with_label(
     """
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     project._wait_until_data_rows_are_processed(
@@ -749,7 +745,6 @@ def configured_batch_project_with_label(
     """
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     data_rows = [dr.uid for dr in list(dataset.data_rows())]
@@ -784,7 +779,6 @@ def configured_batch_project_with_multiple_datarows(
     """
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     global_keys = [dr.global_key for dr in data_rows]
@@ -1065,7 +1059,6 @@ def configured_project_with_complex_ontology(
 ):
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     dataset = initial_dataset

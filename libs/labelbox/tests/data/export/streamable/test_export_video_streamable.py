@@ -21,13 +21,13 @@ class TestExportVideo:
     def test_export(
         self,
         client,
-        configured_project_without_data_rows,
+        configured_video_project_without_data_rows,
         video_data,
         video_data_row,
         bbox_video_annotation_objects,
         rand_gen,
     ):
-        project = configured_project_without_data_rows
+        project = configured_video_project_without_data_rows
         project_id = project.uid
         labels = []
 

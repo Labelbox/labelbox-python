@@ -10,7 +10,7 @@ import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
 from types import MappingProxyType
-from typing import Any, Callable, Dict, List, Optional, Union, overload
+from typing import Any, Callable, Dict, List, Optional, Set, Union, overload
 
 import requests
 import requests.exceptions
@@ -24,6 +24,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
+from labelbox.project_validation import _CoreProjectInput
 from labelbox.schema import role
 from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row import DataRow
@@ -597,7 +598,18 @@ class Client:
             raise e
         return dataset
 
-    def create_project(self, **kwargs) -> Project:
+    def create_project(
+        self,
+        name: str,
+        media_type: MediaType,
+        description: Optional[str] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
+    ) -> Project:
         """Creates a Project object on the server.
 
         Attribute values are passed as keyword arguments.
@@ -606,7 +618,6 @@ class Client:
                 name="<project_name>",
                 description="<project_description>",
                 media_type=MediaType.Image,
-                queue_mode=QueueMode.Batch
             )
 
         Args:
@@ -614,63 +625,38 @@ class Client:
             description (str): A short summary for the project
             media_type (MediaType): The type of assets that this project will accept
             queue_mode (Optional[QueueMode]): The queue mode to use
-            quality_mode (Optional[QualityMode]): The quality mode to use (e.g. Benchmark, Consensus). Defaults to
-                Benchmark
             quality_modes (Optional[List[QualityMode]]): The quality modes to use (e.g. Benchmark, Consensus). Defaults to
                 Benchmark.
+            is_benchmark_enabled (Optional[bool]): Whether the project supports benchmark. Defaults to None.
+            is_consensus_enabled (Optional[bool]): Whether the project supports consensus. Defaults to None.
         Returns:
             A new Project object.
         Raises:
-            InvalidAttributeError: If the Project type does not contain
-                any of the attribute names given in kwargs.
-
-        NOTE: the following attributes are used only in chat model evaluation projects:
-            dataset_name_or_id, append_to_existing_dataset, data_row_count, editor_task_type
-            They are not used for general projects and not supported in this method
+            ValueError: If inputs are invalid.
         """
-        #  The following arguments are not supported for general projects, only for chat model evaluation projects
-        kwargs.pop("dataset_name_or_id", None)
-        kwargs.pop("append_to_existing_dataset", None)
-        kwargs.pop("data_row_count", None)
-        kwargs.pop("editor_task_type", None)
-        return self._create_project(**kwargs)
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": media_type,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
-    @overload
     def create_model_evaluation_project(
         self,
-        dataset_name: str,
-        dataset_id: str = None,
-        data_row_count: int = 100,
-        **kwargs,
-    ) -> Project:
-        pass
-
-    @overload
-    def create_model_evaluation_project(
-        self,
-        dataset_id: str,
-        dataset_name: str = None,
-        data_row_count: int = 100,
-        **kwargs,
-    ) -> Project:
-        pass
-
-    @overload
-    def create_model_evaluation_project(
-        self,
+        name: str,
+        description: Optional[str] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
         dataset_id: Optional[str] = None,
         dataset_name: Optional[str] = None,
         data_row_count: Optional[int] = None,
-        **kwargs,
-    ) -> Project:
-        pass
-
-    def create_model_evaluation_project(
-        self,
-        dataset_id: Optional[str] = None,
-        dataset_name: Optional[str] = None,
-        data_row_count: Optional[int] = None,
-        **kwargs,
     ) -> Project:
         """
         Use this method exclusively to create a chat model evaluation project.
@@ -678,12 +664,12 @@ class Client:
             dataset_name: When creating a new dataset, pass the name
             dataset_id: When using an existing dataset, pass the id
             data_row_count: The number of data row assets to use for the project
-            **kwargs: Additional parameters to pass to the the create_project method
+            See create_project for additional parameters
         Returns:
             Project: The created project
 
         Examples:
-            >>> client.create_model_evaluation_project(name=project_name, dataset_name="new data set")
+            >>> client.create_model_evaluation_project(name=project_name, media_type=dataset_name="new data set")
             >>>     This creates a new dataset with a default number of rows (100), creates new project and assigns a batch of the newly created datarows to the project.
 
             >>> client.create_model_evaluation_project(name=project_name, dataset_name="new data set", data_row_count=10)
@@ -715,39 +701,68 @@ class Client:
                 DeprecationWarning,
             )
 
-        kwargs["media_type"] = MediaType.Conversational
-        kwargs["editor_task_type"] = EditorTaskType.ModelChatEvaluation.value
+        media_type = MediaType.Conversational
+        editor_task_type = EditorTaskType.ModelChatEvaluation
 
-        return self._create_project(**kwargs)
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": media_type,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+            "dataset_name_or_id": dataset_name_or_id,
+            "append_to_existing_dataset": append_to_existing_dataset,
+            "data_row_count": data_row_count,
+            "editor_task_type": editor_task_type,
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
-    def create_offline_model_evaluation_project(self, **kwargs) -> Project:
+    def create_offline_model_evaluation_project(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
+    ) -> Project:
         """
         Creates a project for offline model evaluation.
         Args:
-            **kwargs: Additional parameters to pass see the create_project method
+            See create_project for parameters
         Returns:
             Project: The created project
         """
-        kwargs["media_type"] = (
-            MediaType.Conversational
-        )  # Only Conversational is supported
-        kwargs["editor_task_type"] = (
-            EditorTaskType.OfflineModelChatEvaluation.value
-        )  # Special editor task type for offline model evaluation
-
-        # The following arguments are not supported for offline model evaluation
-        kwargs.pop("dataset_name_or_id", None)
-        kwargs.pop("append_to_existing_dataset", None)
-        kwargs.pop("data_row_count", None)
-
-        return self._create_project(**kwargs)
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": MediaType.Conversational,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+            "editor_task_type": EditorTaskType.OfflineModelChatEvaluation,
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
     def create_prompt_response_generation_project(
         self,
+        name: str,
+        media_type: MediaType,
+        description: Optional[str] = None,
+        auto_audit_percentage: Optional[float] = None,
+        auto_audit_number_of_labels: Optional[int] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
         dataset_id: Optional[str] = None,
         dataset_name: Optional[str] = None,
         data_row_count: int = 100,
-        **kwargs,
     ) -> Project:
         """
         Use this method exclusively to create a prompt and response generation project.
@@ -756,7 +771,8 @@ class Client:
             dataset_name: When creating a new dataset, pass the name
             dataset_id: When using an existing dataset, pass the id
             data_row_count: The number of data row assets to use for the project
-            **kwargs: Additional parameters to pass see the create_project method
+            media_type: The type of assets that this project will accept. Limited to LLMPromptCreation and LLMPromptResponseCreation
+            See create_project for additional parameters
         Returns:
             Project: The created project
 
@@ -786,9 +802,6 @@ class Client:
                 "Only provide a dataset_name or dataset_id, not both."
             )
 
-        if data_row_count <= 0:
-            raise ValueError("data_row_count must be a positive integer.")
-
         if dataset_id:
             append_to_existing_dataset = True
             dataset_name_or_id = dataset_id
@@ -796,7 +809,7 @@ class Client:
             append_to_existing_dataset = False
             dataset_name_or_id = dataset_name
 
-        if "media_type" in kwargs and kwargs.get("media_type") not in [
+        if media_type not in [
             MediaType.LLMPromptCreation,
             MediaType.LLMPromptResponseCreation,
         ]:
@@ -804,131 +817,54 @@ class Client:
                 "media_type must be either LLMPromptCreation or LLMPromptResponseCreation"
             )
 
-        kwargs["dataset_name_or_id"] = dataset_name_or_id
-        kwargs["append_to_existing_dataset"] = append_to_existing_dataset
-        kwargs["data_row_count"] = data_row_count
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": media_type,
+            "auto_audit_percentage": auto_audit_percentage,
+            "auto_audit_number_of_labels": auto_audit_number_of_labels,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+            "dataset_name_or_id": dataset_name_or_id,
+            "append_to_existing_dataset": append_to_existing_dataset,
+            "data_row_count": data_row_count,
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
-        kwargs.pop("editor_task_type", None)
-
-        return self._create_project(**kwargs)
-
-    def create_response_creation_project(self, **kwargs) -> Project:
+    def create_response_creation_project(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
+    ) -> Project:
         """
         Creates a project for response creation.
         Args:
-            **kwargs: Additional parameters to pass see the create_project method
+            See create_project for parameters
         Returns:
             Project: The created project
         """
-        kwargs["media_type"] = MediaType.Text  # Only Text is supported
-        kwargs["editor_task_type"] = (
-            EditorTaskType.ResponseCreation.value
-        )  # Special editor task type for response creation projects
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": MediaType.Text,  # Only Text is supported
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+            "editor_task_type": EditorTaskType.ResponseCreation.value,  # Special editor task type for response creation projects
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
-        # The following arguments are not supported for response creation projects
-        kwargs.pop("dataset_name_or_id", None)
-        kwargs.pop("append_to_existing_dataset", None)
-        kwargs.pop("data_row_count", None)
+    def _create_project(self, input: _CoreProjectInput) -> Project:
+        media_type_value = input.media_type.value
 
-        return self._create_project(**kwargs)
-
-    def _create_project(self, **kwargs) -> Project:
-        auto_audit_percentage = kwargs.get("auto_audit_percentage")
-        auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
-        if (
-            auto_audit_percentage is not None
-            or auto_audit_number_of_labels is not None
-        ):
-            raise ValueError(
-                "quality_modes must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
-            )
-
-        name = kwargs.get("name")
-        if name is None or not name.strip():
-            raise ValueError("project name must be a valid string.")
-
-        queue_mode = kwargs.get("queue_mode")
-        if queue_mode is QueueMode.Dataset:
-            raise ValueError(
-                "Dataset queue mode is deprecated. Please prefer Batch queue mode."
-            )
-        elif queue_mode is QueueMode.Batch:
-            logger.warning(
-                "Passing a queue mode of batch is redundant and will soon no longer be supported."
-            )
-
-        media_type = kwargs.get("media_type")
-        if media_type and MediaType.is_supported(media_type):
-            media_type_value = media_type.value
-        elif media_type:
-            raise TypeError(
-                f"{media_type} is not a valid media type. Use"
-                f" any of {MediaType.get_supported_members()}"
-                " from MediaType. Example: MediaType.Image."
-            )
-        else:
-            logger.warning(
-                "Creating a project without specifying media_type"
-                " through this method will soon no longer be supported."
-            )
-            media_type_value = None
-
-        quality_modes = kwargs.get("quality_modes")
-        quality_mode = kwargs.get("quality_mode")
-        if quality_mode:
-            logger.warning(
-                "Passing quality_mode is deprecated and will soon no longer be supported. Use quality_modes instead."
-            )
-
-        if quality_modes and quality_mode:
-            raise ValueError(
-                "Cannot use both quality_modes and quality_mode at the same time. Use one or the other."
-            )
-
-        if not quality_modes and not quality_mode:
-            logger.info("Defaulting quality modes to Benchmark and Consensus.")
-
-        data = kwargs
-        data.pop("quality_modes", None)
-        data.pop("quality_mode", None)
-
-        # check if quality_modes is a set, if not, convert to set
-        quality_modes_set = quality_modes
-        if quality_modes and not isinstance(quality_modes, set):
-            quality_modes_set = set(quality_modes)
-        if quality_mode:
-            quality_modes_set = {quality_mode}
-
-        if (
-            quality_modes_set is None
-            or len(quality_modes_set) == 0
-            or quality_modes_set
-            == {QualityMode.Benchmark, QualityMode.Consensus}
-        ):
-            data["auto_audit_number_of_labels"] = (
-                CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
-            )
-            data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
-            data["is_benchmark_enabled"] = True
-            data["is_consensus_enabled"] = True
-        elif quality_modes_set == {QualityMode.Benchmark}:
-            data["auto_audit_number_of_labels"] = (
-                BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
-            )
-            data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
-            data["is_benchmark_enabled"] = True
-        elif quality_modes_set == {QualityMode.Consensus}:
-            data["auto_audit_number_of_labels"] = (
-                CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
-            )
-            data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
-            data["is_consensus_enabled"] = True
-        else:
-            raise ValueError(
-                f"{quality_modes_set} is not a valid quality modes set. Allowed values are [Benchmark, Consensus]"
-            )
-
-        params = {**data}
+        params = input.model_dump(exclude_none=True)
         if media_type_value:
             params["media_type"] = media_type_value
 

@@ -1,9 +1,11 @@
-import uuid
 import time
+import uuid
+
 import pytest
-from labelbox.schema.queue_mode import QueueMode
+
+from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
 from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
+from labelbox.schema.media_type import MediaType
 
 
 @pytest.fixture
@@ -246,7 +248,7 @@ def configured_project_with_ontology(
     dataset = initial_dataset
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
     )
     editor = list(
         client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
@@ -273,7 +275,24 @@ def configured_project_without_data_rows(
     project = client.create_project(
         name=rand_gen(str),
         description=rand_gen(str),
-        queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
+    )
+    editor = list(
+        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
+    )[0]
+    project.setup(editor, ontology)
+    yield project
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
+
+
+@pytest.fixture
+def configured_video_project_without_data_rows(
+    client, ontology, rand_gen, teardown_helpers
+):
+    project = client.create_project(
+        name=rand_gen(str),
+        description=rand_gen(str),
+        media_type=MediaType.Video,
     )
     editor = list(
         client.get_labeling_frontends(where=LabelingFrontend.name == "editor")

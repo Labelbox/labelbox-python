@@ -1,11 +1,10 @@
-import pytest
-
-from labelbox import OntologyBuilder, MediaType, Tool
-from labelbox.orm.model import Entity
 import json
 import time
 
-from labelbox.schema.queue_mode import QueueMode
+import pytest
+
+from labelbox import MediaType, OntologyBuilder, Tool
+from labelbox.orm.model import Entity
 
 
 def test_feature_schema_is_not_archived(client, ontology):
@@ -99,7 +98,6 @@ def test_deletes_an_ontology(client):
 def test_cant_delete_an_ontology_with_project(client):
     project = client.create_project(
         name="test project",
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     tool = client.upsert_feature_schema(point.asdict())
@@ -187,7 +185,6 @@ def test_does_not_include_used_ontologies(client):
     )
     project = client.create_project(
         name="test project",
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     project.connect_ontology(ontology_with_project)

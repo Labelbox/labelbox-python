@@ -1,16 +1,21 @@
+import json
 import os
+import re
 import sys
 import time
+import uuid
 from collections import defaultdict
-from datetime import datetime, timezone
+from enum import Enum
 from itertools import islice
-from typing import Type
+from types import SimpleNamespace
+from typing import List, Tuple, Type
 
 import pytest
 
 from labelbox import (
     Classification,
     Client,
+    DataRow,
     Dataset,
     LabelingFrontend,
     MediaType,
@@ -80,7 +85,6 @@ def project_pack(client):
     projects = [
         client.create_project(
             name=f"user-proj-{idx}",
-            queue_mode=QueueMode.Batch,
             media_type=MediaType.Image,
         )
         for idx in range(2)
@@ -128,7 +132,6 @@ def configured_project_with_complex_ontology(
 ):
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     dataset = initial_dataset
