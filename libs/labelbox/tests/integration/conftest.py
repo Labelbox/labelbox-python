@@ -80,7 +80,7 @@ def project_pack(client):
 
 
 @pytest.fixture
-def project_with_empty_ontology(project, client: Client):
+def project_with_one_feature_ontology(project, client: Client):
     tools = [
         Tool(tool=Tool.Type.BBOX, name="test-bbox-class").asdict(),
     ]
@@ -96,11 +96,11 @@ def project_with_empty_ontology(project, client: Client):
 
 @pytest.fixture
 def configured_project(
-    project_with_empty_ontology, initial_dataset, rand_gen, image_url
+    project_with_one_feature_ontology, initial_dataset, rand_gen, image_url
 ):
     dataset = initial_dataset
     data_row_id = dataset.create_data_row(row_data=image_url).uid
-    project = project_with_empty_ontology
+    project = project_with_one_feature_ontology
 
     batch = project.create_batch(
         rand_gen(str),
@@ -116,7 +116,7 @@ def configured_project(
 
 @pytest.fixture
 def configured_project_with_complex_ontology(
-    client, initial_dataset, rand_gen, image_url, teardown_helpers
+    client: Client, initial_dataset, rand_gen, image_url, teardown_helpers
 ):
     project = client.create_project(
         name=rand_gen(str),
@@ -172,7 +172,9 @@ def configured_project_with_complex_ontology(
         ontology.add_classification(c)
 
     ontology = client.create_ontology(
-        "image ontology", MediaType.Image, ontology.asdict()
+        "image ontology",
+        ontology.asdict(),
+        MediaType.Image,
     )
     project.connect_ontology(ontology)
 

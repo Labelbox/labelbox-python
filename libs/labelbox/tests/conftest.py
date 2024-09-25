@@ -1026,11 +1026,11 @@ def upload_invalid_data_rows_for_dataset():
 
 @pytest.fixture
 def configured_project(
-    project_with_empty_ontology, initial_dataset, rand_gen, image_url
+    project_with_one_feature_ontology, initial_dataset, rand_gen, image_url
 ):
     dataset = initial_dataset
     data_row_id = dataset.create_data_row(row_data=image_url).uid
-    project = project_with_empty_ontology
+    project = project_with_one_feature_ontology
 
     batch = project.create_batch(
         rand_gen(str),
@@ -1045,7 +1045,7 @@ def configured_project(
 
 
 @pytest.fixture
-def project_with_empty_ontology(project, client: Client):
+def project_with_one_feature_ontology(project, client: Client):
     tools = [
         Tool(tool=Tool.Type.BBOX, name="test-bbox-class").asdict(),
     ]

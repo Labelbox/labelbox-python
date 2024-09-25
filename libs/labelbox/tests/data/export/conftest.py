@@ -117,13 +117,6 @@ def ontology(client: Client):
         "color": "#008941",
         "classifications": [],
     }
-    entity_tool = {
-        "required": False,
-        "name": "entity--",
-        "tool": "named-entity",
-        "color": "#006FA6",
-        "classifications": [],
-    }
     raster_segmentation_tool = {
         "required": False,
         "name": "segmentation_mask",
@@ -192,6 +185,188 @@ def ontology(client: Client):
 
 
 @pytest.fixture
+def video_ontology(client: Client):
+    bbox_tool_with_nested_text = {
+        "required": False,
+        "name": "bbox_tool_with_nested_text",
+        "tool": "rectangle",
+        "color": "#a23030",
+        "classifications": [
+            {
+                "required": False,
+                "instructions": "nested",
+                "name": "nested",
+                "type": "radio",
+                "options": [
+                    {
+                        "label": "radio_option_1",
+                        "value": "radio_value_1",
+                        "options": [
+                            {
+                                "required": False,
+                                "instructions": "nested_checkbox",
+                                "name": "nested_checkbox",
+                                "type": "checklist",
+                                "options": [
+                                    {
+                                        "label": "nested_checkbox_option_1",
+                                        "value": "nested_checkbox_value_1",
+                                        "options": [],
+                                    },
+                                    {
+                                        "label": "nested_checkbox_option_2",
+                                        "value": "nested_checkbox_value_2",
+                                    },
+                                ],
+                            },
+                            {
+                                "required": False,
+                                "instructions": "nested_text",
+                                "name": "nested_text",
+                                "type": "text",
+                                "options": [],
+                            },
+                        ],
+                    },
+                ],
+            }
+        ],
+    }
+
+    bbox_tool = {
+        "required": False,
+        "name": "bbox",
+        "tool": "rectangle",
+        "color": "#a23030",
+        "classifications": [
+            {
+                "required": False,
+                "instructions": "nested",
+                "name": "nested",
+                "type": "radio",
+                "options": [
+                    {
+                        "label": "radio_option_1",
+                        "value": "radio_value_1",
+                        "options": [
+                            {
+                                "required": False,
+                                "instructions": "nested_checkbox",
+                                "name": "nested_checkbox",
+                                "type": "checklist",
+                                "options": [
+                                    {
+                                        "label": "nested_checkbox_option_1",
+                                        "value": "nested_checkbox_value_1",
+                                        "options": [],
+                                    },
+                                    {
+                                        "label": "nested_checkbox_option_2",
+                                        "value": "nested_checkbox_value_2",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                ],
+            }
+        ],
+    }
+
+    polyline_tool = {
+        "required": False,
+        "name": "polyline",
+        "tool": "line",
+        "color": "#FF4A46",
+        "classifications": [],
+    }
+    point_tool = {
+        "required": False,
+        "name": "point--",
+        "tool": "point",
+        "color": "#008941",
+        "classifications": [],
+    }
+    raster_segmentation_tool = {
+        "required": False,
+        "name": "segmentation_mask",
+        "tool": "raster-segmentation",
+        "color": "#ff0000",
+        "classifications": [],
+    }
+    checklist = {
+        "required": False,
+        "instructions": "checklist",
+        "name": "checklist",
+        "type": "checklist",
+        "options": [
+            {"label": "option1", "value": "option1"},
+            {"label": "option2", "value": "option2"},
+            {"label": "optionN", "value": "optionn"},
+        ],
+    }
+    checklist_index = {
+        "required": False,
+        "instructions": "checklist_index",
+        "name": "checklist_index",
+        "type": "checklist",
+        "scope": "index",
+        "options": [
+            {"label": "option1_index", "value": "option1_index"},
+            {"label": "option2_index", "value": "option2_index"},
+            {"label": "optionN_index", "value": "optionn_index"},
+        ],
+    }
+
+    free_form_text = {
+        "required": False,
+        "instructions": "text",
+        "name": "text",
+        "type": "text",
+        "options": [],
+    }
+
+    radio = {
+        "required": False,
+        "instructions": "radio",
+        "name": "radio",
+        "type": "radio",
+        "options": [
+            {
+                "label": "first_radio_answer",
+                "value": "first_radio_answer",
+                "options": [],
+            },
+            {
+                "label": "second_radio_answer",
+                "value": "second_radio_answer",
+                "options": [],
+            },
+        ],
+    }
+
+    tools = [
+        bbox_tool,
+        bbox_tool_with_nested_text,
+        polyline_tool,
+        point_tool,
+        raster_segmentation_tool,
+    ]
+    classifications = [
+        checklist_index,
+        checklist,
+        free_form_text,
+        radio,
+    ]
+    ontology = client.create_ontology(
+        "image ontology",
+        {"tools": tools, "classifications": classifications},
+        MediaType.Video,
+    )
+    return ontology
+
+
+@pytest.fixture
 def polygon_inference(prediction_id_mapping):
     polygon = prediction_id_mapping["polygon"].copy()
     polygon.update(
@@ -246,6 +421,21 @@ def configured_project_without_data_rows(
     )
 
     project.connect_ontology(ontology)
+    yield project
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
+
+
+@pytest.fixture
+def configured_video_project_without_data_rows(
+    client, video_ontology, rand_gen, teardown_helpers
+):
+    project = client.create_project(
+        name=rand_gen(str),
+        description=rand_gen(str),
+        media_type=MediaType.Video,
+    )
+
+    project.connect_ontology(video_ontology)
     yield project
     teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
 
