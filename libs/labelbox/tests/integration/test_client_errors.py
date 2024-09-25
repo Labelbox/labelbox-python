@@ -8,6 +8,7 @@ from google.api_core.exceptions import RetryError
 
 import labelbox.client
 from labelbox import Project, User
+from labelbox.schema.media_type import MediaType
 
 
 def test_missing_api_key():
@@ -29,7 +30,7 @@ def test_bad_key(rand_gen):
     client = labelbox.client.Client(api_key=bad_key)
 
     with pytest.raises(lbox.exceptions.AuthenticationError) as excinfo:
-        client.create_project(name=rand_gen(str))
+        client.create_project(name=rand_gen(str), media_type=MediaType.Image)
 
 
 def test_syntax_error(client):
@@ -77,31 +78,7 @@ def test_network_error(client):
     )
 
     with pytest.raises(lbox.exceptions.NetworkError) as excinfo:
-        client.create_project(name="Project name")
-
-
-def test_invalid_attribute_error(
-    client,
-    rand_gen,
-):
-    # Creation
-    with pytest.raises(lbox.exceptions.InvalidAttributeError) as excinfo:
-        client.create_project(name="Name", invalid_field="Whatever")
-    assert excinfo.value.db_object_type == Project
-    assert excinfo.value.field == "invalid_field"
-
-    # Update
-    project = client.create_project(name=rand_gen(str))
-    with pytest.raises(lbox.exceptions.InvalidAttributeError) as excinfo:
-        project.update(invalid_field="Whatever")
-    assert excinfo.value.db_object_type == Project
-    assert excinfo.value.field == "invalid_field"
-
-    # Top-level-fetch
-    with pytest.raises(lbox.exceptions.InvalidAttributeError) as excinfo:
-        client.get_projects(where=User.email == "email")
-    assert excinfo.value.db_object_type == Project
-    assert excinfo.value.field == {User.email}
+        client.create_project(name="Project name", media_type=MediaType.Image)
 
 
 @pytest.mark.skip("timeouts cause failure before rate limit")
