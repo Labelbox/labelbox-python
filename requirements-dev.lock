@@ -200,6 +200,7 @@ pygments==2.18.0
     # via nbconvert
     # via rich
     # via sphinx
+pyjwt==2.9.0
 pyproj==3.5.0
     # via labelbox
 pytest==8.2.2

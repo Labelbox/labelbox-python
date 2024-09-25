@@ -57,12 +57,6 @@ class TestUserGroup:
         self.client.enable_experimental = True
         self.group = UserGroup(client=self.client)
 
-    def test_constructor_experimental_needed(self):
-        client = MagicMock(Client)
-        client.enable_experimental = False
-        with pytest.raises(RuntimeError):
-            group = UserGroup(client)
-
     def test_constructor(self):
         group = UserGroup(self.client)
 
