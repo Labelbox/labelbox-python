@@ -619,7 +619,6 @@ class Client:
                 name="<project_name>",
                 description="<project_description>",
                 media_type=MediaType.Image,
-                queue_mode=QueueMode.Batch
             )
 
         Args:
@@ -627,19 +626,14 @@ class Client:
             description (str): A short summary for the project
             media_type (MediaType): The type of assets that this project will accept
             queue_mode (Optional[QueueMode]): The queue mode to use
-            quality_mode (Optional[QualityMode]): The quality mode to use (e.g. Benchmark, Consensus). Defaults to
-                Benchmark
             quality_modes (Optional[List[QualityMode]]): The quality modes to use (e.g. Benchmark, Consensus). Defaults to
                 Benchmark.
+            is_benchmark_enabled (Optional[bool]): Whether the project supports benchmark. Defaults to None.
+            is_consensus_enabled (Optional[bool]): Whether the project supports consensus. Defaults to None.
         Returns:
             A new Project object.
         Raises:
-            InvalidAttributeError: If the Project type does not contain
-                any of the attribute names given in kwargs.
-
-        NOTE: the following attributes are used only in chat model evaluation projects:
-            dataset_name_or_id, append_to_existing_dataset, data_row_count, editor_task_type
-            They are not used for general projects and not supported in this method
+            ValueError: If inputs are invalid.
         """
         input = {
             "name": name,
@@ -675,12 +669,12 @@ class Client:
             dataset_name: When creating a new dataset, pass the name
             dataset_id: When using an existing dataset, pass the id
             data_row_count: The number of data row assets to use for the project
-            **kwargs: Additional parameters to pass to the the create_project method
+            See create_project for additional parameters
         Returns:
             Project: The created project
 
         Examples:
-            >>> client.create_model_evaluation_project(name=project_name, dataset_name="new data set")
+            >>> client.create_model_evaluation_project(name=project_name, media_type=dataset_name="new data set")
             >>>     This creates a new dataset with a default number of rows (100), creates new project and assigns a batch of the newly created datarows to the project.
 
             >>> client.create_model_evaluation_project(name=project_name, dataset_name="new data set", data_row_count=10)
@@ -741,7 +735,7 @@ class Client:
         """
         Creates a project for offline model evaluation.
         Args:
-            **kwargs: Additional parameters to pass see the create_project method
+            See create_project for parameters
         Returns:
             Project: The created project
         """
@@ -782,7 +776,8 @@ class Client:
             dataset_name: When creating a new dataset, pass the name
             dataset_id: When using an existing dataset, pass the id
             data_row_count: The number of data row assets to use for the project
-            **kwargs: Additional parameters to pass see the create_project method
+            media_type: The type of assets that this project will accept. Limited to LLMPromptCreation and LLMPromptResponseCreation
+            See create_project for additional parameters
         Returns:
             Project: The created project
 
@@ -858,7 +853,7 @@ class Client:
         """
         Creates a project for response creation.
         Args:
-            **kwargs: Additional parameters to pass see the create_project method
+            See create_project for parameters
         Returns:
             Project: The created project
         """
