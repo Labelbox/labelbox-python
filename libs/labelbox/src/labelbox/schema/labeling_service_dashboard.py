@@ -3,7 +3,7 @@ from string import Template
 from typing import Any, Dict, List, Optional, Union
 
 from lbox.exceptions import ResourceNotFoundError
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, model_serializer
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
@@ -50,7 +50,7 @@ class LabelingServiceDashboard(_CamelCaseMixin):
     Represent labeling service data for a project
 
     NOTE on tasks vs data rows. A task is a unit of work that is assigned to a user. A data row is a unit of data that needs to be labeled.
-        In the current implementation a task reprsents a single data row. However tasks only exists when a labeler start labeling a data row.
+        In the current implementation a task represents a single data row. However tasks only exists when a labeler start labeling a data row.
         So if a data row is not labeled, it will not have a task associated with it. Therefore the number of tasks can be less than the number of data rows.
 
     Attributes:
@@ -221,8 +221,9 @@ class LabelingServiceDashboard(_CamelCaseMixin):
 
         return data
 
-    def dict(self, *args, **kwargs):
-        row = super().dict(*args, **kwargs)
+    @model_serializer()
+    def ser_model(self):
+        row = self
         row.pop("client")
         row["service_type"] = self.service_type
         return row
