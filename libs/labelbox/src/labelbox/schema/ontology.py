@@ -563,7 +563,7 @@ class OntologyBuilder:
 
     To create an ontology, use the asdict() method after fully building your
     ontology within this class, and inserting it into client.create_ontology() as the
-    "labeling_frontend_options" parameter.
+    "normalized" parameter.
 
     Example:
         >>> builder = OntologyBuilder()
