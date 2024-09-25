@@ -1,6 +1,8 @@
+import inspect
 import json
 import logging
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from types import MappingProxyType
@@ -20,6 +22,39 @@ def python_version_info():
     version_info = sys.version_info
 
     return f"{version_info.major}.{version_info.minor}.{version_info.micro}-{version_info.releaselevel}"
+
+
+LABELBOX_CALL_PATTERN = re.compile(r"/labelbox/")
+
+
+def call_info():
+    method_name = "Unknown"
+    prefix = ""
+    class_name = ""
+    skip_methods = ["wrapper", "__init__"]
+    skip_classes = ["PaginatedCollection", "_CursorPagination", "_OffsetPagination"]
+
+    try:
+        call_info = None
+        for stack in reversed(inspect.stack()):
+            if LABELBOX_CALL_PATTERN.search(stack.filename):
+                call_info = stack
+                method_name = call_info.function
+                class_name = call_info.frame.f_locals.get(
+                    "self", None
+                ).__class__.__name__
+
+                if method_name not in skip_methods and class_name not in skip_classes:
+                    if "test" in call_info.filename:
+                        prefix = "test:"
+                    else:
+                        if class_name == "NoneType":
+                            class_name = ""
+                        break
+
+    except Exception:
+        pass
+    return (prefix, class_name, method_name)
 
 
 class RequestClient:
@@ -186,6 +221,9 @@ class RequestClient:
             if files:
                 del headers["Content-Type"]
                 del headers["Accept"]
+            headers["X-SDK-Method"] = (
+                f"{call_info()[0]}{call_info()[1]}:{call_info()[2]}"
+            )
             request = requests.Request(
                 "POST",
                 endpoint,
