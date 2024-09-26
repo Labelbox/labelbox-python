@@ -6,7 +6,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from types import MappingProxyType
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, TypedDict
 
 import requests
 import requests.exceptions
@@ -25,6 +25,13 @@ def python_version_info():
 
 
 LABELBOX_CALL_PATTERN = re.compile(r"/labelbox/")
+TEST_FILE_PATTERN = re.compile(r".*test.*\.py$")
+
+
+class _RequestInfo(TypedDict):
+    prefix: str
+    class_name: str
+    method_name: str
 
 
 def call_info():
@@ -45,7 +52,7 @@ def call_info():
                 ).__class__.__name__
 
                 if method_name not in skip_methods and class_name not in skip_classes:
-                    if "test" in call_info.filename:
+                    if TEST_FILE_PATTERN.search(call_info.filename):
                         prefix = "test:"
                     else:
                         if class_name == "NoneType":
@@ -54,7 +61,12 @@ def call_info():
 
     except Exception:
         pass
-    return (prefix, class_name, method_name)
+    return _RequestInfo(prefix=prefix, class_name=class_name, method_name=method_name)
+
+
+def call_info_as_str():
+    info = call_info()
+    return f"{info['prefix']}{info['class_name']}:{info['method_name']}"
 
 
 class RequestClient:
@@ -221,9 +233,8 @@ class RequestClient:
             if files:
                 del headers["Content-Type"]
                 del headers["Accept"]
-            headers["X-SDK-Method"] = (
-                f"{call_info()[0]}{call_info()[1]}:{call_info()[2]}"
-            )
+            headers["X-SDK-Method"] = call_info_as_str()
+
             request = requests.Request(
                 "POST",
                 endpoint,
