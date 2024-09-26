@@ -396,7 +396,7 @@ def configured_project_with_ontology(
     project.connect_ontology(ontology)
     data_row_ids = []
 
-    normalized_ontology = ontology.normalized()
+    normalized_ontology = ontology.normalized
 
     for _ in range(
         len(normalized_ontology["tools"])
