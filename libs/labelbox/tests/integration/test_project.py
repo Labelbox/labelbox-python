@@ -2,6 +2,7 @@ import os
 import time
 import uuid
 
+from labelbox.schema.ontology import OntologyBuilder, Tool
 import pytest
 import requests
 from lbox.exceptions import InvalidQueryError
@@ -146,11 +147,17 @@ def test_attach_instructions(client, project):
         str(execinfo.value)
         == "Cannot attach instructions to a project that has not been set up."
     )
-    editor = list(
-        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
-    )[0]
-    empty_ontology = {"tools": [], "classifications": []}
-    project.setup(editor, empty_ontology)
+    ontology_builder = OntologyBuilder(
+        tools=[
+            Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
+        ]
+    )
+    ontology = client.create_ontology(
+        name="ontology with features",
+        media_type=MediaType.Image,
+        normalized=ontology_builder.asdict(),
+    )
+    project.connect_ontology(ontology)
 
     project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
     time.sleep(3)
@@ -167,24 +174,20 @@ def test_attach_instructions(client, project):
     condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem",
     reason="new mutation does not work for onprem",
 )
-def test_html_instructions(project_with_empty_ontology):
+def test_html_instructions(project_with_one_feature_ontology):
     html_file_path = "/tmp/instructions.html"
     sample_html_str = "<html></html>"
 
     with open(html_file_path, "w") as file:
         file.write(sample_html_str)
 
-    project_with_empty_ontology.upsert_instructions(html_file_path)
-    updated_ontology = project_with_empty_ontology.ontology().normalized
+    project_with_one_feature_ontology.upsert_instructions(html_file_path)
+    updated_ontology = project_with_one_feature_ontology.ontology().normalized
 
     instructions = updated_ontology.pop("projectInstructions")
     assert requests.get(instructions).text == sample_html_str
 
 
-@pytest.mark.skipif(
-    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem",
-    reason="new mutation does not work for onprem",
-)
 def test_same_ontology_after_instructions(
     configured_project_with_complex_ontology,
 ):
