@@ -41,11 +41,13 @@ def test_label_update(configured_project_with_label):
     assert label.label == "something else"
 
 
-def test_label_filter_order(configured_project_with_label):
+def test_label_filter_order(configured_project_with_label, label_helpers):
     project, _, _, label = configured_project_with_label
 
     l1 = label
     project.create_label()
+    label_helpers.wait_for_labels(project, 2)
+
     l2 = next(project.labels())
 
     assert set(project.labels()) == {l1, l2}
