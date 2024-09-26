@@ -50,6 +50,10 @@ jinja2==3.1.4
     # via sphinx
 markupsafe==2.1.5
     # via jinja2
+mypy==1.10.1
+    # via labelbox
+mypy-extensions==1.0.0
+    # via mypy
 numpy==1.24.4
     # via labelbox
     # via opencv-python-headless
@@ -119,6 +123,8 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 strenum==0.4.15
     # via labelbox
+tomli==2.0.1
+    # via mypy
 tqdm==4.66.4
     # via labelbox
 typeguard==4.3.0
@@ -126,6 +132,7 @@ typeguard==4.3.0
 typing-extensions==4.12.2
     # via annotated-types
     # via labelbox
+    # via mypy
     # via pydantic
     # via pydantic-core
     # via typeguard

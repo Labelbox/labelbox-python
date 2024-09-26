@@ -1,30 +1,30 @@
-from collections import defaultdict
-from itertools import islice
 import json
 import os
-import sys
 import re
+import sys
 import time
 import uuid
-import requests
-from types import SimpleNamespace
-from typing import Type, List
+from collections import defaultdict
 from enum import Enum
-from typing import Tuple
+from itertools import islice
+from types import SimpleNamespace
+from typing import List, Tuple, Type
 
 import pytest
 import requests
 
-from labelbox import Dataset, DataRow
-from labelbox import LabelingFrontend
 from labelbox import (
-    OntologyBuilder,
-    Tool,
-    Option,
     Classification,
+    Client,
+    DataRow,
+    Dataset,
+    LabelingFrontend,
     MediaType,
+    OntologyBuilder,
+    Option,
     PromptResponseClassification,
     ResponseOption,
+    Tool,
 )
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
@@ -32,11 +32,9 @@ from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.catalog import Catalog
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.invite import Invite
-from labelbox.schema.quality_mode import QualityMode
-from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.user import User
-from labelbox import Client
 from labelbox.schema.ontology_kind import OntologyKind
+from labelbox.schema.quality_mode import QualityMode
+from labelbox.schema.user import User
 
 
 @pytest.fixture
@@ -69,7 +67,6 @@ def project_pack(client):
     projects = [
         client.create_project(
             name=f"user-proj-{idx}",
-            queue_mode=QueueMode.Batch,
             media_type=MediaType.Image,
         )
         for idx in range(2)
@@ -120,7 +117,6 @@ def configured_project_with_complex_ontology(
 ):
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     dataset = initial_dataset

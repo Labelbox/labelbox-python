@@ -1,10 +1,11 @@
-import uuid
 import time
 from labelbox import MediaType, Client
+import uuid
 import pytest
-from labelbox.schema.queue_mode import QueueMode
+
+from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
 from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
+from labelbox.schema.media_type import MediaType
 
 
 @pytest.fixture
@@ -390,6 +391,7 @@ def configured_project_with_ontology(
     dataset = initial_dataset
     project = client.create_project(
         name=rand_gen(str),
+        media_type=MediaType.Image,
     )
     project.connect_ontology(ontology)
     data_row_ids = []
@@ -418,6 +420,7 @@ def configured_project_without_data_rows(
     project = client.create_project(
         name=rand_gen(str),
         description=rand_gen(str),
+        media_type=MediaType.Image,
     )
 
     project.connect_ontology(ontology)
