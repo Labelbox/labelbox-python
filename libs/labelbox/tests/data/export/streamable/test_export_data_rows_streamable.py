@@ -1,7 +1,5 @@
-import json
 import time
 
-import pytest
 
 from labelbox import DataRow, ExportTask, StreamType
 
@@ -27,9 +25,7 @@ class TestExportDataRow:
         )
         assert export_task.get_total_lines(stream_type=StreamType.RESULT) == 1
         assert (
-            json.loads(list(export_task.get_stream())[0].json_str)["data_row"][
-                "id"
-            ]
+            list(export_task.get_buffered_stream())[0].json["data_row"]["id"]
             == data_row.uid
         )
 
@@ -75,9 +71,7 @@ class TestExportDataRow:
         )
         assert export_task.get_total_lines(stream_type=StreamType.RESULT) == 1
         assert (
-            json.loads(list(export_task.get_stream())[0].json_str)["data_row"][
-                "id"
-            ]
+            list(export_task.get_buffered_stream())[0].json["data_row"]["id"]
             == data_row.uid
         )
 
@@ -101,9 +95,7 @@ class TestExportDataRow:
         )
         assert export_task.get_total_lines(stream_type=StreamType.RESULT) == 1
         assert (
-            json.loads(list(export_task.get_stream())[0].json_str)["data_row"][
-                "id"
-            ]
+            list(export_task.get_buffered_stream())[0].json["data_row"]["id"]
             == data_row.uid
         )
 

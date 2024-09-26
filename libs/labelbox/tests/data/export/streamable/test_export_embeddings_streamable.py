@@ -1,7 +1,7 @@
 import json
 import random
 
-from labelbox import StreamType, JsonConverter
+from labelbox import StreamType
 
 
 class TestExportEmbeddings:
@@ -23,12 +23,8 @@ class TestExportEmbeddings:
         assert export_task.has_errors() is False
 
         results = []
-        export_task.get_stream(
-            converter=JsonConverter(), stream_type=StreamType.RESULT
-        ).start(
-            stream_handler=lambda output: results.append(
-                json.loads(output.json_str)
-            )
+        export_task.get_buffered_stream(stream_type=StreamType.RESULT).start(
+            stream_handler=lambda output: results.append(output.json)
         )
 
         assert len(results) == len(data_row_specs)
@@ -69,12 +65,8 @@ class TestExportEmbeddings:
         assert export_task.has_errors() is False
 
         results = []
-        export_task.get_stream(
-            converter=JsonConverter(), stream_type=StreamType.RESULT
-        ).start(
-            stream_handler=lambda output: results.append(
-                json.loads(output.json_str)
-            )
+        export_task.get_buffered_stream(stream_type=StreamType.RESULT).start(
+            stream_handler=lambda output: results.append(output.json)
         )
 
         assert len(results) == 1
