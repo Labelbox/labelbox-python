@@ -9,7 +9,7 @@ dependencies = [
     "sphinx-rtd-theme>=2.0.0",
 ]
 readme = "README.md"
-requires-python = ">= 3.8"
+requires-python = ">= 3.9"
 
 [tool.rye]
 managed = true

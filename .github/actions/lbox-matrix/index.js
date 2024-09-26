@@ -26812,11 +26812,6 @@ try {
   const files = JSON.parse(core.getInput('files-changed'));
   const startingMatrix = [
     {
-      "python-version": "3.8",
-      "api-key": "STAGING_LABELBOX_API_KEY_2",
-      "da-test-key": "DA_GCP_LABELBOX_API_KEY"
-    },
-    {
       "python-version": "3.9",
       "api-key": "STAGING_LABELBOX_API_KEY_3",
       "da-test-key": "DA_GCP_LABELBOX_API_KEY"

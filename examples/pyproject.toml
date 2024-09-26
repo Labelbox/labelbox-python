@@ -5,7 +5,7 @@ description = "Labelbox Python Example Notebooks"
 authors = [{ name = "Labelbox", email = "docs@labelbox.com" }]
 readme = "README.md"
 # Python version matches labelbox SDK
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = []
 
 [project.urls]
