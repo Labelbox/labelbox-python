@@ -684,34 +684,6 @@ class Project(DbObject, Updateable, Deletable):
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
-    def setup(self, labeling_frontend, labeling_frontend_options) -> None:
-        """This method will associate default labeling frontend with the project and create an ontology based on labeling_frontend_options.
-
-        Args:
-            labeling_frontend (LabelingFrontend): Do not use, this parameter is deprecated. We now associate the default labeling frontend with the project.
-            labeling_frontend_options (dict or str): Labeling frontend options,
-                a.k.a. project ontology. If given a `dict` it will be converted
-                to `str` using `json.dumps`.
-        """
-
-        warnings.warn("This method is deprecated use connect_ontology instead.")
-        if labeling_frontend is not None:
-            warnings.warn(
-                "labeling_frontend parameter will not be used to create a new labeling frontend."
-            )
-
-        if self.is_chat_evaluation() or self.is_prompt_response():
-            warnings.warn("""
-            This project is a live chat evaluation project or prompt and response generation project.
-            Editor was setup automatically.
-            """)
-            return
-
-        self._connect_default_labeling_front_end(labeling_frontend_options)
-
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        self.update(setup_complete=timestamp)
-
     def _connect_default_labeling_front_end(self, ontology_as_dict: dict):
         labeling_frontend = self.labeling_frontend()
         if (
