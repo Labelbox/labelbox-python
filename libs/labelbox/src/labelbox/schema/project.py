@@ -1339,10 +1339,6 @@ class Project(DbObject, Updateable, Deletable):
 
         if isinstance(data_rows, list):
             data_rows = UniqueIds(data_rows)
-            warnings.warn(
-                "Using data row ids will be deprecated. Please use "
-                "UniqueIds or GlobalKeys instead."
-            )
 
         method = "createQueuePriorityUpdateTask"
         priority_param = "priority"
@@ -1513,10 +1509,6 @@ class Project(DbObject, Updateable, Deletable):
         """
         if isinstance(data_row_ids, list):
             data_row_ids = UniqueIds(data_row_ids)
-            warnings.warn(
-                "Using data row ids will be deprecated. Please use "
-                "UniqueIds or GlobalKeys instead."
-            )
 
         method = "createBulkAddRowsToQueueTask"
         query_str = (

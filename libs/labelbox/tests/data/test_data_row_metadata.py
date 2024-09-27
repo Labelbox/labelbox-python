@@ -61,7 +61,7 @@ def big_dataset(dataset: Dataset, image_url):
 
 def make_metadata(dr_id: str = None, gk: str = None) -> DataRowMetadata:
     msg = "A message"
-    time = datetime.utcnow()
+    time = datetime.now(timezone.utc),
 
     metadata = DataRowMetadata(
         global_key=gk,
@@ -124,7 +124,7 @@ def test_get_datarow_metadata_ontology(mdo):
         fields=[
             DataRowMetadataField(
                 schema_id=mdo.reserved_by_name["captureDateTime"].uid,
-                value=datetime.utcnow(),
+                value=datetime.now(timezone.utc),
             ),
             DataRowMetadataField(schema_id=split.parent, value=split.uid),
             DataRowMetadataField(

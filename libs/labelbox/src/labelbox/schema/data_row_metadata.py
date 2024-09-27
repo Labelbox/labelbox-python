@@ -26,6 +26,7 @@ from pydantic import (
     conlist,
     model_serializer,
 )
+from typing_extensions import Annotated
 
 from labelbox.schema.identifiable import GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
@@ -423,7 +424,7 @@ class DataRowMetadataOntology:
         schema = self._validate_custom_schema_by_name(name)
         if schema.kind != DataRowMetadataKind.enum:
             raise ValueError(
-                f"Updating Enum option is only supported for Enum metadata schema"
+                "Updating Enum option is only supported for Enum metadata schema"
             )
         valid_options: List[str] = [o.name for o in schema.options]
 
@@ -757,10 +758,6 @@ class DataRowMetadataOntology:
             and isinstance(data_row_ids[0], str)
         ):
             data_row_ids = UniqueIds(data_row_ids)
-            warnings.warn(
-                "Using data row ids will be deprecated. Please use "
-                "UniqueIds or GlobalKeys instead."
-            )
 
         def _bulk_export(
             _data_row_ids: DataRowIdentifiers,
