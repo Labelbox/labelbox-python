@@ -26830,7 +26830,12 @@ try {
       "python-version": "3.12",
       "api-key": "STAGING_LABELBOX_API_KEY_5",
       "da-test-key": "DA_GCP_LABELBOX_API_KEY"
-    }
+    },
+    {
+      "python-version": "3.13",
+      "api-key": "STAGING_LABELBOX_API_KEY_2",
+      "da-test-key": "DA_GCP_LABELBOX_API_KEY"
+    },    
   ];
   const testMatrix = [];
   const packages = files.map(file => {
