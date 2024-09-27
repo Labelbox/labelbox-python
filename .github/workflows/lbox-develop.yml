@@ -90,7 +90,7 @@ jobs:
       - uses: ./.github/actions/python-package-shared-setup
         with:
           rye-version: ${{ vars.RYE_VERSION }}
-          python-version: '3.8'
+          python-version: '3.9'
       - name: Create build
         id: create-build
         working-directory: libs/${{ matrix.package }}

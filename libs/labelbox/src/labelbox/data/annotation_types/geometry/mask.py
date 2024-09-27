@@ -1,14 +1,12 @@
-from typing import Callable, Optional, Tuple, Union, Dict, List
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
-import numpy as np
 import cv2
-
+import numpy as np
+from pydantic import field_validator
 from shapely.geometry import MultiPolygon, Polygon
 
 from ..data import MaskData
 from .geometry import Geometry
-
-from pydantic import field_validator
 
 
 class Mask(Geometry):
@@ -91,7 +89,7 @@ class Mask(Geometry):
                 as opposed to the mask that this object references which might have multiple objects determined by colors
         """
         mask = self.mask.value
-        mask = np.alltrue(mask == self.color, axis=2).astype(np.uint8)
+        mask = np.all(mask == self.color, axis=2).astype(np.uint8)
 
         if height is not None or width is not None:
             mask = cv2.resize(

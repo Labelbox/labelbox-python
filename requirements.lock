@@ -87,8 +87,6 @@ pyproj==3.5.0
     # via labelbox
 python-dateutil==2.9.0.post0
     # via labelbox
-pytz==2024.1
-    # via babel
 requests==2.32.3
     # via google-api-core
     # via labelbox
@@ -130,7 +128,6 @@ tqdm==4.66.4
 typeguard==4.3.0
     # via labelbox
 typing-extensions==4.12.2
-    # via annotated-types
     # via labelbox
     # via mypy
     # via pydantic

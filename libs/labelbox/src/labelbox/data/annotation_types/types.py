@@ -1,11 +1,9 @@
 import sys
-from typing import Generic, TypeVar, Any
+from typing import Annotated, Any, Generic, TypeVar
 
-from typing_extensions import Annotated
-from packaging import version
 import numpy as np
-
-from pydantic import StringConstraints, Field, ConfigDict
+from packaging import version
+from pydantic import ConfigDict, Field, StringConstraints
 from pydantic_core import core_schema
 
 DType = TypeVar("DType")

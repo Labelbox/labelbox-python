@@ -16,10 +16,10 @@ from labelbox.data.annotation_types.classification.classification import (
 try:
     from typing import Literal
 except ImportError:
-    from typing_extensions import Literal
+    from typing import Literal
 
+from ..annotation_types import ClassificationAnnotation, Label, ObjectAnnotation
 from ..annotation_types.feature import FeatureSchema
-from ..annotation_types import ObjectAnnotation, ClassificationAnnotation, Label
 
 
 def get_identifying_key(

@@ -1,11 +1,10 @@
-from typing import Dict, Optional, Union
-from typing_extensions import Annotated
 from enum import Enum
+from typing import Annotated, Dict, Optional, Union
 
 from pydantic import field_validator
 from pydantic.types import confloat
 
-from .base import ConfidenceValue, BaseMetric
+from .base import BaseMetric, ConfidenceValue
 
 ScalarMetricValue = Annotated[float, confloat(ge=0, le=100_000_000)]
 ScalarMetricConfidenceValue = Dict[ConfidenceValue, ScalarMetricValue]

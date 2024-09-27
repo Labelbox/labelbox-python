@@ -15,7 +15,7 @@ dependencies = [
     "lbox-clients==1.1.0",
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 classifiers = [
     # How mature is this project?
     "Development Status :: 5 - Production/Stable",
@@ -29,7 +29,6 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     # Specify the Python versions you support here.
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
