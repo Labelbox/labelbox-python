@@ -1,7 +1,5 @@
 from datetime import datetime, timezone
-from typing import Collection, Dict, List, Optional, Tuple, TypedDict
-
-from labelbox.typing_imports import Literal
+from typing import Collection, Dict, List, Literal, Optional, Tuple, TypedDict
 
 SEARCH_LIMIT_PER_EXPORT_V2 = 2_000
 ISO_8061_FORMAT = "%Y-%m-%dT%H:%M:%S%z"

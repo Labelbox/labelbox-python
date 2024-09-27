@@ -1,5 +1,5 @@
-from typing import Dict, List
-from typing_extensions import TypedDict
+from typing import Dict, List, TypedDict
+
 from pydantic import BaseModel
 
 

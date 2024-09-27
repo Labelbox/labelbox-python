@@ -1,7 +1,6 @@
-from typing import Optional, Set
+from typing import Annotated, Optional, Set
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from typing_extensions import Annotated
 
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.ontology_kind import EditorTaskType

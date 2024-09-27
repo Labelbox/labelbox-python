@@ -1,35 +1,34 @@
 # type: ignore
-from datetime import datetime
+import warnings
 from copy import deepcopy
+from datetime import datetime
 from enum import Enum
 from itertools import chain
-import warnings
-
 from typing import (
+    Annotated,
+    Any,
+    Callable,
+    Dict,
+    Generator,
     List,
     Optional,
-    Dict,
-    Union,
-    Callable,
     Type,
-    Any,
-    Generator,
+    Union,
     overload,
 )
-from typing_extensions import Annotated
 
-from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
-from labelbox.schema.identifiable import UniqueId, GlobalKey
 from pydantic import (
     BaseModel,
+    BeforeValidator,
+    ConfigDict,
     Field,
     StringConstraints,
     conlist,
-    ConfigDict,
     model_serializer,
-    BeforeValidator,
 )
 
+from labelbox.schema.identifiable import GlobalKey, UniqueId
+from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.ontology import SchemaId
 from labelbox.utils import (
     _CamelCaseMixin,

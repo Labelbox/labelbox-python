@@ -5,11 +5,10 @@ import json
 import warnings
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Annotated, Any, Dict, List, Optional, Type, Union
 
 from lbox.exceptions import InconsistentOntologyException
 from pydantic import StringConstraints
-from typing_extensions import Annotated
 
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
