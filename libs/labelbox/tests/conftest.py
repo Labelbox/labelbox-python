@@ -2,17 +2,8 @@ import json
 import os
 import re
 import time
-<<<<<<< HEAD
 import uuid
 from datetime import datetime
-=======
-from labelbox.schema.project import Project
-import requests
-from labelbox.schema.ontology import Ontology
-import pytest
-from types import SimpleNamespace
-from typing import Type
->>>>>>> 0bbd7c29 (Vb/fix ontology leaks plt 1379 (#1814))
 from enum import Enum
 from random import randint
 from string import ascii_letters
