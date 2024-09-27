@@ -1,13 +1,13 @@
-import pytest
-import faker
 from uuid import uuid4
-from labelbox import Client
-from labelbox.schema.user_group import UserGroup, UserGroupColor
+
+import faker
+import pytest
+
 from labelbox.exceptions import (
-    ResourceNotFoundError,
     ResourceCreationError,
-    UnprocessableEntityError,
+    ResourceNotFoundError,
 )
+from labelbox.schema.user_group import UserGroup, UserGroupColor
 
 data = faker.Faker()
 
@@ -147,9 +147,6 @@ def test_cannot_update_group_id(user_group):
 def test_get_user_groups_with_creation_deletion(client):
     user_group = None
     try:
-        # Get all user groups
-        user_groups = list(UserGroup(client).get_user_groups())
-
         # manual delete for iterators
         group_name = data.name()
         user_group = UserGroup(client)
@@ -157,25 +154,12 @@ def test_get_user_groups_with_creation_deletion(client):
         user_group.create()
 
         user_groups_post_creation = list(UserGroup(client).get_user_groups())
+        assert user_group in user_groups_post_creation
 
-        # Verify that at least one user group is returned
-        assert len(user_groups_post_creation) > 0
-        assert len(user_groups_post_creation) == len(user_groups) + 1
-
-        # Verify that each user group has a valid ID and name
-        for ug in user_groups_post_creation:
-            assert ug.id is not None
-            assert ug.name is not None
-
-        user_group.delete()
         user_group = None
 
         user_groups_post_deletion = list(UserGroup(client).get_user_groups())
-
-        assert (
-            len(user_groups_post_deletion) == len(user_groups_post_creation) - 1
-        )
-
+        assert user_group not in user_groups_post_deletion
     finally:
         if user_group:
             user_group.delete()

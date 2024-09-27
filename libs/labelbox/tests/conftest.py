@@ -1,35 +1,39 @@
-from datetime import datetime
-from random import randint
-from string import ascii_letters
-
 import json
 import os
 import re
-import uuid
 import time
-from labelbox.schema.project import Project
-import requests
-from labelbox.schema.ontology import Ontology
-import pytest
-from types import SimpleNamespace
-from typing import Type
+import uuid
+from datetime import datetime
 from enum import Enum
-from typing import Tuple
+from random import randint
+from string import ascii_letters
+from types import SimpleNamespace
+from typing import Tuple, Type
 
-from labelbox import Dataset, DataRow
-from labelbox import MediaType
+import pytest
+import requests
+
+from labelbox import (
+    Classification,
+    Client,
+    DataRow,
+    Dataset,
+    LabelingFrontend,
+    MediaType,
+    OntologyBuilder,
+    Option,
+    Tool,
+)
+from labelbox.exceptions import LabelboxError
 from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
-from labelbox.schema.invite import Invite
-from labelbox.schema.quality_mode import QualityMode
-from labelbox.schema.queue_mode import QueueMode
-from labelbox import Client
-
-from labelbox import LabelingFrontend
-from labelbox import OntologyBuilder, Tool, Option, Classification
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.enums import AnnotationImportState
-from labelbox.exceptions import LabelboxError
+from labelbox.schema.invite import Invite
+from labelbox.schema.ontology import Ontology
+from labelbox.schema.project import Project
+from labelbox.schema.quality_mode import QualityMode
+from labelbox.schema.queue_mode import QueueMode
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
 MASKABLE_IMG_URL = "https://storage.googleapis.com/labelbox-datasets/image_sample_data/2560px-Kitano_Street_Kobe01s5s4110.jpeg"
@@ -1255,6 +1259,21 @@ class TearDownHelpers:
 class ModuleTearDownHelpers(TearDownHelpers): ...
 
 
+class LabelHelpers:
+    def wait_for_labels(self, project, number_of_labels=1):
+        timeout_seconds = 10
+        while True:
+            labels = list(project.labels())
+            if len(labels) >= number_of_labels:
+                return labels
+            timeout_seconds -= 2
+            if timeout_seconds <= 0:
+                raise TimeoutError(
+                    f"Timed out waiting for label for project '{project.uid}' to finish processing"
+                )
+            time.sleep(2)
+
+
 @pytest.fixture
 def teardown_helpers():
     return TearDownHelpers()
@@ -1263,3 +1282,8 @@ def teardown_helpers():
 @pytest.fixture(scope="module")
 def module_teardown_helpers():
     return TearDownHelpers()
+
+
+@pytest.fixture
+def label_helpers():
+    return LabelHelpers()
