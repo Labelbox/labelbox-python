@@ -1,4 +1,9 @@
 # Changelog
+# Version 5.1.0 (2024-09-27)
+## Fixed
+* Support self-signed SSL certs([#1811](https://github.com/Labelbox/labelbox-python/pull/1811))
+* Rectangle units now correctly support percent inputs([#1848](https://github.com/Labelbox/labelbox-python/pull/1848))
+
 # Version 5.0.0 (2024-09-16)
 ## Updated
 * Set tasks_remaining_count to None LabelingServiceDashboard if labeling has not started ([#1817](https://github.com/Labelbox/labelbox-python/pull/1817))
