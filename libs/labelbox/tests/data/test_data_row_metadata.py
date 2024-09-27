@@ -1,18 +1,18 @@
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
 
 import pytest
-import uuid
 
 from labelbox import Dataset
 from labelbox.exceptions import MalformedQueryException
-from labelbox.schema.identifiables import GlobalKeys, UniqueIds
 from labelbox.schema.data_row_metadata import (
-    DataRowMetadataField,
     DataRowMetadata,
+    DataRowMetadataField,
     DataRowMetadataKind,
     DataRowMetadataOntology,
     _parse_metadata_schema,
 )
+from labelbox.schema.identifiables import GlobalKeys, UniqueIds
 
 INVALID_SCHEMA_ID = "1" * 25
 FAKE_SCHEMA_ID = "0" * 25
@@ -61,7 +61,7 @@ def big_dataset(dataset: Dataset, image_url):
 
 def make_metadata(dr_id: str = None, gk: str = None) -> DataRowMetadata:
     msg = "A message"
-    time = datetime.utcnow()
+    time = datetime.now(timezone.utc),
 
     metadata = DataRowMetadata(
         global_key=gk,
@@ -124,7 +124,7 @@ def test_get_datarow_metadata_ontology(mdo):
         fields=[
             DataRowMetadataField(
                 schema_id=mdo.reserved_by_name["captureDateTime"].uid,
-                value=datetime.utcnow(),
+                value=datetime.now(timezone.utc),
             ),
             DataRowMetadataField(schema_id=split.parent, value=split.uid),
             DataRowMetadataField(

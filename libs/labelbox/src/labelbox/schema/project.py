@@ -1,11 +1,11 @@
 import json
 import logging
-from string import Template
 import time
 import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
 from pathlib import Path
+from string import Template
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,28 +14,18 @@ from typing import (
     List,
     Optional,
     Tuple,
-    TypeVar,
     Union,
     overload,
 )
 from urllib.parse import urlparse
 
-from labelbox.schema.labeling_service import (
-    LabelingService,
-    LabelingServiceStatus,
-)
-from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
-import requests
-
-from labelbox import parser
 from labelbox import utils
-from labelbox.exceptions import error_message_for_unparsed_graphql_error
 from labelbox.exceptions import (
     InvalidQueryError,
     LabelboxError,
     ProcessingWaitTimeout,
-    ResourceConflict,
     ResourceNotFoundError,
+    error_message_for_unparsed_graphql_error,
 )
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
@@ -46,7 +36,6 @@ from labelbox.schema.create_batches_task import CreateBatchesTask
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.export_filters import (
     ProjectExportFilters,
-    validate_datetime,
     build_filters,
 )
 from labelbox.schema.export_params import ProjectExportParams
@@ -54,22 +43,26 @@ from labelbox.schema.export_task import ExportTask
 from labelbox.schema.id_type import IdType
 from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
+from labelbox.schema.labeling_service import (
+    LabelingService,
+    LabelingServiceStatus,
+)
+from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.model_config import ModelConfig
-from labelbox.schema.project_model_config import ProjectModelConfig
-from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.resource_tag import ResourceTag
-from labelbox.schema.task import Task
-from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.ontology_kind import (
     EditorTaskType,
-    OntologyKind,
     UploadType,
 )
+from labelbox.schema.project_model_config import ProjectModelConfig
 from labelbox.schema.project_overview import (
     ProjectOverview,
     ProjectOverviewDetailed,
 )
+from labelbox.schema.queue_mode import QueueMode
+from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.task import Task
+from labelbox.schema.task_queue import TaskQueue
 
 if TYPE_CHECKING:
     from labelbox import BulkImportRequest
@@ -579,7 +572,7 @@ class Project(DbObject, Updateable, Deletable):
 
         if frontend.name != "Editor":
             logger.warning(
-                f"This function has only been tested to work with the Editor front end. Found %s",
+                "This function has only been tested to work with the Editor front end. Found %s",
                 frontend.name,
             )
 
@@ -814,7 +807,7 @@ class Project(DbObject, Updateable, Deletable):
 
         if row_count > 100_000:
             raise ValueError(
-                f"Batch exceeds max size, break into smaller batches"
+                "Batch exceeds max size, break into smaller batches"
             )
         if not row_count:
             raise ValueError("You need at least one data row in a batch")
@@ -1088,7 +1081,7 @@ class Project(DbObject, Updateable, Deletable):
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
             raise LabelboxError(
-                f"Batch was not created successfully: "
+                "Batch was not created successfully: "
                 + json.dumps(task.errors)
             )
 
@@ -1387,10 +1380,6 @@ class Project(DbObject, Updateable, Deletable):
 
         if isinstance(data_rows, list):
             data_rows = UniqueIds(data_rows)
-            warnings.warn(
-                "Using data row ids will be deprecated. Please use "
-                "UniqueIds or GlobalKeys instead."
-            )
 
         method = "createQueuePriorityUpdateTask"
         priority_param = "priority"
@@ -1436,7 +1425,7 @@ class Project(DbObject, Updateable, Deletable):
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
             raise LabelboxError(
-                f"Priority was not updated successfully: "
+                "Priority was not updated successfully: "
                 + json.dumps(task.errors)
             )
         return True
@@ -1588,10 +1577,6 @@ class Project(DbObject, Updateable, Deletable):
         """
         if isinstance(data_row_ids, list):
             data_row_ids = UniqueIds(data_row_ids)
-            warnings.warn(
-                "Using data row ids will be deprecated. Please use "
-                "UniqueIds or GlobalKeys instead."
-            )
 
         method = "createBulkAddRowsToQueueTask"
         query_str = (
@@ -1629,7 +1614,7 @@ class Project(DbObject, Updateable, Deletable):
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
             raise LabelboxError(
-                f"Data rows were not moved successfully: "
+                "Data rows were not moved successfully: "
                 + json.dumps(task.errors)
             )
 

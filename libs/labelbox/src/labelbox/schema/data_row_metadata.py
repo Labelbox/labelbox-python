@@ -1,34 +1,33 @@
 # type: ignore
-from datetime import datetime
+import warnings
 from copy import deepcopy
+from datetime import datetime
 from enum import Enum
 from itertools import chain
-import warnings
-
 from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
     List,
     Optional,
-    Dict,
-    Union,
-    Callable,
     Type,
-    Any,
-    Generator,
+    Union,
     overload,
 )
-from typing_extensions import Annotated
 
-from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
-from labelbox.schema.identifiable import UniqueId, GlobalKey
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     StringConstraints,
     conlist,
-    ConfigDict,
     model_serializer,
 )
+from typing_extensions import Annotated
 
+from labelbox.schema.identifiable import GlobalKey, UniqueId
+from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.ontology import SchemaId
 from labelbox.utils import (
     _CamelCaseMixin,
@@ -417,7 +416,7 @@ class DataRowMetadataOntology:
         schema = self._validate_custom_schema_by_name(name)
         if schema.kind != DataRowMetadataKind.enum:
             raise ValueError(
-                f"Updating Enum option is only supported for Enum metadata schema"
+                "Updating Enum option is only supported for Enum metadata schema"
             )
         valid_options: List[str] = [o.name for o in schema.options]
 
@@ -751,10 +750,6 @@ class DataRowMetadataOntology:
             and isinstance(data_row_ids[0], str)
         ):
             data_row_ids = UniqueIds(data_row_ids)
-            warnings.warn(
-                "Using data row ids will be deprecated. Please use "
-                "UniqueIds or GlobalKeys instead."
-            )
 
         def _bulk_export(
             _data_row_ids: DataRowIdentifiers,
@@ -803,13 +798,13 @@ class DataRowMetadataOntology:
             if isinstance(metadata_field, DataRowMetadataField):
                 return metadata_field
             elif isinstance(metadata_field, dict):
-                if not "value" in metadata_field:
+                if "value" not in metadata_field:
                     raise ValueError(
                         f"Custom metadata field '{metadata_field}' must have a 'value' key"
                     )
                 if (
-                    not "schema_id" in metadata_field
-                    and not "name" in metadata_field
+                    "schema_id" not in metadata_field
+                    and "name" not in metadata_field
                 ):
                     raise ValueError(
                         f"Custom metadata field '{metadata_field}' must have either 'schema_id' or 'name' key"
