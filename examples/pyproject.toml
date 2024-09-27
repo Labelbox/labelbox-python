@@ -22,8 +22,8 @@ dev-dependencies = [
     "yapf>=0.40.2",
     "black[jupyter]>=24.4.2",
     "databooks>=1.3.10",
-    # higher versions dont support python 3.8
-    "pandas>=2.0.3",
+    # higher versions dont support python 3.9
+    "pandas>=2.2.3",
 ]
 
 [tool.rye.scripts]

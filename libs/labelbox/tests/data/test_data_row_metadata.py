@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from lbox.exceptions import MalformedQueryException
@@ -61,7 +61,7 @@ def big_dataset(dataset: Dataset, image_url):
 
 def make_metadata(dr_id: str = None, gk: str = None) -> DataRowMetadata:
     msg = "A message"
-    time = datetime.now(timezone.utc),
+    time = datetime.now(timezone.utc)
 
     metadata = DataRowMetadata(
         global_key=gk,
