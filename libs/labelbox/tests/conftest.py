@@ -12,13 +12,13 @@ from typing import Tuple, Type
 
 import pytest
 import requests
+from lbox.exceptions import LabelboxError
 
 from labelbox import (
     Classification,
     Client,
     DataRow,
     Dataset,
-    LabelingFrontend,
     MediaType,
     OntologyBuilder,
     Option,

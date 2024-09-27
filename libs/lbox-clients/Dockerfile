@@ -1,5 +1,5 @@
 # https://github.com/ucyo/python-package-template/blob/master/Dockerfile
-FROM python:3.8-slim as rye
+FROM python:3.9-slim as rye
 
 ENV LANG="C.UTF-8" \
     LC_ALL="C.UTF-8" \
@@ -38,7 +38,7 @@ WORKDIR /home/python/labelbox-python
 
 RUN rye config --set-bool behavior.global-python=true && \
     rye config --set-bool behavior.use-uv=true && \
-    rye pin 3.8 && \
+    rye pin 3.9 && \
     rye sync
 
 CMD rye run unit && rye integration

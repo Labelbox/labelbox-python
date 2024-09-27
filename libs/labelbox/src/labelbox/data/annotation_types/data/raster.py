@@ -1,6 +1,6 @@
 from abc import ABC
 from io import BytesIO
-from typing import Callable, Optional, Union
+from typing import Callable, Literal, Optional, Union
 
 import numpy as np
 import requests
@@ -9,9 +9,6 @@ from lbox.exceptions import InternalServerError
 from PIL import Image
 from pydantic import BaseModel, ConfigDict, model_validator
 from requests.exceptions import ConnectTimeout
-from typing_extensions import Literal
-
-from pydantic import BaseModel, model_validator, ConfigDict
 
 from ..types import TypedArray
 
