@@ -94,6 +94,7 @@ class RectangleUnit(Enum):
     INCHES = "INCHES"
     PIXELS = "PIXELS"
     POINTS = "POINTS"
+    PERCENT = "PERCENT"
 
 
 class DocumentRectangle(Rectangle):
