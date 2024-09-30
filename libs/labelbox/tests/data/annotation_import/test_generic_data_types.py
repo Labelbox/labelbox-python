@@ -1,17 +1,18 @@
 import datetime
+import itertools
+import uuid
+
+import pytest
+
+import labelbox as lb
+from labelbox import Client, OntologyKind, Project
+from labelbox.data.annotation_types import Label
 from labelbox.data.annotation_types.data.generic_data_row_data import (
     GenericDataRowData,
 )
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
-from labelbox.data.annotation_types import Label
-import pytest
-import uuid
-
-import labelbox as lb
-from labelbox.schema.media_type import MediaType
 from labelbox.schema.annotation_import import AnnotationImportState
-from labelbox import Project, Client, OntologyKind
-import itertools
+from labelbox.schema.media_type import MediaType
 
 """
  - integration test for importing mal labels and ground truths with each supported MediaType. 
@@ -39,11 +40,6 @@ def validate_iso_format(date_string: str):
         (MediaType.Conversational, MediaType.Conversational),
         (MediaType.Document, MediaType.Document),
         (MediaType.Dicom, MediaType.Dicom),
-        (
-            MediaType.LLMPromptResponseCreation,
-            MediaType.LLMPromptResponseCreation,
-        ),
-        (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
         (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation),
         (OntologyKind.ModelEvaluation, OntologyKind.ModelEvaluation),
     ],
@@ -57,6 +53,7 @@ def test_import_media_types(
     export_v2_test_helpers,
     helpers,
     media_type,
+    wait_for_label_processing,
 ):
     annotations_ndjson = list(
         itertools.chain.from_iterable(annotations_by_media_type[media_type])
@@ -72,6 +69,8 @@ def test_import_media_types(
 
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
+
+    wait_for_label_processing(configured_project)[0]
 
     result = export_v2_test_helpers.run_project_export_v2_task(
         configured_project
@@ -108,6 +107,53 @@ def test_import_media_types(
         helpers.rename_cuid_key_recursive(exported_annotations)
 
         assert exported_annotations == expected_data
+
+
+@pytest.mark.parametrize(
+    "configured_project, media_type",
+    [
+        (
+            MediaType.LLMPromptResponseCreation,
+            MediaType.LLMPromptResponseCreation,
+        ),
+        (MediaType.LLMPromptCreation, MediaType.LLMPromptCreation),
+    ],
+    indirect=["configured_project"],
+)
+def test_import_media_types_llm(
+    client: Client,
+    configured_project: Project,
+    annotations_by_media_type,
+    exports_v2_by_media_type,
+    export_v2_test_helpers,
+    helpers,
+    media_type,
+    wait_for_label_processing,
+):
+    annotations_ndjson = list(
+        itertools.chain.from_iterable(annotations_by_media_type[media_type])
+    )
+
+    label_import = lb.LabelImport.create_from_objects(
+        client,
+        configured_project.uid,
+        f"test-import-{media_type}",
+        annotations_ndjson,
+    )
+    label_import.wait_until_done()
+
+    assert label_import.state == AnnotationImportState.FINISHED
+    assert len(label_import.errors) == 0
+
+    all_annotations = sorted([a["uuid"] for a in annotations_ndjson])
+    successful_annotations = sorted(
+        [
+            status["uuid"]
+            for status in label_import.statuses
+            if status["status"] == "SUCCESS"
+        ]
+    )
+    assert successful_annotations == all_annotations
 
 
 @pytest.mark.parametrize(

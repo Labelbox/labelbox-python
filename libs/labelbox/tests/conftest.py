@@ -1248,6 +1248,21 @@ class TearDownHelpers:
 class ModuleTearDownHelpers(TearDownHelpers): ...
 
 
+class LabelHelpers:
+    def wait_for_labels(self, project, number_of_labels=1):
+        timeout_seconds = 10
+        while True:
+            labels = list(project.labels())
+            if len(labels) >= number_of_labels:
+                return labels
+            timeout_seconds -= 2
+            if timeout_seconds <= 0:
+                raise TimeoutError(
+                    f"Timed out waiting for label for project '{project.uid}' to finish processing"
+                )
+            time.sleep(2)
+
+
 @pytest.fixture
 def teardown_helpers():
     return TearDownHelpers()
@@ -1256,3 +1271,8 @@ def teardown_helpers():
 @pytest.fixture(scope="module")
 def module_teardown_helpers():
     return TearDownHelpers()
+
+
+@pytest.fixture
+def label_helpers():
+    return LabelHelpers()
