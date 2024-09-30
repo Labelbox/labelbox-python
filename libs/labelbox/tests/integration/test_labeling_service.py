@@ -1,5 +1,9 @@
 import pytest
-from lbox.exceptions import LabelboxError, ResourceNotFoundError
+from lbox.exceptions import (
+    LabelboxError,
+    MalformedQueryException,
+    ResourceNotFoundError,
+)
 
 from labelbox.schema.labeling_service import LabelingServiceStatus
 
