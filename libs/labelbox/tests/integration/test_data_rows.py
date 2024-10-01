@@ -405,7 +405,7 @@ def test_create_data_row_with_metadata_dict(
         row_data=image_url, metadata_fields=make_metadata_fields_dict
     )
 
-    assert len(list(dataset.data_rows())) == 1
+    assert len([dr for dr in dataset.data_rows()]) == 1
     assert data_row.dataset() == dataset
     assert data_row.created_by() == client.get_user()
     assert data_row.organization() == client.get_organization()
