@@ -1,41 +1,39 @@
-from tempfile import NamedTemporaryFile
+import json
+import os
 import uuid
 from datetime import datetime
-import json
-import requests
-import os
-
+from tempfile import NamedTemporaryFile
 from unittest.mock import patch
-import pytest
 
-from labelbox.schema.media_type import MediaType
-from labelbox import DataRow, AssetAttachment
+import pytest
+import requests
+from constants import (
+    CAPTURE_DT_SCHEMA_ID,
+    CUSTOM_TEXT_SCHEMA_NAME,
+    EXPECTED_METADATA_SCHEMA_IDS,
+    SPLIT_SCHEMA_ID,
+    TEST_SPLIT_ID,
+    TEXT_SCHEMA_ID,
+)
+
+from labelbox import AssetAttachment, DataRow
 from labelbox.exceptions import (
+    InvalidQueryError,
     MalformedQueryException,
     ResourceCreationError,
-    InvalidQueryError,
 )
-from labelbox.schema.task import Task, DataUpsertTask
 from labelbox.schema.data_row_metadata import (
     DataRowMetadataField,
     DataRowMetadataKind,
 )
-
-SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
-TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
-TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
-CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
-EXPECTED_METADATA_SCHEMA_IDS = [
-    SPLIT_SCHEMA_ID,
-    TEST_SPLIT_ID,
-    TEXT_SCHEMA_ID,
-    CAPTURE_DT_SCHEMA_ID,
-].sort()
-CUSTOM_TEXT_SCHEMA_NAME = "custom_text"
+from labelbox.schema.media_type import MediaType
+from labelbox.schema.task import Task
 
 
 @pytest.fixture
-def mdo(client):
+def mdo(
+    client,
+):
     mdo = client.get_data_row_metadata_ontology()
     try:
         mdo.create_schema(CUSTOM_TEXT_SCHEMA_NAME, DataRowMetadataKind.string)
@@ -91,18 +89,6 @@ def tile_content():
             ],
         }
     }
-
-
-def make_metadata_fields():
-    msg = "A message"
-    time = datetime.utcnow()
-
-    fields = [
-        DataRowMetadataField(schema_id=SPLIT_SCHEMA_ID, value=TEST_SPLIT_ID),
-        DataRowMetadataField(schema_id=CAPTURE_DT_SCHEMA_ID, value=time),
-        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value=msg),
-    ]
-    return fields
 
 
 def make_metadata_fields_dict():
@@ -375,15 +361,17 @@ def test_create_data_row_with_invalid_input(dataset, image_url):
         dataset.create_data_row("asdf")
 
 
-def test_create_data_row_with_metadata(mdo, dataset, image_url):
+def test_create_data_row_with_metadata(
+    mdo, dataset, image_url, make_metadata_fields
+):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
 
     data_row = dataset.create_data_row(
-        row_data=image_url, metadata_fields=make_metadata_fields()
+        row_data=image_url, metadata_fields=make_metadata_fields
     )
 
-    assert len(list(dataset.data_rows())) == 1
+    assert len([dr for dr in dataset.data_rows()]) == 1
     assert data_row.dataset() == dataset
     assert data_row.created_by() == client.get_user()
     assert data_row.organization() == client.get_organization()
@@ -398,7 +386,7 @@ def test_create_data_row_with_metadata(mdo, dataset, image_url):
     assert len(metadata) == 3
     assert [
         m["schemaId"] for m in metadata_fields
-    ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+    ].sort() == EXPECTED_METADATA_SCHEMA_IDS.sort()
     for m in metadata:
         assert mdo._parse_upsert(m)
 
@@ -426,13 +414,15 @@ def test_create_data_row_with_metadata_dict(mdo, dataset, image_url):
     assert len(metadata) == 3
     assert [
         m["schemaId"] for m in metadata_fields
-    ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+    ].sort() == EXPECTED_METADATA_SCHEMA_IDS.sort()
     for m in metadata:
         assert mdo._parse_upsert(m)
 
 
-def test_create_data_row_with_invalid_metadata(dataset, image_url):
-    fields = make_metadata_fields()
+def test_create_data_row_with_invalid_metadata(
+    dataset, image_url, make_metadata_fields
+):
+    fields = make_metadata_fields
     # make the payload invalid by providing the same schema id more than once
     fields.append(
         DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value="some msg")
@@ -442,7 +432,9 @@ def test_create_data_row_with_invalid_metadata(dataset, image_url):
         dataset.create_data_row(row_data=image_url, metadata_fields=fields)
 
 
-def test_create_data_rows_with_metadata(mdo, dataset, image_url):
+def test_create_data_rows_with_metadata(
+    mdo, dataset, image_url, make_metadata_fields
+):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
 
@@ -451,12 +443,12 @@ def test_create_data_rows_with_metadata(mdo, dataset, image_url):
             {
                 DataRow.row_data: image_url,
                 DataRow.external_id: "row1",
-                DataRow.metadata_fields: make_metadata_fields(),
+                DataRow.metadata_fields: make_metadata_fields,
             },
             {
                 DataRow.row_data: image_url,
                 DataRow.external_id: "row2",
-                "metadata_fields": make_metadata_fields(),
+                "metadata_fields": make_metadata_fields,
             },
             {
                 DataRow.row_data: image_url,
@@ -490,7 +482,7 @@ def test_create_data_rows_with_metadata(mdo, dataset, image_url):
         assert len(metadata) == 3
         assert [
             m["schemaId"] for m in metadata_fields
-        ].sort() == EXPECTED_METADATA_SCHEMA_IDS
+        ].sort() == EXPECTED_METADATA_SCHEMA_IDS.sort()
         for m in metadata:
             assert mdo._parse_upsert(m)
 
@@ -565,8 +557,10 @@ def test_create_data_rows_with_named_metadata_field_class(
     )
 
 
-def test_create_data_rows_with_invalid_metadata(dataset, image_url):
-    fields = make_metadata_fields()
+def test_create_data_rows_with_invalid_metadata(
+    dataset, image_url, make_metadata_fields
+):
+    fields = make_metadata_fields
     # make the payload invalid by providing the same schema id more than once
     fields.append(
         DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value="some msg")
@@ -585,8 +579,10 @@ def test_create_data_rows_with_invalid_metadata(dataset, image_url):
     )
 
 
-def test_create_data_rows_with_metadata_missing_value(dataset, image_url):
-    fields = make_metadata_fields()
+def test_create_data_rows_with_metadata_missing_value(
+    dataset, image_url, make_metadata_fields
+):
+    fields = make_metadata_fields
     fields.append({"schemaId": "some schema id"})
 
     with pytest.raises(ValueError) as exc:
@@ -601,8 +597,10 @@ def test_create_data_rows_with_metadata_missing_value(dataset, image_url):
         )
 
 
-def test_create_data_rows_with_metadata_missing_schema_id(dataset, image_url):
-    fields = make_metadata_fields()
+def test_create_data_rows_with_metadata_missing_schema_id(
+    dataset, image_url, make_metadata_fields
+):
+    fields = make_metadata_fields
     fields.append({"value": "some value"})
 
     with pytest.raises(ValueError) as exc:
@@ -617,8 +615,10 @@ def test_create_data_rows_with_metadata_missing_schema_id(dataset, image_url):
         )
 
 
-def test_create_data_rows_with_metadata_wrong_type(dataset, image_url):
-    fields = make_metadata_fields()
+def test_create_data_rows_with_metadata_wrong_type(
+    dataset, image_url, make_metadata_fields
+):
+    fields = make_metadata_fields
     fields.append("Neither DataRowMetadataField or dict")
 
     with pytest.raises(ValueError) as exc:
@@ -944,7 +944,11 @@ def test_does_not_update_not_provided_attachment_fields(data_row):
     assert attachment.attachment_type == "RAW_TEXT"
 
 
-def test_create_data_rows_result(client, dataset, image_url):
+def test_create_data_rows_result(
+    client,
+    dataset,
+    image_url,
+):
     task = dataset.create_data_rows(
         [
             {
@@ -963,12 +967,14 @@ def test_create_data_rows_result(client, dataset, image_url):
         client.get_data_row(result["id"])
 
 
-def test_create_data_rows_local_file(dataset, sample_image):
+def test_create_data_rows_local_file(
+    dataset, sample_image, make_metadata_fields
+):
     task = dataset.create_data_rows(
         [
             {
                 DataRow.row_data: sample_image,
-                DataRow.metadata_fields: make_metadata_fields(),
+                DataRow.metadata_fields: make_metadata_fields,
             }
         ]
     )
