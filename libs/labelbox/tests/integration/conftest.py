@@ -11,7 +11,6 @@ from types import SimpleNamespace
 from typing import List, Tuple, Type
 
 import pytest
-import requests
 
 from labelbox import (
     Classification,
@@ -832,3 +831,21 @@ def print_perf_summary():
             for aaa in islice(sorted_dict, num_of_entries)
         ]
         print("\nTop slowest fixtures:\n", slowest_fixtures, file=sys.stderr)
+
+
+@pytest.fixture
+def make_metadata_fields(constants):
+    msg = "A message"
+    time = datetime.now(timezone.utc)
+
+    fields = [
+        DataRowMetadataField(
+            schema_id=constants["SPLIT_SCHEMA_ID"],
+            value=constants["TEST_SPLIT_ID"],
+        ),
+        DataRowMetadataField(
+            schema_id=constants["CAPTURE_DT_SCHEMA_ID"], value=time
+        ),
+        DataRowMetadataField(schema_id=constants["TEXT_SCHEMA_ID"], value=msg),
+    ]
+    return fields
