@@ -2,7 +2,6 @@ import json
 import random
 
 import pytest
-from constants import EXPECTED_METADATA_SCHEMA_IDS
 
 
 @pytest.fixture
@@ -35,7 +34,7 @@ def mmc_data_row(dataset, make_metadata_fields, embedding):
     data_row.delete()
 
 
-def test_mmc(mmc_data_row, embedding):
+def test_mmc(mmc_data_row, embedding, constants):
     data_row = mmc_data_row
     assert json.loads(data_row.row_data) == {
         "type": "application/vnd.labelbox.conversational.model-chat-evaluation",
@@ -49,9 +48,9 @@ def test_mmc(mmc_data_row, embedding):
     metadata = data_row.metadata
     assert len(metadata_fields) == 3
     assert len(metadata) == 3
-    assert [
-        m["schemaId"] for m in metadata_fields
-    ].sort() == EXPECTED_METADATA_SCHEMA_IDS.sort()
+    assert [m["schemaId"] for m in metadata_fields].sort() == constants[
+        "EXPECTED_METADATA_SCHEMA_IDS"
+    ].sort()
 
     attachments = list(data_row.attachments())
     assert len(attachments) == 1

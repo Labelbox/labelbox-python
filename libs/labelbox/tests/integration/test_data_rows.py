@@ -1,20 +1,12 @@
 import json
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from tempfile import NamedTemporaryFile
 from unittest.mock import patch
 
 import pytest
 import requests
-from constants import (
-    CAPTURE_DT_SCHEMA_ID,
-    CUSTOM_TEXT_SCHEMA_NAME,
-    EXPECTED_METADATA_SCHEMA_IDS,
-    SPLIT_SCHEMA_ID,
-    TEST_SPLIT_ID,
-    TEXT_SCHEMA_ID,
-)
 
 from labelbox import AssetAttachment, DataRow
 from labelbox.exceptions import (
@@ -33,10 +25,13 @@ from labelbox.schema.task import Task
 @pytest.fixture
 def mdo(
     client,
+    constants,
 ):
     mdo = client.get_data_row_metadata_ontology()
     try:
-        mdo.create_schema(CUSTOM_TEXT_SCHEMA_NAME, DataRowMetadataKind.string)
+        mdo.create_schema(
+            constants["CUSTOM_TEXT_SCHEMA_NAME"], DataRowMetadataKind.string
+        )
     except MalformedQueryException:
         # Do nothing if already exists
         pass
@@ -91,14 +86,18 @@ def tile_content():
     }
 
 
-def make_metadata_fields_dict():
+@pytest.fixture
+def make_metadata_fields_dict(constants):
     msg = "A message"
-    time = datetime.utcnow()
+    time = datetime.now(timezone.utc)
 
     fields = [
-        {"schema_id": SPLIT_SCHEMA_ID, "value": TEST_SPLIT_ID},
-        {"schema_id": CAPTURE_DT_SCHEMA_ID, "value": time},
-        {"schema_id": TEXT_SCHEMA_ID, "value": msg},
+        {
+            "schema_id": constants["SPLIT_SCHEMA_ID"],
+            "value": constants["TEST_SPLIT_ID"],
+        },
+        {"schema_id": constants["CAPTURE_DT_SCHEMA_ID"], "value": time},
+        {"schema_id": constants["TEXT_SCHEMA_ID"], "value": msg},
     ]
     return fields
 
@@ -362,7 +361,12 @@ def test_create_data_row_with_invalid_input(dataset, image_url):
 
 
 def test_create_data_row_with_metadata(
-    mdo, dataset, image_url, make_metadata_fields
+    mdo,
+    dataset,
+    image_url,
+    make_metadata_fields,
+    constants,
+    make_metadata_fields_dict,
 ):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
@@ -384,19 +388,21 @@ def test_create_data_row_with_metadata(
     metadata = data_row.metadata
     assert len(metadata_fields) == 3
     assert len(metadata) == 3
-    assert [
-        m["schemaId"] for m in metadata_fields
-    ].sort() == EXPECTED_METADATA_SCHEMA_IDS.sort()
+    assert [m["schemaId"] for m in metadata_fields].sort() == constants[
+        "EXPECTED_METADATA_SCHEMA_IDS"
+    ].sort()
     for m in metadata:
         assert mdo._parse_upsert(m)
 
 
-def test_create_data_row_with_metadata_dict(mdo, dataset, image_url):
+def test_create_data_row_with_metadata_dict(
+    mdo, dataset, image_url, constants, make_metadata_fields_dict
+):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
 
     data_row = dataset.create_data_row(
-        row_data=image_url, metadata_fields=make_metadata_fields_dict()
+        row_data=image_url, metadata_fields=make_metadata_fields_dict
     )
 
     assert len(list(dataset.data_rows())) == 1
@@ -412,20 +418,22 @@ def test_create_data_row_with_metadata_dict(mdo, dataset, image_url):
     metadata = data_row.metadata
     assert len(metadata_fields) == 3
     assert len(metadata) == 3
-    assert [
-        m["schemaId"] for m in metadata_fields
-    ].sort() == EXPECTED_METADATA_SCHEMA_IDS.sort()
+    assert [m["schemaId"] for m in metadata_fields].sort() == constants[
+        "EXPECTED_METADATA_SCHEMA_IDS"
+    ].sort()
     for m in metadata:
         assert mdo._parse_upsert(m)
 
 
 def test_create_data_row_with_invalid_metadata(
-    dataset, image_url, make_metadata_fields
+    dataset, image_url, constants, make_metadata_fields
 ):
     fields = make_metadata_fields
     # make the payload invalid by providing the same schema id more than once
     fields.append(
-        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value="some msg")
+        DataRowMetadataField(
+            schema_id=constants["TEXT_SCHEMA_ID"], value="some msg"
+        )
     )
 
     with pytest.raises(ResourceCreationError):
@@ -433,7 +441,12 @@ def test_create_data_row_with_invalid_metadata(
 
 
 def test_create_data_rows_with_metadata(
-    mdo, dataset, image_url, make_metadata_fields
+    mdo,
+    dataset,
+    image_url,
+    constants,
+    make_metadata_fields,
+    make_metadata_fields_dict,
 ):
     client = dataset.client
     assert len(list(dataset.data_rows())) == 0
@@ -453,12 +466,12 @@ def test_create_data_rows_with_metadata(
             {
                 DataRow.row_data: image_url,
                 DataRow.external_id: "row3",
-                DataRow.metadata_fields: make_metadata_fields_dict(),
+                DataRow.metadata_fields: make_metadata_fields_dict,
             },
             {
                 DataRow.row_data: image_url,
                 DataRow.external_id: "row4",
-                "metadata_fields": make_metadata_fields_dict(),
+                "metadata_fields": make_metadata_fields_dict,
             },
         ]
     )
@@ -480,9 +493,9 @@ def test_create_data_rows_with_metadata(
         metadata = row.metadata
         assert len(metadata_fields) == 3
         assert len(metadata) == 3
-        assert [
-            m["schemaId"] for m in metadata_fields
-        ].sort() == EXPECTED_METADATA_SCHEMA_IDS.sort()
+        assert [m["schemaId"] for m in metadata_fields].sort() == constants[
+            "EXPECTED_METADATA_SCHEMA_IDS"
+        ].sort()
         for m in metadata:
             assert mdo._parse_upsert(m)
 
@@ -499,14 +512,16 @@ def test_create_data_rows_with_metadata(
     ],
 )
 def test_create_data_rows_with_named_metadata_field_class(
-    test_function, metadata_obj_type, mdo, dataset, image_url
+    test_function, metadata_obj_type, mdo, dataset, image_url, constants
 ):
     row_with_metadata_field = {
         DataRow.row_data: image_url,
         DataRow.external_id: "row1",
         DataRow.metadata_fields: [
             DataRowMetadataField(name="split", value="test"),
-            DataRowMetadataField(name=CUSTOM_TEXT_SCHEMA_NAME, value="hello"),
+            DataRowMetadataField(
+                name=constants["CUSTOM_TEXT_SCHEMA_NAME"], value="hello"
+            ),
         ],
     }
 
@@ -515,7 +530,7 @@ def test_create_data_rows_with_named_metadata_field_class(
         DataRow.external_id: "row2",
         "metadata_fields": [
             {"name": "split", "value": "test"},
-            {"name": CUSTOM_TEXT_SCHEMA_NAME, "value": "hello"},
+            {"name": constants["CUSTOM_TEXT_SCHEMA_NAME"], "value": "hello"},
         ],
     }
 
@@ -547,23 +562,26 @@ def test_create_data_rows_with_named_metadata_field_class(
     assert len(created_rows[0].metadata) == 2
 
     metadata = created_rows[0].metadata
-    assert metadata[0].schema_id == SPLIT_SCHEMA_ID
+    assert metadata[0].schema_id == constants["SPLIT_SCHEMA_ID"]
     assert metadata[0].name == "test"
     assert metadata[0].value == mdo.reserved_by_name["split"]["test"].uid
-    assert metadata[1].name == CUSTOM_TEXT_SCHEMA_NAME
+    assert metadata[1].name == constants["CUSTOM_TEXT_SCHEMA_NAME"]
     assert metadata[1].value == "hello"
     assert (
-        metadata[1].schema_id == mdo.custom_by_name[CUSTOM_TEXT_SCHEMA_NAME].uid
+        metadata[1].schema_id
+        == mdo.custom_by_name[constants["CUSTOM_TEXT_SCHEMA_NAME"]].uid
     )
 
 
 def test_create_data_rows_with_invalid_metadata(
-    dataset, image_url, make_metadata_fields
+    dataset, image_url, constants, make_metadata_fields
 ):
     fields = make_metadata_fields
     # make the payload invalid by providing the same schema id more than once
     fields.append(
-        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value="some msg")
+        DataRowMetadataField(
+            schema_id=constants["TEXT_SCHEMA_ID"], value="some msg"
+        )
     )
 
     task = dataset.create_data_rows(
@@ -574,7 +592,7 @@ def test_create_data_rows_with_invalid_metadata(
     assert task.status == "COMPLETE"
     assert len(task.failed_data_rows) == 1
     assert (
-        f"A schemaId can only be specified once per DataRow : [{TEXT_SCHEMA_ID}]"
+        f"A schemaId can only be specified once per DataRow : [{constants['TEXT_SCHEMA_ID']}]"
         in task.failed_data_rows[0]["message"]
     )
 

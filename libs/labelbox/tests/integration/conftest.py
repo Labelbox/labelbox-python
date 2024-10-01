@@ -7,12 +7,6 @@ from itertools import islice
 from typing import Type
 
 import pytest
-from constants import (
-    CAPTURE_DT_SCHEMA_ID,
-    SPLIT_SCHEMA_ID,
-    TEST_SPLIT_ID,
-    TEXT_SCHEMA_ID,
-)
 
 from labelbox import (
     Classification,
@@ -30,6 +24,30 @@ from labelbox.schema.data_row import DataRowMetadataField
 from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
+
+
+@pytest.fixture
+def constants():
+    SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
+    TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
+    TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
+    CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
+    EXPECTED_METADATA_SCHEMA_IDS = [
+        SPLIT_SCHEMA_ID,
+        TEST_SPLIT_ID,
+        TEXT_SCHEMA_ID,
+        CAPTURE_DT_SCHEMA_ID,
+    ]
+    CUSTOM_TEXT_SCHEMA_NAME = "custom_text"
+
+    return {
+        "SPLIT_SCHEMA_ID": SPLIT_SCHEMA_ID,
+        "TEST_SPLIT_ID": TEST_SPLIT_ID,
+        "TEXT_SCHEMA_ID": TEXT_SCHEMA_ID,
+        "CAPTURE_DT_SCHEMA_ID": CAPTURE_DT_SCHEMA_ID,
+        "EXPECTED_METADATA_SCHEMA_IDS": EXPECTED_METADATA_SCHEMA_IDS,
+        "CUSTOM_TEXT_SCHEMA_NAME": CUSTOM_TEXT_SCHEMA_NAME,
+    }
 
 
 @pytest.fixture
@@ -831,13 +849,18 @@ def print_perf_summary():
 
 
 @pytest.fixture
-def make_metadata_fields():
+def make_metadata_fields(constants):
     msg = "A message"
     time = datetime.now(timezone.utc)
 
     fields = [
-        DataRowMetadataField(schema_id=SPLIT_SCHEMA_ID, value=TEST_SPLIT_ID),
-        DataRowMetadataField(schema_id=CAPTURE_DT_SCHEMA_ID, value=time),
-        DataRowMetadataField(schema_id=TEXT_SCHEMA_ID, value=msg),
+        DataRowMetadataField(
+            schema_id=constants["SPLIT_SCHEMA_ID"],
+            value=constants["TEST_SPLIT_ID"],
+        ),
+        DataRowMetadataField(
+            schema_id=constants["CAPTURE_DT_SCHEMA_ID"], value=time
+        ),
+        DataRowMetadataField(schema_id=constants["TEXT_SCHEMA_ID"], value=msg),
     ]
     return fields
