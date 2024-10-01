@@ -1,42 +1,53 @@
-from collections import defaultdict
-from itertools import islice
-import json
 import os
 import sys
-import re
 import time
-import uuid
-import requests
-from types import SimpleNamespace
-from typing import Type, List
-from enum import Enum
-from typing import Tuple
+from collections import defaultdict
+from datetime import datetime, timezone
+from itertools import islice
+from typing import Type
 
 import pytest
-import requests
 
-from labelbox import Dataset, DataRow
-from labelbox import LabelingFrontend
 from labelbox import (
-    OntologyBuilder,
-    Tool,
-    Option,
     Classification,
+    Client,
+    Dataset,
+    LabelingFrontend,
     MediaType,
+    OntologyBuilder,
+    Option,
     PromptResponseClassification,
     ResponseOption,
+    Tool,
 )
-from labelbox.orm import query
-from labelbox.pagination import PaginatedCollection
-from labelbox.schema.annotation_import import LabelImport
-from labelbox.schema.catalog import Catalog
-from labelbox.schema.enums import AnnotationImportState
-from labelbox.schema.invite import Invite
-from labelbox.schema.quality_mode import QualityMode
+from labelbox.schema.data_row import DataRowMetadataField
+from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
-from labelbox import Client
-from labelbox.schema.ontology_kind import OntologyKind
+
+
+@pytest.fixture
+def constants():
+    SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
+    TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
+    TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
+    CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
+    EXPECTED_METADATA_SCHEMA_IDS = [
+        SPLIT_SCHEMA_ID,
+        TEST_SPLIT_ID,
+        TEXT_SCHEMA_ID,
+        CAPTURE_DT_SCHEMA_ID,
+    ]
+    CUSTOM_TEXT_SCHEMA_NAME = "custom_text"
+
+    return {
+        "SPLIT_SCHEMA_ID": SPLIT_SCHEMA_ID,
+        "TEST_SPLIT_ID": TEST_SPLIT_ID,
+        "TEXT_SCHEMA_ID": TEXT_SCHEMA_ID,
+        "CAPTURE_DT_SCHEMA_ID": CAPTURE_DT_SCHEMA_ID,
+        "EXPECTED_METADATA_SCHEMA_IDS": EXPECTED_METADATA_SCHEMA_IDS,
+        "CUSTOM_TEXT_SCHEMA_NAME": CUSTOM_TEXT_SCHEMA_NAME,
+    }
 
 
 @pytest.fixture
@@ -835,3 +846,21 @@ def print_perf_summary():
             for aaa in islice(sorted_dict, num_of_entries)
         ]
         print("\nTop slowest fixtures:\n", slowest_fixtures, file=sys.stderr)
+
+
+@pytest.fixture
+def make_metadata_fields(constants):
+    msg = "A message"
+    time = datetime.now(timezone.utc)
+
+    fields = [
+        DataRowMetadataField(
+            schema_id=constants["SPLIT_SCHEMA_ID"],
+            value=constants["TEST_SPLIT_ID"],
+        ),
+        DataRowMetadataField(
+            schema_id=constants["CAPTURE_DT_SCHEMA_ID"], value=time
+        ),
+        DataRowMetadataField(schema_id=constants["TEXT_SCHEMA_ID"], value=msg),
+    ]
+    return fields
