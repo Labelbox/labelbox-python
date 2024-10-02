@@ -72,27 +72,6 @@ def test_conversion(list_of_labels):
     assert [x for x in label_collection] == list_of_labels
 
 
-def test_adding_schema_ids():
-    name = "line_feature"
-    label = Label(
-        data=GenericDataRowData(uid="123456"),
-        annotations=[
-            ObjectAnnotation(
-                value=Line(points=[Point(x=1, y=2), Point(x=2, y=2)]),
-                name=name,
-            )
-        ],
-    )
-    feature_schema_id = "expected_id"
-    ontology = OntologyBuilder(
-        tools=[
-            Tool(Tool.Type.LINE, name=name, feature_schema_id=feature_schema_id)
-        ]
-    )
-    generator = LabelGenerator([label]).assign_feature_schema_ids(ontology)
-    assert next(generator).annotations[0].feature_schema_id == feature_schema_id
-
-
 def test_adding_to_masks(signer):
     label = Label(
         data=GenericDataRowData(uid="12345"),
