@@ -1217,9 +1217,7 @@ class Project(DbObject, Updateable, Deletable):
             bool, indicates if the operation was a success.
         """
 
-        if not isinstance(data_rows, get_args(UniqueIds)) or not isinstance(
-            data_rows, get_args(GlobalKeys)
-        ):
+        if not isinstance(data_rows, get_args(DataRowIdentifiers)):
             raise TypeError("data_rows must be a DataRowIdentifiers object")
 
         method = "createQueuePriorityUpdateTask"
@@ -1380,9 +1378,7 @@ class Project(DbObject, Updateable, Deletable):
 
         """
 
-        if not isinstance(data_row_ids, get_args(UniqueIds)) or not isinstance(
-            data_row_ids, get_args(GlobalKeys)
-        ):
+        if not isinstance(data_row_ids, get_args(DataRowIdentifiers)):
             raise TypeError("data_rows must be a DataRowIdentifiers object")
 
         method = "createBulkAddRowsToQueueTask"
