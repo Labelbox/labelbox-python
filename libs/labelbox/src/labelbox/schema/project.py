@@ -1181,9 +1181,7 @@ class Project(DbObject, Updateable, Deletable):
 
         data_rows_with_identifiers = ""
         for data_row, priority in data:
-            if isinstance(data_row, UniqueId) or isinstance(
-                data_row, GlobalKey
-            ):
+            if isinstance(data_row, get_args(DataRowIdentifier)):
                 data_rows_with_identifiers += f'{{dataRowIdentifier: {{id: "{data_row.key}", idType: {data_row.id_type}}}, priority: {priority}}},'
             else:
                 raise TypeError(
