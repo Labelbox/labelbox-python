@@ -1093,8 +1093,6 @@ def test_create_tiled_layer(dataset, tile_content):
     ]
     task = dataset.create_data_rows(examples)
     task.wait_until_done()
-    task = dataset.create_data_rows(examples)
-    task.wait_until_done()
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == len(examples)
     for data_row in data_rows:
