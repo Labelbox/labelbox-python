@@ -9,6 +9,7 @@ from labelbox.schema.media_type import MediaType
 from labelbox import Project, Dataset
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.label import Label
+from labelbox import UniqueIds
 
 IMAGE_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 
@@ -128,7 +129,9 @@ class TestExportProject:
         review_queue = next(
             tq for tq in task_queues if tq.queue_type == "MANUAL_REVIEW_QUEUE"
         )
-        project.move_data_rows_to_task_queue([data_row.uid], review_queue.uid)
+        project.move_data_rows_to_task_queue(
+            UniqueIds([data_row.uid]), review_queue.uid
+        )
         export_task = project_export(
             project, task_name, filters=filters, params=params
         )

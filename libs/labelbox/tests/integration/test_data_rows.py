@@ -1081,6 +1081,7 @@ def test_invalid_media_type(dataset, conversational_content):
         # TODO: What error kind should this be? It looks like for global key we are
         # using malformed query. But for invalid contents in FileUploads we use InvalidQueryError
         with pytest.raises(ResourceCreationError):
+            dataset.(
             dataset._create_data_rows_sync(
                 [{**conversational_content, "media_type": "IMAGE"}]
             )
@@ -1091,6 +1092,8 @@ def test_create_tiled_layer(dataset, tile_content):
         {**tile_content, "media_type": "TMS_GEO"},
         tile_content,
     ]
+    task = dataset.create_data_rows(examples)
+    task.wait_until_done()
     task = dataset.create_data_rows(examples)
     task.wait_until_done()
     data_rows = list(dataset.data_rows())
