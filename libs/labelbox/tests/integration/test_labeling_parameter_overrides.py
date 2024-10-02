@@ -23,7 +23,7 @@ def test_labeling_parameter_overrides(consensus_project_with_batch):
         data_rows[2].uid,
     }
 
-    data = [(UniqueId(data_rows[0]), 4, 2), (UniqueId(data_rows[1]), 3)]
+    data = [(UniqueId(data_rows[0].uid), 4, 2), (UniqueId(data_rows[1].uid), 3)]
     success = project.set_labeling_parameter_overrides(data)
     assert success
 
