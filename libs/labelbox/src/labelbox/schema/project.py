@@ -1143,9 +1143,6 @@ class Project(DbObject, Updateable, Deletable):
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
             >>> project.set_labeling_parameter_overrides([
-            >>>     (data_row_id1, 2), (data_row_id2, 1)])
-            or
-            >>> project.set_labeling_parameter_overrides([
             >>>     (data_row_gk1, 2), (data_row_gk2, 1)])
 
         Args:
@@ -1186,7 +1183,7 @@ class Project(DbObject, Updateable, Deletable):
                 data_rows_with_identifiers += f'{{dataRowIdentifier: {{id: "{data_row.key}", idType: {data_row.id_type}}}, priority: {priority}}},'
             else:
                 raise TypeError(
-                    f"Data row identifier should be be of type Data Row Identifier. Found {type(data_row)}."
+                    f"Data row identifier should be of type Data Row Identifier. Found {type(data_row)}."
                 )
 
         query_str = template.substitute(

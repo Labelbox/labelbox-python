@@ -72,7 +72,7 @@ def test_labeling_parameter_overrides(consensus_project_with_batch):
         project.set_labeling_parameter_overrides(data)
     assert (
         str(exc_info.value)
-        == f"Data row identifier should be be of type DataRow, UniqueId or GlobalKey. Found <class 'str'> for data_row_identifier {data_rows[2].uid}"
+        == f"Data row identifier should be of type Data Row Identifier. Found <class 'str'>"
     )
 
 
