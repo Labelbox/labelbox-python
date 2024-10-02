@@ -13,7 +13,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
-    overload,
+    get_args,
 )
 
 from lbox.exceptions import (
@@ -40,7 +40,11 @@ from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.id_type import IdType
 from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
-from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
+from labelbox.schema.identifiables import (
+    DataRowIdentifiers,
+    GlobalKeys,
+    UniqueIds,
+)
 from labelbox.schema.labeling_service import (
     LabelingService,
     LabelingServiceStatus,
@@ -67,9 +71,7 @@ if TYPE_CHECKING:
 
 
 DataRowPriority = int
-LabelingParameterOverrideInput = Tuple[
-    Union[DataRow, DataRowIdentifier], DataRowPriority
-]
+LabelingParameterOverrideInput = Tuple[DataRowIdentifier, DataRowPriority]
 
 logger = logging.getLogger(__name__)
 MAX_SYNC_BATCH_ROW_COUNT = 1_000
@@ -79,23 +81,18 @@ def validate_labeling_parameter_overrides(
     data: List[LabelingParameterOverrideInput],
 ) -> None:
     for idx, row in enumerate(data):
-        if len(row) < 2:
-            raise TypeError(
-                f"Data must be a list of tuples each containing two elements: a DataRow or a DataRowIdentifier and priority (int). Found {len(row)} items. Index: {idx}"
-            )
         data_row_identifier = row[0]
         priority = row[1]
-        valid_types = (Entity.DataRow, UniqueId, GlobalKey)
-        if not isinstance(data_row_identifier, valid_types):
+        if not isinstance(data_row_identifier, get_args(DataRowIdentifier)):
             raise TypeError(
-                f"Data row identifier should be be of type DataRow, UniqueId or GlobalKey. Found {type(data_row_identifier)} for data_row_identifier {data_row_identifier}"
+                f"Data row identifier should be of type DataRowIdentifier. Found {type(data_row_identifier)}."
             )
-
+        if len(row) < 2:
+            raise TypeError(
+                f"Data must be a list of tuples each containing two elements: a  DataRowIdentifier and priority (int). Found {len(row)} items. Index: {idx}"
+            )
         if not isinstance(priority, int):
-            if isinstance(data_row_identifier, Entity.DataRow):
-                id = data_row_identifier.uid
-            else:
-                id = data_row_identifier
+            id = data_row_identifier.key
             raise TypeError(
                 f"Priority must be an int. Found {type(priority)} for data_row_identifier {id}"
             )
@@ -1046,57 +1043,6 @@ class Project(DbObject, Updateable, Deletable):
 
         return self.client.get_batch(self.uid, batch_id)
 
-    def _update_queue_mode(self, mode: "QueueMode") -> "QueueMode":
-        """
-        Updates the queueing mode of this project.
-
-        Deprecation notice: This method is deprecated. Going forward, projects must
-        go through a migration to have the queue mode changed. Users should specify the
-        queue mode for a project during creation if a non-default mode is desired.
-
-        For more information, visit https://docs.labelbox.com/reference/migrating-to-workflows#upcoming-changes
-
-        Args:
-            mode: the specified queue mode
-
-        Returns: the updated queueing mode of this project
-
-        """
-
-        logger.warning(
-            "Updating the queue_mode for a project will soon no longer be supported."
-        )
-
-        if self.queue_mode == mode:
-            return mode
-
-        if mode == QueueMode.Batch:
-            status = "ENABLED"
-        elif mode == QueueMode.Dataset:
-            status = "DISABLED"
-        else:
-            raise ValueError(
-                "Must provide either `BATCH` or `DATASET` as a mode"
-            )
-
-        query_str = (
-            """mutation %s($projectId: ID!, $status: TagSetStatusInput!) {
-              project(where: {id: $projectId}) {
-                 setTagSetStatus(input: {tagSetStatus: $status}) {
-                    tagSetStatus
-                }
-            }
-        }
-        """
-            % "setTagSetStatusPyApi"
-        )
-
-        self.client.execute(
-            query_str, {"projectId": self.uid, "status": status}
-        )
-
-        return mode
-
     def get_label_count(self) -> int:
         """
         Returns: the total number of labels in this project.
@@ -1110,46 +1056,6 @@ class Project(DbObject, Updateable, Deletable):
 
         res = self.client.execute(query_str, {"projectId": self.uid})
         return res["project"]["labelCount"]
-
-    def get_queue_mode(self) -> "QueueMode":
-        """
-        Provides the queue mode used for this project.
-
-        Deprecation notice: This method is deprecated and will be removed in
-        a future version. To obtain the queue mode of a project, simply refer
-        to the queue_mode attribute of a Project.
-
-        For more information, visit https://docs.labelbox.com/reference/migrating-to-workflows#upcoming-changes
-
-        Returns: the QueueMode for this project
-
-        """
-
-        logger.warning(
-            "Obtaining the queue_mode for a project through this method will soon"
-            " no longer be supported."
-        )
-
-        query_str = (
-            """query %s($projectId: ID!) {
-              project(where: {id: $projectId}) {
-                 tagSetStatus
-            }
-        }
-        """
-            % "GetTagSetStatusPyApi"
-        )
-
-        status = self.client.execute(query_str, {"projectId": self.uid})[
-            "project"
-        ]["tagSetStatus"]
-
-        if status == "ENABLED":
-            return QueueMode.Batch
-        elif status == "DISABLED":
-            return QueueMode.Dataset
-        else:
-            raise ValueError("Status not known")
 
     def add_model_config(self, model_config_id: str) -> str:
         """Adds a model config to this project.
@@ -1244,17 +1150,12 @@ class Project(DbObject, Updateable, Deletable):
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
             >>> project.set_labeling_parameter_overrides([
-            >>>     (data_row_id1, 2), (data_row_id2, 1)])
-            or
-            >>> project.set_labeling_parameter_overrides([
             >>>     (data_row_gk1, 2), (data_row_gk2, 1)])
 
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
-                either (DataRow, DataRowPriority<int>)
-                or (DataRowIdentifier, priority<int>) for the new override.
+                (DataRowIdentifier, priority<int>) for the new override.
                 DataRowIdentifier is an object representing a data row id or a global key. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
-                NOTE - passing whole DatRow is deprecated. Please use a DataRowIdentifier instead.
 
                 Priority:
                     * Data will be labeled in priority order.
@@ -1283,16 +1184,7 @@ class Project(DbObject, Updateable, Deletable):
 
         data_rows_with_identifiers = ""
         for data_row, priority in data:
-            if isinstance(data_row, DataRow):
-                data_rows_with_identifiers += f'{{dataRowIdentifier: {{id: "{data_row.uid}", idType: {IdType.DataRowId}}}, priority: {priority}}},'
-            elif isinstance(data_row, UniqueId) or isinstance(
-                data_row, GlobalKey
-            ):
-                data_rows_with_identifiers += f'{{dataRowIdentifier: {{id: "{data_row.key}", idType: {data_row.id_type}}}, priority: {priority}}},'
-            else:
-                raise TypeError(
-                    f"Data row identifier should be be of type DataRow or Data Row Identifier. Found {type(data_row)}."
-                )
+            data_rows_with_identifiers += f'{{dataRowIdentifier: {{id: "{data_row.key}", idType: {data_row.id_type}}}, priority: {priority}}},'
 
         query_str = template.substitute(
             dataWithDataRowIdentifiers=data_rows_with_identifiers
@@ -1300,25 +1192,9 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {"projectId": self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
-    @overload
     def update_data_row_labeling_priority(
         self,
         data_rows: DataRowIdentifiers,
-        priority: int,
-    ) -> bool:
-        pass
-
-    @overload
-    def update_data_row_labeling_priority(
-        self,
-        data_rows: List[str],
-        priority: int,
-    ) -> bool:
-        pass
-
-    def update_data_row_labeling_priority(
-        self,
-        data_rows,
         priority: int,
     ) -> bool:
         """
@@ -1329,7 +1205,7 @@ class Project(DbObject, Updateable, Deletable):
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
         Args:
-            data_rows: a list of data row ids to update priorities for. This can be a list of strings or a DataRowIdentifiers object
+            data_rows: data row identifiers object to update priorities.
                 DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             priority (int): Priority for the new override. See above for more information.
 
@@ -1337,8 +1213,8 @@ class Project(DbObject, Updateable, Deletable):
             bool, indicates if the operation was a success.
         """
 
-        if isinstance(data_rows, list):
-            data_rows = UniqueIds(data_rows)
+        if not isinstance(data_rows, get_args(DataRowIdentifiers)):
+            raise TypeError("data_rows must be a DataRowIdentifiers object")
 
         method = "createQueuePriorityUpdateTask"
         priority_param = "priority"
@@ -1481,25 +1357,15 @@ class Project(DbObject, Updateable, Deletable):
             for field_values in task_queue_values
         ]
 
-    @overload
     def move_data_rows_to_task_queue(
         self, data_row_ids: DataRowIdentifiers, task_queue_id: str
     ):
-        pass
-
-    @overload
-    def move_data_rows_to_task_queue(
-        self, data_row_ids: List[str], task_queue_id: str
-    ):
-        pass
-
-    def move_data_rows_to_task_queue(self, data_row_ids, task_queue_id: str):
         """
 
         Moves data rows to the specified task queue.
 
         Args:
-            data_row_ids: a list of data row ids to be moved. This can be a list of strings or a DataRowIdentifiers object
+            data_row_ids: a list of data row ids to be moved. This should be a DataRowIdentifiers object
                 DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             task_queue_id: the task queue id to be moved to, or None to specify the "Done" queue
 
@@ -1507,8 +1373,9 @@ class Project(DbObject, Updateable, Deletable):
             None if successful, or a raised error on failure
 
         """
-        if isinstance(data_row_ids, list):
-            data_row_ids = UniqueIds(data_row_ids)
+
+        if not isinstance(data_row_ids, get_args(DataRowIdentifiers)):
+            raise TypeError("data_rows must be a DataRowIdentifiers object")
 
         method = "createBulkAddRowsToQueueTask"
         query_str = (
