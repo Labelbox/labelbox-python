@@ -60,7 +60,7 @@ def test_labeling_parameter_overrides(consensus_project_with_batch):
     assert {o.priority for o in updated_overrides} == {2, 3, 4}
 
     with pytest.raises(TypeError) as exc_info:
-        data = [(data_rows[2], "a_string", 3)]
+        data = [(UniqueId(data_rows[2].uid), "a_string", 3)]
         project.set_labeling_parameter_overrides(data)
     assert (
         str(exc_info.value)
@@ -72,7 +72,7 @@ def test_labeling_parameter_overrides(consensus_project_with_batch):
         project.set_labeling_parameter_overrides(data)
     assert (
         str(exc_info.value)
-        == f"Data row identifier should be of type Data Row Identifier. Found <class 'str'>"
+        == "Data row identifier should be of type DataRowIdentifier. Found <class 'str'>."
     )
 
 

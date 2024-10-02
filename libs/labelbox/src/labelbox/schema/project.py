@@ -81,15 +81,18 @@ def validate_labeling_parameter_overrides(
     data: List[LabelingParameterOverrideInput],
 ) -> None:
     for idx, row in enumerate(data):
+        data_row_identifier = row[0]
+        priority = row[1]
+        if not isinstance(data_row_identifier, get_args(DataRowIdentifier)):
+            raise TypeError(
+                f"Data row identifier should be of type DataRowIdentifier. Found {type(data_row_identifier)}."
+            )
         if len(row) < 2:
             raise TypeError(
                 f"Data must be a list of tuples each containing two elements: a  DataRowIdentifier and priority (int). Found {len(row)} items. Index: {idx}"
             )
-        data_row_identifier = row[0]
-        priority = row[1]
-
         if not isinstance(priority, int):
-            id = data_row_identifier
+            id = data_row_identifier.key
             raise TypeError(
                 f"Priority must be an int. Found {type(priority)} for data_row_identifier {id}"
             )
@@ -1181,12 +1184,7 @@ class Project(DbObject, Updateable, Deletable):
 
         data_rows_with_identifiers = ""
         for data_row, priority in data:
-            if isinstance(data_row, get_args(DataRowIdentifier)):
-                data_rows_with_identifiers += f'{{dataRowIdentifier: {{id: "{data_row.key}", idType: {data_row.id_type}}}, priority: {priority}}},'
-            else:
-                raise TypeError(
-                    f"Data row identifier should be of type Data Row Identifier. Found {type(data_row)}."
-                )
+            data_rows_with_identifiers += f'{{dataRowIdentifier: {{id: "{data_row.key}", idType: {data_row.id_type}}}, priority: {priority}}},'
 
         query_str = template.substitute(
             dataWithDataRowIdentifiers=data_rows_with_identifiers
