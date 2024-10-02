@@ -11,7 +11,6 @@ from labelbox.schema.quality_mode import (
     CONSENSUS_AUTO_AUDIT_PERCENTAGE,
     QualityMode,
 )
-from labelbox.schema.queue_mode import QueueMode
 
 PositiveInt = Annotated[int, Field(gt=0)]
 
@@ -20,7 +19,6 @@ class _CoreProjectInput(BaseModel):
     name: str
     description: Optional[str] = None
     media_type: MediaType
-    queue_mode: QueueMode = Field(default=QueueMode.Batch, frozen=True)
     auto_audit_percentage: Optional[float] = None
     auto_audit_number_of_labels: Optional[int] = None
     quality_modes: Optional[Set[QualityMode]] = Field(
@@ -33,7 +31,7 @@ class _CoreProjectInput(BaseModel):
     data_row_count: Optional[PositiveInt] = None
     editor_task_type: Optional[EditorTaskType] = None
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", use_enum_values=True)
 
     @model_validator(mode="after")
     def validate_fields(self):

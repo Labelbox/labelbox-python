@@ -59,7 +59,6 @@ from labelbox.schema.project_model_config import ProjectModelConfig
 from labelbox.schema.project_resource_tag import ProjectResourceTag
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.slice import Slice, CatalogSlice, ModelSlice
-from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.label_score import LabelScore
 from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds

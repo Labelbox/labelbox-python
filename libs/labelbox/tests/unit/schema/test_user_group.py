@@ -14,7 +14,6 @@ from labelbox import Client
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.project import Project
-from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
 from labelbox.schema.user_group import UserGroup, UserGroupColor
 
@@ -32,7 +31,6 @@ def group_project():
     project_values = defaultdict(lambda: None)
     project_values["id"] = "project_id"
     project_values["name"] = "Test Project"
-    project_values["queueMode"] = QueueMode.Batch.value
     project_values["editorTaskType"] = EditorTaskType.Missing.value
     project_values["mediaType"] = MediaType.Image.value
     return Project(MagicMock(Client), project_values)
