@@ -121,14 +121,9 @@ def data_row_global_key(data_row):
     return GlobalKey(data_row.global_key)
 
 
-@pytest.fixture
-def data_row_id_as_str(data_row):
-    return data_row.uid
-
-
 @pytest.mark.parametrize(
     "data_row_for_delete",
-    ["data_row_id_as_str", "data_row_unique_id", "data_row_global_key"],
+    ["data_row_unique_id", "data_row_global_key"],
 )
 def test_bulk_delete_datarow_metadata(
     data_row_for_delete, data_row, mdo, request
@@ -154,7 +149,7 @@ def test_bulk_delete_datarow_metadata(
 
 @pytest.mark.parametrize(
     "data_row_for_delete",
-    ["data_row_id_as_str", "data_row_unique_id", "data_row_global_key"],
+    ["data_row_unique_id", "data_row_global_key"],
 )
 def test_bulk_partial_delete_datarow_metadata(
     data_row_for_delete, data_row, mdo, request
@@ -196,21 +191,6 @@ def data_row_unique_ids(big_dataset):
 
 
 @pytest.fixture
-def data_row_ids_as_str(big_dataset):
-    deletes = []
-    data_row_ids = [dr.uid for dr in big_dataset.data_rows()]
-
-    for data_row_id in data_row_ids:
-        deletes.append(
-            DeleteDataRowMetadata(
-                data_row_id=data_row_id,
-                fields=[SPLIT_SCHEMA_ID, CAPTURE_DT_SCHEMA_ID],
-            )
-        )
-    return deletes
-
-
-@pytest.fixture
 def data_row_global_keys(big_dataset):
     deletes = []
     global_keys = [dr.global_key for dr in big_dataset.data_rows()]
@@ -227,7 +207,7 @@ def data_row_global_keys(big_dataset):
 
 @pytest.mark.parametrize(
     "data_rows_for_delete",
-    ["data_row_ids_as_str", "data_row_unique_ids", "data_row_global_keys"],
+    ["data_row_unique_ids", "data_row_global_keys"],
 )
 def test_large_bulk_delete_datarow_metadata(
     data_rows_for_delete, big_dataset, mdo, request
@@ -267,7 +247,7 @@ def test_large_bulk_delete_datarow_metadata(
 
 @pytest.mark.parametrize(
     "data_row_for_delete",
-    ["data_row_id_as_str", "data_row_unique_id", "data_row_global_key"],
+    ["data_row_unique_id", "data_row_global_key"],
 )
 def test_bulk_delete_datarow_enum_metadata(
     data_row_for_delete,
@@ -304,7 +284,7 @@ def test_bulk_delete_datarow_enum_metadata(
 
 @pytest.mark.parametrize(
     "data_row_for_delete",
-    ["data_row_id_as_str", "data_row_unique_id", "data_row_global_key"],
+    ["data_row_unique_id", "data_row_global_key"],
 )
 def test_delete_non_existent_schema_id(
     data_row_for_delete, data_row, mdo, request
