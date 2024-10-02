@@ -7,15 +7,6 @@ from labelbox.orm.model import Field
 
 
 class AttachmentType(str, Enum):
-    @classmethod
-    def __missing__(cls, value: object):
-        if str(value) == "TEXT":
-            warnings.warn(
-                "The TEXT attachment type is deprecated. Use RAW_TEXT instead."
-            )
-            return cls.RAW_TEXT
-        return value
-
     VIDEO = "VIDEO"
     IMAGE = "IMAGE"
     IMAGE_OVERLAY = "IMAGE_OVERLAY"
@@ -30,7 +21,7 @@ class AssetAttachment(DbObject):
     """Asset attachment provides extra context about an asset while labeling.
 
     Attributes:
-        attachment_type (str): IMAGE, VIDEO, IMAGE_OVERLAY, HTML, RAW_TEXT, TEXT_URL, or PDF_URL. TEXT attachment type is deprecated.
+        attachment_type (str): IMAGE, VIDEO, IMAGE_OVERLAY, HTML, RAW_TEXT, TEXT_URL, or PDF_URL.
         attachment_value (str): URL to an external file or a string of text
         attachment_name (str): The name of the attachment
     """
