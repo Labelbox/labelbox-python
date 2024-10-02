@@ -464,7 +464,6 @@ class Client:
 
         data = {**data, **extra_params}
         query_string, params = query.create(db_object_type, data)
-        print(query_string)
         res = self.execute(
             query_string, params, raise_return_resource_not_found=True
         )
@@ -473,7 +472,6 @@ class Client:
                 "Failed to create %s" % db_object_type.type_name()
             )
         res = res["create%s" % db_object_type.type_name()]
-        print(res)
         return db_object_type(self, res)
 
     def create_model_config(
