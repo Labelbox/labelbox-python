@@ -13,6 +13,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    get_args,
 )
 
 from lbox.exceptions import (
@@ -1216,8 +1217,8 @@ class Project(DbObject, Updateable, Deletable):
             bool, indicates if the operation was a success.
         """
 
-        if not isinstance(data_rows, UniqueIds) or not isinstance(
-            data_rows, GlobalKeys
+        if not isinstance(data_rows, get_args(UniqueIds)) or not isinstance(
+            data_rows, get_args(GlobalKeys)
         ):
             raise TypeError("data_rows must be a DataRowIdentifiers object")
 
@@ -1379,8 +1380,8 @@ class Project(DbObject, Updateable, Deletable):
 
         """
 
-        if not isinstance(data_row_ids, UniqueIds) or not isinstance(
-            data_row_ids, GlobalKeys
+        if not isinstance(data_row_ids, get_args(UniqueIds)) or not isinstance(
+            data_row_ids, get_args(GlobalKeys)
         ):
             raise TypeError("data_rows must be a DataRowIdentifiers object")
 
