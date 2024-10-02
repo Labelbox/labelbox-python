@@ -1,4 +1,5 @@
 # type: ignore
+import warnings
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
@@ -14,7 +15,6 @@ from typing import (
     Type,
     Union,
     overload,
-    get_args,
 )
 
 from pydantic import (
@@ -28,7 +28,7 @@ from pydantic import (
 )
 from typing_extensions import Annotated
 
-from labelbox.schema.identifiable import GlobalKey, UniqueId, DataRowIdentifier
+from labelbox.schema.identifiable import GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.ontology import SchemaId
 from labelbox.utils import (
@@ -88,7 +88,7 @@ class DataRowMetadata(_CamelCaseMixin):
 
 
 class DeleteDataRowMetadata(_CamelCaseMixin):
-    data_row_id: Union[UniqueId, GlobalKey] = None
+    data_row_id: Union[str, UniqueId, GlobalKey] = None
     fields: List[SchemaId]
 
 
@@ -647,10 +647,21 @@ class DataRowMetadataOntology:
         >>>    )
         >>> mdo.batch_delete([metadata])
 
+        >>> delete = DeleteDataRowMetadata(
+        >>>                 data_row_id="global-key",
+        >>>                 fields=[
+        >>>                        "schema-id-1",
+        >>>                        "schema-id-2"
+        >>>                        ...
+        >>>                    ]
+        >>>    )
+        >>> mdo.batch_delete([metadata])
+
 
         Args:
             deletes: Data row and schema ids to delete
-                For data row, we support UniqueId and GlobalKey.
+                For data row, we support UniqueId, str, and GlobalKey.
+                If you pass a str, we will assume it is a UniqueId
                 Do not pass a mix of data row ids and global keys in the same list
 
         Returns:
@@ -662,8 +673,17 @@ class DataRowMetadataOntology:
         if not len(deletes):
             raise ValueError("The 'deletes' list cannot be empty.")
 
-        for delete in deletes:
-            if not isinstance(delete.data_row_id, get_args(DataRowIdentifier)):
+        for i, delete in enumerate(deletes):
+            if isinstance(delete.data_row_id, str):
+                deletes[i] = DeleteDataRowMetadata(
+                    data_row_id=UniqueId(delete.data_row_id),
+                    fields=delete.fields,
+                )
+            elif isinstance(delete.data_row_id, UniqueId):
+                continue
+            elif isinstance(delete.data_row_id, GlobalKey):
+                continue
+            else:
                 raise ValueError(
                     f"Invalid data row identifier type '{type(delete.data_row_id)}' for '{delete.data_row_id}'"
                 )
