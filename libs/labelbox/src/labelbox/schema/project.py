@@ -1365,7 +1365,7 @@ class Project(DbObject, Updateable, Deletable):
         Moves data rows to the specified task queue.
 
         Args:
-            data_row_ids: a list of data row ids to be moved. This can be a list of strings or a DataRowIdentifiers object
+            data_row_ids: a list of data row ids to be moved. This should be a DataRowIdentifiers object
                 DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             task_queue_id: the task queue id to be moved to, or None to specify the "Done" queue
 
@@ -1374,8 +1374,8 @@ class Project(DbObject, Updateable, Deletable):
 
         """
 
-        if not isinstance(data_row_ids[0], DataRowIdentifiers):
-            raise TypeError("data_rows must be a list of DataRowIdentifiers")
+        if not isinstance(data_row_ids, DataRowIdentifiers):
+            raise TypeError("data_rows must a DataRowIdentifiers object")
 
         method = "createBulkAddRowsToQueueTask"
         query_str = (

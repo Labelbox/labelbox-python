@@ -86,13 +86,6 @@ def test_set_labeling_priority(consensus_project_with_batch):
     assert {o.priority for o in init_labeling_parameter_overrides} == {5, 5, 5}
 
     data = [data_row.uid for data_row in data_rows]
-    success = project.update_data_row_labeling_priority(data, 1)
-    lo = list(project.labeling_parameter_overrides())
-    assert success
-    assert len(lo) == 3
-    assert {o.priority for o in lo} == {1, 1, 1}
-
-    data = [data_row.uid for data_row in data_rows]
     success = project.update_data_row_labeling_priority(UniqueIds(data), 2)
     lo = list(project.labeling_parameter_overrides())
     assert success
