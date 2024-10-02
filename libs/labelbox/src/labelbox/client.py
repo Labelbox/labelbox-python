@@ -1644,10 +1644,6 @@ class Client:
         """
         Gets data row ids for a list of global keys.
 
-        Deprecation Notice: This function will soon no longer return 'Deleted Data Rows'
-        as part of the 'results'. Global keys for deleted data rows will soon be placed
-        under 'Data Row not found' portion.
-
         Args:
             A list of global keys
         Returns:
