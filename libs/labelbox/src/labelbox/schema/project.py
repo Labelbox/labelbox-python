@@ -13,7 +13,6 @@ from typing import (
     Optional,
     Tuple,
     Union,
-    overload,
 )
 
 from lbox.exceptions import (
@@ -40,7 +39,11 @@ from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.id_type import IdType
 from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
-from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
+from labelbox.schema.identifiables import (
+    DataRowIdentifiers,
+    GlobalKeys,
+    UniqueIds,
+)
 from labelbox.schema.labeling_service import (
     LabelingService,
     LabelingServiceStatus,
@@ -1205,7 +1208,7 @@ class Project(DbObject, Updateable, Deletable):
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
         Args:
-            data_rows: a list of data row identifiers to update priorities.
+            data_rows: data row identifiers object to update priorities.
                 DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             priority (int): Priority for the new override. See above for more information.
 
@@ -1213,8 +1216,10 @@ class Project(DbObject, Updateable, Deletable):
             bool, indicates if the operation was a success.
         """
 
-        if not isinstance(data_rows[0], DataRowIdentifiers):
-            raise TypeError("data_rows must be a list of DataRowIdentifiers")
+        if not isinstance(data_rows, UniqueIds) or not isinstance(
+            data_rows, GlobalKeys
+        ):
+            raise TypeError("data_rows must be a DataRowIdentifiers object")
 
         method = "createQueuePriorityUpdateTask"
         priority_param = "priority"
@@ -1374,8 +1379,10 @@ class Project(DbObject, Updateable, Deletable):
 
         """
 
-        if not isinstance(data_row_ids, DataRowIdentifiers):
-            raise TypeError("data_rows must a DataRowIdentifiers object")
+        if not isinstance(data_row_ids, UniqueIds) or not isinstance(
+            data_row_ids, GlobalKeys
+        ):
+            raise TypeError("data_rows must be a DataRowIdentifiers object")
 
         method = "createBulkAddRowsToQueueTask"
         query_str = (
