@@ -2399,6 +2399,10 @@ def expected_export_v2_document():
                     "height": 65.0,
                     "width": 12.0,
                 },
+                "page_dimensions": {
+                    "height": 792.0,
+                    "width": 612.0,
+                },
             },
         ],
         "classifications": [
