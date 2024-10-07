@@ -1,15 +1,12 @@
 import pytest
-from unittest.mock import patch
 
 from labelbox import MediaType
 from labelbox.schema.ontology_kind import OntologyKind
-from labelbox.exceptions import MalformedQueryException
 
 
 def test_create_chat_evaluation_ontology_project(
-    client,
     chat_evaluation_ontology,
-    live_chat_evaluation_project_with_new_dataset,
+    live_chat_evaluation_project,
     offline_conversational_data_row,
     rand_gen,
 ):
@@ -28,7 +25,7 @@ def test_create_chat_evaluation_ontology_project(
         assert classification.schema_id
         assert classification.feature_schema_id
 
-    project = live_chat_evaluation_project_with_new_dataset
+    project = live_chat_evaluation_project
     assert project.model_setup_complete is None
 
     project.connect_ontology(ontology)
@@ -36,28 +33,11 @@ def test_create_chat_evaluation_ontology_project(
     assert project.labeling_frontend().name == "Editor"
     assert project.ontology().name == ontology.name
 
-    with pytest.raises(
-        ValueError,
-        match="Cannot create batches for auto data generation projects",
-    ):
-        project.create_batch(
-            rand_gen(str),
-            [offline_conversational_data_row.uid],  # sample of data row objects
-        )
-
-    with pytest.raises(
-        ValueError,
-        match="Cannot create batches for auto data generation projects",
-    ):
-        with patch(
-            "labelbox.schema.project.MAX_SYNC_BATCH_ROW_COUNT", new=0
-        ):  # force to async
-            project.create_batch(
-                rand_gen(str),
-                [
-                    offline_conversational_data_row.uid
-                ],  # sample of data row objects
-            )
+    batch = project.create_batch(
+        rand_gen(str),
+        [offline_conversational_data_row.uid],  # sample of data row objects
+    )
+    assert batch
 
 
 def test_create_chat_evaluation_ontology_project_existing_dataset(
