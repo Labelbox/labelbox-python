@@ -18,6 +18,20 @@ class ModelEvalutationTemlateRowData(BaseModel):
 
 
 class ModelEvaluationTemplate(BaseModel):
+    """
+    Use this class to create a model evaluation data row.
+
+    Examples:
+        >>> data = ModelEvaluationTemplate()
+        >>> data.row_data.rootMessageIds = ["root1"]
+        >>> vector = [random.uniform(1.0, 2.0) for _ in range(embedding.dims)]
+        >>> data.embeddings = [...]
+        >>> data.metadata_fields = [...]
+        >>> data.attachments = [...]
+        >>> content = data.model_dump()
+        >>> task = dataset.create_data_rows([content])
+    """
+
     row_data: ModelEvalutationTemlateRowData = Field(
         default=ModelEvalutationTemlateRowData()
     )

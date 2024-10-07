@@ -951,6 +951,8 @@ class Client:
             >>> client.create_model_evaluation_project(name=project_name, dataset_id="clr00u8j0j0j0", data_row_count=10)
             >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created 10 data rows to the project.
 
+            >>> client.create_model_evaluation_project(name=project_name)
+            >>>     This creates a new project with no data rows.
 
         """
         autogenerate_data_rows = False
