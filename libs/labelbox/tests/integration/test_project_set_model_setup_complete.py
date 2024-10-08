@@ -4,9 +4,9 @@ from labelbox.exceptions import LabelboxError, OperationNotAllowedException
 
 
 def test_live_chat_evaluation_project(
-    live_chat_evaluation_project_with_new_dataset, model_config
+    live_chat_evaluation_project, model_config
 ):
-    project = live_chat_evaluation_project_with_new_dataset
+    project = live_chat_evaluation_project
 
     project.set_project_model_setup_complete()
     assert bool(project.model_setup_complete) is True
@@ -19,9 +19,9 @@ def test_live_chat_evaluation_project(
 
 
 def test_live_chat_evaluation_project_delete_cofig(
-    live_chat_evaluation_project_with_new_dataset, model_config
+    live_chat_evaluation_project, model_config
 ):
-    project = live_chat_evaluation_project_with_new_dataset
+    project = live_chat_evaluation_project
     project_model_config_id = project.add_model_config(model_config.uid)
     assert project_model_config_id
 
