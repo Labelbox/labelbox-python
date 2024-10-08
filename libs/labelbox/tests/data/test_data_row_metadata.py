@@ -79,7 +79,7 @@ def make_metadata(dr_id: str = None, gk: str = None) -> DataRowMetadata:
 
 def make_named_metadata(dr_id) -> DataRowMetadata:
     msg = "A message"
-    time = datetime.utcnow()
+    time = datetime.now(timezone.utc)
 
     metadata = DataRowMetadata(
         data_row_id=dr_id,
