@@ -6,6 +6,7 @@ import os
 import random
 import time
 import urllib.parse
+import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
 from types import MappingProxyType
@@ -637,6 +638,7 @@ class Client:
         }
         return self._create_project(_CoreProjectInput(**input))
 
+    @overload
     def create_model_evaluation_project(
         self,
         name: str,
@@ -649,7 +651,17 @@ class Client:
         is_consensus_enabled: Optional[bool] = None,
         dataset_id: Optional[str] = None,
         dataset_name: Optional[str] = None,
-        data_row_count: int = 100,
+        data_row_count: Optional[int] = None,
+        **kwargs,
+    ) -> Project:
+        pass
+
+    def create_model_evaluation_project(
+        self,
+        dataset_id: Optional[str] = None,
+        dataset_name: Optional[str] = None,
+        data_row_count: Optional[int] = None,
+        **kwargs,
     ) -> Project:
         """
         Use this method exclusively to create a chat model evaluation project.
@@ -674,22 +686,39 @@ class Client:
             >>> client.create_model_evaluation_project(name=project_name, dataset_id="clr00u8j0j0j0", data_row_count=10)
             >>>     This creates a new project, and adds 100 datarows to the dataset with id "clr00u8j0j0j0" and assigns a batch of the newly created 10 data rows to the project.
 
+            >>> client.create_model_evaluation_project(name=project_name)
+            >>>     This creates a new project with no data rows.
 
         """
-        if not dataset_id and not dataset_name:
-            raise ValueError(
-                "dataset_name or data_set_id must be present and not be an empty string."
-            )
+        autogenerate_data_rows = False
+        dataset_name_or_id = None
+        append_to_existing_dataset = None
+
+        if dataset_id or dataset_name:
+            autogenerate_data_rows = True
 
         if dataset_id:
             append_to_existing_dataset = True
             dataset_name_or_id = dataset_id
-        else:
+        elif dataset_name:
             append_to_existing_dataset = False
             dataset_name_or_id = dataset_name
 
-        media_type = MediaType.Conversational
-        editor_task_type = EditorTaskType.ModelChatEvaluation
+        if autogenerate_data_rows:
+            kwargs["dataset_name_or_id"] = dataset_name_or_id
+            kwargs["append_to_existing_dataset"] = append_to_existing_dataset
+            if data_row_count is None:
+                data_row_count = 100
+            if data_row_count < 0:
+                raise ValueError("data_row_count must be a positive integer.")
+            kwargs["data_row_count"] = data_row_count
+            warnings.warn(
+                "Automatic generation of data rows of live model evaluation projects is deprecated. dataset_name_or_id, append_to_existing_dataset, data_row_count will be removed in a future version.",
+                DeprecationWarning,
+            )
+
+        kwargs["media_type"] = MediaType.Conversational
+        kwargs["editor_task_type"] = EditorTaskType.ModelChatEvaluation.value
 
         input = {
             "name": name,

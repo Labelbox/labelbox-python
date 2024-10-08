@@ -2,10 +2,8 @@ import pytest
 from lbox.exceptions import ResourceNotFoundError
 
 
-def test_add_single_model_config(
-    live_chat_evaluation_project_with_new_dataset, model_config
-):
-    configured_project = live_chat_evaluation_project_with_new_dataset
+def test_add_single_model_config(live_chat_evaluation_project, model_config):
+    configured_project = live_chat_evaluation_project
     project_model_config_id = configured_project.add_model_config(
         model_config.uid
     )
@@ -22,11 +20,11 @@ def test_add_single_model_config(
 def test_add_multiple_model_config(
     client,
     rand_gen,
-    live_chat_evaluation_project_with_new_dataset,
+    live_chat_evaluation_project,
     model_config,
     valid_model_id,
 ):
-    configured_project = live_chat_evaluation_project_with_new_dataset
+    configured_project = live_chat_evaluation_project
     second_model_config = client.create_model_config(
         rand_gen(str), valid_model_id, {"param": "value"}
     )
@@ -52,9 +50,9 @@ def test_add_multiple_model_config(
 
 
 def test_delete_project_model_config(
-    live_chat_evaluation_project_with_new_dataset, model_config
+    live_chat_evaluation_project, model_config
 ):
-    configured_project = live_chat_evaluation_project_with_new_dataset
+    configured_project = live_chat_evaluation_project
     assert configured_project.delete_project_model_config(
         configured_project.add_model_config(model_config.uid)
     )

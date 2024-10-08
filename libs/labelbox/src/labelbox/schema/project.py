@@ -13,7 +13,6 @@ from typing import (
     List,
     Optional,
     Tuple,
-    TypeVar,
     Union,
     get_args,
 )
@@ -23,7 +22,6 @@ from lbox.exceptions import (
     InvalidQueryError,
     LabelboxError,
     ProcessingWaitTimeout,
-    ResourceConflict,
     ResourceNotFoundError,
     error_message_for_unparsed_graphql_error,
 )  # type: ignore
@@ -59,7 +57,6 @@ from labelbox.schema.media_type import MediaType
 from labelbox.schema.model_config import ModelConfig
 from labelbox.schema.ontology_kind import (
     EditorTaskType,
-    OntologyKind,
     UploadType,
 )
 from labelbox.schema.project_model_config import ProjectModelConfig
@@ -577,7 +574,7 @@ class Project(DbObject, Updateable, Deletable):
 
         if frontend.name != "Editor":
             logger.warning(
-                f"This function has only been tested to work with the Editor front end. Found %s",
+                "This function has only been tested to work with the Editor front end. Found %s",
                 frontend.name,
             )
 
@@ -745,7 +742,9 @@ class Project(DbObject, Updateable, Deletable):
             lbox.exceptions.ValueError if a project is not batch mode, if the project is auto data generation, if the batch exceeds 100k data rows
         """
 
-        if self.is_auto_data_generation():
+        if (
+            self.is_auto_data_generation() and not self.is_chat_evaluation()
+        ):  # NOTE live chat evaluatiuon projects in sdk do not pre-generate data rows, but use batch as all other projects
             raise ValueError(
                 "Cannot create batches for auto data generation projects"
             )
@@ -771,7 +770,7 @@ class Project(DbObject, Updateable, Deletable):
 
         if row_count > 100_000:
             raise ValueError(
-                f"Batch exceeds max size, break into smaller batches"
+                "Batch exceeds max size, break into smaller batches"
             )
         if not row_count:
             raise ValueError("You need at least one data row in a batch")
@@ -1039,8 +1038,7 @@ class Project(DbObject, Updateable, Deletable):
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
             raise LabelboxError(
-                f"Batch was not created successfully: "
-                + json.dumps(task.errors)
+                "Batch was not created successfully: " + json.dumps(task.errors)
             )
 
         return self.client.get_batch(self.uid, batch_id)
@@ -1262,7 +1260,7 @@ class Project(DbObject, Updateable, Deletable):
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
             raise LabelboxError(
-                f"Priority was not updated successfully: "
+                "Priority was not updated successfully: "
                 + json.dumps(task.errors)
             )
         return True
@@ -1442,7 +1440,7 @@ class Project(DbObject, Updateable, Deletable):
         task = self._wait_for_task(task_id)
         if task.status != "COMPLETE":
             raise LabelboxError(
-                f"Data rows were not moved successfully: "
+                "Data rows were not moved successfully: "
                 + json.dumps(task.errors)
             )
 
