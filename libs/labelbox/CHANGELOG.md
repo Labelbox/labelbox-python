@@ -1,6 +1,10 @@
 # Changelog
-# Version 5.1.0 (2024-09-27)
+# Version 5.2.0 (2024-10-09)
 ## Fixed
+* Support data row / batch for live mmc projects([#1856](https://github.com/Labelbox/labelbox-python/pull/1856))
+
+# Version 5.1.0 (2024-09-27)
+## Added
 * Support self-signed SSL certs([#1811](https://github.com/Labelbox/labelbox-python/pull/1811))
 * Rectangle units now correctly support percent inputs([#1848](https://github.com/Labelbox/labelbox-python/pull/1848))
 
