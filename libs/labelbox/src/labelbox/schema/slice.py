@@ -53,43 +53,6 @@ class CatalogSlice(Slice):
     Represents a Slice used for filtering data rows in Catalog.
     """
 
-    def get_data_row_ids(self) -> PaginatedCollection:
-        """
-        Fetches all data row ids that match this Slice
-
-        Returns:
-            A PaginatedCollection of mapping of data row ids to global keys
-        """
-
-        warnings.warn(
-            "get_data_row_ids will be deprecated. Use get_data_row_identifiers instead"
-        )
-
-        query_str = """
-            query getDataRowIdsBySavedQueryPyApi($id: ID!, $from: String, $first: Int!) {
-                getDataRowIdsBySavedQuery(input: {
-                    savedQueryId: $id,
-                    after: $from
-                    first: $first
-                }) {
-                    totalCount
-                    nodes
-                    pageInfo {
-                        endCursor
-                        hasNextPage
-                    }
-                }
-            }
-        """
-        return PaginatedCollection(
-            client=self.client,
-            query=query_str,
-            params={"id": str(self.uid)},
-            dereferencing=["getDataRowIdsBySavedQuery", "nodes"],
-            obj_class=lambda _, data_row_id: data_row_id,
-            cursor_path=["getDataRowIdsBySavedQuery", "pageInfo", "endCursor"],
-        )
-
     def get_data_row_identifiers(self) -> PaginatedCollection:
         """
         Fetches all data row ids and global keys (where defined) that match this Slice

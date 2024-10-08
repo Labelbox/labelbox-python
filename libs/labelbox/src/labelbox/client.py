@@ -72,7 +72,6 @@ from labelbox.schema.quality_mode import (
     CONSENSUS_AUTO_AUDIT_PERCENTAGE,
     QualityMode,
 )
-from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.role import Role
 from labelbox.schema.search_filters import SearchFilter
 from labelbox.schema.send_to_annotate_params import (
@@ -468,13 +467,11 @@ class Client:
         res = self.execute(
             query_string, params, raise_return_resource_not_found=True
         )
-
         if not res:
             raise LabelboxError(
                 "Failed to create %s" % db_object_type.type_name()
             )
         res = res["create%s" % db_object_type.type_name()]
-
         return db_object_type(self, res)
 
     def create_model_config(
@@ -621,7 +618,6 @@ class Client:
             name (str): A name for the project
             description (str): A short summary for the project
             media_type (MediaType): The type of assets that this project will accept
-            queue_mode (Optional[QueueMode]): The queue mode to use
             quality_modes (Optional[List[QualityMode]]): The quality modes to use (e.g. Benchmark, Consensus). Defaults to
                 Benchmark.
             is_benchmark_enabled (Optional[bool]): Whether the project supports benchmark. Defaults to None.
@@ -853,11 +849,7 @@ class Client:
         return self._create_project(_CoreProjectInput(**input))
 
     def _create_project(self, input: _CoreProjectInput) -> Project:
-        media_type_value = input.media_type.value
-
         params = input.model_dump(exclude_none=True)
-        if media_type_value:
-            params["media_type"] = media_type_value
 
         extra_params = {
             Field.String("dataset_name_or_id"): params.pop(
@@ -1643,10 +1635,6 @@ class Client:
     ) -> Dict[str, Union[str, List[Any]]]:
         """
         Gets data row ids for a list of global keys.
-
-        Deprecation Notice: This function will soon no longer return 'Deleted Data Rows'
-        as part of the 'results'. Global keys for deleted data rows will soon be placed
-        under 'Data Row not found' portion.
 
         Args:
             A list of global keys

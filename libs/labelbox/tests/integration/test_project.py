@@ -315,7 +315,6 @@ def test_clone(client, project, rand_gen):
 
     assert cloned_project.description == project.description
     assert cloned_project.media_type == project.media_type
-    assert cloned_project.queue_mode == project.queue_mode
     assert (
         cloned_project.auto_audit_number_of_labels
         == project.auto_audit_number_of_labels

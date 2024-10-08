@@ -24,6 +24,6 @@ def test_utc_conversion(project):
     tz = timezone(timedelta(hours=6))  # +6 timezone
     project.update(setup_complete=datetime.now(timezone.utc).replace(tzinfo=tz))
     diff = datetime.now(timezone.utc) - project.setup_complete.replace(
-        tzinfo=None
+        tzinfo=timezone.utc
     )
     assert diff > timedelta(hours=5, minutes=58)

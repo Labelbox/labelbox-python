@@ -136,42 +136,6 @@ class Label(BaseModel):
             self.data.external_id = data_row.external_id
         return self
 
-    def assign_feature_schema_ids(
-        self, ontology_builder: ontology.OntologyBuilder
-    ) -> "Label":
-        """
-        Adds schema ids to all FeatureSchema objects in the Labels.
-
-        Args:
-            ontology_builder: The ontology that matches the feature names assigned to objects in this dataset
-        Returns:
-            Label. useful for chaining these modifying functions
-
-        Note: You can now import annotations using names directly without having to lookup schema_ids
-        """
-        warnings.warn(
-            "This method is deprecated and will be "
-            "removed in a future release. Feature schema ids"
-            " are no longer required for importing."
-        )
-        tool_lookup, classification_lookup = get_feature_schema_lookup(
-            ontology_builder
-        )
-        for annotation in self.annotations:
-            if isinstance(annotation, ClassificationAnnotation):
-                self._assign_or_raise(annotation, classification_lookup)
-                self._assign_option(annotation, classification_lookup)
-            elif isinstance(annotation, ObjectAnnotation):
-                self._assign_or_raise(annotation, tool_lookup)
-                for classification in annotation.classifications:
-                    self._assign_or_raise(classification, classification_lookup)
-                    self._assign_option(classification, classification_lookup)
-            else:
-                raise TypeError(
-                    f"Unexpected type found for annotation. {type(annotation)}"
-                )
-        return self
-
     def _assign_or_raise(self, annotation, lookup: Dict[str, str]) -> None:
         if annotation.feature_schema_id is not None:
             return
