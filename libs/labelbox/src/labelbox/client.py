@@ -690,21 +690,10 @@ class Client:
             >>>     This creates a new project with no data rows.
 
         """
-        autogenerate_data_rows = False
-        dataset_name_or_id = None
-        append_to_existing_dataset = None
+        dataset_name_or_id = dataset_id or dataset_name
+        append_to_existing_dataset = bool(dataset_id)
 
-        if dataset_id or dataset_name:
-            autogenerate_data_rows = True
-
-        if dataset_id:
-            append_to_existing_dataset = True
-            dataset_name_or_id = dataset_id
-        elif dataset_name:
-            append_to_existing_dataset = False
-            dataset_name_or_id = dataset_name
-
-        if autogenerate_data_rows:
+        if dataset_name_or_id:
             kwargs["dataset_name_or_id"] = dataset_name_or_id
             kwargs["append_to_existing_dataset"] = append_to_existing_dataset
             if data_row_count is None:
