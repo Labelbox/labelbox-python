@@ -21,21 +21,6 @@ class LabelGenerator(PrefetchGenerator):
         self._fns = {}
         super().__init__(data, *args, **kwargs)
 
-    def assign_feature_schema_ids(
-        self, ontology_builder: "ontology.OntologyBuilder"
-    ) -> "LabelGenerator":
-        def _assign_ids(label: Label):
-            label.assign_feature_schema_ids(ontology_builder)
-            return label
-
-        warnings.warn(
-            "This method is deprecated and will be "
-            "removed in a future release. Feature schema ids"
-            " are no longer required for importing."
-        )
-        self._fns["assign_feature_schema_ids"] = _assign_ids
-        return self
-
     def add_url_to_masks(
         self, signer: Callable[[bytes], str]
     ) -> "LabelGenerator":

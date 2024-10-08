@@ -55,6 +55,28 @@ from labelbox.schema.ontology import (
     ResponseOption,
     Tool,
 )
+from labelbox.schema.ontology import PromptResponseClassification
+from labelbox.schema.ontology import ResponseOption
+from labelbox.schema.role import Role, ProjectRole
+from labelbox.schema.invite import Invite, InviteLimit
+from labelbox.schema.data_row_metadata import (
+    DataRowMetadataOntology,
+    DataRowMetadataField,
+    DataRowMetadata,
+    DeleteDataRowMetadata,
+)
+from labelbox.schema.model_run import ModelRun, DataSplit
+from labelbox.schema.benchmark import Benchmark
+from labelbox.schema.iam_integration import IAMIntegration
+from labelbox.schema.resource_tag import ResourceTag
+from labelbox.schema.project_model_config import ProjectModelConfig
+from labelbox.schema.project_resource_tag import ProjectResourceTag
+from labelbox.schema.media_type import MediaType
+from labelbox.schema.slice import Slice, CatalogSlice, ModelSlice
+from labelbox.schema.task_queue import TaskQueue
+from labelbox.schema.label_score import LabelScore
+from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds
+from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.organization import Organization
 from labelbox.schema.project import Project

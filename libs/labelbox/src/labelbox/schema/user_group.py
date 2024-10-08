@@ -14,7 +14,6 @@ from labelbox import Client
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.project import Project
-from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
 
 
@@ -411,7 +410,6 @@ class UserGroup(BaseModel):
             project_values = defaultdict(lambda: None)
             project_values["id"] = project["id"]
             project_values["name"] = project["name"]
-            project_values["queueMode"] = QueueMode.Batch.value
             project_values["editorTaskType"] = EditorTaskType.Missing.value
             project_values["mediaType"] = MediaType.Image.value
             projects.add(Project(self.client, project_values))

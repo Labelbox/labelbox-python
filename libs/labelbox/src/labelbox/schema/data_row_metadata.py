@@ -673,10 +673,8 @@ class DataRowMetadataOntology:
         if not len(deletes):
             raise ValueError("The 'deletes' list cannot be empty.")
 
-        passed_strings = False
         for i, delete in enumerate(deletes):
             if isinstance(delete.data_row_id, str):
-                passed_strings = True
                 deletes[i] = DeleteDataRowMetadata(
                     data_row_id=UniqueId(delete.data_row_id),
                     fields=delete.fields,
@@ -688,12 +686,6 @@ class DataRowMetadataOntology:
             else:
                 raise ValueError(
                     f"Invalid data row identifier type '{type(delete.data_row_id)}' for '{delete.data_row_id}'"
-                )
-
-            if passed_strings:
-                warnings.warn(
-                    "Using string for data row id will be deprecated. Please use "
-                    "UniqueId instead."
                 )
 
         def _batch_delete(

@@ -61,7 +61,6 @@ from labelbox.schema.project_overview import (
     ProjectOverview,
     ProjectOverviewDetailed,
 )
-from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
@@ -109,7 +108,6 @@ class Project(DbObject, Updateable, Deletable):
         created_at (datetime)
         setup_complete (datetime)
         last_activity_time (datetime)
-        queue_mode (string)
         auto_audit_number_of_labels (int)
         auto_audit_percentage (float)
         is_benchmark_enabled (bool)
@@ -132,7 +130,6 @@ class Project(DbObject, Updateable, Deletable):
     created_at = Field.DateTime("created_at")
     setup_complete = Field.DateTime("setup_complete")
     last_activity_time = Field.DateTime("last_activity_time")
-    queue_mode = Field.Enum(QueueMode, "queue_mode")
     auto_audit_number_of_labels = Field.Int("auto_audit_number_of_labels")
     auto_audit_percentage = Field.Float("auto_audit_percentage")
     # Bind data_type and allowedMediaTYpe using the GraphQL type MediaType
@@ -734,9 +731,6 @@ class Project(DbObject, Updateable, Deletable):
         Raises:
             lbox.exceptions.ValueError if a project is not batch mode, if the project is auto data generation, if the batch exceeds 100k data rows
         """
-        # @TODO: make this automatic?
-        if self.queue_mode != QueueMode.Batch:
-            raise ValueError("Project must be in batch mode")
 
         if (
             self.is_auto_data_generation() and not self.is_chat_evaluation()
@@ -817,9 +811,6 @@ class Project(DbObject, Updateable, Deletable):
 
         Returns: a task for the created batches
         """
-
-        if self.queue_mode != QueueMode.Batch:
-            raise ValueError("Project must be in batch mode")
 
         dr_ids = []
         if data_rows is not None:
@@ -902,9 +893,6 @@ class Project(DbObject, Updateable, Deletable):
 
         Returns: a task for the created batches
         """
-
-        if self.queue_mode != QueueMode.Batch:
-            raise ValueError("Project must be in batch mode")
 
         if consensus_settings:
             consensus_settings = ConsensusSettings(
