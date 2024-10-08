@@ -169,12 +169,6 @@ class Dataset(DbObject, Updateable, Deletable):
     def _create_data_rows_sync(
         self, items, file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
     ) -> "DataUpsertTask":
-        max_data_rows_supported = 1000
-        if len(items) > max_data_rows_supported:
-            raise ValueError(
-                f"Dataset._create_data_rows_sync() supports a max of {max_data_rows_supported} data rows."
-                " For larger imports use the async function Dataset.create_data_rows()"
-            )
         if file_upload_thread_count < 1:
             raise ValueError(
                 "file_upload_thread_count must be a positive integer"
