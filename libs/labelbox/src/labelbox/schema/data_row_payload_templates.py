@@ -1,11 +1,11 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 from labelbox.schema.data_row import DataRowMetadataField
 
 
-class ModelEvalutationTemlateRowData(BaseModel):
+class ModelEvalutationTemplateRowData(BaseModel):
     type: str = Field(
         default="application/vnd.labelbox.conversational.model-chat-evaluation",
         frozen=True,
@@ -15,6 +15,7 @@ class ModelEvalutationTemlateRowData(BaseModel):
     actors: Dict = Field(default={})
     version: int = Field(default=2, frozen=True)
     messages: Dict = Field(default={})
+    global_key: Optional[str] = None
 
 
 class ModelEvaluationTemplate(BaseModel):
@@ -32,8 +33,8 @@ class ModelEvaluationTemplate(BaseModel):
         >>> task = dataset.create_data_rows([content])
     """
 
-    row_data: ModelEvalutationTemlateRowData = Field(
-        default=ModelEvalutationTemlateRowData()
+    row_data: ModelEvalutationTemplateRowData = Field(
+        default=ModelEvalutationTemplateRowData()
     )
     attachments: List[Dict] = Field(default=[])
     embeddings: List[Dict] = Field(default=[])
