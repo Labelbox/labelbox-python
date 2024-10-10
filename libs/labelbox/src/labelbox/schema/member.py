@@ -6,6 +6,7 @@ from labelbox.exceptions import (
 )
 from typing import Set, Iterator, Any
 from pydantic import (
+    ConfigDict,
     Field,
     field_validator,
     model_serializer,
@@ -78,7 +79,12 @@ class Member(_CamelCaseMixin):
     default_role: Optional[Role] = Field(default=None)
     user_group_ids: Set[str] = Field(default=set())
     client: Client
-    _current_user_id: str = PrivateAttr()
+    _current_user_id: str
+
+    def __init__(self, **data):
+        """set private attribute"""
+        super().__init__(**data)
+        self._current_user_id = self.client.get_user().uid
 
     @field_validator("client", mode="before")
     @classmethod
@@ -91,9 +97,8 @@ class Member(_CamelCaseMixin):
 
     @model_validator(mode="before")
     def current_user(data: Any) -> Any:
-        data["_current_user_id"] = data["client"].get_user.uid
         if "id" not in data:
-            data["id"] = data["_current_user_id"]
+            data["id"] = data["client"].get_user().uid
         return data
 
     def get(self) -> "Member":
@@ -250,7 +255,7 @@ class Member(_CamelCaseMixin):
 
         Raises:
             ResourceNotFoundError: If the deletion of the member fails due to not existing
-            ValueError: If the member id is current users id.
+            ValueError: If the member id is current member id.
         """
 
         query = """
@@ -262,7 +267,7 @@ class Member(_CamelCaseMixin):
             }
             """
 
-        if self.id == self.client.get_user().uid:
+        if self.id == self._current_user_id:
             raise ValueError("Unable to delete self")
 
         params = {"id": self.id}
@@ -276,13 +281,13 @@ class Member(_CamelCaseMixin):
 
     def _get_project_memberships(self, user_id: str) -> Set[ProjectMembership]:
         """
-        Retrieves a set of project members from the given user_id.
+        Retrieves a set of project membership objects from the given user_id.
 
         Args:
             user_id (str): User id you are getting project memberships on.
 
         Returns:
-            set: A set of project members.
+            set: A set of project memberships.
         """
         query = """
             query GetMemberReworkPyApi($userId: ID!) {
@@ -417,3 +422,12 @@ class Member(_CamelCaseMixin):
                 yield Member(client=self.client, **member)
 
             previous_batch += batch_size
+
+
+if __name__ == "__main__":
+    api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbG9vcmRpaGUwMDkyMDcza2Nvcm5jajdnIiwib3JnYW5pemF0aW9uSWQiOiJjbG9vcmRpZ3cwMDkxMDcza2M2cG9oeWFiIiwiYXBpS2V5SWQiOiJjbTIzbDEyZncwYjN2MDd4ZDlqNmthMTBjIiwic2VjcmV0IjoiZWNlZTQ1YzQ1YmU1NTlkOGNkNDgxOTJkMDgxZGIyYjMiLCJpYXQiOjE3Mjg1ODE4OTUsImV4cCI6MjM1OTczMzg5NX0.xm3Yvg0Zub0HKJzSFf66iClaAvBxJpTBo4dxiruW7SA"
+    client = Client(api_key)
+    client.enable_experimental = True
+    member = Member(client=client)
+    print(member)
+    print(member.delete())
