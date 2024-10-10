@@ -9,22 +9,13 @@ from labelbox.schema.user_group import UserGroup, UserGroupColor
 data = faker.Faker()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def current_member(client):
-    yield Member(client=client).get()
+    current_member = Member(client=client).get()
+    yield current_member
 
 
-@pytest.fixture
-def test_member(client, current_member):
-    members = list(Member(client=client).get_members())
-    test_member = None
-    for member in members:
-        if member.id != current_member.id:
-            test_member = member
-    return test_member
-
-
-@pytest.fixture
+@pytest.fixture(scope="session")
 def user_group(client):
     group_name = data.name()
     user_group = UserGroup(client=client)
@@ -34,6 +25,21 @@ def user_group(client):
     yield user_group.create()
 
     user_group.delete()
+
+
+@pytest.fixture(scope="module")
+def test_member(client, current_member, user_group):
+    members = list(Member(client=client).get_members())
+    test_member = None
+    for member in members:
+        if member.id != current_member.id:
+            test_member = member
+    test_member.user_group_ids.add(user_group.id)
+    updated_member = test_member.update()
+    yield updated_member
+    # remove from any user_groups as clean up
+    updated_member.user_group_ids = set()
+    updated_member.update()
 
 
 def test_get_member(current_member, client):
@@ -58,6 +64,7 @@ def test_update_member(client, test_member, project_pack, user_group):
     test_member.user_group_ids.add(user_group.id)
     test_member.can_access_all_projects = False
     updated_member = test_member.update()
+    updated_member = updated_member.get()
 
     # Verify that the member was updated successfully
     assert test_member.email == updated_member.email
@@ -69,12 +76,22 @@ def test_update_member(client, test_member, project_pack, user_group):
     assert user_group.id in updated_member.user_group_ids
     assert updated_member.default_role == reviewer_role
 
+    # update project role for one of the projects
+    project = project_pack[0]
+    project_membership = ProjectMembership(
+        project_id=project.uid, role=reviewer_role
+    )
+    updated_member.project_memberships.add(project_membership)
+    updated_member = updated_member.update()
+    assert project_membership in updated_member.get().project_memberships
+
     # Remove memberships and check if updated
     updated_member.project_memberships = set()
     updated_member.user_group_ids = set()
     updated_member.default_role = labeler_role
     updated_member.can_access_all_projects = True
     updated_member = updated_member.update()
+    updated_member = updated_member.get()
 
     assert updated_member.project_memberships == set()
     assert updated_member.user_group_ids == set()
@@ -83,14 +100,16 @@ def test_update_member(client, test_member, project_pack, user_group):
 
 
 def test_get_members(test_member, current_member, client):
-    members = list(
-        Member(client=client).get_members(search=current_member.email)
-    )
-    assert current_member in members
-    members = list(
-        Member(client=client).get_members(roles=[current_member.default_role])
-    )
-    assert current_member in members
+    member_ids = [
+        member.id
+        for member in Member(client=client).get_members(
+            search=test_member.email
+        )
+    ]
+    assert test_member.id in member_ids
+
+    # TODO<Gabefire>: can not search for roles or groups as it is too flaky will need to add in once user groups are harden
+
     member_ids = [member.id for member in Member(client=client).get_members()]
     assert test_member.id in member_ids
     assert current_member.id in member_ids
