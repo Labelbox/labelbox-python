@@ -4,7 +4,7 @@ from labelbox.exceptions import (
     ResourceNotFoundError,
     UnprocessableEntityError,
 )
-from typing import Set, Iterator, Any
+from typing import Set, Iterator, Any, List
 from pydantic import (
     Field,
     field_validator,
@@ -25,7 +25,7 @@ class ProjectMembership(_CamelCaseMixin):
     """
 
     project_id: str
-    role: Optional[Role] = None
+    role: Optional[Role] = Field(default=None)
 
     def __hash__(self) -> int:
         return self.project_id.__hash__()
@@ -34,7 +34,7 @@ class ProjectMembership(_CamelCaseMixin):
     def serialize_model(self):
         return {
             "projectId": self.project_id,
-            "roleId": None if self.role is None else self.role.id,
+            "roleId": None if self.role is None else self.role.uid,
         }
 
 
@@ -214,6 +214,7 @@ class Member(_CamelCaseMixin):
         Raises:
             ResourceNotFoundError: If the update fails due to unknown member
             UnprocessableEntityError: If the update fails due to a malformed input
+            ValueError: If the member id is current member id.
         """
         query = """
             mutation SetUserAccessPyApi($id: ID!, $roleId: ID!, $canAccessAllProjects: Boolean!, $groupIds: [String!], $projectMemberships: [ProjectMembershipsInput!]) {
@@ -230,12 +231,15 @@ class Member(_CamelCaseMixin):
             "id": self.id,
             "roleId": self.default_role.uid if self.default_role else None,
             "canAccessAllProjects": self.can_access_all_projects,
-            "groupIds": self.user_group_ids,
+            "groupIds": list(self.user_group_ids),
             "projectMemberships": [
                 project_membership.model_dump()
                 for project_membership in self.project_memberships
             ],
         }
+
+        if self.id == self._current_user_id:
+            raise ValueError("Unable to update self")
 
         try:
             result = self.client.execute(query, params, experimental=True)
@@ -282,7 +286,7 @@ class Member(_CamelCaseMixin):
             raise ResourceNotFoundError(
                 message="Failed to delete member as member does not exist"
             )
-        return result["data"]["updateUser"]["deleted"]
+        return result["updateUser"]["deleted"]
 
     def _get_project_memberships(self, user_id: str) -> Set[ProjectMembership]:
         """
@@ -331,8 +335,8 @@ class Member(_CamelCaseMixin):
     def get_members(
         self,
         search: str = "",
-        roles: Optional[list[Role]] = None,
-        group_ids: Optional[list[str]] = None,
+        roles: Optional[List[Role]] = None,
+        group_ids: Optional[List[str]] = None,
     ) -> Iterator["Member"]:
         """
         Gets all members in Labelbox.
