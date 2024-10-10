@@ -1,14 +1,10 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Callable, Generator, Iterable, Union, Optional
-from uuid import uuid4
 import warnings
+from typing import Callable, Generator, Iterable, Union
 
-from tqdm import tqdm
-
-from labelbox.schema import ontology
 from labelbox.orm.model import Entity
-from ..ontology import get_classifications, get_tools
+from labelbox.schema import ontology
+
 from ..generator import PrefetchGenerator
 from .label import Label
 

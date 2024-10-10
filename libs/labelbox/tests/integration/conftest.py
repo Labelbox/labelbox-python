@@ -5,13 +5,13 @@ import sys
 import time
 import uuid
 from collections import defaultdict
+from datetime import datetime, timezone
 from enum import Enum
 from itertools import islice
 from types import SimpleNamespace
 from typing import List, Tuple, Type
 
 import pytest
-import requests
 
 from labelbox import (
     Classification,
@@ -30,11 +30,36 @@ from labelbox.orm import query
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.annotation_import import LabelImport
 from labelbox.schema.catalog import Catalog
+from labelbox.schema.data_row import DataRowMetadataField
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.invite import Invite
 from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.quality_mode import QualityMode
 from labelbox.schema.user import User
+
+
+@pytest.fixture
+def constants():
+    SPLIT_SCHEMA_ID = "cko8sbczn0002h2dkdaxb5kal"
+    TEST_SPLIT_ID = "cko8scbz70005h2dkastwhgqt"
+    TEXT_SCHEMA_ID = "cko8s9r5v0001h2dk9elqdidh"
+    CAPTURE_DT_SCHEMA_ID = "cko8sdzv70006h2dk8jg64zvb"
+    EXPECTED_METADATA_SCHEMA_IDS = [
+        SPLIT_SCHEMA_ID,
+        TEST_SPLIT_ID,
+        TEXT_SCHEMA_ID,
+        CAPTURE_DT_SCHEMA_ID,
+    ]
+    CUSTOM_TEXT_SCHEMA_NAME = "custom_text"
+
+    return {
+        "SPLIT_SCHEMA_ID": SPLIT_SCHEMA_ID,
+        "TEST_SPLIT_ID": TEST_SPLIT_ID,
+        "TEXT_SCHEMA_ID": TEXT_SCHEMA_ID,
+        "CAPTURE_DT_SCHEMA_ID": CAPTURE_DT_SCHEMA_ID,
+        "EXPECTED_METADATA_SCHEMA_IDS": EXPECTED_METADATA_SCHEMA_IDS,
+        "CUSTOM_TEXT_SCHEMA_NAME": CUSTOM_TEXT_SCHEMA_NAME,
+    }
 
 
 @pytest.fixture
@@ -632,11 +657,28 @@ def chat_evaluation_ontology(client, rand_gen):
 
 
 @pytest.fixture
-def live_chat_evaluation_project_with_new_dataset(client, rand_gen):
+def live_chat_evaluation_project(client, rand_gen):
     project_name = f"test-model-evaluation-project-{rand_gen(str)}"
-    dataset_name = f"test-model-evaluation-dataset-{rand_gen(str)}"
-    project = client.create_model_evaluation_project(
-        name=project_name, dataset_name=dataset_name, data_row_count=1
+    project = client.create_model_evaluation_project(name=project_name)
+
+    yield project
+
+    project.delete()
+
+
+@pytest.fixture
+def live_chat_evaluation_project_with_batch(
+    client,
+    rand_gen,
+    live_chat_evaluation_project,
+    offline_conversational_data_row,
+):
+    project_name = f"test-model-evaluation-project-{rand_gen(str)}"
+    project = client.create_model_evaluation_project(name=project_name)
+
+    project.create_batch(
+        rand_gen(str),
+        [offline_conversational_data_row.uid],  # sample of data row objects
     )
 
     yield project
@@ -832,3 +874,21 @@ def print_perf_summary():
             for aaa in islice(sorted_dict, num_of_entries)
         ]
         print("\nTop slowest fixtures:\n", slowest_fixtures, file=sys.stderr)
+
+
+@pytest.fixture
+def make_metadata_fields(constants):
+    msg = "A message"
+    time = datetime.now(timezone.utc)
+
+    fields = [
+        DataRowMetadataField(
+            schema_id=constants["SPLIT_SCHEMA_ID"],
+            value=constants["TEST_SPLIT_ID"],
+        ),
+        DataRowMetadataField(
+            schema_id=constants["CAPTURE_DT_SCHEMA_ID"], value=time
+        ),
+        DataRowMetadataField(schema_id=constants["TEXT_SCHEMA_ID"], value=msg),
+    ]
+    return fields

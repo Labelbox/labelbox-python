@@ -739,7 +739,9 @@ class Project(DbObject, Updateable, Deletable):
             lbox.exceptions.ValueError if a project is not batch mode, if the project is auto data generation, if the batch exceeds 100k data rows
         """
 
-        if self.is_auto_data_generation():
+        if (
+            self.is_auto_data_generation() and not self.is_chat_evaluation()
+        ):  # NOTE live chat evaluatiuon projects in sdk do not pre-generate data rows, but use batch as all other projects
             raise ValueError(
                 "Cannot create batches for auto data generation projects"
             )

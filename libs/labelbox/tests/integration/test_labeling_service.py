@@ -43,19 +43,18 @@ def test_request_labeling_service_moe_offline_project(
 
 
 def test_request_labeling_service_moe_project(
-    rand_gen,
-    live_chat_evaluation_project_with_new_dataset,
+    live_chat_evaluation_project_with_batch,
     chat_evaluation_ontology,
     model_config,
 ):
-    project = live_chat_evaluation_project_with_new_dataset
+    project = live_chat_evaluation_project_with_batch
     project.connect_ontology(chat_evaluation_ontology)
 
     project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
 
     labeling_service = project.get_labeling_service()
     with pytest.raises(
-        LabelboxError,
+        MalformedQueryException,
         match='[{"errorType":"PROJECT_MODEL_CONFIG","errorMessage":"Project model config is not completed"}]',
     ):
         labeling_service.request()
@@ -77,5 +76,5 @@ def test_request_labeling_service_incomplete_requirements(ontology, project):
     ):  # No labeling service by default
         labeling_service.request()
     project.connect_ontology(ontology)
-    with pytest.raises(LabelboxError):
+    with pytest.raises(MalformedQueryException):
         labeling_service.request()
