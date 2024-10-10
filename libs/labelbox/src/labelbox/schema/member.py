@@ -6,12 +6,10 @@ from labelbox.exceptions import (
 )
 from typing import Set, Iterator, Any
 from pydantic import (
-    ConfigDict,
     Field,
     field_validator,
     model_serializer,
     model_validator,
-    PrivateAttr,
 )
 from labelbox.utils import _CamelCaseMixin
 from labelbox.schema.role import Role
@@ -19,8 +17,15 @@ from labelbox import Client
 
 
 class ProjectMembership(_CamelCaseMixin):
+    """Represents a members project role
+
+    Args:
+        project_id (str): id of the project you want the member included
+        role (Optional[Role]): Members role for the project. None represents the member having a default role.
+    """
+
     project_id: str
-    role: Role
+    role: Optional[Role] = None
 
     def __hash__(self) -> int:
         return self.project_id.__hash__()
@@ -29,7 +34,7 @@ class ProjectMembership(_CamelCaseMixin):
     def serialize_model(self):
         return {
             "projectId": self.project_id,
-            "roleId": None if self.role.name is None else self.role.id,
+            "roleId": None if self.role is None else self.role.id,
         }
 
 
