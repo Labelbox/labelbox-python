@@ -1,11 +1,16 @@
+import json
+import os
+import tempfile
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
 from io import TextIOWrapper
-import json
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
+    Any,
     Callable,
     Generic,
     Iterator,
@@ -14,19 +19,14 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    TYPE_CHECKING,
     overload,
-    Any,
 )
 
 import requests
-import warnings
-import tempfile
-import os
+from pydantic import BaseModel
 
 from labelbox.schema.task import Task
 from labelbox.utils import _CamelCaseMixin
-from pydantic import BaseModel, Field, AliasChoices
 
 if TYPE_CHECKING:
     from labelbox import Client
@@ -241,6 +241,7 @@ class FileRetrieverStrategy(ABC):  # pylint: disable=too-few-public-methods
             )
         response = requests.get(file_info.file, timeout=30)
         response.raise_for_status()
+        response.encoding = "utf-8"
         assert (
             len(response.content)
             == file_info.offsets.end - file_info.offsets.start + 1
