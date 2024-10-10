@@ -127,6 +127,13 @@ class CatalogSlice(Slice):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+
+        warnings.warn(
+            "You are currently utilizing export_v2 for this action, which will be deprecated in a V7. Please refer to docs for export alternatives. https://docs.labelbox.com/reference/export-overview#export-methods",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         task, is_streamable = self._export(task_name, params)
         if is_streamable:
             return ExportTask(task, True)

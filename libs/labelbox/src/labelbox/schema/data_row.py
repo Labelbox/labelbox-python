@@ -2,6 +2,7 @@ import logging
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional, Tuple, Union, Any
 import json
+import warnings
 
 from labelbox.orm import query
 from labelbox.orm.db_object import (
@@ -277,6 +278,13 @@ class DataRow(DbObject, Updateable, BulkDeletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+
+        warnings.warn(
+            "You are currently utilizing export_v2 for this action, which will be deprecated in a V7. Please refer to docs for export alternatives. https://docs.labelbox.com/reference/export-overview#export-methods",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         task, is_streamable = DataRow._export(
             client, data_rows, global_keys, task_name, params
         )
