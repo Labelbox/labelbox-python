@@ -539,6 +539,12 @@ class ModelRun(DbObject):
         >>>    export_task = export_v2("my_export_task", params={"media_attributes": True})
 
         """
+
+        warnings.warn(
+            "You are currently utilizing export_v2 for this action, which will be deprecated in a V7. Please refer to docs for export alternatives. https://docs.labelbox.com/reference/export-overview#export-methods",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         task, is_streamable = self._export(task_name, params)
         if is_streamable:
             return ExportTask(task, True)
