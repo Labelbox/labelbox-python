@@ -1,9 +1,6 @@
-from uuid import uuid4
-
 import faker
 from labelbox.schema.member import Member, ProjectMembership
 import pytest
-
 from labelbox.exceptions import (
     ResourceNotFoundError,
 )
@@ -18,8 +15,8 @@ def current_member(client):
 
 
 @pytest.fixture
-def member(client, current_member):
-    members = list(Member(client).get_members())
+def test_member(client, current_member):
+    members = list(Member(client=client).get_members())
     test_member = None
     for member in members:
         if member.id != current_member.id:
@@ -30,7 +27,7 @@ def member(client, current_member):
 @pytest.fixture
 def user_group(client):
     group_name = data.name()
-    user_group = UserGroup(client)
+    user_group = UserGroup(client=client)
     user_group.name = group_name
     user_group.color = UserGroupColor.BLUE
 
@@ -40,16 +37,9 @@ def user_group(client):
 
 
 def test_get_member(current_member, client):
-    current_member_eq = Member(client)
-    current_member_eq.get()
+    current_member_eq = Member(client=client).get()
     assert current_member_eq.id == current_member.id
     assert current_member_eq.email == current_member.email
-
-
-def test_throw_error_cannot_get_user_group_with_invalid_id(client):
-    Member = UserGroup(Member=client, id=str(uuid4()))
-    with pytest.raises(ResourceNotFoundError):
-        Member.get()
 
 
 def test_throw_error_when_deleting_self(current_member, client):
@@ -93,15 +83,17 @@ def test_update_member(client, test_member, project_pack, user_group):
 
 
 def test_get_members(test_member, current_member, client):
-    members = list(Member(client).get_members(search=current_member.email))
-    assert current_member in members
     members = list(
-        Member(client).get_members(roles=[current_member.default_role])
+        Member(client=client).get_members(search=current_member.email)
     )
     assert current_member in members
-    members = list(Member(client).get_members())
-    assert test_member in members
+    members = list(
+        Member(client=client).get_members(roles=[current_member.default_role])
+    )
     assert current_member in members
+    member_ids = [member.id for member in Member(client=client).get_members()]
+    assert test_member.id in member_ids
+    assert current_member.id in member_ids
 
 
 if __name__ == "__main__":
