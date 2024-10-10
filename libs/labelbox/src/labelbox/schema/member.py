@@ -422,12 +422,3 @@ class Member(_CamelCaseMixin):
                 yield Member(client=self.client, **member)
 
             previous_batch += batch_size
-
-
-if __name__ == "__main__":
-    api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbG9vcmRpaGUwMDkyMDcza2Nvcm5jajdnIiwib3JnYW5pemF0aW9uSWQiOiJjbG9vcmRpZ3cwMDkxMDcza2M2cG9oeWFiIiwiYXBpS2V5SWQiOiJjbTIzbDEyZncwYjN2MDd4ZDlqNmthMTBjIiwic2VjcmV0IjoiZWNlZTQ1YzQ1YmU1NTlkOGNkNDgxOTJkMDgxZGIyYjMiLCJpYXQiOjE3Mjg1ODE4OTUsImV4cCI6MjM1OTczMzg5NX0.xm3Yvg0Zub0HKJzSFf66iClaAvBxJpTBo4dxiruW7SA"
-    client = Client(api_key)
-    client.enable_experimental = True
-    member = Member(client=client)
-    print(member)
-    print(member.delete())
