@@ -4,6 +4,7 @@ import time
 import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
+from pathlib import Path
 from string import Template
 from typing import (
     TYPE_CHECKING,
