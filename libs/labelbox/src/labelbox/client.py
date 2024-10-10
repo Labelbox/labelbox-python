@@ -638,7 +638,6 @@ class Client:
         }
         return self._create_project(_CoreProjectInput(**input))
 
-    @overload
     def create_model_evaluation_project(
         self,
         name: str,
@@ -652,16 +651,6 @@ class Client:
         dataset_id: Optional[str] = None,
         dataset_name: Optional[str] = None,
         data_row_count: Optional[int] = None,
-        **kwargs,
-    ) -> Project:
-        pass
-
-    def create_model_evaluation_project(
-        self,
-        dataset_id: Optional[str] = None,
-        dataset_name: Optional[str] = None,
-        data_row_count: Optional[int] = None,
-        **kwargs,
     ) -> Project:
         """
         Use this method exclusively to create a chat model evaluation project.
@@ -694,13 +683,8 @@ class Client:
         append_to_existing_dataset = bool(dataset_id)
 
         if dataset_name_or_id:
-            kwargs["dataset_name_or_id"] = dataset_name_or_id
-            kwargs["append_to_existing_dataset"] = append_to_existing_dataset
             if data_row_count is None:
                 data_row_count = 100
-            if data_row_count < 0:
-                raise ValueError("data_row_count must be a positive integer.")
-            kwargs["data_row_count"] = data_row_count
             warnings.warn(
                 "Automatic generation of data rows of live model evaluation projects is deprecated. dataset_name_or_id, append_to_existing_dataset, data_row_count will be removed in a future version.",
                 DeprecationWarning,
