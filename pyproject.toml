@@ -9,7 +9,7 @@ dependencies = [
     "sphinx-rtd-theme>=2.0.0",
 ]
 readme = "README.md"
-requires-python = ">= 3.8"
+requires-python = ">= 3.9"
 
 [tool.rye]
 managed = true
@@ -28,6 +28,7 @@ dev-dependencies = [
     "pytest-timestamper>=0.0.10",
     "pytest-timeout>=2.3.1",
     "pytest-order>=1.2.1",
+    "pyjwt>=2.9.0",
 ]
 
 [tool.rye.workspace]
@@ -35,7 +36,7 @@ members = ["libs/*", "examples"]
 
 [tool.pytest.ini_options]
 # https://github.com/pytest-dev/pytest-rerunfailures/issues/99
-addopts = "-rP -vvv --reruns 1 --reruns-delay 5 --durations=20 -n auto --cov=labelbox --import-mode=importlib --order-group-scope=module"
+addopts = "-rP -vvv"
 markers = """
     slow: marks tests as slow (deselect with '-m "not slow"')
 """

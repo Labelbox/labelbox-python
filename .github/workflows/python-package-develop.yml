@@ -44,7 +44,7 @@ jobs:
       - name: Get Latest SDK versions
         id: get_sdk_versions
         run: |
-          sdk_versions=$(git tag --list --sort=-version:refname "v.*" | head -n 4 | jq -R -s -c 'split("\n")[:-1]')
+          sdk_versions=$(git tag --list --sort=-version:refname "v.*" | head -n 3 | jq -R -s -c 'split("\n")[:-1]')
           if [ -z "$sdk_versions" ]; then
             echo "No tags found"
             exit 1
@@ -58,10 +58,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python-version: 3.8
-            api-key: STAGING_LABELBOX_API_KEY_2
-            da-test-key: DA_GCP_LABELBOX_API_KEY
-            sdk-version: ${{ fromJson(needs.get_sdk_versions.outputs.sdk_versions)[3] }}
           - python-version: 3.9
             api-key: STAGING_LABELBOX_API_KEY_3
             da-test-key: DA_GCP_LABELBOX_API_KEY
@@ -103,7 +99,7 @@ jobs:
       - uses: ./.github/actions/python-package-shared-setup
         with:
           rye-version: ${{ vars.RYE_VERSION }}
-          python-version: '3.8'
+          python-version: '3.9'
       - name: Create build
         id: create-build
         working-directory: libs/labelbox

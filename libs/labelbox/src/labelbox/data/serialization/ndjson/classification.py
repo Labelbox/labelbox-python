@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union, Optional
 
-from labelbox.data.annotation_types import ImageData, TextData, VideoData
+from labelbox.data.annotation_types import GenericDataRowData
 from labelbox.data.mixins import (
     ConfidenceMixin,
     CustomMetric,
@@ -30,7 +30,6 @@ from pydantic import (
     model_serializer,
 )
 from pydantic.alias_generators import to_camel
-from .base import _SubclassRegistryBase
 
 
 class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
@@ -224,7 +223,7 @@ class NDPromptTextSubclass(NDAnswer):
 # ====== End of subclasses
 
 
-class NDText(NDAnnotation, NDTextSubclass, _SubclassRegistryBase):
+class NDText(NDAnnotation, NDTextSubclass):
     @classmethod
     def from_common(
         cls,
@@ -233,7 +232,7 @@ class NDText(NDAnnotation, NDTextSubclass, _SubclassRegistryBase):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[TextData, ImageData],
+        data: GenericDataRowData,
         message_id: str,
         confidence: Optional[float] = None,
     ) -> "NDText":
@@ -249,9 +248,7 @@ class NDText(NDAnnotation, NDTextSubclass, _SubclassRegistryBase):
         )
 
 
-class NDChecklist(
-    NDAnnotation, NDChecklistSubclass, VideoSupported, _SubclassRegistryBase
-):
+class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         res = handler(self)
@@ -267,7 +264,7 @@ class NDChecklist(
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[VideoData, TextData, ImageData],
+        data: GenericDataRowData,
         message_id: str,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
@@ -298,9 +295,7 @@ class NDChecklist(
         )
 
 
-class NDRadio(
-    NDAnnotation, NDRadioSubclass, VideoSupported, _SubclassRegistryBase
-):
+class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
     @classmethod
     def from_common(
         cls,
@@ -309,7 +304,7 @@ class NDRadio(
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[VideoData, TextData, ImageData],
+        data: GenericDataRowData,
         message_id: str,
         confidence: Optional[float] = None,
     ) -> "NDRadio":
@@ -343,7 +338,7 @@ class NDRadio(
         return res
 
 
-class NDPromptText(NDAnnotation, NDPromptTextSubclass, _SubclassRegistryBase):
+class NDPromptText(NDAnnotation, NDPromptTextSubclass):
     @classmethod
     def from_common(
         cls,
@@ -432,7 +427,7 @@ class NDClassification:
         annotation: Union[
             ClassificationAnnotation, VideoClassificationAnnotation
         ],
-        data: Union[VideoData, TextData, ImageData],
+        data: GenericDataRowData,
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
         classify_obj = cls.lookup_classification(annotation)
         if classify_obj is None:
@@ -480,7 +475,7 @@ class NDPromptClassification:
     def from_common(
         cls,
         annotation: Union[PromptClassificationAnnotation],
-        data: Union[VideoData, TextData, ImageData],
+        data: GenericDataRowData,
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
         return NDPromptText.from_common(
             str(annotation._uuid),

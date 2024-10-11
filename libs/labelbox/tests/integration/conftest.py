@@ -1,16 +1,22 @@
+import json
 import os
+import re
 import sys
 import time
+import uuid
 from collections import defaultdict
 from datetime import datetime, timezone
+from enum import Enum
 from itertools import islice
-from typing import Type
+from types import SimpleNamespace
+from typing import List, Tuple, Type
 
 import pytest
 
 from labelbox import (
     Classification,
     Client,
+    DataRow,
     Dataset,
     LabelingFrontend,
     MediaType,
@@ -20,9 +26,14 @@ from labelbox import (
     ResponseOption,
     Tool,
 )
+from labelbox.orm import query
+from labelbox.pagination import PaginatedCollection
+from labelbox.schema.annotation_import import LabelImport
+from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row import DataRowMetadataField
+from labelbox.schema.enums import AnnotationImportState
+from labelbox.schema.invite import Invite
 from labelbox.schema.ontology_kind import OntologyKind
-from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
 
 
@@ -80,7 +91,6 @@ def project_pack(client):
     projects = [
         client.create_project(
             name=f"user-proj-{idx}",
-            queue_mode=QueueMode.Batch,
             media_type=MediaType.Image,
         )
         for idx in range(2)
@@ -91,24 +101,27 @@ def project_pack(client):
 
 
 @pytest.fixture
-def project_with_empty_ontology(project):
-    editor = list(
-        project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"
-        )
-    )[0]
-    empty_ontology = {"tools": [], "classifications": []}
-    project.setup(editor, empty_ontology)
+def project_with_one_feature_ontology(project, client: Client):
+    tools = [
+        Tool(tool=Tool.Type.BBOX, name="test-bbox-class").asdict(),
+    ]
+    empty_ontology = {"tools": tools, "classifications": []}
+    ontology = client.create_ontology(
+        "empty ontology",
+        empty_ontology,
+        MediaType.Image,
+    )
+    project.connect_ontology(ontology)
     yield project
 
 
 @pytest.fixture
 def configured_project(
-    project_with_empty_ontology, initial_dataset, rand_gen, image_url
+    project_with_one_feature_ontology, initial_dataset, rand_gen, image_url
 ):
     dataset = initial_dataset
     data_row_id = dataset.create_data_row(row_data=image_url).uid
-    project = project_with_empty_ontology
+    project = project_with_one_feature_ontology
 
     batch = project.create_batch(
         rand_gen(str),
@@ -124,11 +137,10 @@ def configured_project(
 
 @pytest.fixture
 def configured_project_with_complex_ontology(
-    client, initial_dataset, rand_gen, image_url, teardown_helpers
+    client: Client, initial_dataset, rand_gen, image_url, teardown_helpers
 ):
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
         media_type=MediaType.Image,
     )
     dataset = initial_dataset
@@ -142,19 +154,12 @@ def configured_project_with_complex_ontology(
     )
     project.data_row_ids = data_row_ids
 
-    editor = list(
-        project.client.get_labeling_frontends(
-            where=LabelingFrontend.name == "editor"
-        )
-    )[0]
-
     ontology = OntologyBuilder()
     tools = [
         Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
         Tool(tool=Tool.Type.LINE, name="test-line-class"),
         Tool(tool=Tool.Type.POINT, name="test-point-class"),
         Tool(tool=Tool.Type.POLYGON, name="test-polygon-class"),
-        Tool(tool=Tool.Type.NER, name="test-ner-class"),
     ]
 
     options = [
@@ -186,7 +191,12 @@ def configured_project_with_complex_ontology(
     for c in classifications:
         ontology.add_classification(c)
 
-    project.setup(editor, ontology.asdict())
+    ontology = client.create_ontology(
+        "image ontology",
+        ontology.asdict(),
+        MediaType.Image,
+    )
+    project.connect_ontology(ontology)
 
     yield [project, data_row]
     teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)

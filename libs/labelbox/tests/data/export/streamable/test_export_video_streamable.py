@@ -4,7 +4,7 @@ import pytest
 
 import labelbox as lb
 import labelbox.types as lb_types
-from labelbox.data.annotation_types.data.video import VideoData
+from labelbox.data.annotation_types.data import GenericDataRowData
 from labelbox.schema.annotation_import import AnnotationImportState
 from labelbox.schema.export_task import ExportTask, StreamType
 
@@ -21,13 +21,13 @@ class TestExportVideo:
     def test_export(
         self,
         client,
-        configured_project_without_data_rows,
+        configured_video_project_without_data_rows,
         video_data,
         video_data_row,
         bbox_video_annotation_objects,
         rand_gen,
     ):
-        project = configured_project_without_data_rows
+        project = configured_video_project_without_data_rows
         project_id = project.uid
         labels = []
 
@@ -41,7 +41,7 @@ class TestExportVideo:
         for data_row_uid in data_row_uids:
             labels = [
                 lb_types.Label(
-                    data=VideoData(uid=data_row_uid),
+                    data=GenericDataRowData(uid=data_row_uid),
                     annotations=bbox_video_annotation_objects,
                 )
             ]
@@ -71,7 +71,8 @@ class TestExportVideo:
             export_task.get_total_file_size(stream_type=StreamType.RESULT) > 0
         )
 
-        export_data = json.loads(list(export_task.get_stream())[0].json_str)
+        export_data = list(export_task.get_buffered_stream())[0].json
+
         data_row_export = export_data["data_row"]
         assert data_row_export["global_key"] == video_data_row["global_key"]
         assert data_row_export["row_data"] == video_data_row["row_data"]

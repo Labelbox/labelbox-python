@@ -1,0 +1,61 @@
+[project]
+name = "lbox-clients"
+version = "1.1.0"
+description = "This module contains client sdk uses to conntect to the Labelbox API and backends"
+authors = [
+    { name = "Labelbox", email = "engineering@labelbox.com" }
+]
+dependencies = [
+    "requests>=2.22.0",
+    "google-api-core>=1.22.1",
+]
+readme = "README.md"
+requires-python = ">= 3.9"
+
+classifiers=[
+    # How mature is this project?
+    "Development Status :: 5 - Production/Stable",
+    # Indicate who your project is intended for
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    # Pick your license as you wish
+    "License :: OSI Approved :: Apache Software License",
+     # Specify the Python versions you support here.
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+keywords = ["ml", "ai", "labelbox", "labeling", "llm", "machinelearning", "edu"]
+
+[project.urls]
+Homepage = "https://labelbox.com/"
+Documentation = "https://labelbox-python.readthedocs.io/en/latest/"
+Repository = "https://github.com/Labelbox/labelbox-python"
+Issues = "https://github.com/Labelbox/labelbox-python/issues"
+Changelog = "https://github.com/Labelbox/labelbox-python/blob/develop/libs/labelbox/CHANGELOG.md"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.rye.scripts]
+unit = "pytest tests/unit"
+integration = "python -c \"import sys; sys.exit(0)\""
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lbox"]
+
+[tool.pytest.ini_options]
+addopts = "-rP -vvv --durations=20 --cov=lbox.example --import-mode=importlib"

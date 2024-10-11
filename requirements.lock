@@ -6,10 +6,10 @@
 #   features: []
 #   all-features: true
 #   with-sources: false
-#   generate-hashes: false
-#   universal: false
 
 -e file:libs/labelbox
+-e file:libs/lbox-clients
+    # via labelbox
 -e file:libs/lbox-example
 alabaster==0.7.13
     # via sphinx
@@ -33,6 +33,7 @@ geojson==3.1.0
     # via labelbox
 google-api-core==2.19.1
     # via labelbox
+    # via lbox-clients
 google-auth==2.31.0
     # via google-api-core
 googleapis-common-protos==1.63.2
@@ -49,6 +50,10 @@ jinja2==3.1.4
     # via sphinx
 markupsafe==2.1.5
     # via jinja2
+mypy==1.10.1
+    # via labelbox
+mypy-extensions==1.0.0
+    # via mypy
 numpy==1.24.4
     # via labelbox
     # via opencv-python-headless
@@ -82,11 +87,10 @@ pyproj==3.5.0
     # via labelbox
 python-dateutil==2.9.0.post0
     # via labelbox
-pytz==2024.1
-    # via babel
 requests==2.32.3
     # via google-api-core
     # via labelbox
+    # via lbox-clients
     # via sphinx
 rsa==4.9
     # via google-auth
@@ -117,13 +121,15 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 strenum==0.4.15
     # via labelbox
+tomli==2.0.1
+    # via mypy
 tqdm==4.66.4
     # via labelbox
 typeguard==4.3.0
     # via labelbox
 typing-extensions==4.12.2
-    # via annotated-types
     # via labelbox
+    # via mypy
     # via pydantic
     # via pydantic-core
     # via typeguard

@@ -27,20 +27,6 @@ IGNORE_IF_NONE = ["page", "unit", "messageId"]
 
 class NDJsonConverter:
     @staticmethod
-    def deserialize(json_data: Iterable[Dict[str, Any]]) -> LabelGenerator:
-        """
-        Converts ndjson data (prediction import format) into the common labelbox format.
-
-        Args:
-            json_data: An iterable representing the ndjson data
-        Returns:
-            LabelGenerator containing the ndjson data.
-        """
-        data = NDLabel(**{"annotations": copy.copy(json_data)})
-        res = data.to_common()
-        return res
-
-    @staticmethod
     def serialize(
         labels: LabelCollection,
     ) -> Generator[Dict[str, Any], None, None]:

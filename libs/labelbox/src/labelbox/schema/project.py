@@ -4,29 +4,27 @@ import time
 import warnings
 from collections import namedtuple
 from datetime import datetime, timezone
-from pathlib import Path
 from string import Template
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Iterable,
     List,
     Optional,
     Tuple,
     Union,
-    overload,
+    get_args,
 )
-from urllib.parse import urlparse
 
-from labelbox import utils
-from labelbox.exceptions import (
+from lbox.exceptions import (
     InvalidQueryError,
     LabelboxError,
     ProcessingWaitTimeout,
     ResourceNotFoundError,
     error_message_for_unparsed_graphql_error,
-)
+)  # type: ignore
+
+from labelbox import utils
 from labelbox.orm import query
 from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -42,7 +40,11 @@ from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.id_type import IdType
 from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
-from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
+from labelbox.schema.identifiables import (
+    DataRowIdentifiers,
+    GlobalKeys,
+    UniqueIds,
+)
 from labelbox.schema.labeling_service import (
     LabelingService,
     LabelingServiceStatus,
@@ -59,19 +61,16 @@ from labelbox.schema.project_overview import (
     ProjectOverview,
     ProjectOverviewDetailed,
 )
-from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
 
 if TYPE_CHECKING:
-    from labelbox import BulkImportRequest
+    pass
 
 
 DataRowPriority = int
-LabelingParameterOverrideInput = Tuple[
-    Union[DataRow, DataRowIdentifier], DataRowPriority
-]
+LabelingParameterOverrideInput = Tuple[DataRowIdentifier, DataRowPriority]
 
 logger = logging.getLogger(__name__)
 MAX_SYNC_BATCH_ROW_COUNT = 1_000
@@ -81,23 +80,18 @@ def validate_labeling_parameter_overrides(
     data: List[LabelingParameterOverrideInput],
 ) -> None:
     for idx, row in enumerate(data):
-        if len(row) < 2:
-            raise TypeError(
-                f"Data must be a list of tuples each containing two elements: a DataRow or a DataRowIdentifier and priority (int). Found {len(row)} items. Index: {idx}"
-            )
         data_row_identifier = row[0]
         priority = row[1]
-        valid_types = (Entity.DataRow, UniqueId, GlobalKey)
-        if not isinstance(data_row_identifier, valid_types):
+        if not isinstance(data_row_identifier, get_args(DataRowIdentifier)):
             raise TypeError(
-                f"Data row identifier should be be of type DataRow, UniqueId or GlobalKey. Found {type(data_row_identifier)} for data_row_identifier {data_row_identifier}"
+                f"Data row identifier should be of type DataRowIdentifier. Found {type(data_row_identifier)}."
             )
-
+        if len(row) < 2:
+            raise TypeError(
+                f"Data must be a list of tuples each containing two elements: a  DataRowIdentifier and priority (int). Found {len(row)} items. Index: {idx}"
+            )
         if not isinstance(priority, int):
-            if isinstance(data_row_identifier, Entity.DataRow):
-                id = data_row_identifier.uid
-            else:
-                id = data_row_identifier
+            id = data_row_identifier.key
             raise TypeError(
                 f"Priority must be an int. Found {type(priority)} for data_row_identifier {id}"
             )
@@ -114,7 +108,6 @@ class Project(DbObject, Updateable, Deletable):
         created_at (datetime)
         setup_complete (datetime)
         last_activity_time (datetime)
-        queue_mode (string)
         auto_audit_number_of_labels (int)
         auto_audit_percentage (float)
         is_benchmark_enabled (bool)
@@ -137,7 +130,6 @@ class Project(DbObject, Updateable, Deletable):
     created_at = Field.DateTime("created_at")
     setup_complete = Field.DateTime("setup_complete")
     last_activity_time = Field.DateTime("last_activity_time")
-    queue_mode = Field.Enum(QueueMode, "queue_mode")
     auto_audit_number_of_labels = Field.Int("auto_audit_number_of_labels")
     auto_audit_percentage = Field.Float("auto_audit_percentage")
     # Bind data_type and allowedMediaTYpe using the GraphQL type MediaType
@@ -423,6 +415,13 @@ class Project(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+
+        warnings.warn(
+            "You are currently utilizing export_v2 for this action, which will be removed in 7.0. Please refer to our docs for export alternatives. https://docs.labelbox.com/reference/export-overview#export-methods",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         task, is_streamable = self._export(task_name, filters, params)
         if is_streamable:
             return ExportTask(task, True)
@@ -659,21 +658,11 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["project"]["reviewMetrics"]["labelAggregate"]["count"]
 
-    def setup_editor(self, ontology) -> None:
-        """
-        Sets up the project using the Pictor editor.
-
-        Args:
-            ontology (Ontology): The ontology to attach to the project
-        """
-        warnings.warn("This method is deprecated use connect_ontology instead.")
-        self.connect_ontology(ontology)
-
     def connect_ontology(self, ontology) -> None:
         """
         Connects the ontology to the project. If an editor is not setup, it will be connected as well.
 
-        Note: For live chat model evaluation projects, the editor setup is skipped becase it is automatically setup when the project is created.
+        Note: For live chat model evaluation projects, the editor setup is skipped because it is automatically setup when the project is created.
 
         Args:
             ontology (Ontology): The ontology to attach to the project
@@ -693,34 +682,6 @@ class Project(DbObject, Updateable, Deletable):
         self.client.execute(
             query_str, {"ontologyId": ontology.uid, "projectId": self.uid}
         )
-        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        self.update(setup_complete=timestamp)
-
-    def setup(self, labeling_frontend, labeling_frontend_options) -> None:
-        """This method will associate default labeling frontend with the project and create an ontology based on labeling_frontend_options.
-
-        Args:
-            labeling_frontend (LabelingFrontend): Do not use, this parameter is deprecated. We now associate the default labeling frontend with the project.
-            labeling_frontend_options (dict or str): Labeling frontend options,
-                a.k.a. project ontology. If given a `dict` it will be converted
-                to `str` using `json.dumps`.
-        """
-
-        warnings.warn("This method is deprecated use connect_ontology instead.")
-        if labeling_frontend is not None:
-            warnings.warn(
-                "labeling_frontend parameter will not be used to create a new labeling frontend."
-            )
-
-        if self.is_chat_evaluation() or self.is_prompt_response():
-            warnings.warn("""
-            This project is a live chat evaluation project or prompt and response generation project.
-            Editor was setup automatically.
-            """)
-            return
-
-        self._connect_default_labeling_front_end(labeling_frontend_options)
-
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.update(setup_complete=timestamp)
 
@@ -775,11 +736,8 @@ class Project(DbObject, Updateable, Deletable):
         Returns: the created batch
 
         Raises:
-            labelbox.exceptions.ValueError if a project is not batch mode, if the project is auto data generation, if the batch exceeds 100k data rows
+            lbox.exceptions.ValueError if a project is not batch mode, if the project is auto data generation, if the batch exceeds 100k data rows
         """
-        # @TODO: make this automatic?
-        if self.queue_mode != QueueMode.Batch:
-            raise ValueError("Project must be in batch mode")
 
         if (
             self.is_auto_data_generation() and not self.is_chat_evaluation()
@@ -860,9 +818,6 @@ class Project(DbObject, Updateable, Deletable):
 
         Returns: a task for the created batches
         """
-
-        if self.queue_mode != QueueMode.Batch:
-            raise ValueError("Project must be in batch mode")
 
         dr_ids = []
         if data_rows is not None:
@@ -945,9 +900,6 @@ class Project(DbObject, Updateable, Deletable):
 
         Returns: a task for the created batches
         """
-
-        if self.queue_mode != QueueMode.Batch:
-            raise ValueError("Project must be in batch mode")
 
         if consensus_settings:
             consensus_settings = ConsensusSettings(
@@ -1088,57 +1040,6 @@ class Project(DbObject, Updateable, Deletable):
 
         return self.client.get_batch(self.uid, batch_id)
 
-    def _update_queue_mode(self, mode: "QueueMode") -> "QueueMode":
-        """
-        Updates the queueing mode of this project.
-
-        Deprecation notice: This method is deprecated. Going forward, projects must
-        go through a migration to have the queue mode changed. Users should specify the
-        queue mode for a project during creation if a non-default mode is desired.
-
-        For more information, visit https://docs.labelbox.com/reference/migrating-to-workflows#upcoming-changes
-
-        Args:
-            mode: the specified queue mode
-
-        Returns: the updated queueing mode of this project
-
-        """
-
-        logger.warning(
-            "Updating the queue_mode for a project will soon no longer be supported."
-        )
-
-        if self.queue_mode == mode:
-            return mode
-
-        if mode == QueueMode.Batch:
-            status = "ENABLED"
-        elif mode == QueueMode.Dataset:
-            status = "DISABLED"
-        else:
-            raise ValueError(
-                "Must provide either `BATCH` or `DATASET` as a mode"
-            )
-
-        query_str = (
-            """mutation %s($projectId: ID!, $status: TagSetStatusInput!) {
-              project(where: {id: $projectId}) {
-                 setTagSetStatus(input: {tagSetStatus: $status}) {
-                    tagSetStatus
-                }
-            }
-        }
-        """
-            % "setTagSetStatusPyApi"
-        )
-
-        self.client.execute(
-            query_str, {"projectId": self.uid, "status": status}
-        )
-
-        return mode
-
     def get_label_count(self) -> int:
         """
         Returns: the total number of labels in this project.
@@ -1152,46 +1053,6 @@ class Project(DbObject, Updateable, Deletable):
 
         res = self.client.execute(query_str, {"projectId": self.uid})
         return res["project"]["labelCount"]
-
-    def get_queue_mode(self) -> "QueueMode":
-        """
-        Provides the queue mode used for this project.
-
-        Deprecation notice: This method is deprecated and will be removed in
-        a future version. To obtain the queue mode of a project, simply refer
-        to the queue_mode attribute of a Project.
-
-        For more information, visit https://docs.labelbox.com/reference/migrating-to-workflows#upcoming-changes
-
-        Returns: the QueueMode for this project
-
-        """
-
-        logger.warning(
-            "Obtaining the queue_mode for a project through this method will soon"
-            " no longer be supported."
-        )
-
-        query_str = (
-            """query %s($projectId: ID!) {
-              project(where: {id: $projectId}) {
-                 tagSetStatus
-            }
-        }
-        """
-            % "GetTagSetStatusPyApi"
-        )
-
-        status = self.client.execute(query_str, {"projectId": self.uid})[
-            "project"
-        ]["tagSetStatus"]
-
-        if status == "ENABLED":
-            return QueueMode.Batch
-        elif status == "DISABLED":
-            return QueueMode.Dataset
-        else:
-            raise ValueError("Status not known")
 
     def add_model_config(self, model_config_id: str) -> str:
         """Adds a model config to this project.
@@ -1286,17 +1147,12 @@ class Project(DbObject, Updateable, Deletable):
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
             >>> project.set_labeling_parameter_overrides([
-            >>>     (data_row_id1, 2), (data_row_id2, 1)])
-            or
-            >>> project.set_labeling_parameter_overrides([
             >>>     (data_row_gk1, 2), (data_row_gk2, 1)])
 
         Args:
             data (iterable): An iterable of tuples. Each tuple must contain
-                either (DataRow, DataRowPriority<int>)
-                or (DataRowIdentifier, priority<int>) for the new override.
+                (DataRowIdentifier, priority<int>) for the new override.
                 DataRowIdentifier is an object representing a data row id or a global key. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
-                NOTE - passing whole DatRow is deprecated. Please use a DataRowIdentifier instead.
 
                 Priority:
                     * Data will be labeled in priority order.
@@ -1325,16 +1181,7 @@ class Project(DbObject, Updateable, Deletable):
 
         data_rows_with_identifiers = ""
         for data_row, priority in data:
-            if isinstance(data_row, DataRow):
-                data_rows_with_identifiers += f'{{dataRowIdentifier: {{id: "{data_row.uid}", idType: {IdType.DataRowId}}}, priority: {priority}}},'
-            elif isinstance(data_row, UniqueId) or isinstance(
-                data_row, GlobalKey
-            ):
-                data_rows_with_identifiers += f'{{dataRowIdentifier: {{id: "{data_row.key}", idType: {data_row.id_type}}}, priority: {priority}}},'
-            else:
-                raise TypeError(
-                    f"Data row identifier should be be of type DataRow or Data Row Identifier. Found {type(data_row)}."
-                )
+            data_rows_with_identifiers += f'{{dataRowIdentifier: {{id: "{data_row.key}", idType: {data_row.id_type}}}, priority: {priority}}},'
 
         query_str = template.substitute(
             dataWithDataRowIdentifiers=data_rows_with_identifiers
@@ -1342,25 +1189,9 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {"projectId": self.uid})
         return res["project"]["setLabelingParameterOverrides"]["success"]
 
-    @overload
     def update_data_row_labeling_priority(
         self,
         data_rows: DataRowIdentifiers,
-        priority: int,
-    ) -> bool:
-        pass
-
-    @overload
-    def update_data_row_labeling_priority(
-        self,
-        data_rows: List[str],
-        priority: int,
-    ) -> bool:
-        pass
-
-    def update_data_row_labeling_priority(
-        self,
-        data_rows,
         priority: int,
     ) -> bool:
         """
@@ -1371,7 +1202,7 @@ class Project(DbObject, Updateable, Deletable):
             https://docs.labelbox.com/en/configure-editor/queue-system#reservation-system
 
         Args:
-            data_rows: a list of data row ids to update priorities for. This can be a list of strings or a DataRowIdentifiers object
+            data_rows: data row identifiers object to update priorities.
                 DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             priority (int): Priority for the new override. See above for more information.
 
@@ -1379,12 +1210,8 @@ class Project(DbObject, Updateable, Deletable):
             bool, indicates if the operation was a success.
         """
 
-        if isinstance(data_rows, list):
-            data_rows = UniqueIds(data_rows)
-            warnings.warn(
-                "Using data row ids will be deprecated. Please use "
-                "UniqueIds or GlobalKeys instead."
-            )
+        if not isinstance(data_rows, get_args(DataRowIdentifiers)):
+            raise TypeError("data_rows must be a DataRowIdentifiers object")
 
         method = "createQueuePriorityUpdateTask"
         priority_param = "priority"
@@ -1482,33 +1309,6 @@ class Project(DbObject, Updateable, Deletable):
             "showingPredictionsToLabelers"
         ]
 
-    def bulk_import_requests(self) -> PaginatedCollection:
-        """Returns bulk import request objects which are used in model-assisted labeling.
-        These are returned with the oldest first, and most recent last.
-        """
-
-        id_param = "project_id"
-        query_str = """query ListAllImportRequestsPyApi($%s: ID!) {
-            bulkImportRequests (
-                where: { projectId: $%s }
-                skip: %%d
-                first: %%d
-            ) {
-                %s
-            }
-        }""" % (
-            id_param,
-            id_param,
-            query.results_query_part(Entity.BulkImportRequest),
-        )
-        return PaginatedCollection(
-            self.client,
-            query_str,
-            {id_param: str(self.uid)},
-            ["bulkImportRequests"],
-            Entity.BulkImportRequest,
-        )
-
     def batches(self) -> PaginatedCollection:
         """Fetch all batches that belong to this project
 
@@ -1554,25 +1354,15 @@ class Project(DbObject, Updateable, Deletable):
             for field_values in task_queue_values
         ]
 
-    @overload
     def move_data_rows_to_task_queue(
         self, data_row_ids: DataRowIdentifiers, task_queue_id: str
     ):
-        pass
-
-    @overload
-    def move_data_rows_to_task_queue(
-        self, data_row_ids: List[str], task_queue_id: str
-    ):
-        pass
-
-    def move_data_rows_to_task_queue(self, data_row_ids, task_queue_id: str):
         """
 
         Moves data rows to the specified task queue.
 
         Args:
-            data_row_ids: a list of data row ids to be moved. This can be a list of strings or a DataRowIdentifiers object
+            data_row_ids: a list of data row ids to be moved. This should be a DataRowIdentifiers object
                 DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
             task_queue_id: the task queue id to be moved to, or None to specify the "Done" queue
 
@@ -1580,12 +1370,9 @@ class Project(DbObject, Updateable, Deletable):
             None if successful, or a raised error on failure
 
         """
-        if isinstance(data_row_ids, list):
-            data_row_ids = UniqueIds(data_row_ids)
-            warnings.warn(
-                "Using data row ids will be deprecated. Please use "
-                "UniqueIds or GlobalKeys instead."
-            )
+
+        if not isinstance(data_row_ids, get_args(DataRowIdentifiers)):
+            raise TypeError("data_rows must be a DataRowIdentifiers object")
 
         method = "createBulkAddRowsToQueueTask"
         query_str = (
@@ -1632,77 +1419,6 @@ class Project(DbObject, Updateable, Deletable):
         task.wait_till_done()
 
         return task
-
-    def upload_annotations(
-        self,
-        name: str,
-        annotations: Union[str, Path, Iterable[Dict]],
-        validate: bool = False,
-    ) -> "BulkImportRequest":  # type: ignore
-        """Uploads annotations to a new Editor project.
-
-        Args:
-            name (str): name of the BulkImportRequest job
-            annotations (str or Path or Iterable):
-                url that is publicly accessible by Labelbox containing an
-                ndjson file
-                OR local path to an ndjson file
-                OR iterable of annotation rows
-            validate (bool):
-                Whether or not to validate the payload before uploading.
-        Returns:
-            BulkImportRequest
-        """
-
-        if isinstance(annotations, str) or isinstance(annotations, Path):
-
-            def _is_url_valid(url: Union[str, Path]) -> bool:
-                """Verifies that the given string is a valid url.
-
-                Args:
-                    url: string to be checked
-                Returns:
-                    True if the given url is valid otherwise False
-
-                """
-                if isinstance(url, Path):
-                    return False
-                parsed = urlparse(url)
-                return bool(parsed.scheme) and bool(parsed.netloc)
-
-            if _is_url_valid(annotations):
-                return Entity.BulkImportRequest.create_from_url(
-                    client=self.client,
-                    project_id=self.uid,
-                    name=name,
-                    url=str(annotations),
-                    validate=validate,
-                )
-            else:
-                path = Path(annotations)
-                if not path.exists():
-                    raise FileNotFoundError(
-                        f"{annotations} is not a valid url nor existing local file"
-                    )
-                return Entity.BulkImportRequest.create_from_local_file(
-                    client=self.client,
-                    project_id=self.uid,
-                    name=name,
-                    file=path,
-                    validate_file=validate,
-                )
-        elif isinstance(annotations, Iterable):
-            return Entity.BulkImportRequest.create_from_objects(
-                client=self.client,
-                project_id=self.uid,
-                name=name,
-                predictions=annotations,  # type: ignore
-                validate=validate,
-            )
-        else:
-            raise ValueError(
-                f"Invalid annotations given of type: {type(annotations)}"
-            )
 
     def _wait_until_data_rows_are_processed(
         self,

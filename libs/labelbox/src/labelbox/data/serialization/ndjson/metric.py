@@ -1,6 +1,6 @@
 from typing import Optional, Union, Type
 
-from labelbox.data.annotation_types.data import ImageData, TextData
+from labelbox.data.annotation_types.data import GenericDataRowData
 from labelbox.data.serialization.ndjson.base import DataRow, NDJsonBase
 from labelbox.data.annotation_types.metrics.scalar import (
     ScalarMetric,
@@ -15,7 +15,6 @@ from labelbox.data.annotation_types.metrics.confusion_matrix import (
     ConfusionMatrixMetricConfidenceValue,
 )
 from pydantic import ConfigDict, model_serializer
-from .base import _SubclassRegistryBase
 
 
 class BaseNDMetric(NDJsonBase):
@@ -33,7 +32,7 @@ class BaseNDMetric(NDJsonBase):
         return res
 
 
-class NDConfusionMatrixMetric(BaseNDMetric, _SubclassRegistryBase):
+class NDConfusionMatrixMetric(BaseNDMetric):
     metric_value: Union[
         ConfusionMatrixMetricValue, ConfusionMatrixMetricConfidenceValue
     ]
@@ -52,7 +51,7 @@ class NDConfusionMatrixMetric(BaseNDMetric, _SubclassRegistryBase):
 
     @classmethod
     def from_common(
-        cls, metric: ConfusionMatrixMetric, data: Union[TextData, ImageData]
+        cls, metric: ConfusionMatrixMetric, data: GenericDataRowData
     ) -> "NDConfusionMatrixMetric":
         return cls(
             uuid=metric.extra.get("uuid"),
@@ -65,7 +64,7 @@ class NDConfusionMatrixMetric(BaseNDMetric, _SubclassRegistryBase):
         )
 
 
-class NDScalarMetric(BaseNDMetric, _SubclassRegistryBase):
+class NDScalarMetric(BaseNDMetric):
     metric_value: Union[ScalarMetricValue, ScalarMetricConfidenceValue]
     metric_name: Optional[str] = None
     aggregation: Optional[ScalarMetricAggregation] = (
@@ -84,7 +83,7 @@ class NDScalarMetric(BaseNDMetric, _SubclassRegistryBase):
 
     @classmethod
     def from_common(
-        cls, metric: ScalarMetric, data: Union[TextData, ImageData]
+        cls, metric: ScalarMetric, data: GenericDataRowData
     ) -> "NDScalarMetric":
         return cls(
             uuid=metric.extra.get("uuid"),
@@ -108,7 +107,7 @@ class NDMetricAnnotation:
     def from_common(
         cls,
         annotation: Union[ScalarMetric, ConfusionMatrixMetric],
-        data: Union[TextData, ImageData],
+        data: GenericDataRowData,
     ) -> Union[NDScalarMetric, NDConfusionMatrixMetric]:
         obj = cls.lookup_object(annotation)
         return obj.from_common(annotation, data)

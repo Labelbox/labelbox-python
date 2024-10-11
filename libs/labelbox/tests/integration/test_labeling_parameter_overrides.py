@@ -23,7 +23,7 @@ def test_labeling_parameter_overrides(consensus_project_with_batch):
         data_rows[2].uid,
     }
 
-    data = [(data_rows[0], 4, 2), (data_rows[1], 3)]
+    data = [(UniqueId(data_rows[0].uid), 4, 2), (UniqueId(data_rows[1].uid), 3)]
     success = project.set_labeling_parameter_overrides(data)
     assert success
 
@@ -60,7 +60,7 @@ def test_labeling_parameter_overrides(consensus_project_with_batch):
     assert {o.priority for o in updated_overrides} == {2, 3, 4}
 
     with pytest.raises(TypeError) as exc_info:
-        data = [(data_rows[2], "a_string", 3)]
+        data = [(UniqueId(data_rows[2].uid), "a_string", 3)]
         project.set_labeling_parameter_overrides(data)
     assert (
         str(exc_info.value)
@@ -72,7 +72,7 @@ def test_labeling_parameter_overrides(consensus_project_with_batch):
         project.set_labeling_parameter_overrides(data)
     assert (
         str(exc_info.value)
-        == f"Data row identifier should be be of type DataRow, UniqueId or GlobalKey. Found <class 'str'> for data_row_identifier {data_rows[2].uid}"
+        == "Data row identifier should be of type DataRowIdentifier. Found <class 'str'>."
     )
 
 
@@ -84,13 +84,6 @@ def test_set_labeling_priority(consensus_project_with_batch):
     )
     assert len(init_labeling_parameter_overrides) == 3
     assert {o.priority for o in init_labeling_parameter_overrides} == {5, 5, 5}
-
-    data = [data_row.uid for data_row in data_rows]
-    success = project.update_data_row_labeling_priority(data, 1)
-    lo = list(project.labeling_parameter_overrides())
-    assert success
-    assert len(lo) == 3
-    assert {o.priority for o in lo} == {1, 1, 1}
 
     data = [data_row.uid for data_row in data_rows]
     success = project.update_data_row_labeling_priority(UniqueIds(data), 2)

@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict, List, Union, Any, Type, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Type, Union
+
+from lbox.exceptions import InvalidAttributeError
 
 import labelbox
 from labelbox import utils
-from labelbox.exceptions import InvalidAttributeError
 from labelbox.orm.comparison import Comparison
 
 """ Defines Field, Relationship and Entity. These classes are building
@@ -386,7 +387,6 @@ class Entity(metaclass=EntityMeta):
         Review: Type[labelbox.Review]
         User: Type[labelbox.User]
         LabelingFrontend: Type[labelbox.LabelingFrontend]
-        BulkImportRequest: Type[labelbox.BulkImportRequest]
         Benchmark: Type[labelbox.Benchmark]
         IAMIntegration: Type[labelbox.IAMIntegration]
         LabelingFrontendOptions: Type[labelbox.LabelingFrontendOptions]

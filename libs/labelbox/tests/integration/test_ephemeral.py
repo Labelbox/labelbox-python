@@ -7,7 +7,7 @@ import pytest
     reason="This test only runs in EPHEMERAL environment",
 )
 def test_org_and_user_setup(client, ephmeral_client):
-    assert type(client) == ephmeral_client
+    assert type(client) is ephmeral_client
     assert client.admin_client
     assert client.api_key != client.admin_client.api_key
 
@@ -22,4 +22,4 @@ def test_org_and_user_setup(client, ephmeral_client):
     reason="This test does not run in EPHEMERAL environment",
 )
 def test_integration_client(client, integration_client):
-    assert type(client) == integration_client
+    assert type(client) is integration_client

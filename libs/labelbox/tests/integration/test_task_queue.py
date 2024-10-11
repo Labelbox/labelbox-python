@@ -68,7 +68,9 @@ def test_move_to_task(configured_batch_project_with_label):
     review_queue = next(
         tq for tq in task_queues if tq.queue_type == "MANUAL_REVIEW_QUEUE"
     )
-    project.move_data_rows_to_task_queue([data_row.uid], review_queue.uid)
+    project.move_data_rows_to_task_queue(
+        UniqueIds([data_row.uid]), review_queue.uid
+    )
     _validate_moved(project, "MANUAL_REVIEW_QUEUE", 1)
 
     review_queue = next(

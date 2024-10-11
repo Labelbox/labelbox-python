@@ -1,20 +1,20 @@
-from enum import Enum
-from typing import Set, Iterator
 from collections import defaultdict
+from enum import Enum
+from typing import Iterator, Set
+
+from lbox.exceptions import (
+    MalformedQueryException,
+    ResourceCreationError,
+    ResourceNotFoundError,
+    UnprocessableEntityError,
+)
+from pydantic import BaseModel, ConfigDict
 
 from labelbox import Client
-from labelbox.exceptions import ResourceCreationError
-from labelbox.schema.user import User
-from labelbox.schema.project import Project
-from labelbox.exceptions import (
-    UnprocessableEntityError,
-    MalformedQueryException,
-    ResourceNotFoundError,
-)
-from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.media_type import MediaType
-from pydantic import BaseModel, ConfigDict
+from labelbox.schema.ontology_kind import EditorTaskType
+from labelbox.schema.project import Project
+from labelbox.schema.user import User
 
 
 class UserGroupColor(Enum):
@@ -92,9 +92,6 @@ class UserGroup(BaseModel):
             color (UserGroupColor, optional): The color of the user group. Defaults to UserGroupColor.BLUE.
             users (Set[User], optional): The set of users in the user group. Defaults to an empty set.
             projects (Set[Project], optional): The set of projects associated with the user group. Defaults to an empty set.
-
-        Raises:
-            RuntimeError: If the experimental feature is not enabled in the client.
         """
         super().__init__(
             client=client,
@@ -104,10 +101,6 @@ class UserGroup(BaseModel):
             users=users,
             projects=projects,
         )
-        if not self.client.enable_experimental:
-            raise RuntimeError(
-                "Please enable experimental in client to use UserGroups"
-            )
 
     def get(self) -> "UserGroup":
         """
@@ -284,7 +277,7 @@ class UserGroup(BaseModel):
         except Exception as e:
             error = e
         if not result or error:
-            # this is client side only, server doesn't have an equivalent error
+            # This is client side only, server doesn't have an equivalent error
             raise ResourceCreationError(
                 f"Failed to create user group, either user group name is in use currently, or provided user or projects don't exist server error: {error}"
             )
@@ -417,7 +410,6 @@ class UserGroup(BaseModel):
             project_values = defaultdict(lambda: None)
             project_values["id"] = project["id"]
             project_values["name"] = project["name"]
-            project_values["queueMode"] = QueueMode.Batch.value
             project_values["editorTaskType"] = EditorTaskType.Missing.value
             project_values["mediaType"] = MediaType.Image.value
             projects.add(Project(self.client, project_values))

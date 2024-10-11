@@ -1,6 +1,6 @@
 Exceptions
 ===============================================================================================
 
-.. automodule:: labelbox.exceptions
+.. automodule:: lbox.exceptions
    :members:
    :show-inheritance:

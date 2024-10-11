@@ -3,10 +3,7 @@ from typing import Any, Callable, Dict, List, Union, Optional, get_args
 import warnings
 
 import labelbox
-from labelbox.data.annotation_types.data.generic_data_row_data import (
-    GenericDataRowData,
-)
-from labelbox.data.annotation_types.data.tiled_image import TiledImageData
+from labelbox.data.annotation_types.data import GenericDataRowData, MaskData
 from labelbox.schema import ontology
 
 from ...annotated_types import Cuid
@@ -14,42 +11,13 @@ from .annotation import ClassificationAnnotation, ObjectAnnotation
 from .relationship import RelationshipAnnotation
 from .llm_prompt_response.prompt import PromptClassificationAnnotation
 from .classification import ClassificationAnswer
-from .data import (
-    AudioData,
-    ConversationData,
-    DicomData,
-    DocumentData,
-    HTMLData,
-    ImageData,
-    TextData,
-    VideoData,
-    LlmPromptCreationData,
-    LlmPromptResponseCreationData,
-    LlmResponseCreationData,
-)
 from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .video import VideoClassificationAnnotation
 from .video import VideoObjectAnnotation, VideoMaskAnnotation
 from .mmc import MessageEvaluationTaskAnnotation
 from ..ontology import get_feature_schema_lookup
-from pydantic import BaseModel, field_validator, model_serializer
-
-DataType = Union[
-    VideoData,
-    ImageData,
-    TextData,
-    TiledImageData,
-    AudioData,
-    ConversationData,
-    DicomData,
-    DocumentData,
-    HTMLData,
-    LlmPromptCreationData,
-    LlmPromptResponseCreationData,
-    LlmResponseCreationData,
-    GenericDataRowData,
-]
+from pydantic import BaseModel, field_validator
 
 
 class Label(BaseModel):
@@ -67,14 +35,13 @@ class Label(BaseModel):
 
     Args:
         uid: Optional Label Id in Labelbox
-        data: Data of Label, Image, Video, Text or dict with a single key uid | global_key | external_id.
-            Note use of classes as data is deprecated. Use GenericDataRowData or dict with a single key instead.
+        data: GenericDataRowData or dict with a single key uid | global_key | external_id.
         annotations: List of Annotations in the label
         extra: additional context
     """
 
     uid: Optional[Cuid] = None
-    data: DataType
+    data: Union[GenericDataRowData, MaskData]
     annotations: List[
         Union[
             ClassificationAnnotation,
@@ -94,13 +61,6 @@ class Label(BaseModel):
     def validate_data(cls, data):
         if isinstance(data, Dict):
             return GenericDataRowData(**data)
-        elif isinstance(data, GenericDataRowData):
-            return data
-        else:
-            warnings.warn(
-                f"Using {type(data).__name__} class for label.data is deprecated. "
-                "Use a dict or an instance of GenericDataRowData instead."
-            )
         return data
 
     def object_annotations(self) -> List[ObjectAnnotation]:
@@ -127,19 +87,6 @@ class Label(BaseModel):
             ):
                 frame_dict[annotation.frame].append(annotation)
         return frame_dict
-
-    def add_url_to_data(self, signer) -> "Label":
-        """
-        Creates signed urls for the data
-        Only uploads url if one doesn't already exist.
-
-        Args:
-            signer: A function that accepts bytes and returns a signed url.
-        Returns:
-            Label with updated references to new data url
-        """
-        self.data.create_url(signer)
-        return self
 
     def add_url_to_masks(self, signer) -> "Label":
         """
@@ -187,42 +134,6 @@ class Label(BaseModel):
             data_row = dataset.create_data_row(**args)
             self.data.uid = data_row.uid
             self.data.external_id = data_row.external_id
-        return self
-
-    def assign_feature_schema_ids(
-        self, ontology_builder: ontology.OntologyBuilder
-    ) -> "Label":
-        """
-        Adds schema ids to all FeatureSchema objects in the Labels.
-
-        Args:
-            ontology_builder: The ontology that matches the feature names assigned to objects in this dataset
-        Returns:
-            Label. useful for chaining these modifying functions
-
-        Note: You can now import annotations using names directly without having to lookup schema_ids
-        """
-        warnings.warn(
-            "This method is deprecated and will be "
-            "removed in a future release. Feature schema ids"
-            " are no longer required for importing."
-        )
-        tool_lookup, classification_lookup = get_feature_schema_lookup(
-            ontology_builder
-        )
-        for annotation in self.annotations:
-            if isinstance(annotation, ClassificationAnnotation):
-                self._assign_or_raise(annotation, classification_lookup)
-                self._assign_option(annotation, classification_lookup)
-            elif isinstance(annotation, ObjectAnnotation):
-                self._assign_or_raise(annotation, tool_lookup)
-                for classification in annotation.classifications:
-                    self._assign_or_raise(classification, classification_lookup)
-                    self._assign_option(classification, classification_lookup)
-            else:
-                raise TypeError(
-                    f"Unexpected type found for annotation. {type(annotation)}"
-                )
         return self
 
     def _assign_or_raise(self, annotation, lookup: Dict[str, str]) -> None:

@@ -1,15 +1,8 @@
-import sys
-
-from typing import Optional, List
-
-EXPORT_LIMIT = 30
+from typing import List, Optional, TypedDict
 
 from labelbox.schema.media_type import MediaType
 
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
+EXPORT_LIMIT = 30
 
 
 class DataRowParams(TypedDict):
