@@ -6,6 +6,9 @@ from labelbox.exceptions import (
 )
 from labelbox.schema.user_group import UserGroup, UserGroupColor
 
+from libs.labelbox.tests.conftest import AdminClient
+import os
+
 data = faker.Faker()
 
 
@@ -28,18 +31,18 @@ def user_group(client):
 
 
 @pytest.fixture(scope="module")
-def test_member(client, current_member, user_group):
+def test_member(client, current_member, admin_client: AdminClient):
+    admin_client._create_user(client.get_organization().uid)
     members = list(Member(client=client).get_members())
     test_member = None
     for member in members:
         if member.id != current_member.id:
             test_member = member
-    test_member.user_group_ids.add(user_group.id)
-    updated_member = test_member.update()
-    yield updated_member
-    # remove from any user_groups as clean up
-    updated_member.user_group_ids = set()
-    updated_member.update()
+    if test_member is None:
+        raise ValueError("Valid member was not found")
+    yield test_member
+    # delete member for clean up
+    test_member.delete()
 
 
 def test_get_member(current_member, client):
@@ -48,11 +51,12 @@ def test_get_member(current_member, client):
     assert current_member_eq.email == current_member.email
 
 
-def test_throw_error_when_deleting_self(current_member, client):
+def test_throw_error_when_deleting_self(current_member):
     with pytest.raises(ValueError):
         current_member.delete()
 
 
+@pytest.mark.skipif(condition=os.environ["LABELBOX_TEST_ENVIRON"] != "staging")
 def test_update_member(client, test_member, project_pack, user_group):
     labeler_role = client.get_roles()["LABELER"]
     reviewer_role = client.get_roles()["REVIEWER"]
@@ -99,6 +103,7 @@ def test_update_member(client, test_member, project_pack, user_group):
     assert updated_member.can_access_all_projects
 
 
+@pytest.mark.skipif(condition=os.environ["LABELBOX_TEST_ENVIRON"] != "staging")
 def test_get_members(test_member, current_member, client):
     member_ids = [
         member.id
@@ -113,6 +118,17 @@ def test_get_members(test_member, current_member, client):
     member_ids = [member.id for member in Member(client=client).get_members()]
     assert test_member.id in member_ids
     assert current_member.id in member_ids
+
+
+@pytest.mark.skipif(condition=os.environ["LABELBOX_TEST_ENVIRON"] != "staging")
+def test_delete_member(test_member, current_member, client):
+    email = test_member.email
+    id = test_member.id
+    test_member.delete()
+    member_ids = [
+        member.id for member in Member(client=client).get_members(search=email)
+    ]
+    assert id not in member_ids
 
 
 if __name__ == "__main__":
