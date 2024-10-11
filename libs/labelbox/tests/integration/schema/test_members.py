@@ -6,7 +6,7 @@ from labelbox.exceptions import (
 )
 from labelbox.schema.user_group import UserGroup, UserGroupColor
 
-from libs.labelbox.tests.conftest import AdminClient
+from libs.labelbox.tests.conftest import AdminClient, Environ
 import os
 
 data = faker.Faker()
@@ -32,8 +32,9 @@ def user_group(client):
 
 @pytest.fixture(scope="module")
 def test_member(client, current_member, admin_client: AdminClient):
+    admin_client = admin_client(Environ.STAGING)
     admin_client._create_user(client.get_organization().uid)
-    members = list(Member(client=client).get_members())
+    members = list(Member(client=client).get_members(search="email@email.com"))
     test_member = None
     for member in members:
         if member.id != current_member.id:
@@ -56,7 +57,10 @@ def test_throw_error_when_deleting_self(current_member):
         current_member.delete()
 
 
-@pytest.mark.skipif(condition=os.environ["LABELBOX_TEST_ENVIRON"] != "staging")
+@pytest.mark.skipif(
+    condition=os.environ["LABELBOX_TEST_ENVIRON"] != "staging",
+    reason="admin client only works in staging",
+)
 def test_update_member(client, test_member, project_pack, user_group):
     labeler_role = client.get_roles()["LABELER"]
     reviewer_role = client.get_roles()["REVIEWER"]
@@ -103,7 +107,10 @@ def test_update_member(client, test_member, project_pack, user_group):
     assert updated_member.can_access_all_projects
 
 
-@pytest.mark.skipif(condition=os.environ["LABELBOX_TEST_ENVIRON"] != "staging")
+@pytest.mark.skipif(
+    condition=os.environ["LABELBOX_TEST_ENVIRON"] != "staging",
+    reason="admin client only works in staging",
+)
 def test_get_members(test_member, current_member, client):
     member_ids = [
         member.id
@@ -120,13 +127,16 @@ def test_get_members(test_member, current_member, client):
     assert current_member.id in member_ids
 
 
-@pytest.mark.skipif(condition=os.environ["LABELBOX_TEST_ENVIRON"] != "staging")
-def test_delete_member(test_member, current_member, client):
+@pytest.mark.skipif(
+    condition=os.environ["LABELBOX_TEST_ENVIRON"] != "staging",
+    reason="admin client only works in staging",
+)
+def test_delete_member(test_member, current_member):
     email = test_member.email
     id = test_member.id
     test_member.delete()
     member_ids = [
-        member.id for member in Member(client=client).get_members(search=email)
+        member.id for member in current_member.get_members(search=email)
     ]
     assert id not in member_ids
 
