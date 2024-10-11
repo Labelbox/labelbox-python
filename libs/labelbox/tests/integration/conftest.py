@@ -34,7 +34,6 @@ from labelbox.schema.data_row import DataRowMetadataField
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.invite import Invite
 from labelbox.schema.ontology_kind import OntologyKind
-from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.user import User
 
 

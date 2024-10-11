@@ -26,6 +26,7 @@ from labelbox.schema.export_task import (
     BufferedJsonConverterOutput,
     ExportTask,
     BufferedJsonConverterOutput,
+    StreamType
 )
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.identifiable import GlobalKey, UniqueId
