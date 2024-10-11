@@ -248,9 +248,7 @@ class RequestClient:
             settings = self._connection.merge_environment_settings(
                 prepped.url, {}, None, None, None
             )
-            response = self._connection.send(
-                prepped, timeout=timeout, **settings
-            )
+            response = self._connection.send(prepped, timeout=timeout, **settings)
             logger.debug("Response: %s", response.text)
         except requests.exceptions.Timeout as e:
             raise exceptions.TimeoutError(str(e))
