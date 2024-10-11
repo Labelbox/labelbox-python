@@ -1,7 +1,6 @@
 import pytest
 from lbox.exceptions import (
     LabelboxError,
-    MalformedQueryException,
     ResourceNotFoundError,
 )
 

@@ -69,6 +69,9 @@ class _CoreProjectInput(BaseModel):
                 is_consensus_enabled=True,
             )
 
+        if self.data_row_count is not None and self.data_row_count < 0:
+            raise ValueError("data_row_count must be a positive integer.")
+
         return self
 
     def _set_quality_mode_attributes(

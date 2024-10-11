@@ -12,7 +12,6 @@ from labelbox.schema.annotation_import import (
 from labelbox.schema.asset_attachment import AssetAttachment
 from labelbox.schema.batch import Batch
 from labelbox.schema.benchmark import Benchmark
-from labelbox.schema.bulk_import_request import BulkImportRequest
 from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.data_row_metadata import (
@@ -86,7 +85,6 @@ from labelbox.schema.project_overview import (
     ProjectOverviewDetailed,
 )
 from labelbox.schema.project_resource_tag import ProjectResourceTag
-from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.review import Review
 from labelbox.schema.role import ProjectRole, Role

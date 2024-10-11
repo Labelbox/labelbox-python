@@ -585,7 +585,7 @@ class Client:
             )
 
             if not validation_result["validateDataset"]["valid"]:
-                raise LabelboxError(
+                raise labelbox.exceptions.LabelboxError(
                     "IAMIntegration was not successfully added to the dataset."
                 )
         except Exception as e:
@@ -683,13 +683,8 @@ class Client:
         append_to_existing_dataset = bool(dataset_id)
 
         if dataset_name_or_id:
-            kwargs["dataset_name_or_id"] = dataset_name_or_id
-            kwargs["append_to_existing_dataset"] = append_to_existing_dataset
             if data_row_count is None:
                 data_row_count = 100
-            if data_row_count < 0:
-                raise ValueError("data_row_count must be a positive integer.")
-            kwargs["data_row_count"] = data_row_count
             warnings.warn(
                 "Automatic generation of data rows of live model evaluation projects is deprecated. dataset_name_or_id, append_to_existing_dataset, data_row_count will be removed in a future version.",
                 DeprecationWarning,

@@ -19,6 +19,7 @@ from labelbox import (
     Client,
     DataRow,
     Dataset,
+    LabelingFrontend,
     MediaType,
     OntologyBuilder,
     Option,
