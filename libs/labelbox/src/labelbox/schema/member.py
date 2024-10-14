@@ -1,8 +1,6 @@
 from typing import Optional
-from labelbox.exceptions import (
-    MalformedQueryException,
+from lbox.exceptions import (
     ResourceNotFoundError,
-    UnprocessableEntityError,
 )
 from typing import Set, Iterator, Any, List
 from pydantic import (
@@ -161,11 +159,12 @@ class Member(_CamelCaseMixin):
         """
         params = {"userId": self.id}
 
-        result = self.client.execute(query, params, experimental=True)
-        if not result:
-            raise ResourceNotFoundError(
-                message="Failed to find user as user does not exist"
-            )
+        result = self.client.execute(
+            query,
+            params,
+            experimental=True,
+            raise_return_resource_not_found=True,
+        )
 
         user = {
             **result["user"],
@@ -241,14 +240,13 @@ class Member(_CamelCaseMixin):
         if self.id == self._current_user_id:
             raise ValueError("Unable to update self")
 
-        try:
-            result = self.client.execute(query, params, experimental=True)
-            if not result:
-                raise ResourceNotFoundError(
-                    message="Failed to update member as member does not exist"
-                )
-        except MalformedQueryException as e:
-            raise UnprocessableEntityError("Failed to update member") from e
+        self.client.execute(
+            query,
+            params,
+            experimental=True,
+            raise_return_resource_not_found=True,
+        )
+
         return self
 
     def delete(self) -> bool:
@@ -281,11 +279,13 @@ class Member(_CamelCaseMixin):
 
         params = {"id": self.id}
 
-        result = self.client.execute(query, params, experimental=True)
-        if not result:
-            raise ResourceNotFoundError(
-                message="Failed to delete member as member does not exist"
-            )
+        result = self.client.execute(
+            query,
+            params,
+            experimental=True,
+            raise_return_resource_not_found=True,
+        )
+
         return result["updateUser"]["deleted"]
 
     def _get_project_memberships(self, user_id: str) -> Set[ProjectMembership]:
