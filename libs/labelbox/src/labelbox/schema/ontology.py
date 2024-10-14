@@ -1,17 +1,17 @@
 # type: ignore
 
 import colorsys
+import json
+import warnings
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union, Type
-from typing_extensions import Annotated
-import warnings
+from typing import Annotated, Any, Dict, List, Optional, Type, Union
 
-from labelbox.exceptions import InconsistentOntologyException
+from lbox.exceptions import InconsistentOntologyException
+from pydantic import StringConstraints
+
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-import json
-from pydantic import StringConstraints
 
 FeatureSchemaId: Type[str] = Annotated[
     str, StringConstraints(min_length=25, max_length=25)
@@ -561,14 +561,18 @@ class OntologyBuilder:
     There are no required instantiation arguments.
 
     To create an ontology, use the asdict() method after fully building your
-    ontology within this class, and inserting it into project.setup() as the
-    "labeling_frontend_options" parameter.
+    ontology within this class, and inserting it into client.create_ontology() as the
+    "normalized" parameter.
 
     Example:
-        builder = OntologyBuilder()
-        ...
-        frontend = list(client.get_labeling_frontends())[0]
-        project.setup(frontend, builder.asdict())
+        >>> builder = OntologyBuilder()
+        >>> ...
+        >>> ontology = client.create_ontology(
+        >>>    "Ontology from new features",
+        >>>    ontology_builder.asdict(),
+        >>>    media_type=lb.MediaType.Image,
+        >>> )
+        >>> project.connect_ontology(ontology)
 
     attributes:
         tools: (list)

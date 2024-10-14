@@ -1,21 +1,22 @@
-import time
 import os
+import time
 import uuid
+
+from labelbox.schema.ontology import OntologyBuilder, Tool
 import pytest
 import requests
+from lbox.exceptions import InvalidQueryError
 
-from labelbox import Project, LabelingFrontend, Dataset
-from labelbox.exceptions import InvalidQueryError
+from labelbox import Dataset, LabelingFrontend, Project
+from labelbox.schema import media_type
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.quality_mode import QualityMode
-from labelbox.schema.queue_mode import QueueMode
 
 
 def test_project(client, rand_gen):
     data = {
         "name": rand_gen(str),
         "description": rand_gen(str),
-        "queue_mode": QueueMode.Batch.Batch,
         "media_type": MediaType.Image,
     }
     project = client.create_project(**data)
@@ -50,7 +51,7 @@ def data_for_project_test(client, rand_gen):
     def _create_project(name: str = None):
         if name is None:
             name = rand_gen(str)
-        project = client.create_project(name=name)
+        project = client.create_project(name=name, media_type=MediaType.Image)
         projects.append(project)
         return project
 
@@ -139,10 +140,6 @@ def test_extend_reservations(project):
         project.extend_reservations("InvalidQueueType")
 
 
-@pytest.mark.skipif(
-    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem",
-    reason="new mutation does not work for onprem",
-)
 def test_attach_instructions(client, project):
     with pytest.raises(ValueError) as execinfo:
         project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
@@ -150,11 +147,17 @@ def test_attach_instructions(client, project):
         str(execinfo.value)
         == "Cannot attach instructions to a project that has not been set up."
     )
-    editor = list(
-        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
-    )[0]
-    empty_ontology = {"tools": [], "classifications": []}
-    project.setup(editor, empty_ontology)
+    ontology_builder = OntologyBuilder(
+        tools=[
+            Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
+        ]
+    )
+    ontology = client.create_ontology(
+        name="ontology with features",
+        media_type=MediaType.Image,
+        normalized=ontology_builder.asdict(),
+    )
+    project.connect_ontology(ontology)
 
     project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
     time.sleep(3)
@@ -171,24 +174,20 @@ def test_attach_instructions(client, project):
     condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem",
     reason="new mutation does not work for onprem",
 )
-def test_html_instructions(project_with_empty_ontology):
+def test_html_instructions(project_with_one_feature_ontology):
     html_file_path = "/tmp/instructions.html"
     sample_html_str = "<html></html>"
 
     with open(html_file_path, "w") as file:
         file.write(sample_html_str)
 
-    project_with_empty_ontology.upsert_instructions(html_file_path)
-    updated_ontology = project_with_empty_ontology.ontology().normalized
+    project_with_one_feature_ontology.upsert_instructions(html_file_path)
+    updated_ontology = project_with_one_feature_ontology.ontology().normalized
 
     instructions = updated_ontology.pop("projectInstructions")
     assert requests.get(instructions).text == sample_html_str
 
 
-@pytest.mark.skipif(
-    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "onprem",
-    reason="new mutation does not work for onprem",
-)
 def test_same_ontology_after_instructions(
     configured_project_with_complex_ontology,
 ):
@@ -247,9 +246,11 @@ def test_media_type(client, project: Project, rand_gen):
     assert isinstance(project.media_type, MediaType)
 
     # Update test
-    project = client.create_project(name=rand_gen(str))
-    project.update(media_type=MediaType.Image)
-    assert project.media_type == MediaType.Image
+    project = client.create_project(
+        name=rand_gen(str), media_type=MediaType.Image
+    )
+    project.update(media_type=MediaType.Text)
+    assert project.media_type == MediaType.Text
     project.delete()
 
     for media_type in MediaType.get_supported_members():
@@ -270,13 +271,16 @@ def test_media_type(client, project: Project, rand_gen):
 
 def test_queue_mode(client, rand_gen):
     project = client.create_project(
-        name=rand_gen(str)
+        name=rand_gen(str),
+        media_type=MediaType.Image,
     )  # defaults to benchmark and consensus
     assert project.auto_audit_number_of_labels == 3
     assert project.auto_audit_percentage == 0
 
     project = client.create_project(
-        name=rand_gen(str), quality_modes=[QualityMode.Benchmark]
+        name=rand_gen(str),
+        quality_modes=[QualityMode.Benchmark],
+        media_type=MediaType.Image,
     )
     assert project.auto_audit_number_of_labels == 1
     assert project.auto_audit_percentage == 1
@@ -284,13 +288,16 @@ def test_queue_mode(client, rand_gen):
     project = client.create_project(
         name=rand_gen(str),
         quality_modes=[QualityMode.Benchmark, QualityMode.Consensus],
+        media_type=MediaType.Image,
     )
     assert project.auto_audit_number_of_labels == 3
     assert project.auto_audit_percentage == 0
 
 
 def test_label_count(client, configured_batch_project_with_label):
-    project = client.create_project(name="test label count")
+    project = client.create_project(
+        name="test label count", media_type=MediaType.Image
+    )
     assert project.get_label_count() == 0
     project.delete()
 
@@ -308,7 +315,6 @@ def test_clone(client, project, rand_gen):
 
     assert cloned_project.description == project.description
     assert cloned_project.media_type == project.media_type
-    assert cloned_project.queue_mode == project.queue_mode
     assert (
         cloned_project.auto_audit_number_of_labels
         == project.auto_audit_number_of_labels

@@ -1,40 +1,47 @@
 # type: ignore
-from datetime import datetime
+import warnings
 from copy import deepcopy
+from datetime import datetime
 from enum import Enum
 from itertools import chain
-import warnings
-
 from typing import (
+    Annotated,
+    Any,
+    Callable,
+    Dict,
+    Generator,
     List,
     Optional,
-    Dict,
-    Union,
-    Callable,
     Type,
-    Any,
-    Generator,
+    Union,
     overload,
 )
-from typing_extensions import Annotated
 
-from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
-from labelbox.schema.identifiable import UniqueId, GlobalKey
 from pydantic import (
     BaseModel,
+    BeforeValidator,
+    ConfigDict,
     Field,
     StringConstraints,
     conlist,
-    ConfigDict,
     model_serializer,
 )
+from typing_extensions import Annotated
 
+from labelbox.schema.identifiable import GlobalKey, UniqueId
+from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
 from labelbox.schema.ontology import SchemaId
 from labelbox.utils import (
     _CamelCaseMixin,
     format_iso_datetime,
     format_iso_from_string,
 )
+
+Name = Annotated[
+    str,
+    BeforeValidator(lambda x: str.strip(str(x))),
+    Field(min_length=1, max_length=100),
+]
 
 
 class DataRowMetadataKind(Enum):
@@ -49,7 +56,7 @@ class DataRowMetadataKind(Enum):
 # Metadata schema
 class DataRowMetadataSchema(BaseModel):
     uid: SchemaId
-    name: str = Field(strip_whitespace=True, min_length=1, max_length=100)
+    name: Name
     reserved: bool
     kind: DataRowMetadataKind
     options: Optional[List["DataRowMetadataSchema"]] = None
@@ -417,7 +424,7 @@ class DataRowMetadataOntology:
         schema = self._validate_custom_schema_by_name(name)
         if schema.kind != DataRowMetadataKind.enum:
             raise ValueError(
-                f"Updating Enum option is only supported for Enum metadata schema"
+                "Updating Enum option is only supported for Enum metadata schema"
             )
         valid_options: List[str] = [o.name for o in schema.options]
 
@@ -666,10 +673,8 @@ class DataRowMetadataOntology:
         if not len(deletes):
             raise ValueError("The 'deletes' list cannot be empty.")
 
-        passed_strings = False
         for i, delete in enumerate(deletes):
             if isinstance(delete.data_row_id, str):
-                passed_strings = True
                 deletes[i] = DeleteDataRowMetadata(
                     data_row_id=UniqueId(delete.data_row_id),
                     fields=delete.fields,
@@ -681,12 +686,6 @@ class DataRowMetadataOntology:
             else:
                 raise ValueError(
                     f"Invalid data row identifier type '{type(delete.data_row_id)}' for '{delete.data_row_id}'"
-                )
-
-            if passed_strings:
-                warnings.warn(
-                    "Using string for data row id will be deprecated. Please use "
-                    "UniqueId instead."
                 )
 
         def _batch_delete(
@@ -751,10 +750,6 @@ class DataRowMetadataOntology:
             and isinstance(data_row_ids[0], str)
         ):
             data_row_ids = UniqueIds(data_row_ids)
-            warnings.warn(
-                "Using data row ids will be deprecated. Please use "
-                "UniqueIds or GlobalKeys instead."
-            )
 
         def _bulk_export(
             _data_row_ids: DataRowIdentifiers,
@@ -803,13 +798,13 @@ class DataRowMetadataOntology:
             if isinstance(metadata_field, DataRowMetadataField):
                 return metadata_field
             elif isinstance(metadata_field, dict):
-                if not "value" in metadata_field:
+                if "value" not in metadata_field:
                     raise ValueError(
                         f"Custom metadata field '{metadata_field}' must have a 'value' key"
                     )
                 if (
-                    not "schema_id" in metadata_field
-                    and not "name" in metadata_field
+                    "schema_id" not in metadata_field
+                    and "name" not in metadata_field
                 ):
                     raise ValueError(
                         f"Custom metadata field '{metadata_field}' must have either 'schema_id' or 'name' key"
@@ -954,9 +949,8 @@ class DataRowMetadataOntology:
 
 
 def _batch_items(iterable: List[Any], size: int) -> Generator[Any, None, None]:
-    l = len(iterable)
-    for ndx in range(0, l, size):
-        yield iterable[ndx : min(ndx + size, l)]
+    for ndx in range(0, len(iterable), size):
+        yield iterable[ndx : min(ndx + size, len(iterable))]
 
 
 def _batch_operations(

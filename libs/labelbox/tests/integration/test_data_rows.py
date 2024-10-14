@@ -7,13 +7,13 @@ from unittest.mock import patch
 
 import pytest
 import requests
-
-from labelbox import AssetAttachment, DataRow
-from labelbox.exceptions import (
+from lbox.exceptions import (
     InvalidQueryError,
     MalformedQueryException,
     ResourceCreationError,
 )
+
+from labelbox import AssetAttachment, DataRow
 from labelbox.schema.data_row_metadata import (
     DataRowMetadataField,
     DataRowMetadataKind,
@@ -105,7 +105,7 @@ def make_metadata_fields_dict(constants):
 def test_get_data_row_by_global_key(data_row_and_global_key, client, rand_gen):
     _, global_key = data_row_and_global_key
     data_row = client.get_data_row_by_global_key(global_key)
-    assert type(data_row) == DataRow
+    assert type(data_row) is DataRow
     assert data_row.global_key == global_key
 
 
@@ -505,8 +505,6 @@ def test_create_data_rows_with_metadata(
     [
         ("create_data_rows", "class"),
         ("create_data_rows", "dict"),
-        ("create_data_rows_sync", "class"),
-        ("create_data_rows_sync", "dict"),
         ("create_data_row", "class"),
         ("create_data_row", "dict"),
     ],
@@ -546,7 +544,6 @@ def test_create_data_rows_with_named_metadata_field_class(
 
     CREATION_FUNCTION = {
         "create_data_rows": dataset.create_data_rows,
-        "create_data_rows_sync": dataset.create_data_rows_sync,
         "create_data_row": create_data_row,
     }
     data_rows = [METADATA_FIELDS[metadata_obj_type]]
@@ -695,9 +692,10 @@ def test_data_row_update(
     pdf_url = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
     tileLayerUrl = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483-lb-textlayer.json"
     data_row.update(row_data={"pdfUrl": pdf_url, "tileLayerUrl": tileLayerUrl})
-    custom_check = (
-        lambda data_row: data_row.row_data and "pdfUrl" not in data_row.row_data
-    )
+
+    def custom_check(data_row):
+        return data_row.row_data and "pdfUrl" not in data_row.row_data
+
     data_row = wait_for_data_row_processing(
         client, data_row, custom_check=custom_check
     )
@@ -819,49 +817,6 @@ def test_data_row_attachments(dataset, image_url):
                 }
             ]
         )
-
-
-def test_create_data_rows_sync_attachments(dataset, image_url):
-    attachments = [
-        ("IMAGE", image_url, "image URL"),
-        ("RAW_TEXT", "test-text", None),
-        ("IMAGE_OVERLAY", image_url, "Overlay"),
-        ("HTML", image_url, None),
-    ]
-    attachments_per_data_row = 3
-    dataset.create_data_rows_sync(
-        [
-            {
-                "row_data": image_url,
-                "external_id": "test-id",
-                "attachments": [
-                    {
-                        "type": attachment_type,
-                        "value": attachment_value,
-                        "name": attachment_name,
-                    }
-                    for _ in range(attachments_per_data_row)
-                ],
-            }
-            for attachment_type, attachment_value, attachment_name in attachments
-        ]
-    )
-    data_rows = list(dataset.data_rows())
-    assert len(data_rows) == len(attachments)
-    for data_row in data_rows:
-        assert len(list(data_row.attachments())) == attachments_per_data_row
-
-
-def test_create_data_rows_sync_mixed_upload(dataset, image_url):
-    n_local = 100
-    n_urls = 100
-    with NamedTemporaryFile() as fp:
-        fp.write("Test data".encode())
-        fp.flush()
-        dataset.create_data_rows_sync(
-            [{DataRow.row_data: image_url}] * n_urls + [fp.name] * n_local
-        )
-    assert len(list(dataset.data_rows())) == n_local + n_urls
 
 
 def test_create_data_row_attachment(data_row):
@@ -1047,9 +1002,9 @@ def test_data_row_bulk_creation_with_same_global_keys(
     task.wait_till_done()
 
     assert task.status == "COMPLETE"
-    assert type(task.failed_data_rows) is list
+    assert isinstance(task.failed_data_rows, list)
     assert len(task.failed_data_rows) == 1
-    assert type(task.created_data_rows) is list
+    assert isinstance(task.created_data_rows, list)
     assert len(task.created_data_rows) == 1
     assert (
         task.failed_data_rows[0]["message"]
@@ -1109,53 +1064,6 @@ def test_data_row_delete_and_create_with_same_global_key(
     assert task.result[0]["global_key"] == global_key_1
 
 
-def test_data_row_bulk_creation_sync_with_unique_global_keys(
-    dataset, sample_image
-):
-    global_key_1 = str(uuid.uuid4())
-    global_key_2 = str(uuid.uuid4())
-    global_key_3 = str(uuid.uuid4())
-
-    dataset.create_data_rows_sync(
-        [
-            {DataRow.row_data: sample_image, DataRow.global_key: global_key_1},
-            {DataRow.row_data: sample_image, DataRow.global_key: global_key_2},
-            {DataRow.row_data: sample_image, DataRow.global_key: global_key_3},
-        ]
-    )
-
-    assert {row.global_key for row in dataset.data_rows()} == {
-        global_key_1,
-        global_key_2,
-        global_key_3,
-    }
-
-
-def test_data_row_bulk_creation_sync_with_same_global_keys(
-    dataset, sample_image
-):
-    global_key_1 = str(uuid.uuid4())
-
-    with pytest.raises(ResourceCreationError) as exc_info:
-        dataset.create_data_rows_sync(
-            [
-                {
-                    DataRow.row_data: sample_image,
-                    DataRow.global_key: global_key_1,
-                },
-                {
-                    DataRow.row_data: sample_image,
-                    DataRow.global_key: global_key_1,
-                },
-            ]
-        )
-
-    assert len(list(dataset.data_rows())) == 1
-    assert list(dataset.data_rows())[0].global_key == global_key_1
-    assert "Duplicate global key" in str(exc_info.value)
-    assert exc_info.value.args[1]  # task id
-
-
 @pytest.fixture
 def conversational_data_rows(dataset, conversational_content):
     examples = [
@@ -1197,7 +1105,7 @@ def test_invalid_media_type(dataset, conversational_content):
         # TODO: What error kind should this be? It looks like for global key we are
         # using malformed query. But for invalid contents in FileUploads we use InvalidQueryError
         with pytest.raises(ResourceCreationError):
-            dataset.create_data_rows_sync(
+            dataset._create_data_rows_sync(
                 [{**conversational_content, "media_type": "IMAGE"}]
             )
 
@@ -1207,7 +1115,8 @@ def test_create_tiled_layer(dataset, tile_content):
         {**tile_content, "media_type": "TMS_GEO"},
         tile_content,
     ]
-    dataset.create_data_rows_sync(examples)
+    task = dataset.create_data_rows(examples)
+    task.wait_until_done()
     data_rows = list(dataset.data_rows())
     assert len(data_rows) == len(examples)
     for data_row in data_rows:

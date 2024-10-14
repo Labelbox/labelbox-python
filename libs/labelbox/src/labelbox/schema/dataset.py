@@ -7,13 +7,14 @@ from itertools import islice
 from string import Template
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import labelbox.schema.internal.data_row_uploader as data_row_uploader
-from labelbox.exceptions import (
+from lbox.exceptions import (
     InvalidQueryError,
     LabelboxError,
     ResourceCreationError,
     ResourceNotFoundError,
-)
+)  # type: ignore
+
+import labelbox.schema.internal.data_row_uploader as data_row_uploader
 from labelbox.orm import query
 from labelbox.orm.comparison import Comparison
 from labelbox.orm.db_object import DbObject, Deletable, Updateable
@@ -165,49 +166,9 @@ class Dataset(DbObject, Updateable, Deletable):
 
         return self.client.get_data_row(res[0]["id"])
 
-    def create_data_rows_sync(
-        self, items, file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
-    ) -> None:
-        """Synchronously bulk upload data rows.
-
-        Use this instead of `Dataset.create_data_rows` for smaller batches of data rows that need to be uploaded quickly.
-        Cannot use this for uploads containing more than 1000 data rows.
-        Each data row is also limited to 5 attachments.
-
-        Args:
-            items (iterable of (dict or str)):
-                See the docstring for `Dataset._create_descriptor_file` for more information.
-        Returns:
-            None. If the function doesn't raise an exception then the import was successful.
-
-        Raises:
-            ResourceCreationError: If the `items` parameter does not conform to
-                the specification in Dataset._create_descriptor_file or if the server did not accept the
-                DataRow creation request (unknown reason).
-            InvalidAttributeError: If there are fields in `items` not valid for
-                a DataRow.
-            ValueError: When the upload parameters are invalid
-        """
-        warnings.warn(
-            "This method is deprecated and will be "
-            "removed in a future release. Please use create_data_rows instead."
-        )
-
-        self._create_data_rows_sync(
-            items, file_upload_thread_count=file_upload_thread_count
-        )
-
-        return None  # Return None if no exception is raised
-
     def _create_data_rows_sync(
         self, items, file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
     ) -> "DataUpsertTask":
-        max_data_rows_supported = 1000
-        if len(items) > max_data_rows_supported:
-            raise ValueError(
-                f"Dataset.create_data_rows_sync() supports a max of {max_data_rows_supported} data rows."
-                " For larger imports use the async function Dataset.create_data_rows()"
-            )
         if file_upload_thread_count < 1:
             raise ValueError(
                 "file_upload_thread_count must be a positive integer"
@@ -233,8 +194,6 @@ class Dataset(DbObject, Updateable, Deletable):
         self, items, file_upload_thread_count=FILE_UPLOAD_THREAD_COUNT
     ) -> "DataUpsertTask":
         """Asynchronously bulk upload data rows
-
-        Use this instead of `Dataset.create_data_rows_sync` uploads for batches that contain more than 1000 data rows.
 
         Args:
             items (iterable of (dict or str))
@@ -310,7 +269,7 @@ class Dataset(DbObject, Updateable, Deletable):
             A list of `DataRow` with the given ID.
 
         Raises:
-         labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
+         lbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
@@ -336,7 +295,7 @@ class Dataset(DbObject, Updateable, Deletable):
             A single `DataRow` with the given ID.
 
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
+            lbox.exceptions.ResourceNotFoundError: If there is no `DataRow`
                 in this `DataSet` with the given external ID, or if there are
                 multiple `DataRows` for it.
         """
@@ -399,6 +358,13 @@ class Dataset(DbObject, Updateable, Deletable):
         >>>     task.wait_till_done()
         >>>     task.result
         """
+
+        warnings.warn(
+            "You are currently utilizing export_v2 for this action, which will be removed in 7.0. Please refer to our docs for export alternatives. https://docs.labelbox.com/reference/export-overview#export-methods",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         task, is_streamable = self._export(task_name, filters, params)
         if is_streamable:
             return ExportTask(task, True)

@@ -1,20 +1,21 @@
-import pytest
 from collections import defaultdict
 from unittest.mock import MagicMock
-from labelbox import Client
-from labelbox.exceptions import (
+
+import pytest
+from lbox.exceptions import (
+    MalformedQueryException,
     ResourceConflict,
     ResourceCreationError,
     ResourceNotFoundError,
-    MalformedQueryException,
     UnprocessableEntityError,
 )
+
+from labelbox import Client
+from labelbox.schema.media_type import MediaType
+from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.project import Project
 from labelbox.schema.user import User
 from labelbox.schema.user_group import UserGroup, UserGroupColor
-from labelbox.schema.queue_mode import QueueMode
-from labelbox.schema.ontology_kind import EditorTaskType
-from labelbox.schema.media_type import MediaType
 
 
 @pytest.fixture
@@ -30,7 +31,6 @@ def group_project():
     project_values = defaultdict(lambda: None)
     project_values["id"] = "project_id"
     project_values["name"] = "Test Project"
-    project_values["queueMode"] = QueueMode.Batch.value
     project_values["editorTaskType"] = EditorTaskType.Missing.value
     project_values["mediaType"] = MediaType.Image.value
     return Project(MagicMock(Client), project_values)
@@ -54,12 +54,6 @@ class TestUserGroup:
         self.client = MagicMock(Client)
         self.client.enable_experimental = True
         self.group = UserGroup(client=self.client)
-
-    def test_constructor_experimental_needed(self):
-        client = MagicMock(Client)
-        client.enable_experimental = False
-        with pytest.raises(RuntimeError):
-            group = UserGroup(client)
 
     def test_constructor(self):
         group = UserGroup(self.client)

@@ -53,7 +53,7 @@ class OntologyKind(Enum):
         return media_type
 
 
-class EditorTaskType(Enum):
+class EditorTaskType(str, Enum):
     ModelChatEvaluation = "MODEL_CHAT_EVALUATION"
     ResponseCreation = "RESPONSE_CREATION"
     OfflineModelChatEvaluation = "OFFLINE_MODEL_CHAT_EVALUATION"

@@ -1,13 +1,16 @@
-import uuid
 import time
+import uuid
+
 import pytest
-from labelbox.schema.queue_mode import QueueMode
+
+from labelbox import Client, MediaType
+from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
 from labelbox.schema.labeling_frontend import LabelingFrontend
-from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
+from labelbox.schema.media_type import MediaType
 
 
 @pytest.fixture
-def ontology():
+def ontology(client: Client):
     bbox_tool_with_nested_text = {
         "required": False,
         "name": "bbox_tool_with_nested_text",
@@ -116,18 +119,174 @@ def ontology():
         "color": "#008941",
         "classifications": [],
     }
-    entity_tool = {
+    raster_segmentation_tool = {
         "required": False,
-        "name": "entity--",
-        "tool": "named-entity",
-        "color": "#006FA6",
+        "name": "segmentation_mask",
+        "tool": "raster-segmentation",
+        "color": "#ff0000",
         "classifications": [],
     }
-    segmentation_tool = {
+    checklist = {
         "required": False,
-        "name": "segmentation--",
-        "tool": "superpixel",
-        "color": "#A30059",
+        "instructions": "checklist",
+        "name": "checklist",
+        "type": "checklist",
+        "options": [
+            {"label": "option1", "value": "option1"},
+            {"label": "option2", "value": "option2"},
+            {"label": "optionN", "value": "optionn"},
+        ],
+    }
+
+    free_form_text = {
+        "required": False,
+        "instructions": "text",
+        "name": "text",
+        "type": "text",
+        "options": [],
+    }
+
+    radio = {
+        "required": False,
+        "instructions": "radio",
+        "name": "radio",
+        "type": "radio",
+        "options": [
+            {
+                "label": "first_radio_answer",
+                "value": "first_radio_answer",
+                "options": [],
+            },
+            {
+                "label": "second_radio_answer",
+                "value": "second_radio_answer",
+                "options": [],
+            },
+        ],
+    }
+
+    tools = [
+        bbox_tool,
+        bbox_tool_with_nested_text,
+        polygon_tool,
+        polyline_tool,
+        point_tool,
+        raster_segmentation_tool,
+    ]
+    classifications = [
+        checklist,
+        free_form_text,
+        radio,
+    ]
+    ontology = client.create_ontology(
+        "image ontology",
+        {"tools": tools, "classifications": classifications},
+        MediaType.Image,
+    )
+    return ontology
+
+
+@pytest.fixture
+def video_ontology(client: Client):
+    bbox_tool_with_nested_text = {
+        "required": False,
+        "name": "bbox_tool_with_nested_text",
+        "tool": "rectangle",
+        "color": "#a23030",
+        "classifications": [
+            {
+                "required": False,
+                "instructions": "nested",
+                "name": "nested",
+                "type": "radio",
+                "options": [
+                    {
+                        "label": "radio_option_1",
+                        "value": "radio_value_1",
+                        "options": [
+                            {
+                                "required": False,
+                                "instructions": "nested_checkbox",
+                                "name": "nested_checkbox",
+                                "type": "checklist",
+                                "options": [
+                                    {
+                                        "label": "nested_checkbox_option_1",
+                                        "value": "nested_checkbox_value_1",
+                                        "options": [],
+                                    },
+                                    {
+                                        "label": "nested_checkbox_option_2",
+                                        "value": "nested_checkbox_value_2",
+                                    },
+                                ],
+                            },
+                            {
+                                "required": False,
+                                "instructions": "nested_text",
+                                "name": "nested_text",
+                                "type": "text",
+                                "options": [],
+                            },
+                        ],
+                    },
+                ],
+            }
+        ],
+    }
+
+    bbox_tool = {
+        "required": False,
+        "name": "bbox",
+        "tool": "rectangle",
+        "color": "#a23030",
+        "classifications": [
+            {
+                "required": False,
+                "instructions": "nested",
+                "name": "nested",
+                "type": "radio",
+                "options": [
+                    {
+                        "label": "radio_option_1",
+                        "value": "radio_value_1",
+                        "options": [
+                            {
+                                "required": False,
+                                "instructions": "nested_checkbox",
+                                "name": "nested_checkbox",
+                                "type": "checklist",
+                                "options": [
+                                    {
+                                        "label": "nested_checkbox_option_1",
+                                        "value": "nested_checkbox_value_1",
+                                        "options": [],
+                                    },
+                                    {
+                                        "label": "nested_checkbox_option_2",
+                                        "value": "nested_checkbox_value_2",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                ],
+            }
+        ],
+    }
+
+    polyline_tool = {
+        "required": False,
+        "name": "polyline",
+        "tool": "line",
+        "color": "#FF4A46",
+        "classifications": [],
+    }
+    point_tool = {
+        "required": False,
+        "name": "point--",
+        "tool": "point",
+        "color": "#008941",
         "classifications": [],
     }
     raster_segmentation_tool = {
@@ -160,6 +319,7 @@ def ontology():
             {"label": "optionN_index", "value": "optionn_index"},
         ],
     }
+
     free_form_text = {
         "required": False,
         "instructions": "text",
@@ -167,14 +327,7 @@ def ontology():
         "type": "text",
         "options": [],
     }
-    free_form_text_index = {
-        "required": False,
-        "instructions": "text_index",
-        "name": "text_index",
-        "type": "text",
-        "scope": "index",
-        "options": [],
-    }
+
     radio = {
         "required": False,
         "instructions": "radio",
@@ -193,33 +346,26 @@ def ontology():
             },
         ],
     }
-    named_entity = {
-        "tool": "named-entity",
-        "name": "named-entity",
-        "required": False,
-        "color": "#A30059",
-        "classifications": [],
-    }
 
     tools = [
         bbox_tool,
         bbox_tool_with_nested_text,
-        polygon_tool,
         polyline_tool,
         point_tool,
-        entity_tool,
-        segmentation_tool,
         raster_segmentation_tool,
-        named_entity,
     ]
     classifications = [
-        checklist,
         checklist_index,
+        checklist,
         free_form_text,
-        free_form_text_index,
         radio,
     ]
-    return {"tools": tools, "classifications": classifications}
+    ontology = client.create_ontology(
+        "image ontology",
+        {"tools": tools, "classifications": classifications},
+        MediaType.Video,
+    )
+    return ontology
 
 
 @pytest.fixture
@@ -246,15 +392,17 @@ def configured_project_with_ontology(
     dataset = initial_dataset
     project = client.create_project(
         name=rand_gen(str),
-        queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
     )
-    editor = list(
-        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
-    )[0]
-    project.setup(editor, ontology)
+    project.connect_ontology(ontology)
     data_row_ids = []
 
-    for _ in range(len(ontology["tools"]) + len(ontology["classifications"])):
+    normalized_ontology = ontology.normalized
+
+    for _ in range(
+        len(normalized_ontology["tools"])
+        + len(normalized_ontology["classifications"])
+    ):
         data_row_ids.append(dataset.create_data_row(row_data=image_url).uid)
     project.create_batch(
         rand_gen(str),
@@ -273,12 +421,25 @@ def configured_project_without_data_rows(
     project = client.create_project(
         name=rand_gen(str),
         description=rand_gen(str),
-        queue_mode=QueueMode.Batch,
+        media_type=MediaType.Image,
     )
-    editor = list(
-        client.get_labeling_frontends(where=LabelingFrontend.name == "editor")
-    )[0]
-    project.setup(editor, ontology)
+
+    project.connect_ontology(ontology)
+    yield project
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
+
+
+@pytest.fixture
+def configured_video_project_without_data_rows(
+    client, video_ontology, rand_gen, teardown_helpers
+):
+    project = client.create_project(
+        name=rand_gen(str),
+        description=rand_gen(str),
+        media_type=MediaType.Video,
+    )
+
+    project.connect_ontology(video_ontology)
     yield project
     teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
 

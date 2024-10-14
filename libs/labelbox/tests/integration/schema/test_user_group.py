@@ -2,11 +2,11 @@ from uuid import uuid4
 
 import faker
 import pytest
-
-from labelbox.exceptions import (
+from lbox.exceptions import (
     ResourceCreationError,
     ResourceNotFoundError,
 )
+
 from labelbox.schema.user_group import UserGroup, UserGroupColor
 
 data = faker.Faker()

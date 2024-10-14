@@ -1,11 +1,15 @@
 import datetime
 from enum import Enum
-from typing import List, Union
-from pydantic import PlainSerializer, BaseModel, Field
+from typing import Annotated, List, Union
 
-from typing_extensions import Annotated
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    field_validator,
+)
 
-from pydantic import BaseModel, Field, field_validator
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
 from labelbox.utils import format_iso_datetime
 
@@ -15,8 +19,7 @@ class BaseSearchFilter(BaseModel):
     Shared code for all search filters
     """
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class OperationTypeEnum(Enum):

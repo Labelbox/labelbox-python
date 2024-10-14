@@ -1,10 +1,9 @@
-import json
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation
 from labelbox.data.annotation_types.classification.classification import (
     ClassificationAnswer,
 )
 from labelbox.data.annotation_types.classification.classification import Radio
-from labelbox.data.annotation_types.data.text import TextData
+from labelbox.data.annotation_types.data import GenericDataRowData
 from labelbox.data.annotation_types.label import Label
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
@@ -13,9 +12,8 @@ from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 def test_serialization_with_radio_min():
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
-        data=TextData(
+        data=GenericDataRowData(
             uid="bkj7z2q0b0000jx6x0q2q7q0d",
-            text="This is a test",
         ),
         annotations=[
             ClassificationAnnotation(
@@ -40,21 +38,12 @@ def test_serialization_with_radio_min():
     res.pop("uuid")
     assert res == expected
 
-    deserialized = NDJsonConverter.deserialize([res])
-    res = next(deserialized)
-
-    for i, annotation in enumerate(res.annotations):
-        annotation.extra.pop("uuid")
-        assert annotation.value == label.annotations[i].value
-        assert annotation.name == label.annotations[i].name
-
 
 def test_serialization_with_radio_classification():
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
-        data=TextData(
+        data=GenericDataRowData(
             uid="bkj7z2q0b0000jx6x0q2q7q0d",
-            text="This is a test",
         ),
         annotations=[
             ClassificationAnnotation(
@@ -101,10 +90,3 @@ def test_serialization_with_radio_classification():
     res = next(serialized)
     res.pop("uuid")
     assert res == expected
-
-    deserialized = NDJsonConverter.deserialize([res])
-    res = next(deserialized)
-    res.annotations[0].extra.pop("uuid")
-    assert res.annotations[0].model_dump(
-        exclude_none=True
-    ) == label.annotations[0].model_dump(exclude_none=True)

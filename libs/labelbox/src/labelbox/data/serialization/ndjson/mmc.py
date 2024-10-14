@@ -2,13 +2,14 @@ from typing import Any, Dict, List, Optional, Union
 
 from labelbox.utils import _CamelCaseMixin
 
-from .base import _SubclassRegistryBase, DataRow, NDAnnotation
+from .base import DataRow, NDAnnotation
 from ...annotation_types.mmc import (
     MessageSingleSelectionTask,
     MessageMultiSelectionTask,
     MessageRankingTask,
     MessageEvaluationTaskAnnotation,
 )
+from ...annotation_types import GenericDataRowData
 
 
 class MessageTaskData(_CamelCaseMixin):
@@ -20,7 +21,7 @@ class MessageTaskData(_CamelCaseMixin):
     ]
 
 
-class NDMessageTask(NDAnnotation, _SubclassRegistryBase):
+class NDMessageTask(NDAnnotation):
     message_evaluation_task: MessageTaskData
 
     def to_common(self) -> MessageEvaluationTaskAnnotation:
@@ -35,7 +36,7 @@ class NDMessageTask(NDAnnotation, _SubclassRegistryBase):
     def from_common(
         cls,
         annotation: MessageEvaluationTaskAnnotation,
-        data: Any,  # Union[ImageData, TextData],
+        data: GenericDataRowData,
     ) -> "NDMessageTask":
         return cls(
             uuid=str(annotation._uuid),

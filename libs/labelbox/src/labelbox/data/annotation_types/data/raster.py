@@ -1,17 +1,15 @@
 from abc import ABC
 from io import BytesIO
-from typing import Callable, Optional, Union
-from typing_extensions import Literal
+from typing import Callable, Literal, Optional, Union
 
-from PIL import Image
-from google.api_core import retry
-from requests.exceptions import ConnectTimeout
-import requests
 import numpy as np
+import requests
+from google.api_core import retry
+from lbox.exceptions import InternalServerError
+from PIL import Image
+from pydantic import BaseModel, ConfigDict, model_validator
+from requests.exceptions import ConnectTimeout
 
-from pydantic import BaseModel, model_validator, ConfigDict
-from labelbox.exceptions import InternalServerError
-from .base_data import BaseData
 from ..types import TypedArray
 
 
@@ -172,7 +170,7 @@ class RasterData(BaseModel, ABC):
         uid = self.uid
         global_key = self.global_key
         if (
-            uid == file_path == im_bytes == url == global_key == None
+            uid == file_path == im_bytes == url == global_key is None
             and arr is None
         ):
             raise ValueError(
@@ -191,7 +189,9 @@ class RasterData(BaseModel, ABC):
         return self
 
     def __repr__(self) -> str:
-        symbol_or_none = lambda data: "..." if data is not None else None
+        def symbol_or_none(data):
+            return "..." if data is not None else None
+
         return (
             f"{self.__class__.__name__}(im_bytes={symbol_or_none(self.im_bytes)},"
             f"file_path={self.file_path},"
@@ -220,6 +220,3 @@ class MaskData(RasterData):
         url: Optional[str] = None
         arr: Optional[TypedArray[Literal['uint8']]] = None
     """
-
-
-class ImageData(RasterData, BaseData): ...

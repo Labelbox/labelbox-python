@@ -125,7 +125,7 @@ class MaskFrame(_CamelCaseMixin, BaseModel):
     def validate_args(self, values):
         im_bytes = self.im_bytes
         instance_uri = self.instance_uri
-        if im_bytes == instance_uri == None:
+        if im_bytes == instance_uri is None:
             raise ValueError("One of `instance_uri`, `im_bytes` required.")
         return self
 

@@ -5,7 +5,7 @@ from labelbox.data.annotation_types.classification.classification import (
     Radio,
     Text,
 )
-from labelbox.data.annotation_types.data.text import TextData
+from labelbox.data.annotation_types.data import GenericDataRowData
 from labelbox.data.annotation_types.label import Label
 
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
@@ -14,7 +14,7 @@ from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 def test_serialization():
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
-        data=TextData(
+        data=GenericDataRowData(
             uid="bkj7z2q0b0000jx6x0q2q7q0d",
             text="This is a test",
         ),
@@ -34,21 +34,11 @@ def test_serialization():
     assert res["answer"] == "text_answer"
     assert res["dataRow"]["id"] == "bkj7z2q0b0000jx6x0q2q7q0d"
 
-    deserialized = NDJsonConverter.deserialize([res])
-    res = next(deserialized)
-
-    annotation = res.annotations[0]
-
-    annotation_value = annotation.value
-    assert type(annotation_value) is Text
-    assert annotation_value.answer == "text_answer"
-    assert annotation_value.confidence == 0.5
-
 
 def test_nested_serialization():
     label = Label(
         uid="ckj7z2q0b0000jx6x0q2q7q0d",
-        data=TextData(
+        data=GenericDataRowData(
             uid="bkj7z2q0b0000jx6x0q2q7q0d",
             text="This is a test",
         ),
@@ -102,19 +92,3 @@ def test_nested_serialization():
     assert sub_classification["name"] == "nested answer"
     assert sub_classification["answer"] == "nested answer"
     assert sub_classification["confidence"] == 0.7
-
-    deserialized = NDJsonConverter.deserialize([res])
-    res = next(deserialized)
-    annotation = res.annotations[0]
-    answer = annotation.value.answer[0]
-    assert answer.confidence == 0.9
-    assert answer.name == "first_answer"
-
-    classification_answer = answer.classifications[0].value.answer
-    assert classification_answer.confidence == 0.8
-    assert classification_answer.name == "first_sub_radio_answer"
-
-    sub_classification_answer = classification_answer.classifications[0].value
-    assert type(sub_classification_answer) is Text
-    assert sub_classification_answer.answer == "nested answer"
-    assert sub_classification_answer.confidence == 0.7

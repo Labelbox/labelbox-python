@@ -1,6 +1,5 @@
 from copy import copy
 import pytest
-import base64
 import labelbox.types as lb_types
 from labelbox.data.serialization import NDJsonConverter
 from labelbox.data.serialization.ndjson.objects import (
@@ -32,7 +31,7 @@ dicom_polyline_annotations = [
 ]
 
 polyline_label = lb_types.Label(
-    data=lb_types.DicomData(uid="test-uid"),
+    data=lb_types.GenericDataRowData(uid="test-uid"),
     annotations=dicom_polyline_annotations,
 )
 
@@ -59,7 +58,7 @@ polyline_annotation_ndjson = {
 }
 
 polyline_with_global_key = lb_types.Label(
-    data=lb_types.DicomData(global_key="test-global-key"),
+    data=lb_types.GenericDataRowData(global_key="test-global-key"),
     annotations=dicom_polyline_annotations,
 )
 
@@ -110,11 +109,12 @@ video_mask_annotation_ndjson_with_global_key["dataRow"] = {
 }
 
 video_mask_label = lb_types.Label(
-    data=lb_types.VideoData(uid="test-uid"), annotations=[video_mask_annotation]
+    data=lb_types.GenericDataRowData(uid="test-uid"),
+    annotations=[video_mask_annotation],
 )
 
 video_mask_label_with_global_key = lb_types.Label(
-    data=lb_types.VideoData(global_key="test-global-key"),
+    data=lb_types.GenericDataRowData(global_key="test-global-key"),
     annotations=[video_mask_annotation],
 )
 """
@@ -129,11 +129,12 @@ dicom_mask_annotation = lb_types.DICOMMaskAnnotation(
 )
 
 dicom_mask_label = lb_types.Label(
-    data=lb_types.DicomData(uid="test-uid"), annotations=[dicom_mask_annotation]
+    data=lb_types.GenericDataRowData(uid="test-uid"),
+    annotations=[dicom_mask_annotation],
 )
 
 dicom_mask_label_with_global_key = lb_types.Label(
-    data=lb_types.DicomData(global_key="test-global-key"),
+    data=lb_types.GenericDataRowData(global_key="test-global-key"),
     annotations=[dicom_mask_annotation],
 )
 
@@ -181,28 +182,3 @@ def test_serialize_label(label, ndjson):
     if "uuid" in serialized_label:
         serialized_label.pop("uuid")
     assert serialized_label == ndjson
-
-
-@pytest.mark.parametrize("label, ndjson", labels_ndjsons)
-def test_deserialize_label(label, ndjson):
-    deserialized_label = next(NDJsonConverter().deserialize([ndjson]))
-    if hasattr(deserialized_label.annotations[0], "extra"):
-        deserialized_label.annotations[0].extra = {}
-    for i, annotation in enumerate(deserialized_label.annotations):
-        if hasattr(annotation, "frames"):
-            assert annotation.frames == label.annotations[i].frames
-        if hasattr(annotation, "value"):
-            assert annotation.value == label.annotations[i].value
-
-
-@pytest.mark.parametrize("label", labels)
-def test_serialize_deserialize_label(label):
-    serialized = list(NDJsonConverter.serialize([label]))
-    deserialized = list(NDJsonConverter.deserialize(serialized))
-    if hasattr(deserialized[0].annotations[0], "extra"):
-        deserialized[0].annotations[0].extra = {}
-    for i, annotation in enumerate(deserialized[0].annotations):
-        if hasattr(annotation, "frames"):
-            assert annotation.frames == label.annotations[i].frames
-        if hasattr(annotation, "value"):
-            assert annotation.value == label.annotations[i].value

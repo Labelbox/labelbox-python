@@ -25,8 +25,8 @@ class TestExportDataset:
         ) == len(expected_data_row_ids)
         data_row_ids = list(
             map(
-                lambda x: json.loads(x.json_str)["data_row"]["id"],
-                export_task.get_stream(),
+                lambda x: x.json["data_row"]["id"],
+                export_task.get_buffered_stream(),
             )
         )
         assert data_row_ids.sort() == expected_data_row_ids.sort()
@@ -58,8 +58,8 @@ class TestExportDataset:
         )
         data_row_ids = list(
             map(
-                lambda x: json.loads(x.json_str)["data_row"]["id"],
-                export_task.get_stream(),
+                lambda x: x.json["data_row"]["id"],
+                export_task.get_buffered_stream(),
             )
         )
         assert data_row_ids.sort() == expected_data_row_ids.sort()
@@ -91,8 +91,8 @@ class TestExportDataset:
         )
         global_keys = list(
             map(
-                lambda x: json.loads(x.json_str)["data_row"]["global_key"],
-                export_task.get_stream(),
+                lambda x: x.json["data_row"]["global_key"],
+                export_task.get_buffered_stream(),
             )
         )
         assert global_keys.sort() == expected_global_keys.sort()

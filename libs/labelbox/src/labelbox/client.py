@@ -4,20 +4,25 @@ import logging
 import mimetypes
 import os
 import random
-import sys
 import time
 import urllib.parse
 import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
 from types import MappingProxyType
-from typing import Any, Dict, List, Optional, Union, overload
+from typing import Any, Callable, Dict, List, Optional, Set, Union, overload
 
 import requests
 import requests.exceptions
 from google.api_core import retry
+from lbox.exceptions import (
+    InternalServerError,
+    LabelboxError,
+    ResourceNotFoundError,
+    TimeoutError,
+)
+from lbox.request_client import RequestClient
 
-import labelbox.exceptions
 from labelbox import __version__ as SDK_VERSION
 from labelbox import utils
 from labelbox.adv_client import AdvClient
@@ -25,6 +30,7 @@ from labelbox.orm import query
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
+from labelbox.project_validation import _CoreProjectInput
 from labelbox.schema import role
 from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row import DataRow
@@ -67,7 +73,6 @@ from labelbox.schema.quality_mode import (
     CONSENSUS_AUTO_AUDIT_PERCENTAGE,
     QualityMode,
 )
-from labelbox.schema.queue_mode import QueueMode
 from labelbox.schema.role import Role
 from labelbox.schema.search_filters import SearchFilter
 from labelbox.schema.send_to_annotate_params import (
@@ -82,20 +87,11 @@ from labelbox.schema.user import User
 
 logger = logging.getLogger(__name__)
 
-_LABELBOX_API_KEY = "LABELBOX_API_KEY"
-
-
-def python_version_info():
-    version_info = sys.version_info
-
-    return f"{version_info.major}.{version_info.minor}.{version_info.micro}-{version_info.releaselevel}"
-
 
 class Client:
     """A Labelbox client.
 
-    Contains info necessary for connecting to a Labelbox server (URL,
-    authentication key). Provides functions for querying and creating
+    Provides functions for querying and creating
     top-level data objects (Projects, Datasets).
     """
 
@@ -121,57 +117,45 @@ class Client:
             enable_experimental (bool): Indicates whether or not to use experimental features
             app_url (str) : host url for all links to the web app
         Raises:
-            labelbox.exceptions.AuthenticationError: If no `api_key`
+            AuthenticationError: If no `api_key`
                 is provided as an argument or via the environment
                 variable.
         """
-        if api_key is None:
-            if _LABELBOX_API_KEY not in os.environ:
-                raise labelbox.exceptions.AuthenticationError(
-                    "Labelbox API key not provided"
-                )
-            api_key = os.environ[_LABELBOX_API_KEY]
-        self.api_key = api_key
-
-        self.enable_experimental = enable_experimental
-        if enable_experimental:
-            logger.info("Experimental features have been enabled")
-
-        logger.info("Initializing Labelbox client at '%s'", endpoint)
-        self.app_url = app_url
-        self.endpoint = endpoint
-        self.rest_endpoint = rest_endpoint
         self._data_row_metadata_ontology = None
+        self._request_client = RequestClient(
+            sdk_version=SDK_VERSION,
+            api_key=api_key,
+            endpoint=endpoint,
+            enable_experimental=enable_experimental,
+            app_url=app_url,
+            rest_endpoint=rest_endpoint,
+        )
         self._adv_client = AdvClient.factory(rest_endpoint, api_key)
-        self._connection: requests.Session = self._init_connection()
-
-    def _init_connection(self) -> requests.Session:
-        connection = (
-            requests.Session()
-        )  # using default connection pool size of 10
-        connection.headers.update(self._default_headers())
-
-        return connection
 
     @property
     def headers(self) -> MappingProxyType:
-        return self._connection.headers
+        return self._request_client.headers
 
-    def _default_headers(self):
-        return {
-            "Authorization": "Bearer %s" % self.api_key,
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "X-User-Agent": f"python-sdk {SDK_VERSION}",
-            "X-Python-Version": f"{python_version_info()}",
-        }
+    @property
+    def connection(self) -> requests.Session:
+        return self._request_client._connection
 
-    @retry.Retry(
-        predicate=retry.if_exception_type(
-            labelbox.exceptions.InternalServerError,
-            labelbox.exceptions.TimeoutError,
-        )
-    )
+    @property
+    def endpoint(self) -> str:
+        return self._request_client.endpoint
+
+    @property
+    def rest_endpoint(self) -> str:
+        return self._request_client.rest_endpoint
+
+    @property
+    def enable_experimental(self) -> bool:
+        return self._request_client.enable_experimental
+
+    @property
+    def app_url(self) -> str:
+        return self._request_client.app_url
+
     def execute(
         self,
         query=None,
@@ -182,264 +166,34 @@ class Client:
         experimental=False,
         error_log_key="message",
         raise_return_resource_not_found=False,
-    ):
-        """Sends a request to the server for the execution of the
-        given query.
-
-        Checks the response for errors and wraps errors
-        in appropriate `labelbox.exceptions.LabelboxError` subtypes.
+        error_handlers: Optional[
+            Dict[str, Callable[[requests.models.Response], None]]
+        ] = None,
+    ) -> Dict[str, Any]:
+        """Executes a GraphQL query.
 
         Args:
             query (str): The query to execute.
-            params (dict): Query parameters referenced within the query.
-            data (str): json string containing the query to execute
-            files (dict): file arguments for request
-            timeout (float): Max allowed time for query execution,
-                in seconds.
+            variables (dict): Variables to pass to the query.
+            raise_return_resource_not_found (bool): If True, raise a
+                ResourceNotFoundError if the query returns None.
+            error_handlers (dict): A dictionary mapping graphql error code to handler functions.
+                Allows a caller to handle specific errors reporting in a custom way or produce more user-friendly readable messages
+
         Returns:
-            dict, parsed JSON response.
-        Raises:
-            labelbox.exceptions.AuthenticationError: If authentication
-                failed.
-            labelbox.exceptions.InvalidQueryError: If `query` is not
-                syntactically or semantically valid (checked server-side).
-            labelbox.exceptions.ApiLimitError: If the server API limit was
-                exceeded. See "How to import data" in the online documentation
-                to see API limits.
-            labelbox.exceptions.TimeoutError: If response was not received
-                in `timeout` seconds.
-            labelbox.exceptions.NetworkError: If an unknown error occurred
-                most likely due to connection issues.
-            labelbox.exceptions.LabelboxError: If an unknown error of any
-                kind occurred.
-            ValueError: If query and data are both None.
+            dict: The response from the server.
         """
-        logger.debug("Query: %s, params: %r, data %r", query, params, data)
-
-        # Convert datetimes to UTC strings.
-        def convert_value(value):
-            if isinstance(value, datetime):
-                value = value.astimezone(timezone.utc)
-                value = value.strftime("%Y-%m-%dT%H:%M:%SZ")
-            return value
-
-        if query is not None:
-            if params is not None:
-                params = {
-                    key: convert_value(value) for key, value in params.items()
-                }
-            data = json.dumps({"query": query, "variables": params}).encode(
-                "utf-8"
-            )
-        elif data is None:
-            raise ValueError("query and data cannot both be none")
-
-        endpoint = (
-            self.endpoint
-            if not experimental
-            else self.endpoint.replace("/graphql", "/_gql")
+        return self._request_client.execute(
+            query,
+            params,
+            data=data,
+            files=files,
+            timeout=timeout,
+            experimental=experimental,
+            error_log_key=error_log_key,
+            raise_return_resource_not_found=raise_return_resource_not_found,
+            error_handlers=error_handlers,
         )
-
-        try:
-            headers = self._connection.headers.copy()
-            if files:
-                del headers["Content-Type"]
-                del headers["Accept"]
-            request = requests.Request(
-                "POST",
-                endpoint,
-                headers=headers,
-                data=data,
-                files=files if files else None,
-            )
-
-            prepped: requests.PreparedRequest = request.prepare()
-
-            settings = self._connection.merge_environment_settings(
-                prepped.url, {}, None, None, None
-            )
-
-            response = self._connection.send(
-                prepped, timeout=timeout, **settings
-            )
-            logger.debug("Response: %s", response.text)
-        except requests.exceptions.Timeout as e:
-            raise labelbox.exceptions.TimeoutError(str(e))
-        except requests.exceptions.RequestException as e:
-            logger.error("Unknown error: %s", str(e))
-            raise labelbox.exceptions.NetworkError(e)
-        except Exception as e:
-            raise labelbox.exceptions.LabelboxError(
-                "Unknown error during Client.query(): " + str(e), e
-            )
-
-        if (
-            200 <= response.status_code < 300
-            or response.status_code < 500
-            or response.status_code >= 600
-        ):
-            try:
-                r_json = response.json()
-            except Exception:
-                raise labelbox.exceptions.LabelboxError(
-                    "Failed to parse response as JSON: %s" % response.text
-                )
-        else:
-            if (
-                "upstream connect error or disconnect/reset before headers"
-                in response.text
-            ):
-                raise labelbox.exceptions.InternalServerError(
-                    "Connection reset"
-                )
-            elif response.status_code == 502:
-                error_502 = "502 Bad Gateway"
-                raise labelbox.exceptions.InternalServerError(error_502)
-            elif 500 <= response.status_code < 600:
-                error_500 = f"Internal server http error {response.status_code}"
-                raise labelbox.exceptions.InternalServerError(error_500)
-
-        errors = r_json.get("errors", [])
-
-        def check_errors(keywords, *path):
-            """Helper that looks for any of the given `keywords` in any of
-            current errors on paths (like error[path][component][to][keyword]).
-            """
-            for error in errors:
-                obj = error
-                for path_elem in path:
-                    obj = obj.get(path_elem, {})
-                if obj in keywords:
-                    return error
-            return None
-
-        def get_error_status_code(error: dict) -> int:
-            try:
-                return int(error["extensions"].get("exception").get("status"))
-            except:
-                return 500
-
-        if (
-            check_errors(["AUTHENTICATION_ERROR"], "extensions", "code")
-            is not None
-        ):
-            raise labelbox.exceptions.AuthenticationError("Invalid API key")
-
-        authorization_error = check_errors(
-            ["AUTHORIZATION_ERROR"], "extensions", "code"
-        )
-        if authorization_error is not None:
-            raise labelbox.exceptions.AuthorizationError(
-                authorization_error["message"]
-            )
-
-        validation_error = check_errors(
-            ["GRAPHQL_VALIDATION_FAILED"], "extensions", "code"
-        )
-
-        if validation_error is not None:
-            message = validation_error["message"]
-            if message == "Query complexity limit exceeded":
-                raise labelbox.exceptions.ValidationFailedError(message)
-            else:
-                raise labelbox.exceptions.InvalidQueryError(message)
-
-        graphql_error = check_errors(
-            ["GRAPHQL_PARSE_FAILED"], "extensions", "code"
-        )
-        if graphql_error is not None:
-            raise labelbox.exceptions.InvalidQueryError(
-                graphql_error["message"]
-            )
-
-        # Check if API limit was exceeded
-        response_msg = r_json.get("message", "")
-
-        if response_msg.startswith("You have exceeded"):
-            raise labelbox.exceptions.ApiLimitError(response_msg)
-
-        resource_not_found_error = check_errors(
-            ["RESOURCE_NOT_FOUND"], "extensions", "code"
-        )
-        if resource_not_found_error is not None:
-            if raise_return_resource_not_found:
-                raise labelbox.exceptions.ResourceNotFoundError(
-                    message=resource_not_found_error["message"]
-                )
-            else:
-                # Return None and let the caller methods raise an exception
-                # as they already know which resource type and ID was requested
-                return None
-
-        resource_conflict_error = check_errors(
-            ["RESOURCE_CONFLICT"], "extensions", "code"
-        )
-        if resource_conflict_error is not None:
-            raise labelbox.exceptions.ResourceConflict(
-                resource_conflict_error["message"]
-            )
-
-        malformed_request_error = check_errors(
-            ["MALFORMED_REQUEST"], "extensions", "code"
-        )
-        if malformed_request_error is not None:
-            raise labelbox.exceptions.MalformedQueryException(
-                malformed_request_error[error_log_key]
-            )
-
-        # A lot of different error situations are now labeled serverside
-        # as INTERNAL_SERVER_ERROR, when they are actually client errors.
-        # TODO: fix this in the server API
-        internal_server_error = check_errors(
-            ["INTERNAL_SERVER_ERROR"], "extensions", "code"
-        )
-        if internal_server_error is not None:
-            message = internal_server_error.get("message")
-            error_status_code = get_error_status_code(internal_server_error)
-            if error_status_code == 400:
-                raise labelbox.exceptions.InvalidQueryError(message)
-            elif error_status_code == 422:
-                raise labelbox.exceptions.UnprocessableEntityError(message)
-            elif error_status_code == 426:
-                raise labelbox.exceptions.OperationNotAllowedException(message)
-            elif error_status_code == 500:
-                raise labelbox.exceptions.LabelboxError(message)
-            else:
-                raise labelbox.exceptions.InternalServerError(message)
-
-        not_allowed_error = check_errors(
-            ["OPERATION_NOT_ALLOWED"], "extensions", "code"
-        )
-        if not_allowed_error is not None:
-            message = not_allowed_error.get("message")
-            raise labelbox.exceptions.OperationNotAllowedException(message)
-
-        if len(errors) > 0:
-            logger.warning("Unparsed errors on query execution: %r", errors)
-            messages = list(
-                map(
-                    lambda x: {
-                        "message": x["message"],
-                        "code": x["extensions"]["code"],
-                    },
-                    errors,
-                )
-            )
-            raise labelbox.exceptions.LabelboxError(
-                "Unknown error: %s" % str(messages)
-            )
-
-        # if we do return a proper error code, and didn't catch this above
-        # reraise
-        # this mainly catches a 401 for API access disabled for free tier
-        # TODO: need to unify API errors to handle things more uniformly
-        # in the SDK
-        if response.status_code != requests.codes.ok:
-            message = f"{response.status_code} {response.reason}"
-            cause = r_json.get("message")
-            raise labelbox.exceptions.LabelboxError(message, cause)
-
-        return r_json["data"]
 
     def upload_file(self, path: str) -> str:
         """Uploads given path to local file.
@@ -451,7 +205,7 @@ class Client:
         Returns:
             str, the URL of uploaded data.
         Raises:
-            labelbox.exceptions.LabelboxError: If upload failed.
+            LabelboxError: If upload failed.
         """
         content_type, _ = mimetypes.guess_type(path)
         filename = os.path.basename(path)
@@ -460,11 +214,7 @@ class Client:
                 content=f.read(), filename=filename, content_type=content_type
             )
 
-    @retry.Retry(
-        predicate=retry.if_exception_type(
-            labelbox.exceptions.InternalServerError
-        )
-    )
+    @retry.Retry(predicate=retry.if_exception_type(InternalServerError))
     def upload_data(
         self,
         content: bytes,
@@ -484,7 +234,7 @@ class Client:
             str, the URL of uploaded data.
 
         Raises:
-            labelbox.exceptions.LabelboxError: If upload failed.
+            LabelboxError: If upload failed.
         """
 
         request_data = {
@@ -509,7 +259,7 @@ class Client:
             if (filename and content_type)
             else content
         }
-        headers = self._connection.headers.copy()
+        headers = self.connection.headers.copy()
         headers.pop("Content-Type", None)
         request = requests.Request(
             "POST",
@@ -521,22 +271,20 @@ class Client:
 
         prepped: requests.PreparedRequest = request.prepare()
 
-        response = self._connection.send(prepped)
+        response = self.connection.send(prepped)
 
         if response.status_code == 502:
             error_502 = "502 Bad Gateway"
-            raise labelbox.exceptions.InternalServerError(error_502)
+            raise InternalServerError(error_502)
         elif response.status_code == 503:
-            raise labelbox.exceptions.InternalServerError(response.text)
+            raise InternalServerError(response.text)
         elif response.status_code == 520:
-            raise labelbox.exceptions.InternalServerError(response.text)
+            raise InternalServerError(response.text)
 
         try:
             file_data = response.json().get("data", None)
         except ValueError as e:  # response is not valid JSON
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, unknown cause", e
-            )
+            raise LabelboxError("Failed to upload, unknown cause", e)
 
         if not file_data or not file_data.get("uploadFile", None):
             try:
@@ -546,9 +294,7 @@ class Client:
                 )
             except Exception:
                 error_msg = "Unknown error"
-            raise labelbox.exceptions.LabelboxError(
-                "Failed to upload, message: %s" % error_msg
-            )
+            raise LabelboxError("Failed to upload, message: %s" % error_msg)
 
         return file_data["uploadFile"]["url"]
 
@@ -561,7 +307,7 @@ class Client:
         Returns:
             Object of `db_object_type`.
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no object
+            ResourceNotFoundError: If there is no object
                 of the given type for the given ID.
         """
         query_str, params = query.get_single(db_object_type, uid)
@@ -569,9 +315,7 @@ class Client:
         res = self.execute(query_str, params)
         res = res and res.get(utils.camel_case(db_object_type.type_name()))
         if res is None:
-            raise labelbox.exceptions.ResourceNotFoundError(
-                db_object_type, params
-            )
+            raise ResourceNotFoundError(db_object_type, params)
         else:
             return db_object_type(self, res)
 
@@ -585,7 +329,7 @@ class Client:
         Returns:
             The sought Project.
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no
+            ResourceNotFoundError: If there is no
                 Project with the given ID.
         """
         return self._get_single(Entity.Project, project_id)
@@ -600,7 +344,7 @@ class Client:
         Returns:
             The sought Dataset.
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no
+            ResourceNotFoundError: If there is no
                 Dataset with the given ID.
         """
         return self._get_single(Entity.Dataset, dataset_id)
@@ -630,7 +374,7 @@ class Client:
             An iterable of `db_object_type` instances.
         """
         if filter_deleted:
-            not_deleted = db_object_type.deleted == False
+            not_deleted = db_object_type.deleted == False  # noqa: E712 <Gabefire> Needed for bit operator to combine comparisons
             where = not_deleted if where is None else where & not_deleted
         query_str, params = query.get_all(db_object_type, where)
 
@@ -724,13 +468,11 @@ class Client:
         res = self.execute(
             query_string, params, raise_return_resource_not_found=True
         )
-
         if not res:
-            raise labelbox.exceptions.LabelboxError(
+            raise LabelboxError(
                 "Failed to create %s" % db_object_type.type_name()
             )
         res = res["create%s" % db_object_type.type_name()]
-
         return db_object_type(self, res)
 
     def create_model_config(
@@ -784,9 +526,7 @@ class Client:
         params = {"id": id}
         result = self.execute(query, params)
         if not result:
-            raise labelbox.exceptions.ResourceNotFoundError(
-                Entity.ModelConfig, params
-            )
+            raise ResourceNotFoundError(Entity.ModelConfig, params)
         return result["deleteModelConfig"]["success"]
 
     def create_dataset(
@@ -853,7 +593,18 @@ class Client:
             raise e
         return dataset
 
-    def create_project(self, **kwargs) -> Project:
+    def create_project(
+        self,
+        name: str,
+        media_type: MediaType,
+        description: Optional[str] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
+    ) -> Project:
         """Creates a Project object on the server.
 
         Attribute values are passed as keyword arguments.
@@ -862,71 +613,44 @@ class Client:
                 name="<project_name>",
                 description="<project_description>",
                 media_type=MediaType.Image,
-                queue_mode=QueueMode.Batch
             )
 
         Args:
             name (str): A name for the project
             description (str): A short summary for the project
             media_type (MediaType): The type of assets that this project will accept
-            queue_mode (Optional[QueueMode]): The queue mode to use
-            quality_mode (Optional[QualityMode]): The quality mode to use (e.g. Benchmark, Consensus). Defaults to
-                Benchmark
             quality_modes (Optional[List[QualityMode]]): The quality modes to use (e.g. Benchmark, Consensus). Defaults to
                 Benchmark.
+            is_benchmark_enabled (Optional[bool]): Whether the project supports benchmark. Defaults to None.
+            is_consensus_enabled (Optional[bool]): Whether the project supports consensus. Defaults to None.
         Returns:
             A new Project object.
         Raises:
-            InvalidAttributeError: If the Project type does not contain
-                any of the attribute names given in kwargs.
-
-        NOTE: the following attributes are used only in chat model evaluation projects:
-            dataset_name_or_id, append_to_existing_dataset, data_row_count, editor_task_type
-            They are not used for general projects and not supported in this method
+            ValueError: If inputs are invalid.
         """
-        #  The following arguments are not supported for general projects, only for chat model evaluation projects
-        kwargs.pop("dataset_name_or_id", None)
-        kwargs.pop("append_to_existing_dataset", None)
-        kwargs.pop("data_row_count", None)
-        kwargs.pop("editor_task_type", None)
-        return self._create_project(**kwargs)
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": media_type,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
-    @overload
     def create_model_evaluation_project(
         self,
-        dataset_name: str,
-        dataset_id: str = None,
-        data_row_count: int = 100,
-        **kwargs,
-    ) -> Project:
-        pass
-
-    @overload
-    def create_model_evaluation_project(
-        self,
-        dataset_id: str,
-        dataset_name: str = None,
-        data_row_count: int = 100,
-        **kwargs,
-    ) -> Project:
-        pass
-
-    @overload
-    def create_model_evaluation_project(
-        self,
+        name: str,
+        description: Optional[str] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
         dataset_id: Optional[str] = None,
         dataset_name: Optional[str] = None,
         data_row_count: Optional[int] = None,
-        **kwargs,
-    ) -> Project:
-        pass
-
-    def create_model_evaluation_project(
-        self,
-        dataset_id: Optional[str] = None,
-        dataset_name: Optional[str] = None,
-        data_row_count: Optional[int] = None,
-        **kwargs,
     ) -> Project:
         """
         Use this method exclusively to create a chat model evaluation project.
@@ -934,12 +658,12 @@ class Client:
             dataset_name: When creating a new dataset, pass the name
             dataset_id: When using an existing dataset, pass the id
             data_row_count: The number of data row assets to use for the project
-            **kwargs: Additional parameters to pass to the the create_project method
+            See create_project for additional parameters
         Returns:
             Project: The created project
 
         Examples:
-            >>> client.create_model_evaluation_project(name=project_name, dataset_name="new data set")
+            >>> client.create_model_evaluation_project(name=project_name, media_type=dataset_name="new data set")
             >>>     This creates a new dataset with a default number of rows (100), creates new project and assigns a batch of the newly created datarows to the project.
 
             >>> client.create_model_evaluation_project(name=project_name, dataset_name="new data set", data_row_count=10)
@@ -959,51 +683,75 @@ class Client:
         append_to_existing_dataset = bool(dataset_id)
 
         if dataset_name_or_id:
-            kwargs["dataset_name_or_id"] = dataset_name_or_id
-            kwargs["append_to_existing_dataset"] = append_to_existing_dataset
             if data_row_count is None:
                 data_row_count = 100
-            if data_row_count < 0:
-                raise ValueError("data_row_count must be a positive integer.")
-            kwargs["data_row_count"] = data_row_count
             warnings.warn(
                 "Automatic generation of data rows of live model evaluation projects is deprecated. dataset_name_or_id, append_to_existing_dataset, data_row_count will be removed in a future version.",
                 DeprecationWarning,
             )
 
-        kwargs["media_type"] = MediaType.Conversational
-        kwargs["editor_task_type"] = EditorTaskType.ModelChatEvaluation.value
+        media_type = MediaType.Conversational
+        editor_task_type = EditorTaskType.ModelChatEvaluation
 
-        return self._create_project(**kwargs)
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": media_type,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+            "dataset_name_or_id": dataset_name_or_id,
+            "append_to_existing_dataset": append_to_existing_dataset,
+            "data_row_count": data_row_count,
+            "editor_task_type": editor_task_type,
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
-    def create_offline_model_evaluation_project(self, **kwargs) -> Project:
+    def create_offline_model_evaluation_project(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
+    ) -> Project:
         """
         Creates a project for offline model evaluation.
         Args:
-            **kwargs: Additional parameters to pass see the create_project method
+            See create_project for parameters
         Returns:
             Project: The created project
         """
-        kwargs["media_type"] = (
-            MediaType.Conversational
-        )  # Only Conversational is supported
-        kwargs["editor_task_type"] = (
-            EditorTaskType.OfflineModelChatEvaluation.value
-        )  # Special editor task type for offline model evaluation
-
-        # The following arguments are not supported for offline model evaluation
-        kwargs.pop("dataset_name_or_id", None)
-        kwargs.pop("append_to_existing_dataset", None)
-        kwargs.pop("data_row_count", None)
-
-        return self._create_project(**kwargs)
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": MediaType.Conversational,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+            "editor_task_type": EditorTaskType.OfflineModelChatEvaluation,
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
     def create_prompt_response_generation_project(
         self,
+        name: str,
+        media_type: MediaType,
+        description: Optional[str] = None,
+        auto_audit_percentage: Optional[float] = None,
+        auto_audit_number_of_labels: Optional[int] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
         dataset_id: Optional[str] = None,
         dataset_name: Optional[str] = None,
         data_row_count: int = 100,
-        **kwargs,
     ) -> Project:
         """
         Use this method exclusively to create a prompt and response generation project.
@@ -1012,7 +760,8 @@ class Client:
             dataset_name: When creating a new dataset, pass the name
             dataset_id: When using an existing dataset, pass the id
             data_row_count: The number of data row assets to use for the project
-            **kwargs: Additional parameters to pass see the create_project method
+            media_type: The type of assets that this project will accept. Limited to LLMPromptCreation and LLMPromptResponseCreation
+            See create_project for additional parameters
         Returns:
             Project: The created project
 
@@ -1042,9 +791,6 @@ class Client:
                 "Only provide a dataset_name or dataset_id, not both."
             )
 
-        if data_row_count <= 0:
-            raise ValueError("data_row_count must be a positive integer.")
-
         if dataset_id:
             append_to_existing_dataset = True
             dataset_name_or_id = dataset_id
@@ -1052,7 +798,7 @@ class Client:
             append_to_existing_dataset = False
             dataset_name_or_id = dataset_name
 
-        if "media_type" in kwargs and kwargs.get("media_type") not in [
+        if media_type not in [
             MediaType.LLMPromptCreation,
             MediaType.LLMPromptResponseCreation,
         ]:
@@ -1060,133 +806,52 @@ class Client:
                 "media_type must be either LLMPromptCreation or LLMPromptResponseCreation"
             )
 
-        kwargs["dataset_name_or_id"] = dataset_name_or_id
-        kwargs["append_to_existing_dataset"] = append_to_existing_dataset
-        kwargs["data_row_count"] = data_row_count
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": media_type,
+            "auto_audit_percentage": auto_audit_percentage,
+            "auto_audit_number_of_labels": auto_audit_number_of_labels,
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+            "dataset_name_or_id": dataset_name_or_id,
+            "append_to_existing_dataset": append_to_existing_dataset,
+            "data_row_count": data_row_count,
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
-        kwargs.pop("editor_task_type", None)
-
-        return self._create_project(**kwargs)
-
-    def create_response_creation_project(self, **kwargs) -> Project:
+    def create_response_creation_project(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        quality_modes: Optional[Set[QualityMode]] = {
+            QualityMode.Benchmark,
+            QualityMode.Consensus,
+        },
+        is_benchmark_enabled: Optional[bool] = None,
+        is_consensus_enabled: Optional[bool] = None,
+    ) -> Project:
         """
         Creates a project for response creation.
         Args:
-            **kwargs: Additional parameters to pass see the create_project method
+            See create_project for parameters
         Returns:
             Project: The created project
         """
-        kwargs["media_type"] = MediaType.Text  # Only Text is supported
-        kwargs["editor_task_type"] = (
-            EditorTaskType.ResponseCreation.value
-        )  # Special editor task type for response creation projects
+        input = {
+            "name": name,
+            "description": description,
+            "media_type": MediaType.Text,  # Only Text is supported
+            "quality_modes": quality_modes,
+            "is_benchmark_enabled": is_benchmark_enabled,
+            "is_consensus_enabled": is_consensus_enabled,
+            "editor_task_type": EditorTaskType.ResponseCreation.value,  # Special editor task type for response creation projects
+        }
+        return self._create_project(_CoreProjectInput(**input))
 
-        # The following arguments are not supported for response creation projects
-        kwargs.pop("dataset_name_or_id", None)
-        kwargs.pop("append_to_existing_dataset", None)
-        kwargs.pop("data_row_count", None)
-
-        return self._create_project(**kwargs)
-
-    def _create_project(self, **kwargs) -> Project:
-        auto_audit_percentage = kwargs.get("auto_audit_percentage")
-        auto_audit_number_of_labels = kwargs.get("auto_audit_number_of_labels")
-        if (
-            auto_audit_percentage is not None
-            or auto_audit_number_of_labels is not None
-        ):
-            raise ValueError(
-                "quality_modes must be set instead of auto_audit_percentage or auto_audit_number_of_labels."
-            )
-
-        name = kwargs.get("name")
-        if name is None or not name.strip():
-            raise ValueError("project name must be a valid string.")
-
-        queue_mode = kwargs.get("queue_mode")
-        if queue_mode is QueueMode.Dataset:
-            raise ValueError(
-                "Dataset queue mode is deprecated. Please prefer Batch queue mode."
-            )
-        elif queue_mode is QueueMode.Batch:
-            logger.warning(
-                "Passing a queue mode of batch is redundant and will soon no longer be supported."
-            )
-
-        media_type = kwargs.get("media_type")
-        if media_type and MediaType.is_supported(media_type):
-            media_type_value = media_type.value
-        elif media_type:
-            raise TypeError(
-                f"{media_type} is not a valid media type. Use"
-                f" any of {MediaType.get_supported_members()}"
-                " from MediaType. Example: MediaType.Image."
-            )
-        else:
-            logger.warning(
-                "Creating a project without specifying media_type"
-                " through this method will soon no longer be supported."
-            )
-            media_type_value = None
-
-        quality_modes = kwargs.get("quality_modes")
-        quality_mode = kwargs.get("quality_mode")
-        if quality_mode:
-            logger.warning(
-                "Passing quality_mode is deprecated and will soon no longer be supported. Use quality_modes instead."
-            )
-
-        if quality_modes and quality_mode:
-            raise ValueError(
-                "Cannot use both quality_modes and quality_mode at the same time. Use one or the other."
-            )
-
-        if not quality_modes and not quality_mode:
-            logger.info("Defaulting quality modes to Benchmark and Consensus.")
-
-        data = kwargs
-        data.pop("quality_modes", None)
-        data.pop("quality_mode", None)
-
-        # check if quality_modes is a set, if not, convert to set
-        quality_modes_set = quality_modes
-        if quality_modes and not isinstance(quality_modes, set):
-            quality_modes_set = set(quality_modes)
-        if quality_mode:
-            quality_modes_set = {quality_mode}
-
-        if (
-            quality_modes_set is None
-            or len(quality_modes_set) == 0
-            or quality_modes_set
-            == {QualityMode.Benchmark, QualityMode.Consensus}
-        ):
-            data["auto_audit_number_of_labels"] = (
-                CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
-            )
-            data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
-            data["is_benchmark_enabled"] = True
-            data["is_consensus_enabled"] = True
-        elif quality_modes_set == {QualityMode.Benchmark}:
-            data["auto_audit_number_of_labels"] = (
-                BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS
-            )
-            data["auto_audit_percentage"] = BENCHMARK_AUTO_AUDIT_PERCENTAGE
-            data["is_benchmark_enabled"] = True
-        elif quality_modes_set == {QualityMode.Consensus}:
-            data["auto_audit_number_of_labels"] = (
-                CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS
-            )
-            data["auto_audit_percentage"] = CONSENSUS_AUTO_AUDIT_PERCENTAGE
-            data["is_consensus_enabled"] = True
-        else:
-            raise ValueError(
-                f"{quality_modes_set} is not a valid quality modes set. Allowed values are [Benchmark, Consensus]"
-            )
-
-        params = {**data}
-        if media_type_value:
-            params["media_type"] = media_type_value
+    def _create_project(self, input: _CoreProjectInput) -> Project:
+        params = input.model_dump(exclude_none=True)
 
         extra_params = {
             Field.String("dataset_name_or_id"): params.pop(
@@ -1222,7 +887,7 @@ class Client:
         """
         res = self.get_data_row_ids_for_global_keys([global_key])
         if res["status"] != "SUCCESS":
-            raise labelbox.exceptions.ResourceNotFoundError(
+            raise ResourceNotFoundError(
                 Entity.DataRow, {global_key: global_key}
             )
         data_row_id = res["results"][0]
@@ -1250,7 +915,7 @@ class Client:
         Returns:
             The sought Model.
         Raises:
-            labelbox.exceptions.ResourceNotFoundError: If there is no
+            ResourceNotFoundError: If there is no
                 Model with the given ID.
         """
         return self._get_single(Entity.Model, model_id)
@@ -1493,10 +1158,10 @@ class Client:
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
         )
-        response = self._connection.delete(endpoint)
+        response = self.connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
-            raise labelbox.exceptions.LabelboxError(
+            raise LabelboxError(
                 "Failed to delete the feature schema, message: "
                 + str(response.json()["message"])
             )
@@ -1514,10 +1179,10 @@ class Client:
             + "/ontologies/"
             + urllib.parse.quote(ontology_id)
         )
-        response = self._connection.delete(endpoint)
+        response = self.connection.delete(endpoint)
 
         if response.status_code != requests.codes.no_content:
-            raise labelbox.exceptions.LabelboxError(
+            raise LabelboxError(
                 "Failed to delete the ontology, message: "
                 + str(response.json()["message"])
             )
@@ -1542,12 +1207,12 @@ class Client:
             + urllib.parse.quote(feature_schema_id)
             + "/definition"
         )
-        response = self._connection.patch(endpoint, json={"title": title})
+        response = self.connection.patch(endpoint, json={"title": title})
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(feature_schema_id)
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise LabelboxError(
                 "Failed to update the feature schema, message: "
                 + str(response.json()["message"])
             )
@@ -1576,14 +1241,14 @@ class Client:
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
         )
-        response = self._connection.put(
+        response = self.connection.put(
             endpoint, json={"normalized": json.dumps(feature_schema)}
         )
 
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(response.json()["schemaId"])
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise LabelboxError(
                 "Failed to upsert the feature schema, message: "
                 + str(response.json()["message"])
             )
@@ -1609,9 +1274,9 @@ class Client:
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
         )
-        response = self._connection.post(endpoint, json={"position": position})
+        response = self.connection.post(endpoint, json={"position": position})
         if response.status_code != requests.codes.created:
-            raise labelbox.exceptions.LabelboxError(
+            raise LabelboxError(
                 "Failed to insert the feature schema into the ontology, message: "
                 + str(response.json()["message"])
             )
@@ -1631,12 +1296,12 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/ontologies/unused"
-        response = self._connection.get(endpoint, json={"after": after})
+        response = self.connection.get(endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise LabelboxError(
                 "Failed to get unused ontologies, message: "
                 + str(response.json()["message"])
             )
@@ -1656,12 +1321,12 @@ class Client:
         """
 
         endpoint = self.rest_endpoint + "/feature-schemas/unused"
-        response = self._connection.get(endpoint, json={"after": after})
+        response = self.connection.get(endpoint, json={"after": after})
 
         if response.status_code == requests.codes.ok:
             return response.json()
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise LabelboxError(
                 "Failed to get unused feature schemas, message: "
                 + str(response.json()["message"])
             )
@@ -1957,12 +1622,12 @@ class Client:
             elif (
                 res["assignGlobalKeysToDataRowsResult"]["jobStatus"] == "FAILED"
             ):
-                raise labelbox.exceptions.LabelboxError(
+                raise LabelboxError(
                     "Job assign_global_keys_to_data_rows failed."
                 )
             current_time = time.time()
             if current_time - start_time > timeout_seconds:
-                raise labelbox.exceptions.TimeoutError(
+                raise TimeoutError(
                     "Timed out waiting for assign_global_keys_to_data_rows job to complete."
                 )
             time.sleep(sleep_time)
@@ -1972,10 +1637,6 @@ class Client:
     ) -> Dict[str, Union[str, List[Any]]]:
         """
         Gets data row ids for a list of global keys.
-
-        Deprecation Notice: This function will soon no longer return 'Deleted Data Rows'
-        as part of the 'results'. Global keys for deleted data rows will soon be placed
-        under 'Data Row not found' portion.
 
         Args:
             A list of global keys
@@ -2066,12 +1727,10 @@ class Client:
 
                 return {"status": status, "results": results, "errors": errors}
             elif res["dataRowsForGlobalKeysResult"]["jobStatus"] == "FAILED":
-                raise labelbox.exceptions.LabelboxError(
-                    "Job dataRowsForGlobalKeys failed."
-                )
+                raise LabelboxError("Job dataRowsForGlobalKeys failed.")
             current_time = time.time()
             if current_time - start_time > timeout_seconds:
-                raise labelbox.exceptions.TimeoutError(
+                raise TimeoutError(
                     "Timed out waiting for get_data_rows_for_global_keys job to complete."
                 )
             time.sleep(sleep_time)
@@ -2170,12 +1829,10 @@ class Client:
 
                 return {"status": status, "results": results, "errors": errors}
             elif res["clearGlobalKeysResult"]["jobStatus"] == "FAILED":
-                raise labelbox.exceptions.LabelboxError(
-                    "Job clearGlobalKeys failed."
-                )
+                raise LabelboxError("Job clearGlobalKeys failed.")
             current_time = time.time()
             if current_time - start_time > timeout_seconds:
-                raise labelbox.exceptions.TimeoutError(
+                raise TimeoutError(
                     "Timed out waiting for clear_global_keys job to complete."
                 )
             time.sleep(sleep_time)
@@ -2224,7 +1881,7 @@ class Client:
             + "/ontologies/"
             + urllib.parse.quote(ontology_id)
         )
-        response = self._connection.get(ontology_endpoint)
+        response = self.connection.get(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             feature_schema_nodes = response.json()["featureSchemaNodes"]
@@ -2240,16 +1897,14 @@ class Client:
             if filtered_feature_schema_nodes:
                 return bool(filtered_feature_schema_nodes[0]["archived"])
             else:
-                raise labelbox.exceptions.LabelboxError(
+                raise LabelboxError(
                     "The specified feature schema was not in the ontology."
                 )
 
         elif response.status_code == 404:
-            raise labelbox.exceptions.ResourceNotFoundError(
-                Ontology, ontology_id
-            )
+            raise ResourceNotFoundError(Ontology, ontology_id)
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise LabelboxError(
                 "Failed to get the feature schema archived status."
             )
 
@@ -2276,9 +1931,7 @@ class Client:
         """
         res = self.execute(query_str, {"id": slice_id})
         if res is None or res["getSavedQuery"] is None:
-            raise labelbox.exceptions.ResourceNotFoundError(
-                ModelSlice, slice_id
-            )
+            raise ResourceNotFoundError(ModelSlice, slice_id)
 
         return Entity.ModelSlice(self, res["getSavedQuery"])
 
@@ -2308,15 +1961,15 @@ class Client:
             + "/feature-schemas/"
             + urllib.parse.quote(feature_schema_id)
         )
-        response = self._connection.delete(ontology_endpoint)
+        response = self.connection.delete(ontology_endpoint)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
-            if response_json["archived"] == True:
+            if response_json["archived"] is True:
                 logger.info(
                     "Feature schema was archived from the ontology because it had associated labels."
                 )
-            elif response_json["deleted"] == True:
+            elif response_json["deleted"] is True:
                 logger.info(
                     "Feature schema was successfully removed from the ontology"
                 )
@@ -2325,7 +1978,7 @@ class Client:
             result.deleted = bool(response_json["deleted"])
             return result
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise LabelboxError(
                 "Failed to remove feature schema from ontology, message: "
                 + str(response.json()["message"])
             )
@@ -2350,14 +2003,12 @@ class Client:
             + urllib.parse.quote(root_feature_schema_id)
             + "/unarchive"
         )
-        response = self._connection.patch(ontology_endpoint)
+        response = self.connection.patch(ontology_endpoint)
         if response.status_code == requests.codes.ok:
             if not bool(response.json()["unarchived"]):
-                raise labelbox.exceptions.LabelboxError(
-                    "Failed unarchive the feature schema."
-                )
+                raise LabelboxError("Failed unarchive the feature schema.")
         else:
-            raise labelbox.exceptions.LabelboxError(
+            raise LabelboxError(
                 "Failed unarchive the feature schema node, message: ",
                 response.text,
             )
@@ -2586,9 +2237,7 @@ class Client:
         for e in embeddings:
             if e.name == name:
                 return e
-        raise labelbox.exceptions.ResourceNotFoundError(
-            Embedding, dict(name=name)
-        )
+        raise ResourceNotFoundError(Embedding, dict(name=name))
 
     def upsert_label_feedback(
         self, label_id: str, feedback: str, scores: Dict[str, float]
@@ -2635,8 +2284,7 @@ class Client:
         scores_raw = res["upsertAutoQaLabelFeedback"]["scores"]
 
         return [
-            labelbox.LabelScore(name=x["name"], score=x["score"])
-            for x in scores_raw
+            LabelScore(name=x["name"], score=x["score"]) for x in scores_raw
         ]
 
     def get_labeling_service_dashboards(
@@ -2712,7 +2360,7 @@ class Client:
         result = self.execute(query, {"userId": user.uid, "taskId": task_id})
         data = result.get("user", {}).get("createdTasks", [])
         if not data:
-            raise labelbox.exceptions.ResourceNotFoundError(
+            raise ResourceNotFoundError(
                 message=f"The task {task_id} does not exist."
             )
         task_data = data[0]

@@ -2,6 +2,7 @@ from io import BytesIO
 from typing import Any, Dict, List, Tuple, Union, Optional
 import base64
 
+from labelbox.data.annotation_types.data.raster import MaskData
 from labelbox.data.annotation_types.ner.conversation_entity import (
     ConversationEntity,
 )
@@ -21,9 +22,9 @@ import numpy as np
 from PIL import Image
 from labelbox.data.annotation_types import feature
 
-from labelbox.data.annotation_types.data.video import VideoData
+from labelbox.data.annotation_types.data import GenericDataRowData
 
-from ...annotation_types.data import ImageData, TextData, MaskData
+from ...annotation_types.data import GenericDataRowData
 from ...annotation_types.ner import (
     DocumentEntity,
     DocumentTextSelection,
@@ -52,7 +53,7 @@ from .classification import (
     NDSubclassification,
     NDSubclassificationType,
 )
-from .base import DataRow, NDAnnotation, NDJsonBase, _SubclassRegistryBase
+from .base import DataRow, NDAnnotation, NDJsonBase
 from pydantic import BaseModel
 
 
@@ -81,9 +82,7 @@ class Bbox(BaseModel):
     width: float
 
 
-class NDPoint(
-    NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase
-):
+class NDPoint(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
     point: _Point
 
     def to_common(self) -> Point:
@@ -98,7 +97,7 @@ class NDPoint(
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDPoint":
@@ -114,7 +113,7 @@ class NDPoint(
         )
 
 
-class NDFramePoint(VideoSupported, _SubclassRegistryBase):
+class NDFramePoint(VideoSupported):
     point: _Point
     classifications: List[NDSubclassificationType] = []
 
@@ -148,9 +147,7 @@ class NDFramePoint(VideoSupported, _SubclassRegistryBase):
         )
 
 
-class NDLine(
-    NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase
-):
+class NDLine(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
     line: List[_Point]
 
     def to_common(self) -> Line:
@@ -165,7 +162,7 @@ class NDLine(
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDLine":
@@ -181,7 +178,7 @@ class NDLine(
         )
 
 
-class NDFrameLine(VideoSupported, _SubclassRegistryBase):
+class NDFrameLine(VideoSupported):
     line: List[_Point]
     classifications: List[NDSubclassificationType] = []
 
@@ -215,7 +212,7 @@ class NDFrameLine(VideoSupported, _SubclassRegistryBase):
         )
 
 
-class NDDicomLine(NDFrameLine, _SubclassRegistryBase):
+class NDDicomLine(NDFrameLine):
     def to_common(
         self,
         name: str,
@@ -234,9 +231,7 @@ class NDDicomLine(NDFrameLine, _SubclassRegistryBase):
         )
 
 
-class NDPolygon(
-    NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase
-):
+class NDPolygon(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
     polygon: List[_Point]
 
     def to_common(self) -> Polygon:
@@ -251,7 +246,7 @@ class NDPolygon(
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDPolygon":
@@ -267,9 +262,7 @@ class NDPolygon(
         )
 
 
-class NDRectangle(
-    NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase
-):
+class NDRectangle(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
     bbox: Bbox
 
     def to_common(self) -> Rectangle:
@@ -290,7 +283,7 @@ class NDRectangle(
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDRectangle":
@@ -313,7 +306,7 @@ class NDRectangle(
         )
 
 
-class NDDocumentRectangle(NDRectangle, _SubclassRegistryBase):
+class NDDocumentRectangle(NDRectangle):
     page: int
     unit: str
 
@@ -337,7 +330,7 @@ class NDDocumentRectangle(NDRectangle, _SubclassRegistryBase):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDRectangle":
@@ -360,7 +353,7 @@ class NDDocumentRectangle(NDRectangle, _SubclassRegistryBase):
         )
 
 
-class NDFrameRectangle(VideoSupported, _SubclassRegistryBase):
+class NDFrameRectangle(VideoSupported):
     bbox: Bbox
     classifications: List[NDSubclassificationType] = []
 
@@ -496,7 +489,7 @@ class NDDicomSegment(NDSegment):
         ]
 
 
-class NDSegments(NDBaseObject, _SubclassRegistryBase):
+class NDSegments(NDBaseObject):
     segments: List[NDSegment]
 
     def to_common(self, name: str, feature_schema_id: Cuid):
@@ -516,7 +509,7 @@ class NDSegments(NDBaseObject, _SubclassRegistryBase):
     def from_common(
         cls,
         segments: List[VideoObjectAnnotation],
-        data: VideoData,
+        data: GenericDataRowData,
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
@@ -532,7 +525,7 @@ class NDSegments(NDBaseObject, _SubclassRegistryBase):
         )
 
 
-class NDDicomSegments(NDBaseObject, DicomSupported, _SubclassRegistryBase):
+class NDDicomSegments(NDBaseObject, DicomSupported):
     segments: List[NDDicomSegment]
 
     def to_common(self, name: str, feature_schema_id: Cuid):
@@ -553,7 +546,7 @@ class NDDicomSegments(NDBaseObject, DicomSupported, _SubclassRegistryBase):
     def from_common(
         cls,
         segments: List[DICOMObjectAnnotation],
-        data: VideoData,
+        data: GenericDataRowData,
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
@@ -580,9 +573,7 @@ class _PNGMask(BaseModel):
     png: str
 
 
-class NDMask(
-    NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase
-):
+class NDMask(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
     mask: Union[_URIMask, _PNGMask]
 
     def to_common(self) -> Mask:
@@ -611,7 +602,7 @@ class NDMask(
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDMask":
@@ -646,7 +637,6 @@ class NDVideoMasks(
     NDJsonBase,
     ConfidenceMixin,
     CustomMetricsNotSupportedMixin,
-    _SubclassRegistryBase,
 ):
     masks: NDVideoMasksFramesInstances
 
@@ -678,7 +668,7 @@ class NDVideoMasks(
         )
 
 
-class NDDicomMasks(NDVideoMasks, DicomSupported, _SubclassRegistryBase):
+class NDDicomMasks(NDVideoMasks, DicomSupported):
     def to_common(self) -> DICOMMaskAnnotation:
         return DICOMMaskAnnotation(
             frames=self.masks.frames,
@@ -702,9 +692,7 @@ class Location(BaseModel):
     end: int
 
 
-class NDTextEntity(
-    NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase
-):
+class NDTextEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
     location: Location
 
     def to_common(self) -> TextEntity:
@@ -719,7 +707,7 @@ class NDTextEntity(
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDTextEntity":
@@ -738,9 +726,7 @@ class NDTextEntity(
         )
 
 
-class NDDocumentEntity(
-    NDBaseObject, ConfidenceMixin, CustomMetricsMixin, _SubclassRegistryBase
-):
+class NDDocumentEntity(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
     name: str
     text_selections: List[DocumentTextSelection]
 
@@ -758,7 +744,7 @@ class NDDocumentEntity(
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDDocumentEntity":
@@ -774,7 +760,7 @@ class NDDocumentEntity(
         )
 
 
-class NDConversationEntity(NDTextEntity, _SubclassRegistryBase):
+class NDConversationEntity(NDTextEntity):
     message_id: str
 
     def to_common(self) -> ConversationEntity:
@@ -793,7 +779,7 @@ class NDConversationEntity(NDTextEntity, _SubclassRegistryBase):
         name: str,
         feature_schema_id: Cuid,
         extra: Dict[str, Any],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
         confidence: Optional[float] = None,
         custom_metrics: Optional[List[CustomMetric]] = None,
     ) -> "NDConversationEntity":
@@ -851,7 +837,7 @@ class NDObject:
             List[List[VideoObjectAnnotation]],
             VideoMaskAnnotation,
         ],
-        data: Union[ImageData, TextData],
+        data: GenericDataRowData,
     ) -> Union[
         NDLine,
         NDPoint,
