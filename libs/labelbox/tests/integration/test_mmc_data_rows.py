@@ -26,7 +26,7 @@ def mmc_data_row(dataset):
 def mmc_data_row_all(dataset, make_metadata_fields, embedding):
     data = ModelEvaluationTemplate()
     data.row_data.rootMessageIds = ["root1"]
-    data.row_data.global_key = "global_key"
+    data.global_key = "global_key"
     vector = [random.uniform(1.0, 2.0) for _ in range(embedding.dims)]
     data.embeddings = [{"embedding_id": embedding.id, "vector": vector}]
     data.metadata_fields = make_metadata_fields
@@ -65,9 +65,8 @@ def test_mmc_all(mmc_data_row_all, embedding, constants):
         "actors": {},
         "messages": {},
         "version": 2,
-        "globalKey": "global_key",
     }
-
+    assert data_row.global_key == "global_key"
     metadata_fields = data_row.metadata_fields
     metadata = data_row.metadata
     assert len(metadata_fields) == 3
