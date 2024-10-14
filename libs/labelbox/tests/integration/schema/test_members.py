@@ -1,9 +1,6 @@
 import faker
 from labelbox.schema.member import Member, ProjectMembership
 import pytest
-from labelbox.exceptions import (
-    ResourceNotFoundError,
-)
 from labelbox.schema.user_group import UserGroup, UserGroupColor
 
 from libs.labelbox.tests.conftest import AdminClient, Environ
