@@ -15,7 +15,6 @@ class ModelEvalutationTemplateRowData(BaseModel):
     actors: Dict = Field(default={})
     version: int = Field(default=2, frozen=True)
     messages: Dict = Field(default={})
-    global_key: Optional[str] = None
 
 
 class ModelEvaluationTemplate(BaseModel):
@@ -36,6 +35,7 @@ class ModelEvaluationTemplate(BaseModel):
     row_data: ModelEvalutationTemplateRowData = Field(
         default=ModelEvalutationTemplateRowData()
     )
+    global_key: Optional[str] = None
     attachments: List[Dict] = Field(default=[])
     embeddings: List[Dict] = Field(default=[])
     metadata_fields: List[DataRowMetadataField] = Field(default=[])
