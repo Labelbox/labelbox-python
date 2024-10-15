@@ -1,4 +1,4 @@
-# lbox-example
+# lbox-clients
 
 This is an example module which can be cloned and reused to develop modules under the `lbox` namespace.
 
