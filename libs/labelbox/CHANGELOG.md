@@ -1,4 +1,49 @@
 # Changelog
+# Version 6.0.0 (2024-10-15)
+## Added
+* Deprecation messages to all export_v2 methods([#1865](https://github.com/Labelbox/labelbox-python/pull/1865))
+* Logic to extract sdk method to pass to datadog dashboard([#1865](https://github.com/Labelbox/labelbox-python/pull/1865))
+* Graphql client as a separate component lbox.request_client([#1834](https://github.com/Labelbox/labelbox-python/pull/1834))
+
+## Updated
+* Minimum requirement numpy version from 1.24 to 1.25 and cleaned up _TypedArray validations([#1845](https://github.com/Labelbox/labelbox-python/pull/1845))
+* Refactored client `create_project` inputs to be named parameters, not kwargs([#1844](https://github.com/Labelbox/labelbox-python/pull/1844))
+* Fixed pydantic v2 deprecation warnings([#1838](https://github.com/Labelbox/labelbox-python/pull/1838))
+* Remove experimental from `UserGroup`([#1840](https://github.com/Labelbox/labelbox-python/pull/1840))
+* Improved labeling service error reporting([#1836](https://github.com/Labelbox/labelbox-python/pull/1836))
+* Switched to ruff linter([#1822](https://github.com/Labelbox/labelbox-python/pull/1822))
+
+## Fixed
+* Labeling dashboard serialization ([#1870](https://github.com/Labelbox/labelbox-python/pull/1870))
+* Handling of global key in ModelEvaluationTemplate([#1869](https://github.com/Labelbox/labelbox-python/pull/1869))
+
+## Removed
+* Various deprecated classes, methods and attributes([#1853](https://github.com/Labelbox/labelbox-python/pull/1853))
+  * `QueueMode` for project
+  * LabelGenerator `assign_feature_schema_ids`
+  * Label `assign_feature_schema_ids`
+  * AttachmentType `attachment_type` TEXT
+  * DataRowMetadata bulk_delete `deletes` paramerter - support for string for data row ids or global keys, use `UniqueId` or `GlobalKey` class instead
+  * Dataset `create_data_rows_sync`. Use create_data_rows instead
+  * Slice `get_data_row_ids`. Use get_data_row_identifiers instead
+* More deprecations([#1852](https://github.com/Labelbox/labelbox-python/pull/1852))
+  * LabelingParameterOverrideInput remove instance of `DataRow` as a type of input
+  * Project `_update_queue_mode`, `get_queue_mode`
+* Support for Python 3.8([#1847](https://github.com/Labelbox/labelbox-python/pull/1847))
+* Project `setup`([#1843](https://github.com/Labelbox/labelbox-python/pull/1843))
+* Deprecated get stream - related classes from ExportTask([#1839](https://github.com/Labelbox/labelbox-python/pull/1839))
+  * `JsonConverter`, `JsonConverterOutput`, `FileConverter`, `FileConverterOutput`
+* Project `setup_editor`([#1841](https://github.com/Labelbox/labelbox-python/pull/1841))
+* Label `*Data*` classes as Label data attribute. Use GenericDataRowData
+  * NOTE MaskData was NOT removed
+* COCO package([#1820](https://github.com/Labelbox/labelbox-python/pull/1820))
+* NDJsonConverter `deserialize`([#1818](https://github.com/Labelbox/labelbox-python/pull/1818))
+* BulkImportRequest package([#1821](https://github.com/Labelbox/labelbox-python/pull/1821)), including
+  * BulkImportRequest
+  * BulkImportRequestState
+  * Project `upload_annotations`
+  * Project `bulk_import_requests`
+
 # Version 5.2.1 (2024-10-09)
 ## Fixed
 * Exporter encoding
