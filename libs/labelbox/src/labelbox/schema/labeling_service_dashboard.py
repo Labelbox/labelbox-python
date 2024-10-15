@@ -3,7 +3,7 @@ from string import Template
 from typing import Any, Dict, List, Optional, Union
 
 from lbox.exceptions import ResourceNotFoundError
-from pydantic import BaseModel, Field, model_validator, model_serializer
+from pydantic import BaseModel, Field, model_serializer, model_validator
 
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.labeling_service_status import LabelingServiceStatus
@@ -221,9 +221,9 @@ class LabelingServiceDashboard(_CamelCaseMixin):
 
         return data
 
-    @model_serializer()
-    def ser_model(self):
-        row = self
+    @model_serializer(mode="wrap")
+    def ser_model(self, handler):
+        row = handler(self)
         row.pop("client")
         row["service_type"] = self.service_type
         return row
