@@ -1,0 +1,189 @@
+name: LBox Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release Tag'
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+
+jobs:
+  path-filter:
+    runs-on: ubuntu-latest
+    outputs:
+      lbox: ${{ true }}
+      test-matrix: ${{ steps.matrix.outputs.test-matrix }}
+      package-matrix: ${{ steps.matrix.outputs.publish-matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # ref: ${{ inputs.tag }}
+          ref: ${{ inputs.tag }}
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          ref: ${{ inputs.tag }}
+          list-files: 'json'
+          filters: |
+            lbox:
+              - 'libs/lbox*/**'
+      - id: matrix
+        uses: ./.github/actions/lbox-matrix
+        with:
+          files-changed: ${{ steps.filter.outputs.lbox_files }}
+  build:
+    runs-on: ubuntu-latest
+    needs: ['path-filter', 'test-build']
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes_lbox-clients }}
+    strategy:
+      fail-fast: false
+      matrix: 
+        include: ${{ fromJSON(needs.path-filter.outputs.package-matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # ref: ${{ inputs.tag }}
+          ref: ${{ inputs.tag }}
+      - name: Install the latest version of rye
+        uses: eifinger/setup-rye@v2
+        with:
+          version: ${{ vars.RYE_VERSION }}
+          enable-cache: true
+      - name: Rye Setup
+        run: |
+            rye config --set-bool behavior.use-uv=true
+      - name: Create build
+        working-directory: libs/${{ matrix.package }}
+        run: |
+          rye sync
+          rye build
+      - name: "Generate hashes"
+        id: hash
+        run: |
+          cd dist && echo "hashes_${{ matrix.package }}=$(sha256sum * | base64 -w0)" >> $GITHUB_OUTPUT          
+          echo "hashes_${{ matrix.package }}=$(sha256sum * | base64 -w0)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.package }}
+          path: ./dist          
+  provenance_python:
+    needs: [build]
+    permissions:
+      actions: read
+      contents: write
+      id-token: write # Needed to access the workflow's OIDC identity.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    with:
+      base64-subjects: "${{ needs.build.outputs.hashes }}"
+      upload-assets: true
+      upload-tag-name: ${{ inputs.tag }} # Tag from the initiation of the workflow
+      provenance-name: lbox-clients.intoto.jsonl
+                
+  test-build:
+    needs: ['path-filter']
+    if: ${{ needs.path-filter.outputs.lbox == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: 
+        include: ${{ fromJSON(needs.path-filter.outputs.test-matrix) }}    
+    concurrency:
+      group: lbox-staging-${{ matrix.python-version }}-${{ matrix.package }}
+      cancel-in-progress: false  
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
+          # ref: ${{ inputs.tag }}
+          ref: ${{ inputs.tag }}
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: ${{ matrix.python-version }}
+      - name: Format
+        run: rye format --check -v -p ${{ matrix.package }}
+      - name: Linting
+        run: rye lint -v -p ${{ matrix.package }}
+      - name: Unit
+        working-directory: libs/${{ matrix.package }}
+        run: rye run unit
+      - name: Integration
+        working-directory: libs/${{ matrix.package }}
+        env:
+          LABELBOX_TEST_API_KEY: ${{ secrets[matrix.api-key] }}
+          DA_GCP_LABELBOX_API_KEY: ${{ secrets[matrix.da-test-key] }}
+          LABELBOX_TEST_ENVIRON: 'staging'
+        run: rye run integration
+  pypi-publish:
+    runs-on: ubuntu-latest
+    needs: ['build', 'test-build', 'path-filter']
+    strategy:
+      fail-fast: false
+      matrix: 
+        include: ${{ fromJSON(needs.path-filter.outputs.package-matrix) }}
+    environment: 
+      name: publish-${{ matrix.package }}
+      url: 'https://pypi.org/project/${{ matrix.package }}'
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-${{ matrix.package }}
+          path: ./artifact
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: artifact/
+  container-publish:
+    runs-on: ubuntu-latest
+    needs: ['build', 'path-filter']
+    if: ${{ needs.path-filter.outputs.lbox == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix: 
+        include: ${{ fromJSON(needs.path-filter.outputs.package-matrix) }}
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # ref: ${{ inputs.tag }}
+          ref: ${{ inputs.tag }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        id: build_container
+        with:
+          context: .
+          file: ./libs/${{ matrix.package }}/Dockerfile
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          push: true
+          platforms: |
+            linux/amd64
+            linux/arm64
+          tags: |
+            ghcr.io/labelbox/${{ matrix.package }}:latest
+            ghcr.io/labelbox/${{ matrix.package }}:${{ inputs.tag }}
+      - name: Output image
+        id: image
+        run: |
+          echo "ghcr.io/labelbox/${{ matrix.package }}:latest" >> "$GITHUB_STEP_SUMMARY"
+          echo "ghcr.io/labelbox/${{ matrix.package }}:${{ inputs.tag }}" >> "$GITHUB_STEP_SUMMARY"

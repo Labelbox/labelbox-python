@@ -1,0 +1,15 @@
+name: Labelbox Python SDK Provenance Generation
+
+inputs:
+  subjects:
+    required: true
+    type: string   
+runs:
+  using: "composite"
+  steps:
+    - name: upload
+      uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+      with:
+        base64-subjects: "${{ inputs.subjects }}"
+        upload-assets: true
+        upload-tag-name: v.6.0.0 # Tag from the initiation of the workflow  
