@@ -18,18 +18,18 @@ jobs:
   path-filter:
     runs-on: ubuntu-latest
     outputs:
-      lbox: ${{ true }}
+      lbox: ${{ steps.filter.outputs.lbox }}
       test-matrix: ${{ steps.matrix.outputs.test-matrix }}
       package-matrix: ${{ steps.matrix.outputs.publish-matrix }}
     steps:
       - uses: actions/checkout@v4
         with:
-          # ref: ${{ inputs.tag }}
           ref: ${{ inputs.tag }}
       - uses: dorny/paths-filter@v3
         id: filter
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ github.head_ref }}
+          base: ${{ inputs.tag }}
           list-files: 'json'
           filters: |
             lbox:
