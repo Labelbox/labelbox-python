@@ -20,7 +20,6 @@ from pydantic import (
     model_validator,
     BaseModel,
     field_validator,
-    model_serializer,
     Field,
     ConfigDict,
     AliasChoices,

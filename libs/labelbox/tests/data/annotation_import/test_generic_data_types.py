@@ -6,11 +6,6 @@ import pytest
 
 import labelbox as lb
 from labelbox import Client, OntologyKind, Project
-from labelbox.data.annotation_types import Label
-from labelbox.data.annotation_types.data.generic_data_row_data import (
-    GenericDataRowData,
-)
-from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 from labelbox.schema.annotation_import import AnnotationImportState
 from labelbox.schema.media_type import MediaType
 

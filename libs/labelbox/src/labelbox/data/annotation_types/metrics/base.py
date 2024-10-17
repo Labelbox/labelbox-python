@@ -6,9 +6,7 @@ from pydantic import (
     BaseModel,
     model_serializer,
     field_validator,
-    error_wrappers,
 )
-from pydantic_core import ValidationError, InitErrorDetails
 
 ConfidenceValue = confloat(ge=0, le=1)
 

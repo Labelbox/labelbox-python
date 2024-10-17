@@ -7,7 +7,6 @@ import pytest
 from google.api_core.exceptions import RetryError
 
 import labelbox.client
-from labelbox import Project, User
 from labelbox.schema.media_type import MediaType
 
 

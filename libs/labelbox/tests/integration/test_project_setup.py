@@ -1,11 +1,7 @@
-import json
 import time
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from lbox.exceptions import InvalidQueryError
-
-from labelbox import LabelingFrontend
 
 
 def simple_ontology():

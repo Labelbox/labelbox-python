@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Union
 
 from labelbox.utils import _CamelCaseMixin
 

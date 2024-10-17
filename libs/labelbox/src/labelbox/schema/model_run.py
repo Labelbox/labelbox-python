@@ -16,9 +16,7 @@ from typing import (
     Any,
 )
 
-import requests
 
-from labelbox import parser
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm.model import Field, Relationship, Entity
 from labelbox.orm.query import results_query_part
@@ -28,7 +26,7 @@ from labelbox.schema.conflict_resolution_strategy import (
 )
 from labelbox.schema.export_params import ModelRunExportParams
 from labelbox.schema.export_task import ExportTask
-from labelbox.schema.identifiables import UniqueIds, GlobalKeys, DataRowIds
+from labelbox.schema.identifiables import GlobalKeys, DataRowIds
 from labelbox.schema.send_to_annotate_params import (
     SendToAnnotateFromModelParams,
     build_destination_task_queue_input,

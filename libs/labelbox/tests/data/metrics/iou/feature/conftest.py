@@ -3,7 +3,6 @@ from types import SimpleNamespace
 import pytest
 
 from labelbox.data.annotation_types import (
-    ClassificationAnnotation,
     ObjectAnnotation,
 )
 from labelbox.data.annotation_types import Polygon, Point

@@ -1,9 +1,6 @@
 import logging
-import warnings
 from typing import Callable, Generator, Iterable, Union
 
-from labelbox.orm.model import Entity
-from labelbox.schema import ontology
 
 from ..generator import PrefetchGenerator
 from .label import Label

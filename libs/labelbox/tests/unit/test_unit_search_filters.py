@@ -9,7 +9,6 @@ from labelbox.schema.search_filters import (
     DateRangeValue,
     DateValue,
     IdOperator,
-    OperationType,
     OrganizationFilter,
     ProjectStageFilter,
     SharedWithOrganizationFilter,

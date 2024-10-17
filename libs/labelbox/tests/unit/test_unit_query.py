@@ -1,5 +1,3 @@
-import pytest
-
 from labelbox import Project, Dataset
 from labelbox.orm import query
 from labelbox.orm.comparison import Comparison, LogicalExpression

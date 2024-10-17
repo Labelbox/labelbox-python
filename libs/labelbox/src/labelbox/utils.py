@@ -10,10 +10,8 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     model_serializer,
-    AliasGenerator,
-    AliasChoices,
 )
-from pydantic.alias_generators import to_camel, to_pascal
+from pydantic.alias_generators import to_camel
 
 UPPERCASE_COMPONENTS = ["uri", "rgb"]
 ISO_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
