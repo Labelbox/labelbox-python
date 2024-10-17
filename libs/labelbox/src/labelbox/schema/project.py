@@ -692,7 +692,7 @@ class Project(DbObject, Updateable, Deletable):
         ):  # Chat evaluation projects are automatically set up via the same api that creates a project
             warnings.warn("Connecting default labeling editor for the project.")
             labeling_frontend = next(
-                self.client.get_labeling_frontends(
+                self.client._get_labeling_frontends(
                     where=Entity.LabelingFrontend.name == "Editor"
                 )
             )
