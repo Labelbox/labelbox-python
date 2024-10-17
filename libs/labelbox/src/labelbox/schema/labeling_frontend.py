@@ -3,19 +3,7 @@ from labelbox.orm.model import Field, Relationship
 
 
 class LabelingFrontend(DbObject):
-    """Label editor.
-
-    Represents an HTML / JavaScript UI that is used to generate
-    labels. “Editor” is the default Labeling Frontend that comes in every
-    organization. You can create new labeling frontends for an organization.
-
-    Attributes:
-        name (str)
-        description (str)
-        iframe_url_path (str)
-
-        projects (Relationship): `ToMany` relationship to Project
-    """
+    """Private db object representing a projects label editor"""
 
     name = Field.String("name")
     description = Field.String("description")

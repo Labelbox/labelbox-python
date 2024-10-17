@@ -425,17 +425,8 @@ class Client:
         """
         return self._get_all(Entity.Dataset, where)
 
-    def get_labeling_frontends(self, where=None) -> List[LabelingFrontend]:
-        """Fetches all the labeling frontends.
-
-        >>> frontend = client.get_labeling_frontends(where=LabelingFrontend.name == "Editor")
-
-        Args:
-            where (Comparison, LogicalOperation or None): The `where` clause
-                for filtering.
-        Returns:
-            An iterable of LabelingFrontends (typically a PaginatedCollection).
-        """
+    def _get_labeling_frontends(self, where=None) -> List[LabelingFrontend]:
+        """Private method to obtain labeling front ends"""
         return self._get_all(Entity.LabelingFrontend, where)
 
     def _create(self, db_object_type, data, extra_params={}):
