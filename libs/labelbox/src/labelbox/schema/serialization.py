@@ -1,4 +1,4 @@
-from typing import cast, Any, Dict, Generator, List, TYPE_CHECKING, Union
+from typing import cast, Any, Dict, List, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from labelbox.types import Label

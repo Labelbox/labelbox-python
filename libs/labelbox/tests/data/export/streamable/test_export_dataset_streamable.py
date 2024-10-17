@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from labelbox import ExportTask, StreamType

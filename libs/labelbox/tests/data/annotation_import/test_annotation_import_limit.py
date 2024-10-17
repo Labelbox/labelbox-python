@@ -1,8 +1,6 @@
 import itertools
-import uuid
 from labelbox.schema.annotation_import import (
     AnnotationImport,
-    MALPredictionImport,
 )
 from labelbox.schema.media_type import MediaType
 import pytest

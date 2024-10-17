@@ -1,5 +1,3 @@
-from os import name
-
 import pytest
 from pydantic import ValidationError
 

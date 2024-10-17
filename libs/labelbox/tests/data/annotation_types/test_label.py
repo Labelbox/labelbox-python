@@ -1,18 +1,7 @@
-from pydantic import ValidationError
 import numpy as np
 
 import labelbox.types as lb_types
-from labelbox import (
-    OntologyBuilder,
-    Tool,
-    Classification as OClassification,
-    Option,
-)
 from labelbox.data.annotation_types import (
-    ClassificationAnswer,
-    Radio,
-    Text,
-    ClassificationAnnotation,
     PromptText,
     ObjectAnnotation,
     Point,

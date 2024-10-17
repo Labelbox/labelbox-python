@@ -1,5 +1,3 @@
-import json
-
 import pytest
 import uuid
 from typing import Tuple

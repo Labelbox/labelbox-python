@@ -1,5 +1,5 @@
 from labelbox.orm.db_object import DbObject, Updateable
-from labelbox.orm.model import Field, Relationship
+from labelbox.orm.model import Field
 
 
 class ProjectResourceTag(DbObject, Updateable):

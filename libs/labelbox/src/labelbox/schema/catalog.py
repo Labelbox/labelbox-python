@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 import warnings
-from labelbox.orm.db_object import experimental
 from labelbox.schema.export_filters import CatalogExportFilters, build_filters
 
 from labelbox.schema.export_params import (

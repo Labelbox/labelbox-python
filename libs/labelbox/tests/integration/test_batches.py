@@ -1,6 +1,5 @@
 from typing import List
 
-import pytest
 
 from labelbox import Project, Dataset
 

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 import warnings
-from labelbox.orm.db_object import DbObject, experimental
+from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.export_params import (

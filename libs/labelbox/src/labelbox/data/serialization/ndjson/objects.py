@@ -20,7 +20,6 @@ from ....annotated_types import Cuid
 import numpy as np
 
 from PIL import Image
-from labelbox.data.annotation_types import feature
 
 from labelbox.data.annotation_types.data import GenericDataRowData
 
@@ -49,7 +48,6 @@ from ...annotation_types.video import (
     MaskInstance,
 )
 from .classification import (
-    NDClassification,
     NDSubclassification,
     NDSubclassificationType,
 )

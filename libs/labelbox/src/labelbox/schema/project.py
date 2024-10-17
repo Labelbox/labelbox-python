@@ -38,12 +38,9 @@ from labelbox.schema.export_filters import (
 )
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
-from labelbox.schema.id_type import IdType
-from labelbox.schema.identifiable import DataRowIdentifier, GlobalKey, UniqueId
+from labelbox.schema.identifiable import DataRowIdentifier
 from labelbox.schema.identifiables import (
     DataRowIdentifiers,
-    GlobalKeys,
-    UniqueIds,
 )
 from labelbox.schema.labeling_service import (
     LabelingService,

@@ -1,6 +1,5 @@
 from typing import Any, Dict, Optional
-from pydantic import BaseModel, ConfigDict, AliasGenerator
-from pydantic.alias_generators import to_camel, to_snake
+from pydantic import ConfigDict
 from labelbox.utils import _CamelCaseMixin
 
 

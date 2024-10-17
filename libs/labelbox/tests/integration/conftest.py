@@ -1,24 +1,17 @@
-import json
 import os
-import re
 import sys
 import time
-import uuid
 from collections import defaultdict
 from datetime import datetime, timezone
-from enum import Enum
 from itertools import islice
-from types import SimpleNamespace
-from typing import List, Tuple, Type
+from typing import Type
 
 import pytest
 
 from labelbox import (
     Classification,
     Client,
-    DataRow,
     Dataset,
-    LabelingFrontend,
     MediaType,
     OntologyBuilder,
     Option,
@@ -26,13 +19,7 @@ from labelbox import (
     ResponseOption,
     Tool,
 )
-from labelbox.orm import query
-from labelbox.pagination import PaginatedCollection
-from labelbox.schema.annotation_import import LabelImport
-from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row import DataRowMetadataField
-from labelbox.schema.enums import AnnotationImportState
-from labelbox.schema.invite import Invite
 from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.user import User
 

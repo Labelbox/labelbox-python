@@ -8,9 +8,8 @@ import time
 import urllib.parse
 import warnings
 from collections import defaultdict
-from datetime import datetime, timezone
 from types import MappingProxyType
-from typing import Any, Callable, Dict, List, Optional, Set, Union, overload
+from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 import requests
 import requests.exceptions
@@ -67,10 +66,6 @@ from labelbox.schema.ontology_kind import (
 from labelbox.schema.organization import Organization
 from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import (
-    BENCHMARK_AUTO_AUDIT_NUMBER_OF_LABELS,
-    BENCHMARK_AUTO_AUDIT_PERCENTAGE,
-    CONSENSUS_AUTO_AUDIT_NUMBER_OF_LABELS,
-    CONSENSUS_AUTO_AUDIT_PERCENTAGE,
     QualityMode,
 )
 from labelbox.schema.role import Role

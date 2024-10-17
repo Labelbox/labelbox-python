@@ -1,10 +1,7 @@
 # type: ignore
-from collections import defaultdict
-from labelbox.data.annotation_types import feature
 from labelbox.data.annotation_types.metrics import ConfusionMatrixMetric
-from typing import List, Optional, Union
+from typing import List, Union
 from ...annotation_types import (
-    Label,
     ObjectAnnotation,
     ClassificationAnnotation,
 )
@@ -12,7 +9,6 @@ from ...annotation_types import (
 from ..group import get_feature_pairs
 from .calculation import confusion_matrix
 from .calculation import feature_confusion_matrix
-import numpy as np
 
 
 def confusion_matrix_metric(

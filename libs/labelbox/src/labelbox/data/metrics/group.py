@@ -8,7 +8,6 @@ from typing import Dict, List, Tuple, Union
 from labelbox.data.annotation_types.annotation import ClassificationAnnotation
 from labelbox.data.annotation_types.classification.classification import (
     Checklist,
-    ClassificationAnswer,
     Radio,
     Text,
 )

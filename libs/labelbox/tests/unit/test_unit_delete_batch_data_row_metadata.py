@@ -1,5 +1,3 @@
-from re import U
-
 from labelbox.schema.data_row_metadata import _DeleteBatchDataRowMetadata
 from labelbox.schema.identifiable import GlobalKey, UniqueId
 

@@ -1,10 +1,9 @@
 from enum import Enum
 from typing import Optional, Tuple, Dict, Union
 
-from pydantic import conint, Field
+from pydantic import conint
 
 from .base import ConfidenceValue, BaseMetric
-from typing import Literal
 
 Count = conint(ge=0, le=1e10)
 

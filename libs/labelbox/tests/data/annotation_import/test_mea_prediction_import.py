@@ -1,11 +1,6 @@
 import uuid
 from labelbox import parser
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
-from labelbox.data.annotation_types.classification.classification import (
-    ClassificationAnnotation,
-    ClassificationAnswer,
-    Radio,
-)
 from labelbox.data.annotation_types.data.generic_data_row_data import (
     GenericDataRowData,
 )

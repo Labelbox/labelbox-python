@@ -2,7 +2,7 @@ import copy
 import logging
 import uuid
 from collections import defaultdict, deque
-from typing import Any, Deque, Dict, Generator, Iterable, List, Set, Union
+from typing import Any, Deque, Dict, Generator, List, Set, Union
 
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
 from labelbox.data.annotation_types.classification.classification import (
@@ -14,7 +14,7 @@ from labelbox.data.annotation_types.metrics.confusion_matrix import (
 from labelbox.data.annotation_types.metrics.scalar import ScalarMetric
 from labelbox.data.annotation_types.video import VideoMaskAnnotation
 
-from ...annotation_types.collection import LabelCollection, LabelGenerator
+from ...annotation_types.collection import LabelCollection
 from ...annotation_types.relationship import RelationshipAnnotation
 from ...annotation_types.mmc import MessageEvaluationTaskAnnotation
 from .label import NDLabel

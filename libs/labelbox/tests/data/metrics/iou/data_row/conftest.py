@@ -1,8 +1,6 @@
-from io import BytesIO
 from types import SimpleNamespace
 import pytest
 import numpy as np
-from PIL import Image
 import base64
 
 

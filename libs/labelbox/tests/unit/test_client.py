@@ -1,7 +1,3 @@
-import os
-
-from unittest.mock import patch
-
 from labelbox.client import Client
 
 
