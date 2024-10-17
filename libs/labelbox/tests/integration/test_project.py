@@ -7,8 +7,7 @@ import pytest
 import requests
 from lbox.exceptions import InvalidQueryError
 
-from labelbox import Dataset, LabelingFrontend, Project
-from labelbox.schema import media_type
+from labelbox import Dataset, Project
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.quality_mode import QualityMode
 

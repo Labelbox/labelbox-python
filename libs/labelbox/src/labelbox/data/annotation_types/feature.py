@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, model_validator, model_serializer
+from pydantic import BaseModel, model_validator
 
 from ...annotated_types import Cuid
 

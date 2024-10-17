@@ -1,4 +1,3 @@
-from typing import Union
 from pydantic import BaseModel
 from .base import NDAnnotation, DataRow
 from ...annotation_types.data import GenericDataRowData

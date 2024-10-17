@@ -74,7 +74,7 @@ dev-dependencies = [
 line-length = 80
 
 [tool.ruff.lint]
-ignore = ["F", "E722"]
+ignore = ["F841", "E722", "F811", "F402", "F601", "F403", "F821", "F541"]
 exclude = ["**/__init__.py"]
 
 [tool.rye.scripts]

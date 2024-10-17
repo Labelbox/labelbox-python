@@ -5,7 +5,6 @@ import pytest
 
 from labelbox import Client, MediaType
 from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
-from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema.media_type import MediaType
 
 

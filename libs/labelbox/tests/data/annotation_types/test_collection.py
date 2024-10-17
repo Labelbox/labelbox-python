@@ -7,14 +7,11 @@ import pytest
 from labelbox.data.annotation_types import (
     LabelGenerator,
     ObjectAnnotation,
-    Line,
     Mask,
-    Point,
     Label,
     GenericDataRowData,
     MaskData,
 )
-from labelbox import OntologyBuilder, Tool
 
 
 @pytest.fixture

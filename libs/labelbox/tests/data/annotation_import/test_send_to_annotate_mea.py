@@ -1,5 +1,3 @@
-import pytest
-
 from labelbox import UniqueIds, OntologyBuilder
 from labelbox.schema.conflict_resolution_strategy import (
     ConflictResolutionStrategy,
