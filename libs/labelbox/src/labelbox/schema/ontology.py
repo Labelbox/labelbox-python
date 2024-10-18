@@ -545,6 +545,12 @@ class Ontology(DbObject):
             Union[List[Classification], List[PromptResponseClassification]]
         ] = None
 
+    def _tool_deserializer_cls(self, tool: Dict[str, Any]) -> Tool:
+        import pdb
+
+        pdb.set_trace()
+        return Tool
+
     def tools(self) -> List[Tool]:
         """Get list of tools (AKA objects) in an Ontology."""
         if self._tools is None:
