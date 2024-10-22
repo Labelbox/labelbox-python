@@ -2,7 +2,6 @@ import pytest
 
 
 def test_create_offline_chat_evaluation_project(
-    client,
     rand_gen,
     offline_chat_evaluation_project,
     chat_evaluation_ontology,

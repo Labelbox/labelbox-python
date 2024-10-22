@@ -353,7 +353,7 @@ class PromptResponseClassification:
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
         return cls(
-            class_type=Type(dictionary["type"]),
+            class_type=PromptResponseClassification.Type(dictionary["type"]),
             name=dictionary["name"],
             instructions=dictionary["instructions"],
             required=True,  # always required
@@ -492,12 +492,14 @@ class Tool:
 
 def tool_cls_from_type(tool_type: str):
     if tool_type.lower() == ToolType.STEP_REASONING.value:
-        from labelbox.schema.tool_building.step_reasoning_tool import (
-            StepReasoningTool,
-        )
-
         return StepReasoningTool
     return Tool
+
+
+def tool_type_cls_from_type(tool_type: str):
+    if tool_type.lower() == ToolType.STEP_REASONING.value:
+        return ToolType
+    return Tool.Type
 
 
 class Ontology(DbObject):
@@ -532,12 +534,6 @@ class Ontology(DbObject):
         self._classifications: Optional[
             Union[List[Classification], List[PromptResponseClassification]]
         ] = None
-
-    def _tool_deserializer_cls(self, tool: Dict[str, Any]) -> Tool:
-        import pdb
-
-        pdb.set_trace()
-        return Tool
 
     def tools(self) -> List[Tool]:
         """Get list of tools (AKA objects) in an Ontology."""

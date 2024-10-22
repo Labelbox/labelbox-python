@@ -56,7 +56,7 @@ from labelbox.schema.ontology import (
     FeatureSchema,
     Ontology,
     PromptResponseClassification,
-    Tool,
+    tool_type_cls_from_type,
 )
 from labelbox.schema.ontology_kind import (
     EditorTaskType,
@@ -1098,7 +1098,8 @@ class Client:
             if "tool" in feature_schema.normalized:
                 tool = feature_schema.normalized["tool"]
                 try:
-                    Tool.Type(tool)
+                    tool_type_cls = tool_type_cls_from_type(tool)
+                    tool_type_cls(tool)
                     tools.append(feature_schema.normalized)
                 except ValueError:
                     raise ValueError(
