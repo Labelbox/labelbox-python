@@ -643,14 +643,12 @@ def chat_evaluation_ontology(client, rand_gen):
             ),
         ],
     )
-
     ontology = client.create_ontology(
         ontology_name,
         ontology_builder.asdict(),
         media_type=MediaType.Conversational,
         ontology_kind=OntologyKind.ModelEvaluation,
     )
-
     yield ontology
 
     try:

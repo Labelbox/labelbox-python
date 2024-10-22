@@ -5,6 +5,7 @@ import pytest
 
 from labelbox import MediaType, OntologyBuilder, Tool
 from labelbox.orm.model import Entity
+from labelbox.schema.tool_building.step_reasoning_tool import StepReasoningTool
 
 
 def test_feature_schema_is_not_archived(client, ontology):
@@ -322,3 +323,47 @@ def test_unarchive_feature_schema_node_for_non_existing_ontology(
         client.unarchive_feature_schema_node(
             "invalid-ontology", feature_schema_to_unarchive["featureSchemaId"]
         )
+
+
+def test_step_reasoning_ontology(chat_evaluation_ontology):
+    ontology = chat_evaluation_ontology
+    step_reasoning_tool = None
+    for tool in ontology.normalized["tools"]:
+        if tool["tool"] == "step-reasoning":
+            step_reasoning_tool = tool
+            break
+    assert step_reasoning_tool is not None
+    assert step_reasoning_tool["definition"]["variants"] == [
+        {"id": 0, "name": "Correct"},
+        {"id": 1, "name": "Neutral"},
+        {
+            "id": 2,
+            "name": "Incorrect",
+            "actions": ["regenerateSteps", "generateAndRateAlternativeSteps"],
+        },
+    ]
+    assert step_reasoning_tool["definition"]["version"] == 1
+    assert step_reasoning_tool["schemaNodeId"] is not None
+    assert step_reasoning_tool["featureSchemaId"] is not None
+
+    step_reasoning_tool = None
+    for tool in ontology.tools():
+        if isinstance(tool, StepReasoningTool):
+            step_reasoning_tool = tool
+            break
+    assert step_reasoning_tool is not None
+    assert step_reasoning_tool.definition.variants.asdict() == [
+        {
+            "id": 0,
+            "name": "Correct",
+        },
+        {
+            "id": 1,
+            "name": "Neutral",
+        },
+        {
+            "id": 2,
+            "name": "Incorrect",
+            "actions": ["regenerateSteps", "generateAndRateAlternativeSteps"],
+        },
+    ]

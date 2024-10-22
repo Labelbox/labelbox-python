@@ -9,11 +9,21 @@ def test_step_reasoning_as_dict_default():
         "required": False,
         "schemaNodeId": None,
         "featureSchemaId": None,
-        "variants": [
-            {"id": 0, "name": "Correct"},
-            {"id": 1, "name": "Neutral"},
-            {"id": 2, "name": "Incorrect", "actions": []},
-        ],
+        "definition": {
+            "variants": [
+                {"id": 0, "name": "Correct"},
+                {"id": 1, "name": "Neutral"},
+                {
+                    "id": 2,
+                    "name": "Incorrect",
+                    "actions": [
+                        "regenerateSteps",
+                        "generateAndRateAlternativeSteps",
+                    ],
+                },
+            ],
+            "version": 1,
+        },
     }
 
 
@@ -27,13 +37,19 @@ def test_step_reasoning_as_dict_with_actions():
         "required": False,
         "schemaNodeId": None,
         "featureSchemaId": None,
-        "variants": [
-            {"id": 0, "name": "Correct"},
-            {"id": 1, "name": "Neutral"},
-            {
-                "id": 2,
-                "name": "Incorrect",
-                "actions": ["regenerateSteps", "generateAlternatives"],
-            },
-        ],
+        "definition": {
+            "variants": [
+                {"id": 0, "name": "Correct"},
+                {"id": 1, "name": "Neutral"},
+                {
+                    "id": 2,
+                    "name": "Incorrect",
+                    "actions": [
+                        "regenerateSteps",
+                        "generateAndRateAlternativeSteps",
+                    ],
+                },
+            ],
+            "version": 1,
+        },
     }

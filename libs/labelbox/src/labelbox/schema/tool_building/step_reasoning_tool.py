@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from labelbox.schema.tool_building.tool_type import ToolType
 
@@ -25,8 +25,39 @@ class IncorrectStepReasoningVariant:
         if self.regenerate_conversations_after_incorrect_step:
             actions.append("regenerateSteps")
         if self.rate_alternative_responses:
-            actions.append("generateAlternatives")
+            actions.append("generateAndRateAlternativeSteps")
         return {"id": self.id, "name": self.name, "actions": actions}
+
+    @classmethod
+    def from_dict(
+        cls, dictionary: Dict[str, Any]
+    ) -> "IncorrectStepReasoningVariant":
+        return cls(
+            id=dictionary["id"],
+            name=dictionary["name"],
+            regenerate_conversations_after_incorrect_step="regenerateSteps"
+            in dictionary.get("actions", []),
+            rate_alternative_responses="generateAndRateAlternativeSteps"
+            in dictionary.get("actions", []),
+        )
+
+
+def _create_correct_step() -> StepReasoningVariant:
+    return StepReasoningVariant(
+        id=StepReasoningVariants.CORRECT_STEP_ID, name="Correct"
+    )
+
+
+def _create_neutral_step() -> StepReasoningVariant:
+    return StepReasoningVariant(
+        id=StepReasoningVariants.NEUTRAL_STEP_ID, name="Neutral"
+    )
+
+
+def _create_incorrect_step() -> IncorrectStepReasoningVariant:
+    return IncorrectStepReasoningVariant(
+        id=StepReasoningVariants.INCORRECT_STEP_ID, name="Incorrect"
+    )
 
 
 @dataclass
@@ -36,13 +67,13 @@ class StepReasoningVariants:
     INCORRECT_STEP_ID = 2
 
     correct_step: StepReasoningVariant = field(
-        default=StepReasoningVariant(CORRECT_STEP_ID, "Correct"), init=False
+        default_factory=_create_correct_step
     )
     neutral_step: StepReasoningVariant = field(
-        default=StepReasoningVariant(NEUTRAL_STEP_ID, "Neutral"), init=False
+        default_factory=_create_neutral_step
     )
     incorrect_step: IncorrectStepReasoningVariant = field(
-        default=IncorrectStepReasoningVariant(INCORRECT_STEP_ID, "Incorrect"),
+        default_factory=_create_incorrect_step
     )
 
     def asdict(self):
@@ -51,6 +82,31 @@ class StepReasoningVariants:
             self.neutral_step.asdict(),
             self.incorrect_step.asdict(),
         ]
+
+    @classmethod
+    def from_dict(cls, dictionary: List[Dict[str, Any]]):
+        correct_step = None
+        neutral_step = None
+        incorrect_step = None
+
+        for variant in dictionary:
+            if variant["id"] == cls.CORRECT_STEP_ID:
+                correct_step = StepReasoningVariant(**variant)
+            elif variant["id"] == cls.NEUTRAL_STEP_ID:
+                neutral_step = StepReasoningVariant(**variant)
+            elif variant["id"] == cls.INCORRECT_STEP_ID:
+                incorrect_step = IncorrectStepReasoningVariant.from_dict(
+                    variant
+                )
+
+        if not all([correct_step, neutral_step, incorrect_step]):
+            raise ValueError("Invalid step reasoning variants")
+
+        return cls(
+            correct_step=correct_step,  # type: ignore
+            neutral_step=neutral_step,  # type: ignore
+            incorrect_step=incorrect_step,  # type: ignore
+        )
 
 
 @dataclass
@@ -61,7 +117,6 @@ class StepReasoningDefinition:
     version: int = field(default=1)
     title: Optional[str] = None
     value: Optional[str] = None
-    color: Optional[str] = None
 
     def asdict(self) -> Dict[str, Any]:
         result = {"variants": self.variants.asdict(), "version": self.version}
@@ -69,9 +124,14 @@ class StepReasoningDefinition:
             result["title"] = self.title
         if self.value is not None:
             result["value"] = self.value
-        if self.color is not None:
-            result["color"] = self.color
         return result
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, Any]) -> "StepReasoningDefinition":
+        variants = StepReasoningVariants.from_dict(dictionary["variants"])
+        title = dictionary.get("title", None)
+        value = dictionary.get("value", None)
+        return cls(variants=variants, title=title, value=value)
 
 
 @dataclass
@@ -113,5 +173,7 @@ class StepReasoningTool:
             schema_id=dictionary.get("schemaNodeId", None),
             feature_schema_id=dictionary.get("featureSchemaId", None),
             required=dictionary.get("required", False),
-            definition=StepReasoningDefinition(**dictionary["definition"]),
+            definition=StepReasoningDefinition.from_dict(
+                dictionary["definition"]
+            ),
         )
