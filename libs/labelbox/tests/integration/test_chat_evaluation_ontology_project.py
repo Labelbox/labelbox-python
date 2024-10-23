@@ -17,7 +17,7 @@ def test_create_chat_evaluation_ontology_project(
     # here we are essentially testing the ontology creation which is a fixture
     assert ontology
     assert ontology.name
-    assert len(ontology.tools()) == 3
+    assert len(ontology.tools()) == 4
     for tool in ontology.tools():
         assert tool.schema_id
         assert tool.feature_schema_id
@@ -43,7 +43,7 @@ def test_create_chat_evaluation_ontology_project(
 
 
 def test_create_chat_evaluation_ontology_project_existing_dataset(
-    client, chat_evaluation_ontology, chat_evaluation_project_append_to_dataset
+    chat_evaluation_ontology, chat_evaluation_project_append_to_dataset
 ):
     ontology = chat_evaluation_ontology
 
@@ -84,6 +84,29 @@ def tools_json():
             "classifications": [],
             "schemaNodeId": None,
             "featureSchemaId": None,
+        },
+        {
+            "tool": "step-reasoning",
+            "name": "step reasoning",
+            "required": True,
+            "schemaNodeId": None,
+            "featureSchemaId": None,
+            "color": "#0000ff",
+            "definition": {
+                "variants": [
+                    {"id": 0, "name": "Correct"},
+                    {"id": 1, "name": "Neutral"},
+                    {
+                        "id": 2,
+                        "name": "Incorrect",
+                        "actions": [
+                            "regenerateSteps",
+                            "generateAndRateAlternativeSteps",
+                        ],
+                    },
+                ],
+                "version": 1,
+            },
         },
     ]
 

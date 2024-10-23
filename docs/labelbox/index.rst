@@ -47,6 +47,7 @@ Labelbox Python SDK Documentation
     search-filters
     send-to-annotate-params
     slice
+    step_reasoning_tool
     task
     task-queue
     user

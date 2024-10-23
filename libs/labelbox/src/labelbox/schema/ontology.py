@@ -12,6 +12,8 @@ from pydantic import StringConstraints
 
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
+from labelbox.schema.tool_building.step_reasoning_tool import StepReasoningTool
+from labelbox.schema.tool_building.tool_type import ToolType
 
 FeatureSchemaId: Type[str] = Annotated[
     str, StringConstraints(min_length=25, max_length=25)
@@ -187,7 +189,7 @@ class Classification:
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
         return cls(
-            class_type=cls.Type(dictionary["type"]),
+            class_type=Classification.Type(dictionary["type"]),
             name=dictionary["name"],
             instructions=dictionary["instructions"],
             required=dictionary.get("required", False),
@@ -351,7 +353,7 @@ class PromptResponseClassification:
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
         return cls(
-            class_type=cls.Type(dictionary["type"]),
+            class_type=PromptResponseClassification.Type(dictionary["type"]),
             name=dictionary["name"],
             instructions=dictionary["instructions"],
             required=True,  # always required
@@ -458,7 +460,7 @@ class Tool:
             schema_id=dictionary.get("schemaNodeId", None),
             feature_schema_id=dictionary.get("featureSchemaId", None),
             required=dictionary.get("required", False),
-            tool=cls.Type(dictionary["tool"]),
+            tool=Tool.Type(dictionary["tool"]),
             classifications=[
                 Classification.from_dict(c)
                 for c in dictionary["classifications"]
@@ -486,6 +488,18 @@ class Tool:
                 f"for tool '{self.name}'"
             )
         self.classifications.append(classification)
+
+
+def tool_cls_from_type(tool_type: str):
+    if tool_type.lower() == ToolType.STEP_REASONING.value:
+        return StepReasoningTool
+    return Tool
+
+
+def tool_type_cls_from_type(tool_type: str):
+    if tool_type.lower() == ToolType.STEP_REASONING.value:
+        return ToolType
+    return Tool.Type
 
 
 class Ontology(DbObject):
@@ -525,7 +539,8 @@ class Ontology(DbObject):
         """Get list of tools (AKA objects) in an Ontology."""
         if self._tools is None:
             self._tools = [
-                Tool.from_dict(tool) for tool in self.normalized["tools"]
+                tool_cls_from_type(tool["tool"]).from_dict(tool)
+                for tool in self.normalized["tools"]
             ]
         return self._tools
 
@@ -581,7 +596,7 @@ class OntologyBuilder:
 
     """
 
-    tools: List[Tool] = field(default_factory=list)
+    tools: List[Union[Tool, StepReasoningTool]] = field(default_factory=list)
     classifications: List[
         Union[Classification, PromptResponseClassification]
     ] = field(default_factory=list)
