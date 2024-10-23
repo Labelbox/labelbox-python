@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 _PAGE_SIZE = 100
 
+
 class PaginatedCollection:
     """An iterable collection of database objects (Projects, Labels, etc...).
 
