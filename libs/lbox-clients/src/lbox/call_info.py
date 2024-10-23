@@ -21,7 +21,7 @@ class _RequestInfo(TypedDict):
 
 
 def call_info():
-    method_name = "Unknown"
+    method_name: str = "Unknown"
     prefix = ""
     class_name = ""
     skip_methods = ["wrapper", "__init__", "execute"]
@@ -32,7 +32,7 @@ def call_info():
         for stack in reversed(inspect.stack()):
             if LABELBOX_CALL_PATTERN.search(stack.filename):
                 call_info = stack
-                method_name = call_info.function
+                method_name: str = call_info.function
                 class_name = call_info.frame.f_locals.get(
                     "self", None
                 ).__class__.__name__
@@ -51,5 +51,5 @@ def call_info():
 
 
 def call_info_as_str():
-    info = call_info()
+    info: _RequestInfo = call_info()
     return f"{info['prefix']}{info['class_name']}:{info['method_name']}"

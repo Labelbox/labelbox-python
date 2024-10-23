@@ -1,6 +1,6 @@
 [project]
 name = "lbox-clients"
-version = "1.1.0"
+version = "1.1.1"
 description = "This module contains client sdk uses to conntect to the Labelbox API and backends"
 authors = [
     { name = "Labelbox", email = "engineering@labelbox.com" }
