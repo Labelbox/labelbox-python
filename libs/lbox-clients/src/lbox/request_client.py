@@ -39,7 +39,7 @@ def call_info():
     method_name = "Unknown"
     prefix = ""
     class_name = ""
-    skip_methods = ["wrapper", "__init__"]
+    skip_methods = ["wrapper", "__init__", "execute"]
     skip_classes = ["PaginatedCollection", "_CursorPagination", "_OffsetPagination"]
 
     try:
@@ -51,14 +51,16 @@ def call_info():
                 class_name = call_info.frame.f_locals.get(
                     "self", None
                 ).__class__.__name__
-
-                if method_name not in skip_methods and class_name not in skip_classes:
-                    if TEST_FILE_PATTERN.search(call_info.filename):
-                        prefix = "test:"
-                    else:
-                        if class_name == "NoneType":
-                            class_name = ""
-                        break
+                print(call_info.frame.f_locals)
+                import pdb; pdb.set_trace()
+                if method_name not in skip_methods:
+                    if class_name not in skip_classes:
+                        if TEST_FILE_PATTERN.search(call_info.filename):
+                            prefix = "test:"
+                        else:
+                            if class_name == "NoneType":
+                                class_name = ""
+                            break
 
     except Exception:
         pass
