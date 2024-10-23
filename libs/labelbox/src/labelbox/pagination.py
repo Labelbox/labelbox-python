@@ -1,8 +1,18 @@
 # Size of a single page in a paginated query.
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
-from typing import TYPE_CHECKING
+from lbox.call_info import call_info_as_str
 
 if TYPE_CHECKING:
     from labelbox import Client
@@ -49,9 +59,11 @@ class PaginatedCollection:
         self._fetched_all = False
         self._data: List[Dict[str, Any]] = []
         self._data_ind = 0
+        self._client = client
+        self._client.set_sdk_method(call_info_as_str())
 
         pagination_kwargs = {
-            "client": client,
+            "client": self._client,
             "obj_class": obj_class,
             "dereferencing": dereferencing,
             "experimental": experimental,
@@ -72,11 +84,13 @@ class PaginatedCollection:
     def __next__(self):
         if len(self._data) <= self._data_ind:
             if self._fetched_all:
+                self._client.unset_sdk_method()
                 raise StopIteration()
 
             page_data, self._fetched_all = self.paginator.get_next_page()
             self._data.extend(page_data)
             if len(page_data) == 0:
+                self._client.unset_sdk_method()
                 raise StopIteration()
 
         rval = self._data[self._data_ind]

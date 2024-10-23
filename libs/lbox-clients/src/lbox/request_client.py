@@ -1,73 +1,20 @@
 # for the Labelbox Python SDK
-import inspect
 import json
 import logging
 import os
-import re
-import sys
 from datetime import datetime, timezone
 from types import MappingProxyType
-from typing import Callable, Dict, Optional, TypedDict
+from typing import Callable, Dict, Optional
 
 import requests
 import requests.exceptions
 from google.api_core import retry
-from lbox import exceptions  # type: ignore
+from lbox import exceptions
+from lbox.call_info import call_info_as_str, python_version_info  # type: ignore
 
 logger = logging.getLogger(__name__)
 
 _LABELBOX_API_KEY = "LABELBOX_API_KEY"
-
-
-def python_version_info():
-    version_info = sys.version_info
-
-    return f"{version_info.major}.{version_info.minor}.{version_info.micro}-{version_info.releaselevel}"
-
-
-LABELBOX_CALL_PATTERN = re.compile(r"/labelbox/")
-TEST_FILE_PATTERN = re.compile(r".*test.*\.py$")
-
-
-class _RequestInfo(TypedDict):
-    prefix: str
-    class_name: str
-    method_name: str
-
-
-def call_info():
-    method_name = "Unknown"
-    prefix = ""
-    class_name = ""
-    skip_methods = ["wrapper", "__init__"]
-    skip_classes = ["PaginatedCollection", "_CursorPagination", "_OffsetPagination"]
-
-    try:
-        call_info = None
-        for stack in reversed(inspect.stack()):
-            if LABELBOX_CALL_PATTERN.search(stack.filename):
-                call_info = stack
-                method_name = call_info.function
-                class_name = call_info.frame.f_locals.get(
-                    "self", None
-                ).__class__.__name__
-
-                if method_name not in skip_methods and class_name not in skip_classes:
-                    if TEST_FILE_PATTERN.search(call_info.filename):
-                        prefix = "test:"
-                    else:
-                        if class_name == "NoneType":
-                            class_name = ""
-                        break
-
-    except Exception:
-        pass
-    return _RequestInfo(prefix=prefix, class_name=class_name, method_name=method_name)
-
-
-def call_info_as_str():
-    info = call_info()
-    return f"{info['prefix']}{info['class_name']}:{info['method_name']}"
 
 
 class RequestClient:
@@ -114,6 +61,7 @@ class RequestClient:
         self.endpoint = endpoint
         self.rest_endpoint = rest_endpoint
         self.sdk_version = sdk_version
+        self._sdk_method = None
         self._connection: requests.Session = self._init_connection()
 
     def _init_connection(self) -> requests.Session:
@@ -125,6 +73,14 @@ class RequestClient:
     @property
     def headers(self) -> MappingProxyType:
         return self._connection.headers
+
+    @property
+    def sdk_method(self):
+        return self._sdk_method
+
+    @sdk_method.setter
+    def sdk_method(self, value):
+        self._sdk_method = value
 
     def _default_headers(self):
         return {
@@ -234,7 +190,9 @@ class RequestClient:
             if files:
                 del headers["Content-Type"]
                 del headers["Accept"]
-            headers["X-SDK-Method"] = call_info_as_str()
+            headers["X-SDK-Method"] = (
+                self.sdk_method if self.sdk_method else call_info_as_str()
+            )
 
             request = requests.Request(
                 "POST",
