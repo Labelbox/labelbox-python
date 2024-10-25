@@ -12,8 +12,12 @@ from pydantic import StringConstraints
 
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
+from labelbox.schema.tool_building.fact_checking_tool import FactCheckingTool
 from labelbox.schema.tool_building.step_reasoning_tool import StepReasoningTool
 from labelbox.schema.tool_building.tool_type import ToolType
+from labelbox.schema.tool_building.tool_type_mapping import (
+    map_tool_type_to_tool_cls,
+)
 
 FeatureSchemaId: Type[str] = Annotated[
     str, StringConstraints(min_length=25, max_length=25)
@@ -490,14 +494,20 @@ class Tool:
         self.classifications.append(classification)
 
 
+"""
+The following 2 functions help to bridge the gap between the step reasoning all other tool ontologies.
+"""
+
+
 def tool_cls_from_type(tool_type: str):
-    if tool_type.lower() == ToolType.STEP_REASONING.value:
-        return StepReasoningTool
+    tool_cls = map_tool_type_to_tool_cls(tool_type)
+    if tool_cls is not None:
+        return tool_cls
     return Tool
 
 
 def tool_type_cls_from_type(tool_type: str):
-    if tool_type.lower() == ToolType.STEP_REASONING.value:
+    if ToolType.valid(tool_type):
         return ToolType
     return Tool.Type
 
@@ -596,7 +606,9 @@ class OntologyBuilder:
 
     """
 
-    tools: List[Union[Tool, StepReasoningTool]] = field(default_factory=list)
+    tools: List[Union[Tool, StepReasoningTool, FactCheckingTool]] = field(
+        default_factory=list
+    )
     classifications: List[
         Union[Classification, PromptResponseClassification]
     ] = field(default_factory=list)

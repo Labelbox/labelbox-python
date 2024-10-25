@@ -55,8 +55,8 @@ from labelbox.schema.ontology import (
     ResponseOption,
     Tool,
 )
-from labelbox.schema.ontology import PromptResponseClassification
-from labelbox.schema.ontology import ResponseOption
+from labelbox.schema.tool_building.fact_checking_tool import FactCheckingTool
+from labelbox.schema.tool_building.step_reasoning_tool import StepReasoningTool
 from labelbox.schema.role import Role, ProjectRole
 from labelbox.schema.invite import Invite, InviteLimit
 from labelbox.schema.data_row_metadata import (

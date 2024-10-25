@@ -5,6 +5,7 @@ import pytest
 
 from labelbox import MediaType, OntologyBuilder, Tool
 from labelbox.orm.model import Entity
+from labelbox.schema.tool_building.fact_checking_tool import FactCheckingTool
 from labelbox.schema.tool_building.step_reasoning_tool import StepReasoningTool
 
 
@@ -357,25 +358,89 @@ def test_step_reasoning_ontology(chat_evaluation_ontology):
             step_reasoning_tool = tool
             break
     assert step_reasoning_tool is not None
-    assert step_reasoning_tool.definition.variants.asdict() == [
+
+    assert step_reasoning_tool.definition.asdict() == {
+        "title": "step reasoning",
+        "value": "step_reasoning",
+        "variants": [
+            {
+                "id": 0,
+                "name": "Correct",
+                "actions": [],
+            },
+            {
+                "id": 1,
+                "name": "Neutral",
+                "actions": [],
+            },
+            {
+                "id": 2,
+                "name": "Incorrect",
+                "actions": [
+                    "regenerateSteps",
+                    "generateAndRateAlternativeSteps",
+                    "rewriteStep",
+                    "justification",
+                ],
+            },
+        ],
+        "version": 1,
+    }
+
+
+def test_fact_checking_ontology(chat_evaluation_ontology):
+    ontology = chat_evaluation_ontology
+    fact_checking = None
+    for tool in ontology.normalized["tools"]:
+        if tool["tool"] == "fact-checking":
+            fact_checking = tool
+            break
+    assert fact_checking is not None
+    assert fact_checking["definition"]["variants"] == [
+        {"id": 0, "name": "Accurate", "actions": ["justification"]},
+        {"id": 1, "name": "Inaccurate", "actions": ["justification"]},
+        {"id": 2, "name": "Disputed", "actions": ["justification"]},
+        {"id": 3, "name": "Unsupported", "actions": []},
         {
-            "id": 0,
-            "name": "Correct",
+            "id": 4,
+            "name": "Can't confidently assess",
             "actions": [],
         },
         {
-            "id": 1,
-            "name": "Neutral",
+            "id": 5,
+            "name": "No factual information",
             "actions": [],
-        },
-        {
-            "id": 2,
-            "name": "Incorrect",
-            "actions": [
-                "regenerateSteps",
-                "generateAndRateAlternativeSteps",
-                "rewriteStep",
-                "justification",
-            ],
         },
     ]
+    assert fact_checking["definition"]["version"] == 1
+    assert fact_checking["schemaNodeId"] is not None
+    assert fact_checking["featureSchemaId"] is not None
+
+    fact_checking = None
+    for tool in ontology.tools():
+        if isinstance(tool, FactCheckingTool):
+            fact_checking = tool
+            break
+    assert fact_checking is not None
+
+    assert fact_checking.definition.asdict() == {
+        "title": "fact checking",
+        "value": "fact_checking",
+        "variants": [
+            {"id": 0, "name": "Accurate", "actions": ["justification"]},
+            {"id": 1, "name": "Inaccurate", "actions": ["justification"]},
+            {"id": 2, "name": "Disputed", "actions": ["justification"]},
+            {"id": 3, "name": "Unsupported", "actions": []},
+            {
+                "id": 4,
+                "name": "Can't confidently assess",
+                "actions": [],
+            },
+            {
+                "id": 5,
+                "name": "No factual information",
+                "actions": [],
+            },
+        ],
+        "version": 1,
+    }

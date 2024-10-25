@@ -1,2 +1,4 @@
 import labelbox.schema.tool_building.tool_type
 import labelbox.schema.tool_building.step_reasoning_tool
+import labelbox.schema.tool_building.fact_checking_tool
+import labelbox.schema.tool_building.tool_type_mapping

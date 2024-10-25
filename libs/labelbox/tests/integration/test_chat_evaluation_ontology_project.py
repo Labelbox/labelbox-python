@@ -15,7 +15,7 @@ def test_create_chat_evaluation_ontology_project(
     # here we are essentially testing the ontology creation which is a fixture
     assert ontology
     assert ontology.name
-    assert len(ontology.tools()) == 4
+    assert len(ontology.tools()) == 5
     for tool in ontology.tools():
         assert tool.schema_id
         assert tool.feature_schema_id

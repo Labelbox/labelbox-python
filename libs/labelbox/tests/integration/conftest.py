@@ -12,16 +12,17 @@ from labelbox import (
     Classification,
     Client,
     Dataset,
+    FactCheckingTool,
     MediaType,
     OntologyBuilder,
     Option,
     PromptResponseClassification,
     ResponseOption,
+    StepReasoningTool,
     Tool,
 )
 from labelbox.schema.data_row import DataRowMetadataField
 from labelbox.schema.ontology_kind import OntologyKind
-from labelbox.schema.tool_building.step_reasoning_tool import StepReasoningTool
 from labelbox.schema.user import User
 
 
@@ -579,6 +580,7 @@ def chat_evaluation_ontology(client, rand_gen):
                 name="model output multi ranking",
             ),
             StepReasoningTool(name="step reasoning"),
+            FactCheckingTool(name="fact checking"),
         ],
         classifications=[
             Classification(

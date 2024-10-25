@@ -19,6 +19,7 @@ Labelbox Python SDK Documentation
     enums
     exceptions
     export-task
+    fact-checking-tool
     foundry-client
     foundry-model
     identifiable
