@@ -10,7 +10,6 @@ Labelbox Python SDK Documentation
     asset-attachment
     batch
     benchmark
-    bulk-import-request
     client
     conflict-resolution-strategy
     datarow
