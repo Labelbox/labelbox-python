@@ -16,10 +16,7 @@ def test_step_reasoning_as_dict_default():
                 {
                     "id": 2,
                     "name": "Incorrect",
-                    "actions": [
-                        "regenerateSteps",
-                        "generateAndRateAlternativeSteps",
-                    ],
+                    "actions": [],
                 },
             ],
             "version": 1,

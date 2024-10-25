@@ -171,8 +171,6 @@ class StepReasoningTool:
         )
 
     def asdict(self) -> Dict[str, Any]:
-        self.set_rate_alternative_responses()
-        self.set_regenerate_conversations_after_incorrect_step()
         return {
             "tool": self.type.value,
             "name": self.name,
