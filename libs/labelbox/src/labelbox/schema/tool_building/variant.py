@@ -22,7 +22,8 @@ class VariantWithActions:
     actions: List[str] = field(default_factory=list)
     _available_actions: Set[str] = field(default_factory=set)
 
-    def set_actions(self, actions: Set[str]) -> None:
+    def set_actions(self, actions: List[str]) -> None:
+        self.actions = []
         for action in actions:
             if action in self._available_actions:
                 self.actions.append(action)
@@ -31,8 +32,11 @@ class VariantWithActions:
         self.actions = []
 
     def asdict(self) -> Dict[str, Any]:
-        return {
+        data = {
             "id": self.id,
             "name": self.name,
-            "actions": list(set(self.actions)),
         }
+        if len(self.actions) > 0:
+            data["actions"] = self.actions
+
+        return data

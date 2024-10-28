@@ -61,6 +61,18 @@ def build_fact_checking_definition():
     return _Definition(variants=variants)
 
 
+class UnsupportedStepActions(Enum):
+    WRITE_JUSTIFICATION = "writeJustification"
+
+
+class CanConfidentlyAssessStepActions(Enum):
+    WRITE_JUSTIFICATION = "writeJustification"
+
+
+class NoFactualInformationStepActions(Enum):
+    WRITE_JUSTIFICATION = "writeJustification"
+
+
 @dataclass
 class FactCheckingTool(_BaseStepReasoningTool):
     """
