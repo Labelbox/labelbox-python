@@ -22,7 +22,6 @@ from labelbox import (
 from labelbox.schema.data_row import DataRowMetadataField
 from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.tool_building.step_reasoning_tool import StepReasoningTool
-from labelbox.schema.tool_building.tool_type import ToolType
 from labelbox.schema.user import User
 
 

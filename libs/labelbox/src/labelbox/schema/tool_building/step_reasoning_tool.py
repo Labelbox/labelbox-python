@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -155,6 +156,11 @@ class StepReasoningTool:
     definition: StepReasoningDefinition = field(
         default_factory=StepReasoningDefinition
     )
+
+    def __post_init__(self):
+        warnings.warn(
+            "This feature is experimental and subject to change.",
+        )
 
     def reset_regenerate_conversations_after_incorrect_step(self):
         """
