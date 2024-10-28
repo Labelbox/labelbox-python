@@ -17,7 +17,7 @@ class StepReasoningVariant:
 class IncorrectStepReasoningVariant:
     id: int
     name: str
-    regenerate_conversations_after_incorrect_step: Optional[bool] = False
+    regenerate_conversations_after_incorrect_step: Optional[bool] = True
     rate_alternative_responses: Optional[bool] = False
 
     def asdict(self) -> Dict[str, Any]:
@@ -156,11 +156,12 @@ class StepReasoningTool:
         default_factory=StepReasoningDefinition
     )
 
-    def set_regenerate_conversations_after_incorrect_step(self):
+    def reset_regenerate_conversations_after_incorrect_step(self):
         """
-        For live models, will invoke the model to generate alternatives if a step is marked as incorrect
+        For live models, the default acation will invoke the model to generate alternatives if a step is marked as incorrect
+        This method will reset the action to not regenerate the conversation
         """
-        self.definition.variants.incorrect_step.regenerate_conversations_after_incorrect_step = True
+        self.definition.variants.incorrect_step.regenerate_conversations_after_incorrect_step = False
 
     def set_rate_alternative_responses(self):
         """
