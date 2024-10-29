@@ -16,7 +16,10 @@ def test_step_reasoning_as_dict_default():
                 {
                     "id": 2,
                     "name": "Incorrect",
-                    "actions": ["regenerateSteps"],
+                    "actions": [
+                        "regenerateSteps",
+                        "generateAndRateAlternativeSteps",
+                    ],
                 },
             ],
             "version": 1,
@@ -26,7 +29,7 @@ def test_step_reasoning_as_dict_default():
 
 def test_step_reasoning_as_dict_with_actions():
     tool = StepReasoningTool(name="step reasoning")
-    tool.set_rate_alternative_responses()
+    tool.reset_rate_alternative_responses()
     tool.reset_regenerate_conversations_after_incorrect_step()
     assert tool.asdict() == {
         "tool": "step-reasoning",
@@ -41,9 +44,7 @@ def test_step_reasoning_as_dict_with_actions():
                 {
                     "id": 2,
                     "name": "Incorrect",
-                    "actions": [
-                        "generateAndRateAlternativeSteps",
-                    ],
+                    "actions": [],
                 },
             ],
             "version": 1,

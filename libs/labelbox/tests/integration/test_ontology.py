@@ -339,7 +339,7 @@ def test_step_reasoning_ontology(chat_evaluation_ontology):
         {
             "id": 2,
             "name": "Incorrect",
-            "actions": ["regenerateSteps"],
+            "actions": ["regenerateSteps", "generateAndRateAlternativeSteps"],
         },
     ]
     assert step_reasoning_tool["definition"]["version"] == 1
@@ -364,6 +364,6 @@ def test_step_reasoning_ontology(chat_evaluation_ontology):
         {
             "id": 2,
             "name": "Incorrect",
-            "actions": ["regenerateSteps"],
+            "actions": ["regenerateSteps", "generateAndRateAlternativeSteps"],
         },
     ]
