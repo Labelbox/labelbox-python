@@ -16,9 +16,7 @@ class Variant:
 
 
 @dataclass
-class VariantWithActions:
-    id: int
-    name: str
+class VariantWithActions(Variant):
     actions: List[str] = field(default_factory=list)
     _available_actions: Set[str] = field(default_factory=set)
 
@@ -32,11 +30,7 @@ class VariantWithActions:
         self.actions = []
 
     def asdict(self) -> Dict[str, Any]:
-        data = {
-            "id": self.id,
-            "name": self.name,
-        }
-        if len(self.actions) > 0:
-            data["actions"] = self.actions
+        data = super().asdict()
+        data["actions"] = self.actions
 
         return data
