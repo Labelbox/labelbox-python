@@ -1,4 +1,8 @@
 # Changelog
+# Version 6.0.1 (2024-10-30)
+## Fixed
+* Updated labelbox.exception to lbox.exception for IAMIntegration check([#1887](https://github.com/Labelbox/labelbox-python/pull/1887))
+
 # Version 6.0.0 (2024-10-15)
 ## Added
 * Deprecation messages to all export_v2 methods([#1865](https://github.com/Labelbox/labelbox-python/pull/1865))
