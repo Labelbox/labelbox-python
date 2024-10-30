@@ -13,8 +13,11 @@ from pydantic import StringConstraints
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.tool_building.step_reasoning_tool import StepReasoningTool
+from typing import TYPE_CHECKING
 from labelbox.schema.tool_building.tool_type import ToolType
-from labelbox import Project
+
+if TYPE_CHECKING:
+    from labelbox import Project
 
 FeatureSchemaId: Type[str] = Annotated[
     str, StringConstraints(min_length=25, max_length=25)
