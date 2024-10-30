@@ -4,6 +4,12 @@ inputs:
   subjects:
     required: true
     type: string   
+  tag:
+    required: true
+    type: string
+  provenance-name:
+    required: true
+    type: string
 runs:
   using: "composite"
   steps:
@@ -12,4 +18,5 @@ runs:
       with:
         base64-subjects: "${{ inputs.subjects }}"
         upload-assets: true
-        upload-tag-name: v.6.0.0 # Tag from the initiation of the workflow  
+        upload-tag-name: ${{ inputs.tag }}
+        provenance-name: ${{ inputs.provenance-name }}
