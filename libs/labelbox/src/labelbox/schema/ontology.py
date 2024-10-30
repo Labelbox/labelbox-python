@@ -656,7 +656,7 @@ class OntologyBuilder:
                 self.tools[index].color = "#%02x%02x%02x" % rgb_color
 
     @classmethod
-    def from_project(cls, project: Project) -> "OntologyBuilder":
+    def from_project(cls, project: "Project") -> "OntologyBuilder":
         ontology = project.ontology().normalized
         return cls.from_dict(ontology)
 
