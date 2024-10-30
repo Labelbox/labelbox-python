@@ -164,7 +164,7 @@ class TestUserGroup:
         group = self.group
         group.name = ""
 
-        with pytest.raises(UnprocessableEntityError):
+        with pytest.raises(ValueError):
             group.update()
 
     def test_update_with_exception_id(self):
