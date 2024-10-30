@@ -585,7 +585,7 @@ class Client:
             )
 
             if not validation_result["validateDataset"]["valid"]:
-                raise labelbox.exceptions.LabelboxError(
+                raise LabelboxError(
                     "IAMIntegration was not successfully added to the dataset."
                 )
         except Exception as e:
