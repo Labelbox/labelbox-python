@@ -25,7 +25,6 @@ from pydantic import (
     conlist,
     model_serializer,
 )
-from typing_extensions import Annotated
 
 from labelbox.schema.identifiable import GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds

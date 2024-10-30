@@ -156,7 +156,7 @@ def test_lookup_data_rows(client, dataset):
 
 
 def test_data_row_bulk_creation(dataset, rand_gen, image_url):
-    client = dataset.client
+    dataset.client
     data_rows = []
     assert len(list(dataset.data_rows())) == 0
 
@@ -356,7 +356,7 @@ def test_create_data_row_with_dict_unpacked(dataset, image_url):
 
 
 def test_create_data_row_with_invalid_input(dataset, image_url):
-    with pytest.raises(ResourceCreationError) as exc:
+    with pytest.raises(ResourceCreationError):
         dataset.create_data_row("asdf")
 
 
@@ -600,7 +600,7 @@ def test_create_data_rows_with_metadata_missing_value(
     fields = make_metadata_fields
     fields.append({"schemaId": "some schema id"})
 
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(ValueError):
         dataset.create_data_rows(
             [
                 {
@@ -618,7 +618,7 @@ def test_create_data_rows_with_metadata_missing_schema_id(
     fields = make_metadata_fields
     fields.append({"value": "some value"})
 
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(ValueError):
         dataset.create_data_rows(
             [
                 {
@@ -636,8 +636,8 @@ def test_create_data_rows_with_metadata_wrong_type(
     fields = make_metadata_fields
     fields.append("Neither DataRowMetadataField or dict")
 
-    with pytest.raises(ValueError) as exc:
-        task = dataset.create_data_rows(
+    with pytest.raises(ValueError):
+        dataset.create_data_rows(
             [
                 {
                     DataRow.row_data: image_url,
@@ -807,7 +807,7 @@ def test_data_row_attachments(dataset, image_url):
         assert len(list(data_row.attachments())) == 1
         assert data_row.external_id == "test-id"
 
-    with pytest.raises(ValueError) as exc:
+    with pytest.raises(ValueError):
         task = dataset.create_data_rows(
             [
                 {
@@ -1135,7 +1135,7 @@ def test_create_data_row_with_attachments(dataset):
 
 def test_create_data_row_with_media_type(dataset, image_url):
     with pytest.raises(ResourceCreationError) as exc:
-        dr = dataset.create_data_row(
+        dataset.create_data_row(
             row_data={"invalid_object": "invalid_value"}, media_type="IMAGE"
         )
 

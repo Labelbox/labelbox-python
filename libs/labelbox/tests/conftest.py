@@ -312,11 +312,6 @@ def ephmeral_client() -> EphemeralClient:
 
 
 @pytest.fixture
-def admin_client() -> AdminClient:
-    return AdminClient
-
-
-@pytest.fixture
 def integration_client() -> IntegrationClient:
     return IntegrationClient
 

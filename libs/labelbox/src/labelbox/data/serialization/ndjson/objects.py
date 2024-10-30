@@ -23,7 +23,6 @@ from PIL import Image
 
 from labelbox.data.annotation_types.data import GenericDataRowData
 
-from ...annotation_types.data import GenericDataRowData
 from ...annotation_types.ner import (
     DocumentEntity,
     DocumentTextSelection,

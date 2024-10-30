@@ -3,7 +3,6 @@ from uuid import uuid4
 
 from labelbox.utils import _CamelCaseMixin, is_exactly_one_set
 from pydantic import model_validator, Field
-from uuid import uuid4
 
 from ....annotated_types import Cuid
 

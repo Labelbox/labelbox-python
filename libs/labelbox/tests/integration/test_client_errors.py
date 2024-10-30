@@ -28,7 +28,7 @@ def test_bad_key(rand_gen):
     bad_key = "BAD_KEY_" + rand_gen(str)
     client = labelbox.client.Client(api_key=bad_key)
 
-    with pytest.raises(lbox.exceptions.AuthenticationError) as excinfo:
+    with pytest.raises(lbox.exceptions.AuthenticationError):
         client.create_project(name=rand_gen(str), media_type=MediaType.Image)
 
 
@@ -45,7 +45,7 @@ def test_semantic_error(client):
 
 
 def test_timeout_error(client, project):
-    with pytest.raises(RetryError) as excinfo:
+    with pytest.raises(RetryError):
         query_str = """query getOntology {
         project (where: {id: %s}) {
             ontology {
@@ -76,7 +76,7 @@ def test_network_error(client):
         api_key=client._request_client.api_key, endpoint="not_a_valid_URL"
     )
 
-    with pytest.raises(lbox.exceptions.NetworkError) as excinfo:
+    with pytest.raises(lbox.exceptions.NetworkError):
         client.create_project(name="Project name", media_type=MediaType.Image)
 
 

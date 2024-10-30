@@ -106,5 +106,5 @@ def test_confidence_value_range_validation():
     name = "line_feature"
     line = Line(points=[Point(x=1, y=2), Point(x=2, y=2)])
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError):
         ObjectAnnotation(value=line, name=name, confidence=14)

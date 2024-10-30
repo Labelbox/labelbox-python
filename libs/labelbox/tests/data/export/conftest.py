@@ -5,7 +5,6 @@ import pytest
 
 from labelbox import Client, MediaType
 from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
-from labelbox.schema.media_type import MediaType
 
 
 @pytest.fixture
@@ -365,23 +364,6 @@ def video_ontology(client: Client):
         MediaType.Video,
     )
     return ontology
-
-
-@pytest.fixture
-def polygon_inference(prediction_id_mapping):
-    polygon = prediction_id_mapping["polygon"].copy()
-    polygon.update(
-        {
-            "polygon": [
-                {"x": 147.692, "y": 118.154},
-                {"x": 142.769, "y": 104.923},
-                {"x": 57.846, "y": 118.769},
-                {"x": 28.308, "y": 169.846},
-            ]
-        }
-    )
-    del polygon["tool"]
-    return polygon
 
 
 @pytest.fixture

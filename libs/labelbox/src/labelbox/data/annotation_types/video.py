@@ -6,10 +6,6 @@ from labelbox.data.annotation_types.annotation import (
     ObjectAnnotation,
 )
 
-from labelbox.data.annotation_types.annotation import (
-    ClassificationAnnotation,
-    ObjectAnnotation,
-)
 from labelbox.data.annotation_types.feature import FeatureSchema
 from labelbox.data.mixins import (
     ConfidenceNotSupportedMixin,

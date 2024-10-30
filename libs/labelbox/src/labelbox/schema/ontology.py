@@ -14,6 +14,7 @@ from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.tool_building.step_reasoning_tool import StepReasoningTool
 from labelbox.schema.tool_building.tool_type import ToolType
+from labelbox import Project
 
 FeatureSchemaId: Type[str] = Annotated[
     str, StringConstraints(min_length=25, max_length=25)
@@ -655,7 +656,7 @@ class OntologyBuilder:
                 self.tools[index].color = "#%02x%02x%02x" % rgb_color
 
     @classmethod
-    def from_project(cls, project: "project.Project") -> "OntologyBuilder":
+    def from_project(cls, project: Project) -> "OntologyBuilder":
         ontology = project.ontology().normalized
         return cls.from_dict(ontology)
 

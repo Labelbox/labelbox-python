@@ -18,7 +18,6 @@ from ...annotation_types.collection import LabelCollection
 from ...annotation_types.relationship import RelationshipAnnotation
 from ...annotation_types.mmc import MessageEvaluationTaskAnnotation
 from .label import NDLabel
-import copy
 
 logger = logging.getLogger(__name__)
 

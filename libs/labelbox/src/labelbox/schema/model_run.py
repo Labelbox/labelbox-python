@@ -198,7 +198,7 @@ class ModelRun(DbObject):
             if res["status"] == "COMPLETE":
                 return True
             elif res["status"] == "FAILED":
-                raise Exception(f"Job failed.")
+                raise Exception("Job failed.")
             timeout_seconds -= sleep_time
             if timeout_seconds <= 0:
                 raise TimeoutError(

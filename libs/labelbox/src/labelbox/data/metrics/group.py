@@ -17,7 +17,7 @@ try:
 except ImportError:
     from typing import Literal
 
-from ..annotation_types import ClassificationAnnotation, Label, ObjectAnnotation
+from ..annotation_types import Label, ObjectAnnotation
 from ..annotation_types.feature import FeatureSchema
 
 

@@ -130,7 +130,7 @@ def data_row_id_as_str(data_row):
     "data_row_for_delete",
     ["data_row_id_as_str", "data_row_unique_id", "data_row_global_key"],
 )
-def test_bulk_delete_datarow_metadata(
+def test_bulk_delete_datarow_metadata_with_different_ids(
     data_row_for_delete, data_row, mdo, request
 ):
     """test bulk deletes for all fields"""

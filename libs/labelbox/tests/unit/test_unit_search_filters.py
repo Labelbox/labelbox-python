@@ -52,7 +52,7 @@ def test_id_filters():
 def test_stage_filter_with_invalid_values():
     with pytest.raises(
         ValueError, match="is not a valid value for ProjectStageFilter"
-    ) as e:
+    ):
         _ = (
             ProjectStageFilter(
                 operator=IdOperator.Is,

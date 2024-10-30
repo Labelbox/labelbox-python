@@ -31,7 +31,6 @@ def test_im_url():
 
 
 def test_ref():
-    external_id = "external_id"
     uid = "uid"
     metadata = []
     media_attributes = {}

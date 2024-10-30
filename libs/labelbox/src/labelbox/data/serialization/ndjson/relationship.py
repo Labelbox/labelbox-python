@@ -4,7 +4,6 @@ from ...annotation_types.data import GenericDataRowData
 from ...annotation_types.relationship import RelationshipAnnotation
 from ...annotation_types.relationship import Relationship
 from .objects import NDObjectType
-from .base import DataRow
 
 SUPPORTED_ANNOTATIONS = NDObjectType
 

@@ -52,8 +52,8 @@ def test_prompt_classification_validation():
     prompt_text_2 = lb_types.PromptClassificationAnnotation(
         name="prompt text", value=PromptText(answer="test")
     )
-    with pytest.raises(TypeError) as e_info:
-        label = Label(
+    with pytest.raises(TypeError):
+        Label(
             data={"global_key": global_key},
             annotations=[prompt_text, prompt_text_2],
         )

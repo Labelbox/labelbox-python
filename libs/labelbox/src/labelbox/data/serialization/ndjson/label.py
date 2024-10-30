@@ -258,7 +258,7 @@ class NDLabel(BaseModel):
             return frame_ranges
         else:
             raise ValueError(
-                f"Video annotations cannot partially have `segment_index` set"
+                "Video annotations cannot partially have `segment_index` set"
             )
 
     @classmethod

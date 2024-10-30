@@ -9,7 +9,6 @@ from labelbox.data.annotation_types.metrics import (
     ScalarMetric,
 )
 from labelbox.data.annotation_types import (
-    ScalarMetric,
     Label,
     GenericDataRowData,
 )
@@ -166,19 +165,19 @@ def test_custom_confusison_matrix_metric(
 
 def test_name_exists():
     # Name is only required for ConfusionMatrixMetric for now.
-    with pytest.raises(ValidationError) as exc_info:
-        metric = ConfusionMatrixMetric(value=[0, 1, 2, 3])
+    with pytest.raises(ValidationError):
+        ConfusionMatrixMetric(value=[0, 1, 2, 3])
 
 
 def test_invalid_aggregations():
-    with pytest.raises(ValidationError) as exc_info:
-        metric = ScalarMetric(
+    with pytest.raises(ValidationError):
+        ScalarMetric(
             metric_name="invalid aggregation",
             value=0.1,
             aggregation=ConfusionMatrixAggregation.CONFUSION_MATRIX,
         )
-    with pytest.raises(ValidationError) as exc_info:
-        metric = ConfusionMatrixMetric(
+    with pytest.raises(ValidationError):
+        ConfusionMatrixMetric(
             metric_name="invalid aggregation",
             value=[0, 1, 2, 3],
             aggregation=ScalarMetricAggregation.SUM,
@@ -187,21 +186,21 @@ def test_invalid_aggregations():
 
 def test_invalid_number_of_confidence_scores():
     with pytest.raises(ValidationError) as exc_info:
-        metric = ScalarMetric(metric_name="too few scores", value={0.1: 0.1})
+        ScalarMetric(metric_name="too few scores", value={0.1: 0.1})
     assert "Number of confidence scores must be greater" in str(exc_info.value)
     with pytest.raises(ValidationError) as exc_info:
-        metric = ConfusionMatrixMetric(
+        ConfusionMatrixMetric(
             metric_name="too few scores", value={0.1: [0, 1, 2, 3]}
         )
     assert "Number of confidence scores must be greater" in str(exc_info.value)
     with pytest.raises(ValidationError) as exc_info:
-        metric = ScalarMetric(
+        ScalarMetric(
             metric_name="too many scores",
             value={i / 20.0: 0.1 for i in range(20)},
         )
     assert "Number of confidence scores must be greater" in str(exc_info.value)
     with pytest.raises(ValidationError) as exc_info:
-        metric = ConfusionMatrixMetric(
+        ConfusionMatrixMetric(
             metric_name="too many scores",
             value={i / 20.0: [0, 1, 2, 3] for i in range(20)},
         )
