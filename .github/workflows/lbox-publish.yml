@@ -67,23 +67,45 @@ jobs:
           rye sync
           rye build
       - name: "Generate hashes"
-        id: hash
+        id: hashes
         run: |
-          cd dist && echo "hashes=$(sha256sum * | base64 -w0)" >> $GITHUB_OUTPUT          
-          echo "hashes_${{ matrix.package }}=$(sha256sum * | base64 -w0)"
+          cd dist && echo "hash_${{ matrix.package }}=$(sha256sum * | base64 -w0)" >> $GITHUB_OUTPUT          
+          echo "hash_${{ matrix.package }}=$(sha256sum * | base64 -w0)"
       - uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.package }}
           path: ./dist
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-      - uses: ./.github/actions/provenance
-        with:
-          subjects: "${{ steps.hash.outputs.hashes }}"
-          tag: ${{ inputs.tag }}
-          provenance-name: ${{ matrix.package }}.intoto.jsonl
-                
+  debug:
+    runs-on: ubuntu-latest
+    needs: ['path-filter', 'build']
+    strategy:
+      fail-fast: false
+      matrix: 
+        include: ${{ fromJSON(needs.path-filter.outputs.package-matrix) }}
+    steps:
+      - name: "Print hashes"
+        run: |
+          echo "output hashes ${{ needs.build.outputs.hashes[format('hashes_{}', matrix.package)] }}"
+
+  provenance:
+    needs: ['path-filter', 'build']
+    permissions:
+      actions: read
+      contents: write
+      id-token: write # Needed to access the workflow's OIDC identity.
+    strategy:
+      fail-fast: false
+      matrix: 
+        include: ${{ fromJSON(needs.path-filter.outputs.package-matrix) }}
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    with:
+      base64-subjects: ${{ needs.build.outputs.hashes[format('hashes_{}', matrix.package)] }}
+      # base64-subjects: ${{ needs.build.outputs.hashes.hash_lbox-clients }}
+      upload-assets: true
+      upload-tag-name: ${{ inputs.tag }}
+      provenance-name: ${{ matrix.package }}.intoto.jsonl
+  
+  
   test-build:
     needs: ['path-filter']
     if: ${{ needs.path-filter.outputs.lbox == 'true' }}
