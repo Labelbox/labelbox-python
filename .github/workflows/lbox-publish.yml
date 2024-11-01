@@ -49,6 +49,8 @@ jobs:
       fail-fast: false
       matrix: 
         include: ${{ fromJSON(needs.path-filter.outputs.package-matrix) }}
+    outputs:
+      hashes: ${{ steps.output-hashes.outputs.hashes }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,12 +71,25 @@ jobs:
       - name: "Generate hashes"
         id: hashes
         run: |
-          cd dist && echo "hash_${{ matrix.package }}=$(sha256sum * | base64 -w0)" >> $GITHUB_OUTPUT          
+          cd dist && echo "hash_${{ matrix.package }}=$(sha256sum * | base64 -w0)" >> $GITHUB_ENV          
           echo "hash_${{ matrix.package }}=$(sha256sum * | base64 -w0)"
       - uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.package }}
           path: ./dist
+      - name: "Output hashes"
+        id: output-hashes
+        run: |
+          hashes=""
+          while IFS= read -r line; do
+            if [[ $line == hash_* ]]; then
+              value=$(echo "$line" | cut -d'=' -f2)
+              hashes="$hashes$value,"
+            fi
+          done < "$GITHUB_ENV"
+          # Remove the trailing comma
+          hashes="${hashes%,}"
+          echo "hashes=${hashes}" >> $GITHUB_OUTPUT
   debug:
     runs-on: ubuntu-latest
     needs: ['path-filter', 'build']
