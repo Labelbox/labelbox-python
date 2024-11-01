@@ -50,9 +50,7 @@ from labelbox.schema.ontology import (
     FeatureSchema,
     Ontology,
     OntologyBuilder,
-    Option,
     PromptResponseClassification,
-    ResponseOption,
     Tool,
 )
 from labelbox.schema.tool_building.fact_checking_tool import FactCheckingTool
@@ -94,3 +92,8 @@ from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.user import User
 from labelbox.schema.webhook import Webhook
+from labelbox.schema.ontology_building.classification import (
+    Classification,
+    Option,
+    ResponseOption,
+)

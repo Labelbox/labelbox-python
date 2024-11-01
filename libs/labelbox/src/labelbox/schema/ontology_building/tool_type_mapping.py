@@ -1,6 +1,10 @@
-from labelbox.schema.tool_building.fact_checking_tool import FactCheckingTool
-from labelbox.schema.tool_building.step_reasoning_tool import StepReasoningTool
-from labelbox.schema.tool_building.tool_type import ToolType
+from labelbox.schema.ontology_building.fact_checking_tool import (
+    FactCheckingTool,
+)
+from labelbox.schema.ontology_building.step_reasoning_tool import (
+    StepReasoningTool,
+)
+from labelbox.schema.ontology_building.tool_type import ToolType
 
 
 def map_tool_type_to_tool_cls(tool_type_str: str):
