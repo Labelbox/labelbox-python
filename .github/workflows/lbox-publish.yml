@@ -1,11 +1,12 @@
 name: LBox Publish
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       tag:
         description: 'Release Tag'
         required: true
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
