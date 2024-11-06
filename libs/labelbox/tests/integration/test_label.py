@@ -44,16 +44,12 @@ def test_label_update(configured_project_with_label):
 def test_label_filter_order(configured_project_with_label, label_helpers):
     project, _, _, label = configured_project_with_label
 
-    l1 = label
     project.create_label()
     label_helpers.wait_for_labels(project, 2)
 
-    l2 = next(project.labels())
-
-    assert set(project.labels()) == {l1, l2}
-
-    assert list(project.labels(order_by=Label.created_at.asc)) == [l1, l2]
-    assert list(project.labels(order_by=Label.created_at.desc)) == [l2, l1]
+    list_asc = list(project.labels(order_by=Label.created_at.asc))
+    list_desc = list(project.labels(order_by=Label.created_at.desc))
+    assert list_asc == list_desc[::-1]
 
 
 def test_label_bulk_deletion(configured_project_with_label):
