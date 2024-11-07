@@ -9,9 +9,10 @@ from labelbox.schema.tool_building.tool_type import ToolType
 class StepReasoningVariant:
     id: int
     name: str
+    actions: List[str] = field(default_factory=list)
 
     def asdict(self) -> Dict[str, Any]:
-        return {"id": self.id, "name": self.name}
+        return {"id": self.id, "name": self.name, "actions": self.actions}
 
 
 @dataclass
