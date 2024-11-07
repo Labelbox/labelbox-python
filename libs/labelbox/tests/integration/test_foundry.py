@@ -6,7 +6,7 @@ from labelbox.schema.foundry.app import App
 from labelbox.schema.foundry.foundry_client import FoundryClient
 
 # Yolo object detection model id
-TEST_MODEL_ID = "e8b352ce-8f3a-4cd6-93a5-8af904307346"
+TEST_MODEL_ID = "c8a5b29a-cdba-408a-803a-a605a95631c2"
 
 
 @pytest.fixture()
