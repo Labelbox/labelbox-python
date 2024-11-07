@@ -11,14 +11,16 @@ def test_step_reasoning_as_dict_default():
         "featureSchemaId": None,
         "definition": {
             "variants": [
-                {"id": 0, "name": "Correct"},
-                {"id": 1, "name": "Neutral"},
+                {"id": 0, "name": "Correct", "actions": []},
+                {"id": 1, "name": "Neutral", "actions": []},
                 {
                     "id": 2,
                     "name": "Incorrect",
                     "actions": [
                         "regenerateSteps",
                         "generateAndRateAlternativeSteps",
+                        "rewriteSteps",
+                        "justification",
                     ],
                 },
             ],
@@ -29,8 +31,10 @@ def test_step_reasoning_as_dict_default():
 
 def test_step_reasoning_as_dict_with_actions():
     tool = StepReasoningTool(name="step reasoning")
-    tool.reset_rate_alternative_responses()
-    tool.reset_regenerate_conversations_after_incorrect_step()
+    tool.reset_generate_and_rate_alternative_steps()
+    tool.reset_regenerate_steps()
+    tool.reset_rewrite_steps()
+    tool.reset_justification()
     assert tool.asdict() == {
         "tool": "step-reasoning",
         "name": "step reasoning",
@@ -39,8 +43,8 @@ def test_step_reasoning_as_dict_with_actions():
         "featureSchemaId": None,
         "definition": {
             "variants": [
-                {"id": 0, "name": "Correct"},
-                {"id": 1, "name": "Neutral"},
+                {"id": 0, "name": "Correct", "actions": []},
+                {"id": 1, "name": "Neutral", "actions": []},
                 {
                     "id": 2,
                     "name": "Incorrect",
