@@ -92,8 +92,8 @@ def tools_json():
             "color": "#0000ff",
             "definition": {
                 "variants": [
-                    {"id": 0, "name": "Correct"},
-                    {"id": 1, "name": "Neutral"},
+                    {"id": 0, "name": "Correct", "actions": []},
+                    {"id": 1, "name": "Neutral", "actions": []},
                     {
                         "id": 2,
                         "name": "Incorrect",
