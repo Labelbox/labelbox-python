@@ -19,7 +19,7 @@ def test_step_reasoning_as_dict_default():
                     "actions": [
                         "regenerateSteps",
                         "generateAndRateAlternativeSteps",
-                        "rewriteSteps",
+                        "rewriteStep",
                         "justification",
                     ],
                 },
@@ -33,7 +33,7 @@ def test_step_reasoning_as_dict_with_actions():
     tool = StepReasoningTool(name="step reasoning")
     tool.reset_generate_and_rate_alternative_steps()
     tool.reset_regenerate_steps()
-    tool.reset_rewrite_steps()
+    tool.reset_rewrite_step()
     tool.reset_justification()
     assert tool.asdict() == {
         "tool": "step-reasoning",

@@ -334,12 +334,17 @@ def test_step_reasoning_ontology(chat_evaluation_ontology):
             break
     assert step_reasoning_tool is not None
     assert step_reasoning_tool["definition"]["variants"] == [
-        {"id": 0, "name": "Correct"},
-        {"id": 1, "name": "Neutral"},
+        {"id": 0, "name": "Correct", "actions": []},
+        {"id": 1, "name": "Neutral", "actions": []},
         {
             "id": 2,
             "name": "Incorrect",
-            "actions": ["regenerateSteps", "generateAndRateAlternativeSteps"],
+            "actions": [
+                "regenerateSteps",
+                "generateAndRateAlternativeSteps",
+                "rewriteStep",
+                "justification",
+            ],
         },
     ]
     assert step_reasoning_tool["definition"]["version"] == 1
@@ -356,14 +361,21 @@ def test_step_reasoning_ontology(chat_evaluation_ontology):
         {
             "id": 0,
             "name": "Correct",
+            "actions": [],
         },
         {
             "id": 1,
             "name": "Neutral",
+            "actions": [],
         },
         {
             "id": 2,
             "name": "Incorrect",
-            "actions": ["regenerateSteps", "generateAndRateAlternativeSteps"],
+            "actions": [
+                "regenerateSteps",
+                "generateAndRateAlternativeSteps",
+                "rewriteStep",
+                "justification",
+            ],
         },
     ]

@@ -21,7 +21,7 @@ class IncorrectStepReasoningVariant:
     name: str
     regenerate_steps: Optional[bool] = True
     generate_and_rate_alternative_steps: Optional[bool] = True
-    rewrite_steps: Optional[bool] = True
+    rewrite_step: Optional[bool] = True
     justification: Optional[bool] = True
 
     def asdict(self) -> Dict[str, Any]:
@@ -30,8 +30,8 @@ class IncorrectStepReasoningVariant:
             actions.append("regenerateSteps")
         if self.generate_and_rate_alternative_steps:
             actions.append("generateAndRateAlternativeSteps")
-        if self.rewrite_steps:
-            actions.append("rewriteSteps")
+        if self.rewrite_step:
+            actions.append("rewriteStep")
         if self.justification:
             actions.append("justification")
         return {"id": self.id, "name": self.name, "actions": actions}
@@ -46,7 +46,7 @@ class IncorrectStepReasoningVariant:
             regenerate_steps="regenerateSteps" in dictionary.get("actions", []),
             generate_and_rate_alternative_steps="generateAndRateAlternativeSteps"
             in dictionary.get("actions", []),
-            rewrite_steps="rewriteSteps" in dictionary.get("actions", []),
+            rewrite_step="rewriteStep" in dictionary.get("actions", []),
             justification="justification" in dictionary.get("actions", []),
         )
 
@@ -183,11 +183,11 @@ class StepReasoningTool:
         """
         self.definition.variants.incorrect_step.generate_and_rate_alternative_steps = False
 
-    def reset_rewrite_steps(self):
+    def reset_rewrite_step(self):
         """
         For live models, will require labelers to rewrite the conversation
         """
-        self.definition.variants.incorrect_step.rewrite_steps = False
+        self.definition.variants.incorrect_step.rewrite_step = False
 
     def reset_justification(self):
         """
