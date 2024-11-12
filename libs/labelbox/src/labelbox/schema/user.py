@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING
+
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
 
 if TYPE_CHECKING:
-    from labelbox import Role, Project
+    from labelbox import Project, Role
 
 
 class User(DbObject):
@@ -16,7 +17,6 @@ class User(DbObject):
         email (str)
         name (str)
         nickname (str)
-        intercom_hash (str)
         picture (str)
         is_viewer (bool)
         is_external_viewer (bool)
@@ -31,7 +31,6 @@ class User(DbObject):
     email = Field.String("email")
     name = Field.String("nickname")
     nickname = Field.String("name")
-    intercom_hash = Field.String("intercom_hash")
     picture = Field.String("picture")
     is_viewer = Field.Boolean("is_viewer")
     is_external_user = Field.Boolean("is_external_user")
