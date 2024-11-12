@@ -1,4 +1,16 @@
 # Changelog
+# Version 6.1.0 (2024-11-12)
+## Added
+* Support for step reasoning ontology tool([#1894](https://github.com/Labelbox/labelbox-python/pull/1894), [#1882](https://github.com/Labelbox/labelbox-python/pull/1882), [#1879](https://github.com/Labelbox/labelbox-python/pull/1879))
+
+## Fixed
+* Use valid lbox.exception in client IAMIntegration validation([#1887](https://github.com/Labelbox/labelbox-python/pull/1887))
+* Improve SDK method name detection for Datadog dashboard([#1880](https://github.com/Labelbox/labelbox-python/pull/1880))
+* Limit labeling front end visibility and mentions of a custom editor([#1877](https://github.com/Labelbox/labelbox-python/pull/1877))
+* Remove all unused python imports([#1876](https://github.com/Labelbox/labelbox-python/pull/1876))
+* Remove bulk import request from readthedocs([#1872](https://github.com/Labelbox/labelbox-python/pull/1872))
+
+
 # Version 6.0.1 (2024-10-30)
 ## Fixed
 * Updated labelbox.exception to lbox.exception for IAMIntegration check([#1887](https://github.com/Labelbox/labelbox-python/pull/1887))
