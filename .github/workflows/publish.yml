@@ -6,6 +6,9 @@ on:
       tag:
         description: 'Release Tag'
         required: true
+      prev_sdk_tag:
+        description: 'Prev SDK Release Tag, used to determine which lbox files have changed'
+        required: true
       skip-tests:
         description: 'Skip PROD Test (Do not do this unless there is an emergency)'
         default: false
@@ -32,6 +35,7 @@ jobs:
     uses: ./.github/workflows/lbox-publish.yml
     with:
       tag: ${{ inputs.tag }}
+      prev_sdk_tag: ${{ inputs.prev_sdk_tag }}
     secrets: inherit
   build:
     needs: ['build-lbox']

@@ -7,6 +7,10 @@ on:
         description: 'Release Tag'
         required: true
         type: string
+      prev_sdk_tag:
+        description: 'Prev SDK Release Tag'
+        required: true
+        type: string        
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -29,8 +33,7 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
-          ref: ${{ github.head_ref }}
-          base: ${{ inputs.tag }}
+          base: ${{ inputs.prev_sdk_tag }}
           list-files: 'json'
           filters: |
             lbox:
