@@ -8,7 +8,7 @@
 * Improve SDK method name detection for Datadog dashboard([#1880](https://github.com/Labelbox/labelbox-python/pull/1880))
 * Limit labeling front end visibility and mentions of a custom editor([#1877](https://github.com/Labelbox/labelbox-python/pull/1877))
 * Remove all unused python imports([#1876](https://github.com/Labelbox/labelbox-python/pull/1876))
-* Remove bulk import request from readthedocs([#1872](https://github.com/Labelbox/labelbox-python/pull/1872))
+* Remove bulk import request from readthedocs([#1881](https://github.com/Labelbox/labelbox-python/pull/1881))
 
 
 # Version 6.0.1 (2024-10-30)
