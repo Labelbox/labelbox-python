@@ -148,7 +148,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: artifact/
-          verbose: true
+          attestations: false
   container-publish:
     runs-on: ubuntu-latest
     needs: ['build', 'path-filter']
