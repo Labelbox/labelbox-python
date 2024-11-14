@@ -1,19 +1,16 @@
+import time
 import uuid
-from typing import Union
+from typing import Tuple, Type, Union
 
+import pytest
+import requests
+from pytest import FixtureRequest
+
+from labelbox import Client, Dataset, MediaType, OntologyKind, parser
+from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
 from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology
 from labelbox.schema.project import Project
-import pytest
-import time
-import requests
-
-from labelbox import parser, MediaType, OntologyKind
-from labelbox import Client, Dataset
-
-from typing import Tuple, Type
-from labelbox.schema.annotation_import import LabelImport, AnnotationImportState
-from pytest import FixtureRequest
 
 """
 The main fixtures of this library are configured_project and configured_project_by_global_key. Both fixtures generate data rows with a parametrize media type. They create the amount of data rows equal to the DATA_ROW_COUNT variable below. The data rows are generated with a factory fixture that returns a function that allows you to pass a global key. The ontologies are generated normalized and based on the MediaType given (i.e. only features supported by MediaType are created). This ontology is later used to obtain the correct annotations with the prediction_id_mapping and corresponding inferences. Each data row will have all possible annotations attached supported for the MediaType. 
@@ -1257,35 +1254,6 @@ def line_inference(prediction_id_mapping):
 
 
 @pytest.fixture
-def line_inference_v2(prediction_id_mapping):
-    lines = []
-    for feature in prediction_id_mapping:
-        if "line" not in feature:
-            continue
-        line = feature["line"].copy()
-        line_data = {
-            "groupKey": "axial",
-            "segments": [
-                {
-                    "keyframes": [
-                        {
-                            "frame": 1,
-                            "line": [
-                                {"x": 147.692, "y": 118.154},
-                                {"x": 150.692, "y": 160.154},
-                            ],
-                        }
-                    ]
-                },
-            ],
-        }
-        line.update(line_data)
-        del line["tool"]
-        lines.append(line)
-    return lines
-
-
-@pytest.fixture
 def point_inference(prediction_id_mapping):
     points = []
     for feature in prediction_id_mapping:
@@ -1796,7 +1764,6 @@ def annotations_by_media_type(
     polygon_inference,
     rectangle_inference,
     rectangle_inference_document,
-    line_inference_v2,
     line_inference,
     entity_inference,
     entity_inference_index,
@@ -1825,7 +1792,6 @@ def annotations_by_media_type(
             text_inference_index,
             entity_inference_index,
         ],
-        MediaType.Dicom: [line_inference_v2],
         MediaType.Document: [
             entity_inference_document,
             checklist_inference,

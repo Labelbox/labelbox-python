@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import List, Optional, Tuple
 
 from pydantic import (
@@ -66,14 +65,6 @@ class VideoObjectAnnotation(
     frame: int
     keyframe: bool
     segment_index: Optional[int] = None
-
-
-class GroupKey(Enum):
-    """Group key for DICOM annotations"""
-
-    AXIAL = "axial"
-    SAGITTAL = "sagittal"
-    CORONAL = "coronal"
 
 
 class MaskFrame(_CamelCaseMixin, BaseModel):
