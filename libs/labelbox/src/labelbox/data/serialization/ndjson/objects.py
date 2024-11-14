@@ -61,10 +61,6 @@ class VideoSupported(BaseModel):
     frame: int
 
 
-class DicomSupported(BaseModel):
-    group_key: str
-
-
 class _Point(BaseModel):
     x: float
     y: float
