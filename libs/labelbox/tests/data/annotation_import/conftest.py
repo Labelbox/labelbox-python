@@ -57,18 +57,6 @@ def conversational_data_row_factory():
 
 
 @pytest.fixture(scope="module", autouse=True)
-def dicom_data_row_factory():
-    def dicom_data_row(global_key):
-        return {
-            "row_data": "https://storage.googleapis.com/labelbox-datasets/dicom-sample-data/sample-dicom-1.dcm",
-            "global_key": f"https://storage.googleapis.com/labelbox-datasets/dicom-sample-data/sample-dicom-1.dcm-{global_key}",
-            "media_type": "DICOM",
-        }
-
-    return dicom_data_row
-
-
-@pytest.fixture(scope="module", autouse=True)
 def geospatial_data_row_factory():
     def geospatial_data_row(global_key):
         return {
@@ -170,7 +158,6 @@ def offline_model_evaluation_data_row_factory(mmc_data_row_url: str):
 def data_row_json_by_media_type(
     audio_data_row_factory,
     conversational_data_row_factory,
-    dicom_data_row_factory,
     geospatial_data_row_factory,
     html_data_row_factory,
     image_data_row_factory,
@@ -182,7 +169,6 @@ def data_row_json_by_media_type(
     return {
         MediaType.Audio: audio_data_row_factory,
         MediaType.Conversational: conversational_data_row_factory,
-        MediaType.Dicom: dicom_data_row_factory,
         MediaType.Geospatial_Tile: geospatial_data_row_factory,
         MediaType.Html: html_data_row_factory,
         MediaType.Image: image_data_row_factory,
