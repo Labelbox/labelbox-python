@@ -6,7 +6,6 @@ from labelbox.utils import camel_case
 class MediaType(Enum):
     Audio = "AUDIO"
     Conversational = "CONVERSATIONAL"
-    Dicom = "DICOM"
     Document = "PDF"
     Geospatial_Tile = "TMS_GEO"
     Html = "HTML"
