@@ -76,35 +76,6 @@ class GroupKey(Enum):
     CORONAL = "coronal"
 
 
-class DICOMObjectAnnotation(VideoObjectAnnotation):
-    """DICOM object annotation
-    >>> DICOMObjectAnnotation(
-    >>>     name="dicom_polyline",
-    >>>     frame=2,
-    >>>     value=lb_types.Line(points = [
-    >>>         lb_types.Point(x=680, y=100),
-    >>>         lb_types.Point(x=100, y=190),
-    >>>         lb_types.Point(x=190, y=220)
-    >>>     ]),
-    >>>     segment_index=0,
-    >>>     keyframe=True,
-    >>>     Group_key=GroupKey.AXIAL
-    >>> )
-    Args:
-        name (Optional[str])
-        feature_schema_id (Optional[Cuid])
-        value (Geometry)
-        group_key (GroupKey)
-        frame (Int): The frame index that this annotation corresponds to
-        keyframe (bool): Whether or not this annotation was a human generated or interpolated annotation
-        segment_id (Optional[Int]): Index of video segment this annotation belongs to
-        classifications (List[ClassificationAnnotation]) = []
-        extra (Dict[str, Any])
-    """
-
-    group_key: GroupKey
-
-
 class MaskFrame(_CamelCaseMixin, BaseModel):
     index: int
     instance_uri: Optional[str] = Field(
@@ -158,4 +129,3 @@ class VideoMaskAnnotation(BaseModel):
 
     frames: List[MaskFrame]
     instances: List[MaskInstance]
-

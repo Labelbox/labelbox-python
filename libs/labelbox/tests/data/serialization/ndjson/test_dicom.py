@@ -9,23 +9,6 @@ from labelbox.data.serialization import NDJsonConverter
 Polyline test data
 """
 
-dicom_polyline_annotations = [
-    lb_types.DICOMObjectAnnotation(
-        uuid="78a8a027-9089-420c-8348-6099eb77e4aa",
-        name="dicom_polyline",
-        frame=2,
-        value=lb_types.Line(
-            points=[
-                lb_types.Point(x=680, y=100),
-                lb_types.Point(x=100, y=190),
-                lb_types.Point(x=190, y=220),
-            ]
-        ),
-        segment_index=0,
-        keyframe=True,
-        group_key=lb_types.GroupKey.AXIAL,
-    )
-]
 
 polyline_label = lb_types.Label(
     data=lb_types.GenericDataRowData(uid="test-uid"),

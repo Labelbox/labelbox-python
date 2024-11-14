@@ -12,7 +12,6 @@ from labelbox.data.annotation_types.ner.conversation_entity import (
     ConversationEntity,
 )
 from labelbox.data.annotation_types.video import (
-    DICOMObjectAnnotation,
     VideoObjectAnnotation,
 )
 from labelbox.data.mixins import (
@@ -698,22 +697,7 @@ class NDObject:
         obj = cls.lookup_object(annotation)
 
         # if it is video segments
-        if obj == NDSegments:
-            first_video_annotation = annotation[0][0]
-            args = dict(
-                segments=annotation,
-                data=data,
-                name=first_video_annotation.name,
-                feature_schema_id=first_video_annotation.feature_schema_id,
-                extra=first_video_annotation.extra,
-            )
-
-            if isinstance(first_video_annotation, DICOMObjectAnnotation):
-                group_key = first_video_annotation.group_key.value
-                args.update(dict(group_key=group_key))
-
-            return obj.from_common(**args)
-        elif obj == NDVideoMasks:
+        if obj == NDVideoMasks:
             return obj.from_common(annotation, data)
 
         subclasses = [
