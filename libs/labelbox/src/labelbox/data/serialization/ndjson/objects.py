@@ -724,8 +724,6 @@ class NDObject:
     ) -> "NDObjectType":
         if isinstance(annotation, VideoMaskAnnotation):
             result = NDVideoMasks
-        elif isinstance(annotation, list):
-            result = NDSegments
         else:
             result = {
                 Line: NDLine,
