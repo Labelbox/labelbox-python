@@ -118,13 +118,6 @@ video_mask_label_with_global_key = lb_types.Label(
 DICOM Mask test data
 """
 
-dicom_mask_annotation = lb_types.DICOMMaskAnnotation(
-    name="dicom_mask",
-    group_key=lb_types.GroupKey.AXIAL,
-    frames=frames,
-    instances=instances,
-)
-
 dicom_mask_label = lb_types.Label(
     data=lb_types.GenericDataRowData(uid="test-uid"),
     annotations=[dicom_mask_annotation],
