@@ -1,58 +1,56 @@
-from io import BytesIO
-from typing import Any, Dict, List, Tuple, Union, Optional
 import base64
+from io import BytesIO
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+import numpy as np
+from PIL import Image
+from pydantic import BaseModel
+
+from labelbox.data.annotation_types.data import GenericDataRowData
 from labelbox.data.annotation_types.data.raster import MaskData
 from labelbox.data.annotation_types.ner.conversation_entity import (
     ConversationEntity,
 )
 from labelbox.data.annotation_types.video import (
-    VideoObjectAnnotation,
     DICOMObjectAnnotation,
+    VideoObjectAnnotation,
 )
 from labelbox.data.mixins import (
     ConfidenceMixin,
-    CustomMetricsMixin,
     CustomMetric,
+    CustomMetricsMixin,
     CustomMetricsNotSupportedMixin,
 )
+
 from ....annotated_types import Cuid
-import numpy as np
-
-from PIL import Image
-
-from labelbox.data.annotation_types.data import GenericDataRowData
-
+from ...annotation_types.annotation import (
+    ClassificationAnnotation,
+    ObjectAnnotation,
+)
 from ...annotation_types.data import GenericDataRowData
+from ...annotation_types.geometry import (
+    DocumentRectangle,
+    Line,
+    Mask,
+    Point,
+    Polygon,
+    Rectangle,
+)
 from ...annotation_types.ner import (
     DocumentEntity,
     DocumentTextSelection,
     TextEntity,
 )
-from ...annotation_types.geometry import (
-    DocumentRectangle,
-    Rectangle,
-    Polygon,
-    Line,
-    Point,
-    Mask,
-)
-from ...annotation_types.annotation import (
-    ClassificationAnnotation,
-    ObjectAnnotation,
-)
 from ...annotation_types.video import (
-    VideoMaskAnnotation,
-    DICOMMaskAnnotation,
     MaskFrame,
     MaskInstance,
+    VideoMaskAnnotation,
 )
+from .base import DataRow, NDAnnotation, NDJsonBase
 from .classification import (
     NDSubclassification,
     NDSubclassificationType,
 )
-from .base import DataRow, NDAnnotation, NDJsonBase
-from pydantic import BaseModel
 
 
 class NDBaseObject(NDAnnotation):
@@ -666,25 +664,6 @@ class NDVideoMasks(
         )
 
 
-class NDDicomMasks(NDVideoMasks, DicomSupported):
-    def to_common(self) -> DICOMMaskAnnotation:
-        return DICOMMaskAnnotation(
-            frames=self.masks.frames,
-            instances=self.masks.instances,
-            group_key=self.group_key,
-        )
-
-    @classmethod
-    def from_common(cls, annotation, data):
-        return cls(
-            data_row=DataRow(id=data.uid, global_key=data.global_key),
-            masks=NDVideoMasksFramesInstances(
-                frames=annotation.frames, instances=annotation.instances
-            ),
-            group_key=annotation.group_key.value,
-        )
-
-
 class Location(BaseModel):
     start: int
     end: int
@@ -863,7 +842,7 @@ class NDObject:
                 args.update(dict(group_key=group_key))
 
             return obj.from_common(**args)
-        elif obj == NDVideoMasks or obj == NDDicomMasks:
+        elif obj == NDVideoMasks:
             return obj.from_common(annotation, data)
 
         subclasses = [
@@ -892,9 +871,7 @@ class NDObject:
     def lookup_object(
         annotation: Union[ObjectAnnotation, List],
     ) -> "NDObjectType":
-        if isinstance(annotation, DICOMMaskAnnotation):
-            result = NDDicomMasks
-        elif isinstance(annotation, VideoMaskAnnotation):
+        if isinstance(annotation, VideoMaskAnnotation):
             result = NDVideoMasks
         elif isinstance(annotation, list):
             try:

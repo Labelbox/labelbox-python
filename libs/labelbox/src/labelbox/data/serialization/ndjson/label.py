@@ -1,48 +1,48 @@
+from collections import defaultdict
 from itertools import groupby
 from operator import itemgetter
 from typing import Dict, Generator, List, Tuple, Union
-from collections import defaultdict
+
+from pydantic import BaseModel
 
 from ...annotation_types.annotation import (
     ClassificationAnnotation,
     ObjectAnnotation,
 )
-from ...annotation_types.relationship import RelationshipAnnotation
-from ...annotation_types.video import (
-    VideoClassificationAnnotation,
-)
-from ...annotation_types.video import VideoObjectAnnotation, VideoMaskAnnotation
 from ...annotation_types.collection import LabelCollection, LabelGenerator
 from ...annotation_types.data.generic_data_row_data import GenericDataRowData
 from ...annotation_types.label import Label
-from ...annotation_types.metrics import ScalarMetric, ConfusionMatrixMetric
 from ...annotation_types.llm_prompt_response.prompt import (
     PromptClassificationAnnotation,
 )
+from ...annotation_types.metrics import ConfusionMatrixMetric, ScalarMetric
 from ...annotation_types.mmc import MessageEvaluationTaskAnnotation
-
-from .metric import NDScalarMetric, NDMetricAnnotation, NDConfusionMatrixMetric
+from ...annotation_types.relationship import RelationshipAnnotation
+from ...annotation_types.video import (
+    VideoClassificationAnnotation,
+    VideoMaskAnnotation,
+    VideoObjectAnnotation,
+)
+from .base import DataRow
 from .classification import (
     NDChecklistSubclass,
     NDClassification,
     NDClassificationType,
-    NDRadioSubclass,
     NDPromptClassification,
     NDPromptClassificationType,
     NDPromptText,
+    NDRadioSubclass,
 )
+from .metric import NDConfusionMatrixMetric, NDMetricAnnotation, NDScalarMetric
+from .mmc import NDMessageTask
 from .objects import (
+    NDDicomSegments,
     NDObject,
     NDObjectType,
     NDSegments,
-    NDDicomSegments,
     NDVideoMasks,
-    NDDicomMasks,
 )
-from .mmc import NDMessageTask
 from .relationship import NDRelationship
-from .base import DataRow
-from pydantic import BaseModel
 
 AnnotationType = Union[
     NDObjectType,
@@ -52,7 +52,6 @@ AnnotationType = Union[
     NDScalarMetric,
     NDDicomSegments,
     NDSegments,
-    NDDicomMasks,
     NDVideoMasks,
     NDRelationship,
     NDPromptText,
@@ -151,10 +150,6 @@ class NDLabel(BaseModel):
                             ndjson_annotation.name,
                             ndjson_annotation.schema_id,
                         )
-                    )
-                elif isinstance(ndjson_annotation, NDDicomMasks):
-                    annotations.append(
-                        NDDicomMasks.to_common(ndjson_annotation)
                     )
                 elif isinstance(ndjson_annotation, NDVideoMasks):
                     annotations.append(
