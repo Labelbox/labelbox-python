@@ -208,25 +208,6 @@ class NDFrameLine(VideoSupported):
         )
 
 
-class NDDicomLine(NDFrameLine):
-    def to_common(
-        self,
-        name: str,
-        feature_schema_id: Cuid,
-        segment_index: int,
-        group_key: str,
-    ) -> DICOMObjectAnnotation:
-        return DICOMObjectAnnotation(
-            frame=self.frame,
-            segment_index=segment_index,
-            keyframe=True,
-            name=name,
-            feature_schema_id=feature_schema_id,
-            value=Line(points=[Point(x=pt.x, y=pt.y) for pt in self.line]),
-            group_key=group_key,
-        )
-
-
 class NDPolygon(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
     polygon: List[_Point]
 
@@ -797,4 +778,3 @@ NDObjectType = Union[
 ]
 
 NDFrameObjectType = NDFrameRectangle, NDFramePoint, NDFrameLine
-NDDicomObjectType = NDDicomLine
