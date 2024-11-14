@@ -36,7 +36,6 @@ from .classification import (
 from .metric import NDConfusionMatrixMetric, NDMetricAnnotation, NDScalarMetric
 from .mmc import NDMessageTask
 from .objects import (
-    NDDicomSegments,
     NDObject,
     NDObjectType,
     NDSegments,
@@ -50,7 +49,6 @@ AnnotationType = Union[
     NDPromptClassificationType,
     NDConfusionMatrixMetric,
     NDScalarMetric,
-    NDDicomSegments,
     NDSegments,
     NDVideoMasks,
     NDRelationship,
@@ -135,15 +133,7 @@ class NDLabel(BaseModel):
             # deserialized objects in the _AnnotationGroupTuple
             # object *if* the object can be used in a relationship
             for uuid, ndjson_annotation in group.ndjson_annotations.items():
-                if isinstance(ndjson_annotation, NDDicomSegments):
-                    annotations.extend(
-                        NDDicomSegments.to_common(
-                            ndjson_annotation,
-                            ndjson_annotation.name,
-                            ndjson_annotation.schema_id,
-                        )
-                    )
-                elif isinstance(ndjson_annotation, NDSegments):
+                if isinstance(ndjson_annotation, NDSegments):
                     annotations.extend(
                         NDSegments.to_common(
                             ndjson_annotation,

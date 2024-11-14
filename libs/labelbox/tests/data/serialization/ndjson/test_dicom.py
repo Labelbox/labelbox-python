@@ -1,12 +1,9 @@
 from copy import copy
+
 import pytest
+
 import labelbox.types as lb_types
 from labelbox.data.serialization import NDJsonConverter
-from labelbox.data.serialization.ndjson.objects import (
-    NDDicomSegments,
-    NDDicomSegment,
-    NDDicomLine,
-)
 
 """
 Polyline test data
@@ -167,13 +164,6 @@ ndjsons = [
     video_mask_annotation_ndjson_with_global_key,
 ]
 labels_ndjsons = list(zip(labels, ndjsons))
-
-
-def test_deserialize_nd_dicom_segments():
-    nd_dicom_segments = NDDicomSegments(**polyline_annotation_ndjson)
-    assert isinstance(nd_dicom_segments, NDDicomSegments)
-    assert isinstance(nd_dicom_segments.segments[0], NDDicomSegment)
-    assert isinstance(nd_dicom_segments.segments[0].keyframes[0], NDDicomLine)
 
 
 @pytest.mark.parametrize("label, ndjson", labels_ndjsons)

@@ -450,116 +450,6 @@ class NDSegment(BaseModel):
         )
 
 
-class NDDicomSegment(NDSegment):
-    keyframes: List[NDDicomLine]
-
-    @staticmethod
-    def lookup_segment_object_type(segment: List) -> "NDDicomObjectType":
-        """Used for determining which object type the annotation contains
-        returns the object type"""
-        segment_class = type(segment[0].value)
-        if segment_class == Line:
-            return NDDicomLine
-        else:
-            raise ValueError("DICOM segments only support Line objects")
-
-    def to_common(
-        self,
-        name: str,
-        feature_schema_id: Cuid,
-        uuid: str,
-        segment_index: int,
-        group_key: str,
-    ):
-        return [
-            self.segment_with_uuid(
-                keyframe.to_common(
-                    name=name,
-                    feature_schema_id=feature_schema_id,
-                    segment_index=segment_index,
-                    group_key=group_key,
-                ),
-                uuid,
-            )
-            for keyframe in self.keyframes
-        ]
-
-
-class NDSegments(NDBaseObject):
-    segments: List[NDSegment]
-
-    def to_common(self, name: str, feature_schema_id: Cuid):
-        result = []
-        for idx, segment in enumerate(self.segments):
-            result.extend(
-                segment.to_common(
-                    name=name,
-                    feature_schema_id=feature_schema_id,
-                    segment_index=idx,
-                    uuid=self.uuid,
-                )
-            )
-        return result
-
-    @classmethod
-    def from_common(
-        cls,
-        segments: List[VideoObjectAnnotation],
-        data: GenericDataRowData,
-        name: str,
-        feature_schema_id: Cuid,
-        extra: Dict[str, Any],
-    ) -> "NDSegments":
-        segments = [NDSegment.from_common(segment) for segment in segments]
-
-        return cls(
-            segments=segments,
-            data_row=DataRow(id=data.uid, global_key=data.global_key),
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=extra.get("uuid"),
-        )
-
-
-class NDDicomSegments(NDBaseObject, DicomSupported):
-    segments: List[NDDicomSegment]
-
-    def to_common(self, name: str, feature_schema_id: Cuid):
-        result = []
-        for idx, segment in enumerate(self.segments):
-            result.extend(
-                segment.to_common(
-                    name=name,
-                    feature_schema_id=feature_schema_id,
-                    segment_index=idx,
-                    uuid=self.uuid,
-                    group_key=self.group_key,
-                )
-            )
-        return result
-
-    @classmethod
-    def from_common(
-        cls,
-        segments: List[DICOMObjectAnnotation],
-        data: GenericDataRowData,
-        name: str,
-        feature_schema_id: Cuid,
-        extra: Dict[str, Any],
-        group_key: str,
-    ) -> "NDDicomSegments":
-        segments = [NDDicomSegment.from_common(segment) for segment in segments]
-
-        return cls(
-            segments=segments,
-            dataRow=DataRow(id=data.uid, global_key=data.global_key),
-            name=name,
-            schema_id=feature_schema_id,
-            uuid=extra.get("uuid"),
-            group_key=group_key,
-        )
-
-
 class _URIMask(BaseModel):
     instanceURI: str
     colorRGB: Tuple[int, int, int]
@@ -827,7 +717,7 @@ class NDObject:
         obj = cls.lookup_object(annotation)
 
         # if it is video segments
-        if obj == NDSegments or obj == NDDicomSegments:
+        if obj == NDSegments:
             first_video_annotation = annotation[0][0]
             args = dict(
                 segments=annotation,
@@ -874,15 +764,7 @@ class NDObject:
         if isinstance(annotation, VideoMaskAnnotation):
             result = NDVideoMasks
         elif isinstance(annotation, list):
-            try:
-                first_annotation = annotation[0][0]
-            except IndexError:
-                raise ValueError("Annotation list cannot be empty")
-
-            if isinstance(first_annotation, DICOMObjectAnnotation):
-                result = NDDicomSegments
-            else:
-                result = NDSegments
+            result = NDSegments
         else:
             result = {
                 Line: NDLine,
