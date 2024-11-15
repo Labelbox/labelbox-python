@@ -26,7 +26,7 @@ from lbox.exceptions import (
 
 from labelbox import utils
 from labelbox.orm import query
-from labelbox.orm.db_object import DbObject, Deletable, Updateable, experimental
+from labelbox.orm.db_object import DbObject, Deletable, Updateable
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.consensus_settings import ConsensusSettings
@@ -861,9 +861,9 @@ class Project(DbObject, Updateable, Deletable):
             },
         }
 
-        tasks = self.client.execute(mutation_str, params, experimental=True)[
-            "project"
-        ][method]["tasks"]
+        tasks = self.client.execute(mutation_str, params)["project"][method][
+            "tasks"
+        ]
         batch_ids = [task["batchUuid"] for task in tasks]
         task_ids = [task["taskId"] for task in tasks]
 
@@ -926,9 +926,9 @@ class Project(DbObject, Updateable, Deletable):
             },
         }
 
-        tasks = self.client.execute(mutation_str, params, experimental=True)[
-            "project"
-        ][method]["tasks"]
+        tasks = self.client.execute(mutation_str, params)["project"][method][
+            "tasks"
+        ]
 
         batch_ids = [task["batchUuid"] for task in tasks]
         task_ids = [task["taskId"] for task in tasks]
@@ -1595,7 +1595,6 @@ class Project(DbObject, Updateable, Deletable):
         result = self.client.execute(mutation, {"projectId": self.uid})
         return self.client.get_project(result["cloneProject"]["id"])
 
-    @experimental
     def get_labeling_service(self) -> LabelingService:
         """Get the labeling service for this project.
 
@@ -1606,7 +1605,6 @@ class Project(DbObject, Updateable, Deletable):
         """
         return LabelingService.getOrCreate(self.client, self.uid)
 
-    @experimental
     def get_labeling_service_status(self) -> LabelingServiceStatus:
         """Get the labeling service status for this project.
 
@@ -1618,7 +1616,6 @@ class Project(DbObject, Updateable, Deletable):
         """
         return self.get_labeling_service().status
 
-    @experimental
     def get_labeling_service_dashboard(self) -> LabelingServiceDashboard:
         """Get the labeling service for this project.
 

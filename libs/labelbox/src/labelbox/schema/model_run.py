@@ -7,18 +7,17 @@ from enum import Enum
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
+    Any,
     Dict,
     Iterable,
-    Union,
-    Tuple,
     List,
     Optional,
-    Any,
+    Tuple,
+    Union,
 )
 
-
 from labelbox.orm.db_object import DbObject, experimental
-from labelbox.orm.model import Field, Relationship, Entity
+from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm.query import results_query_part
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.conflict_resolution_strategy import (
@@ -26,7 +25,7 @@ from labelbox.schema.conflict_resolution_strategy import (
 )
 from labelbox.schema.export_params import ModelRunExportParams
 from labelbox.schema.export_task import ExportTask
-from labelbox.schema.identifiables import GlobalKeys, DataRowIds
+from labelbox.schema.identifiables import DataRowIds, GlobalKeys
 from labelbox.schema.send_to_annotate_params import (
     SendToAnnotateFromModelParams,
     build_destination_task_queue_input,
@@ -458,7 +457,6 @@ class ModelRun(DbObject):
             experimental=True,
         )
 
-    @experimental
     def update_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """
         Updates the Model Run's training metadata config
@@ -474,11 +472,9 @@ class ModelRun(DbObject):
             }
         """,
             {"modelRunId": self.uid, "data": data},
-            experimental=True,
         )
         return res["updateModelRunConfig"]
 
-    @experimental
     def reset_config(self) -> Dict[str, Any]:
         """
         Resets Model Run's training metadata config
@@ -491,11 +487,9 @@ class ModelRun(DbObject):
             }
         """,
             {"modelRunId": self.uid},
-            experimental=True,
         )
         return res["resetModelRunConfig"]
 
-    @experimental
     def get_config(self) -> Dict[str, Any]:
         """
         Gets Model Run's training metadata
@@ -508,7 +502,6 @@ class ModelRun(DbObject):
             }
         """,
             {"modelRunId": self.uid},
-            experimental=True,
         )
         return res["modelRun"]["trainingMetadata"]
 

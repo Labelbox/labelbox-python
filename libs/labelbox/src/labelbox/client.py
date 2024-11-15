@@ -2026,7 +2026,6 @@ class Client:
             get_batch_str,
             {"projectId": project_id, "batchId": batch_id},
             timeout=180.0,
-            experimental=True,
         )["project"]["batches"]["nodes"][0]
 
         return Entity.Batch(self, project_id, batch)
