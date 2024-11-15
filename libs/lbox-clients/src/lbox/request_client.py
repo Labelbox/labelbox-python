@@ -29,7 +29,6 @@ class RequestClient:
         sdk_version,
         api_key=None,
         endpoint="https://api.labelbox.com/graphql",
-        enable_experimental=False,
         app_url="https://app.labelbox.com",
         rest_endpoint="https://api.labelbox.com/api/v1",
     ):
@@ -39,7 +38,6 @@ class RequestClient:
         Args:
             api_key (str): API key. If None, the key is obtained from the "LABELBOX_API_KEY" environment variable.
             endpoint (str): URL of the Labelbox server to connect to.
-            enable_experimental (bool): Indicates whether or not to use experimental features
             app_url (str) : host url for all links to the web app
         Raises:
             exceptions.AuthenticationError: If no `api_key`
@@ -51,10 +49,6 @@ class RequestClient:
                 raise exceptions.AuthenticationError("Labelbox API key not provided")
             api_key = os.environ[_LABELBOX_API_KEY]
         self.api_key = api_key
-
-        self.enable_experimental = enable_experimental
-        if enable_experimental:
-            logger.info("Experimental features have been enabled")
 
         logger.info("Initializing Labelbox client at '%s'", endpoint)
         self.app_url = app_url
@@ -163,6 +157,8 @@ class RequestClient:
                 kind occurred.
             ValueError: If query and data are both None.
         """
+        if experimental:
+            logger.info("Experimental features have been enabled")
         logger.debug("Query: %s, params: %r, data %r", query, params, data)
 
         # Convert datetimes to UTC strings.

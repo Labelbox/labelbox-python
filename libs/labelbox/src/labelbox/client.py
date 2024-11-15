@@ -121,11 +121,11 @@ class Client:
             sdk_version=SDK_VERSION,
             api_key=api_key,
             endpoint=endpoint,
-            enable_experimental=enable_experimental,
             app_url=app_url,
             rest_endpoint=rest_endpoint,
         )
         self._adv_client = AdvClient.factory(rest_endpoint, api_key)
+        self._enable_experimental = enable_experimental
 
     @property
     def headers(self) -> MappingProxyType:
@@ -145,7 +145,11 @@ class Client:
 
     @property
     def enable_experimental(self) -> bool:
-        return self._request_client.enable_experimental
+        return self._enable_experimental
+
+    @enable_experimental.setter
+    def enable_experimental(self, value: bool) -> None:
+        self._enable_experimental = value
 
     @property
     def app_url(self) -> str:
@@ -184,13 +188,14 @@ class Client:
         Returns:
             dict: The response from the server.
         """
+        use_experimental = experimental or self.enable_experimental
         return self._request_client.execute(
             query,
             params,
             data=data,
             files=files,
             timeout=timeout,
-            experimental=experimental,
+            experimental=use_experimental,
             error_log_key=error_log_key,
             raise_return_resource_not_found=raise_return_resource_not_found,
             error_handlers=error_handlers,
