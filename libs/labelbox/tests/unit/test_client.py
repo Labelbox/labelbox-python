@@ -13,10 +13,10 @@ def test_headers():
     assert client.headers["X-Python-Version"]
 
 
-@patch('labelbox.client.RequestClient')
+@patch("labelbox.client.RequestClient")
 def test_client_initialization(mock_request_client):
     # Act: Initialize the Client
-    client = Client(api_key='test_api_key')
+    client = Client(api_key="test_api_key")
     client.execute("query_str", {"projectId": "project_id"})
 
     # Assert: Check if the RequestClient was called with the correct arguments
@@ -33,7 +33,7 @@ def test_client_initialization(mock_request_client):
     )
     mock_request_client.reset_mock()
 
-    client = Client(api_key='test_api_key', enable_experimental=True)
+    client = Client(api_key="test_api_key", enable_experimental=True)
     client.execute("query_str", {"projectId": "project_id"})
 
     # Assert: Check if the RequestClient was called with the correct arguments
@@ -50,7 +50,7 @@ def test_client_initialization(mock_request_client):
     )
     mock_request_client.reset_mock()
 
-    client = Client(api_key='test_api_key')
+    client = Client(api_key="test_api_key")
     client.enable_experimental = True
     client.execute("query_str", {"projectId": "project_id"})
 
@@ -67,7 +67,7 @@ def test_client_initialization(mock_request_client):
         error_handlers=ANY,
     )
     mock_request_client.reset_mock()
-    client = Client(api_key='test_api_key')
+    client = Client(api_key="test_api_key")
     client.enable_experimental = True
     client.execute("query_str", {"projectId": "project_id"}, experimental=False)
 
