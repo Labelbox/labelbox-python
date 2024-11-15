@@ -147,6 +147,10 @@ class Client:
     def enable_experimental(self) -> bool:
         return self._request_client.enable_experimental
 
+    @enable_experimental.setter
+    def enable_experimental(self, value: bool):
+        self._request_client.enable_experimental = value
+
     @property
     def app_url(self) -> str:
         return self._request_client.app_url
