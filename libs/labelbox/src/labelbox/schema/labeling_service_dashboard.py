@@ -83,10 +83,6 @@ class LabelingServiceDashboard(_CamelCaseMixin):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if not self.client.enable_experimental:
-            raise RuntimeError(
-                "Please enable experimental in client to use LabelingService"
-            )
 
     @property
     def service_type(self):
@@ -140,7 +136,7 @@ class LabelingServiceDashboard(_CamelCaseMixin):
                         }}
                     }}
                 """
-        result = client.execute(query, {"id": project_id}, experimental=True)
+        result = client.execute(query, {"id": project_id})
         if result["getProjectById"] is None:
             raise ResourceNotFoundError(
                 message="The project does not have a labeling service data yet."
@@ -196,7 +192,6 @@ class LabelingServiceDashboard(_CamelCaseMixin):
             dereferencing=["searchProjects", "nodes"],
             obj_class=convert_to_labeling_service_dashboard,
             cursor_path=["searchProjects", "pageInfo", "endCursor"],
-            experimental=True,
         )
 
     @model_validator(mode="before")

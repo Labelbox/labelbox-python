@@ -26,10 +26,6 @@ class LabelingService(_CamelCaseMixin):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if not self.client.enable_experimental:
-            raise RuntimeError(
-                "Please enable experimental in client to use LabelingService"
-            )
 
     @classmethod
     def start(cls, client, project_id: Cuid) -> "LabelingService":
