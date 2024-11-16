@@ -2071,7 +2071,10 @@ def expected_export_v2_image():
             {
                 "name": "text",
                 "value": "text",
-                "text_answer": {"content": "free form text..."},
+                "text_answer": {
+                    "content": "free form text...",
+                    "classifications": []
+                },
             },
         ],
         "relationships": [],
@@ -2103,7 +2106,10 @@ def expected_export_v2_audio():
             {
                 "name": "text",
                 "value": "text",
-                "text_answer": {"content": "free form text..."},
+                "text_answer": {
+                    "content": "free form text...",
+                    "classifications": []
+                },
             },
         ],
         "segments": {},
@@ -2120,7 +2126,10 @@ def expected_export_v2_html():
             {
                 "name": "text",
                 "value": "text",
-                "text_answer": {"content": "free form text..."},
+                "text_answer": {
+                    "content": "free form text...",
+                    "classifications": []
+                },
             },
             {
                 "name": "checklist",
@@ -2180,7 +2189,10 @@ def expected_export_v2_text():
             {
                 "name": "text",
                 "value": "text",
-                "text_answer": {"content": "free form text..."},
+                "text_answer": {
+                    "content": "free form text...",
+                    "classifications": []
+                },
             },
         ],
         "relationships": [],
@@ -2328,7 +2340,40 @@ def expected_export_v2_document():
             {
                 "name": "text",
                 "value": "text",
-                "text_answer": {"content": "free form text..."},
+                "text_answer": {
+                    "content": "free form text...",
+                    "classifications": []
+                },
+            },
+        ],
+        "relationships": [],
+    }
+    return expected_annotations
+
+
+@pytest.fixture()
+def expected_export_v2_llm_prompt_creation():
+    expected_annotations = {
+        "objects": [],
+        "classifications": [
+            {
+                "name":
+                    "checklist",
+                "value":
+                    "checklist",
+                "checklist_answers": [{
+                    "name": "option1",
+                    "value": "option1",
+                    "classifications": []
+                }],
+            },
+            {
+                "name": "text",
+                "value": "text",
+                "text_answer": {
+                    "content": "free form text...",
+                    "classifications": []
+                },
             },
         ],
         "relationships": [],
@@ -2344,11 +2389,17 @@ def expected_export_v2_llm_prompt_response_creation():
             {
                 "name": "prompt-text",
                 "value": "prompt-text",
-                "text_answer": {"content": "free form text..."},
+                "text_answer": {
+                    "content": "free form text...",
+                    "classifications": []
+                },
             },
             {
                 "name": "response-text",
-                "text_answer": {"content": "free form text..."},
+                "text_answer": {
+                    "content": "free form text...",
+                    "classifications": []
+                },
                 "value": "response-text",
             },
             {
@@ -2390,7 +2441,10 @@ def expected_export_v2_llm_prompt_creation():
             {
                 "name": "prompt-text",
                 "value": "prompt-text",
-                "text_answer": {"content": "free form text..."},
+                "text_answer": {
+                    "content": "free form text...",
+                    "classifications": []
+                },
             },
         ],
         "relationships": [],
@@ -2406,7 +2460,10 @@ def expected_export_v2_llm_response_creation():
         "classifications": [
             {
                 "name": "response-text",
-                "text_answer": {"content": "free form text..."},
+                "text_answer": {
+                    "content": "free form text...",
+                    "classifications": []
+                },
                 "value": "response-text",
             },
             {
@@ -2518,7 +2575,10 @@ def expected_exports_v2_mmc(mmc_example_data_row_message_ids):
             {
                 "name": "text",
                 "value": "text",
-                "text_answer": {"content": "free form text..."},
+                "text_answer": {
+                    "content": "free form text...",
+                    "classifications": []
+                },
             },
             {
                 "name": "radio_index",
