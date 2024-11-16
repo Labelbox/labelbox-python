@@ -760,32 +760,6 @@ class Project(DbObject, Updateable, Deletable):
             LabelImport,
         )
 
-    def get_annotation_imports(self) -> PaginatedCollection:
-        """Returns label import objects associated with the project.
-        These are returned with the oldest first, and most recent last.
-
-        Returns:
-            PaginatedCollection.
-        """
-
-        id_param = "projectId"
-        query_str = """
-        query getLabelImportsPyApi($%s: ID!) {
-            labelImports(skip: %%d, first: %%d, where: { projectId: $%s  }) { %s }}
-        """ % (
-            id_param,
-            id_param,
-            query.results_query_part(LabelImport),
-        )
-
-        return PaginatedCollection(
-            self.client,
-            query_str,
-            {id_param: self.uid},
-            ["labelImports"],
-            LabelImport,
-        )
-
     def create_batch(
         self,
         name: str,
