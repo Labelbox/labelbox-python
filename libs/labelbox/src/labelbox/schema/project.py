@@ -713,7 +713,9 @@ class Project(DbObject, Updateable, Deletable):
 
     def get_mal_prediction_imports(self) -> PaginatedCollection:
         """Returns mal prediction import objects which are used in model-assisted labeling associated with the project.
-        These are returned with the oldest first, and most recent last.
+
+        Returns:
+            PaginatedCollection
         """
 
         id_param = "projectId"
@@ -736,10 +738,9 @@ class Project(DbObject, Updateable, Deletable):
 
     def get_label_imports(self) -> PaginatedCollection:
         """Returns label import objects associated with the project.
-        These are returned with the oldest first, and most recent last.
 
         Returns:
-            PaginatedCollection.
+            PaginatedCollection
         """
 
         id_param = "projectId"
