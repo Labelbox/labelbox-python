@@ -78,3 +78,7 @@ def test_get_mal_import_jobs_from_project(client, configured_project):
     label_imports = list(configured_project.get_mal_prediction_imports())
     assert len(label_imports) == 1
     assert label_imports[0].input_file_url == url
+
+    label_imports[0].delete()
+    label_imports = list(configured_project.get_mal_prediction_imports())
+    assert len(label_imports) == 0

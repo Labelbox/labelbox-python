@@ -587,6 +587,20 @@ class MALPredictionImport(CreatableAnnotationImport):
         """
         return self.project().uid
 
+    def delete(self) -> None:
+        """
+        Deletes a MALPredictionImport job
+        """
+
+        query_string = """
+            mutation deleteModelAssistedLabelingPredictionImportPyApi($id: ID!) {
+                deleteModelAssistedLabelingPredictionImport(where: { id: $id }) {
+                        id
+                    }
+                }
+            """
+        self.client.execute(query_string, {"id": self.uid})
+
     @classmethod
     def create_from_file(
         cls, client: "labelbox.Client", project_id: str, name: str, path: str
