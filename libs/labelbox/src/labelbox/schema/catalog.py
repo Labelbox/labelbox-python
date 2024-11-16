@@ -47,7 +47,7 @@ class Catalog:
         """
 
         warnings.warn(
-            "You are currently utilizing export_v2 for this action, which will be removed in 7.0. Please refer to our docs for export alternatives. https://docs.labelbox.com/reference/export-overview#export-methods",
+            "The method export_v2 for Catalog is deprecated and will be removed in the next major release. Use the export method instead.",
             DeprecationWarning,
             stacklevel=2,
         )
