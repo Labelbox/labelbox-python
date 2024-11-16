@@ -136,6 +136,19 @@ def test_get(client, module_project, annotation_import_test_helpers):
     annotation_import_test_helpers.check_running_state(label_import, name, url)
 
 
+def test_get_import_jobs_from_project(client, configured_project):
+    name = str(uuid.uuid4())
+    url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
+    label_import = LabelImport.create_from_url(
+        client=client, project_id=configured_project.uid, name=name, url=url
+    )
+    label_import.wait_until_done()
+
+    label_imports = list(configured_project.get_label_imports())
+    assert len(label_imports) == 1
+    assert label_imports[0].input_file_url == url
+
+
 @pytest.mark.slow
 def test_wait_till_done(client, module_project, predictions):
     name = str(uuid.uuid4())

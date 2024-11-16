@@ -16,6 +16,7 @@ from typing import (
     get_args,
 )
 
+from labelbox.schema.annotation_import import LabelImport, MALPredictionImport
 from lbox.exceptions import (
     InvalidQueryError,
     LabelboxError,
@@ -708,6 +709,81 @@ class Project(DbObject, Updateable, Deletable):
                 LFO.labeling_frontend: labeling_frontend,
                 LFO.customization_options: labeling_frontend_options_str,
             },
+        )
+
+    def get_mal_prediction_imports(self) -> PaginatedCollection:
+        """Returns mal prediction import objects which are used in model-assisted labeling associated with the project.
+        These are returned with the oldest first, and most recent last.
+        """
+
+        id_param = "projectId"
+        query_str = """
+        query getModelAssistedLabelingPredictionImportsPyApi($%s: ID!) {
+            modelAssistedLabelingPredictionImports(skip: %%d, first: %%d, where: { projectId: $%s  }) { %s }}
+        """ % (
+            id_param,
+            id_param,
+            query.results_query_part(MALPredictionImport),
+        )
+
+        return PaginatedCollection(
+            self.client,
+            query_str,
+            {id_param: self.uid},
+            ["modelAssistedLabelingPredictionImports"],
+            MALPredictionImport,
+        )
+
+    def get_label_imports(self) -> PaginatedCollection:
+        """Returns label import objects associated with the project.
+        These are returned with the oldest first, and most recent last.
+
+        Returns:
+            PaginatedCollection.
+        """
+
+        id_param = "projectId"
+        query_str = """
+        query getLabelImportsPyApi($%s: ID!) {
+            labelImports(skip: %%d, first: %%d, where: { projectId: $%s  }) { %s }}
+        """ % (
+            id_param,
+            id_param,
+            query.results_query_part(LabelImport),
+        )
+
+        return PaginatedCollection(
+            self.client,
+            query_str,
+            {id_param: self.uid},
+            ["labelImports"],
+            LabelImport,
+        )
+
+    def get_annotation_imports(self) -> PaginatedCollection:
+        """Returns label import objects associated with the project.
+        These are returned with the oldest first, and most recent last.
+
+        Returns:
+            PaginatedCollection.
+        """
+
+        id_param = "projectId"
+        query_str = """
+        query getLabelImportsPyApi($%s: ID!) {
+            labelImports(skip: %%d, first: %%d, where: { projectId: $%s  }) { %s }}
+        """ % (
+            id_param,
+            id_param,
+            query.results_query_part(LabelImport),
+        )
+
+        return PaginatedCollection(
+            self.client,
+            query_str,
+            {id_param: self.uid},
+            ["labelImports"],
+            LabelImport,
         )
 
     def create_batch(

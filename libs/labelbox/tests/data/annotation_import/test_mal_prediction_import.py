@@ -65,3 +65,16 @@ def test_create_with_path_arg(
     annotation_import_test_helpers.assert_file_content(
         label_import.input_file_url, object_predictions
     )
+
+
+def test_get_mal_import_jobs_from_project(client, configured_project):
+    name = str(uuid.uuid4())
+    url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
+    label_import = MALPredictionImport.create(
+        client=client, id=configured_project.uid, name=name, url=url
+    )
+    label_import.wait_until_done()
+
+    label_imports = list(configured_project.get_mal_prediction_imports())
+    assert len(label_imports) == 1
+    assert label_imports[0].input_file_url == url
