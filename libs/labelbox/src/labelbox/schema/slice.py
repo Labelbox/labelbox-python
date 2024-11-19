@@ -258,6 +258,13 @@ class ModelSlice(Slice):
         Returns:
             A PaginatedCollection of data row ids
         """
+
+        warnings.warn(
+            "The method get_data_row_ids for ModelSlice is deprecated and will be removed in the next major release. Use the get_data_row_identifiers method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         return PaginatedCollection(
             client=self.client,
             query=ModelSlice.query_str(),
