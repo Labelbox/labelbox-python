@@ -14,6 +14,7 @@ from typing import (
     Union,
     cast,
 )
+import warnings
 
 import requests
 from google.api_core import retry
@@ -72,7 +73,7 @@ class AnnotationImport(DbObject):
             See `AnnotationImport.statuses` for more details.
         * This information will expire after 24 hours.
         """
-        self.wait_until_done()
+        self.wait_till_done()
         return self._fetch_remote_ndjson(self.error_file_url)
 
     @property
@@ -101,15 +102,20 @@ class AnnotationImport(DbObject):
 
         * This information will expire after 24 hours.
         """
-        self.wait_until_done()
+        self.wait_till_done()
         return self._fetch_remote_ndjson(self.status_file_url)
 
-    def wait_till_done(
+    def wait_until_done(
         self, sleep_time_seconds: int = 10, show_progress: bool = False
     ) -> None:
-        self.wait_until_done(sleep_time_seconds, show_progress)
+        warnings.warn(
+            "The method wait_until_done for AnnotationImport is deprecated and will be removed in the next major release. Use the wait_till_done method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.wait_till_done(sleep_time_seconds, show_progress)
 
-    def wait_until_done(
+    def wait_till_done(
         self, sleep_time_seconds: int = 10, show_progress: bool = False
     ) -> None:
         """Blocks import job until certain conditions are met.

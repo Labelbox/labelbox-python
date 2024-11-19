@@ -16,6 +16,7 @@ from typing import (
     TypeVar,
     Union,
 )
+import warnings
 
 import requests
 from pydantic import BaseModel
@@ -484,6 +485,11 @@ class ExportTask:
         return self._task.organization
 
     def wait_until_done(self, timeout_seconds: int = 7200) -> None:
+        warnings.warn(
+            "The method wait_until_done for ExportTask is deprecated and will be removed in the next major release. Use the wait_till_done method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.wait_till_done(timeout_seconds)
 
     def wait_till_done(self, timeout_seconds: int = 7200) -> None:

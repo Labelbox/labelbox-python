@@ -1,5 +1,6 @@
 import json
 from typing import TYPE_CHECKING, Callable, List, Optional, Dict, Any
+import warnings
 
 from labelbox.orm.model import Entity
 
@@ -23,6 +24,11 @@ class CreateBatchesTask:
         ]
 
     def wait_until_done(self, timeout_seconds: int = 300) -> None:
+        warnings.warn(
+            "The method wait_until_done for CreateBatchesTask is deprecated and will be removed in the next major release. Use the wait_till_done method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         self.wait_till_done(timeout_seconds)
 
     def wait_till_done(self, timeout_seconds: int = 300) -> None:

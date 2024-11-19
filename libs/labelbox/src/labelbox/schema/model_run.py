@@ -119,7 +119,7 @@ class ModelRun(DbObject):
             MEALabelRegistrationTaskStatus(where: $where) {status errorMessage}
         }
         """
-        return self._wait_until_done(
+        return self._wait_till_done(
             lambda: self.client.execute(
                 status_query_str, {"where": {"id": task_id}}
             )["MEALabelRegistrationTaskStatus"],
@@ -144,7 +144,7 @@ class ModelRun(DbObject):
             MEALabelRegistrationTaskStatus(where: $where) {status errorMessage}
         }
         """
-        return self._wait_until_done(
+        return self._wait_till_done(
             lambda: self.client.execute(
                 status_query_str, {"where": {"id": task_id}}
             )["MEALabelRegistrationTaskStatus"],
@@ -182,14 +182,14 @@ class ModelRun(DbObject):
             MEADataRowRegistrationTaskStatus(where: $where) {status errorMessage}
         }
         """
-        return self._wait_until_done(
+        return self._wait_till_done(
             lambda: self.client.execute(
                 status_query_str, {"where": {"id": task_id}}
             )["MEADataRowRegistrationTaskStatus"],
             timeout_seconds=timeout_seconds,
         )
 
-    def _wait_until_done(self, status_fn, timeout_seconds=120, sleep_time=5):
+    def _wait_till_done(self, status_fn, timeout_seconds=120, sleep_time=5):
         # Do not use this function outside of the scope of upsert_data_rows or upsert_labels. It could change.
         original_timeout = timeout_seconds
         while True:
@@ -419,7 +419,7 @@ class ModelRun(DbObject):
             assignDataRowsToDataSplitTaskStatus(where: {id : $id}){status errorMessage}}
             """
 
-        return self._wait_until_done(
+        return self._wait_till_done(
             lambda: self.client.execute(
                 status_query_str, {"id": task_id}, experimental=True
             )["assignDataRowsToDataSplitTaskStatus"],
