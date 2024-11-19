@@ -28,6 +28,14 @@ def validate_iso_format(date_string: str):
     "configured_project, media_type",
     [
         (MediaType.Audio, MediaType.Audio),
+        (MediaType.Html, MediaType.Html),
+        (MediaType.Image, MediaType.Image),
+        (MediaType.Text, MediaType.Text),
+        (MediaType.Video, MediaType.Video),
+        (MediaType.Conversational, MediaType.Conversational),
+        (MediaType.Document, MediaType.Document),
+        (OntologyKind.ResponseCreation, OntologyKind.ResponseCreation),
+        (OntologyKind.ModelEvaluation, OntologyKind.ModelEvaluation),
     ],
     indirect=["configured_project"],
 )
@@ -52,6 +60,7 @@ def test_import_media_types(
         annotations_ndjson,
     )
     label_import.wait_until_done()
+    # comment
 
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
@@ -61,7 +70,6 @@ def test_import_media_types(
     result = export_v2_test_helpers.run_project_export_v2_task(
         configured_project
     )
-    print("test")
 
     assert result
 
