@@ -281,7 +281,6 @@ def matching_checklist():
                 "featureId": "1234567890111213141516171",
                 "schemaId": "ckppid25v0000aeyjmxfwlc7t",
                 "uuid": "76e0dcea-fe46-43e5-95f5-a5e3f378520a",
-                "schemaId": "ckppid25v0000aeyjmxfwlc7t",
                 "answers": [
                     {
                         "schemaId": "ckppid25v0000aeyjmxfwlc7t",
@@ -319,7 +318,6 @@ def partially_matching_checklist_1():
                 "featureId": "1234567890111213141516171",
                 "schemaId": "ckppid25v0000aeyjmxfwlc7t",
                 "uuid": "76e0dcea-fe46-43e5-95f5-a5e3f378520a",
-                "schemaId": "ckppid25v0000aeyjmxfwlc7t",
                 "answers": [
                     {
                         "schemaId": "ckppid25v0000aeyjmxfwlc7t",
@@ -359,7 +357,6 @@ def partially_matching_checklist_2():
                 "featureId": "1234567890111213141516171",
                 "schemaId": "ckppid25v0000aeyjmxfwlc7t",
                 "uuid": "76e0dcea-fe46-43e5-95f5-a5e3f378520a",
-                "schemaId": "ckppid25v0000aeyjmxfwlc7t",
                 "answers": [
                     {
                         "schemaId": "ckppid25v0000aeyjmxfwlc7t",
@@ -397,7 +394,6 @@ def partially_matching_checklist_3():
                 "featureId": "1234567890111213141516171",
                 "schemaId": "ckppid25v0000aeyjmxfwlc7t",
                 "uuid": "76e0dcea-fe46-43e5-95f5-a5e3f378520a",
-                "schemaId": "ckppid25v0000aeyjmxfwlc7t",
                 "answers": [
                     {
                         "schemaId": "ckppid25v0000aeyjmxfwlc7t",
