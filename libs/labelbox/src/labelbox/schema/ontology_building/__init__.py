@@ -1,7 +1,0 @@
-import labelbox.schema.ontology_building.tool_type
-import labelbox.schema.ontology_building.variant
-import labelbox.schema.ontology_building.step_reasoning_tool
-import labelbox.schema.ontology_building.fact_checking_tool
-import labelbox.schema.ontology_building.tool_type_mapping
-import labelbox.schema.ontology_building.types
-import labelbox.schema.ontology_building.classification

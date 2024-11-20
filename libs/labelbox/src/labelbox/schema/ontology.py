@@ -10,19 +10,19 @@ from lbox.exceptions import InconsistentOntologyException
 
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field, Relationship
-from labelbox.schema.ontology_building.classification import (
+from labelbox.schema.ontology_building.prompt_issue_tool import PromptIssueTool
+from labelbox.schema.tool_building.classification import (
     Classification,
     PromptResponseClassification,
 )
-from labelbox.schema.ontology_building.fact_checking_tool import (
+from labelbox.schema.tool_building.fact_checking_tool import (
     FactCheckingTool,
 )
-from labelbox.schema.ontology_building.prompt_issue_tool import PromptIssueTool
-from labelbox.schema.ontology_building.step_reasoning_tool import (
+from labelbox.schema.tool_building.step_reasoning_tool import (
     StepReasoningTool,
 )
-from labelbox.schema.ontology_building.tool_type import ToolType
-from labelbox.schema.ontology_building.tool_type_mapping import (
+from labelbox.schema.tool_building.tool_type import ToolType
+from labelbox.schema.tool_building.tool_type_mapping import (
     map_tool_type_to_tool_cls,
 )
 

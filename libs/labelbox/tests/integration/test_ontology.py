@@ -5,10 +5,10 @@ import pytest
 
 from labelbox import MediaType, OntologyBuilder, Tool
 from labelbox.orm.model import Entity
-from labelbox.schema.ontology_building.fact_checking_tool import (
+from labelbox.schema.tool_building.fact_checking_tool import (
     FactCheckingTool,
 )
-from labelbox.schema.ontology_building.step_reasoning_tool import (
+from labelbox.schema.tool_building.step_reasoning_tool import (
     StepReasoningTool,
 )
 

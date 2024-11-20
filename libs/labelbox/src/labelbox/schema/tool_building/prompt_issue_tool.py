@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from labelbox.schema.ontology_building.classification import (
+from labelbox.schema.tool_building.classification import (
     Classification,
 )
-from labelbox.schema.ontology_building.tool_type import ToolType
+from labelbox.schema.tool_building.tool_type import ToolType
 
 
 def _supported_classifications() -> List[Classification]:

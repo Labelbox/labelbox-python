@@ -16,3 +16,5 @@ def map_tool_type_to_tool_cls(tool_type_str: str):
         return StepReasoningTool
     elif tool_type == ToolType.FACT_CHECKING:
         return FactCheckingTool
+    elif tool_type == ToolType.PROMPT_ISSUE:
+        return PromptIssueTool

@@ -55,6 +55,7 @@ from labelbox.schema.ontology import (
 )
 from labelbox.schema.tool_building.fact_checking_tool import FactCheckingTool
 from labelbox.schema.tool_building.step_reasoning_tool import StepReasoningTool
+from labelbox.schema.tool_building.prompt_issue_tool import PromptIssueTool
 from labelbox.schema.role import Role, ProjectRole
 from labelbox.schema.invite import Invite, InviteLimit
 from labelbox.schema.data_row_metadata import (
@@ -92,7 +93,7 @@ from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
 from labelbox.schema.user import User
 from labelbox.schema.webhook import Webhook
-from labelbox.schema.ontology_building.classification import (
+from labelbox.schema.tool_building.classification import (
     Classification,
     Option,
     ResponseOption,

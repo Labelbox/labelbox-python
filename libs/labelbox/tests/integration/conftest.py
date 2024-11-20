@@ -22,14 +22,14 @@ from labelbox import (
     Tool,
 )
 from labelbox.schema.data_row import DataRowMetadataField
-from labelbox.schema.ontology_building.fact_checking_tool import (
+from labelbox.schema.ontology_building.prompt_issue_tool import PromptIssueTool
+from labelbox.schema.ontology_kind import OntologyKind
+from labelbox.schema.tool_building.fact_checking_tool import (
     FactCheckingTool,
 )
-from labelbox.schema.ontology_building.prompt_issue_tool import PromptIssueTool
-from labelbox.schema.ontology_building.step_reasoning_tool import (
+from labelbox.schema.tool_building.step_reasoning_tool import (
     StepReasoningTool,
 )
-from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.user import User
 
 

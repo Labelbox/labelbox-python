@@ -29,7 +29,7 @@ from typing_extensions import Annotated
 
 from labelbox.schema.identifiable import GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIdentifiers, UniqueIds
-from labelbox.schema.ontology_building.types import SchemaId
+from labelbox.schema.tool_building.types import SchemaId
 from labelbox.utils import (
     _CamelCaseMixin,
     format_iso_datetime,
