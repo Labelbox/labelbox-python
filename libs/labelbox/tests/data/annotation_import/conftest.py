@@ -2313,10 +2313,12 @@ def expected_export_v2_document():
                     "left": 58.0,
                     "height": 65.0,
                     "width": 12.0,
+                    "unit": "points",
                 },
                 "page_dimensions": {
                     "height": 792.0,
                     "width": 612.0,
+                    "unit": "points",
                 },
             },
         ],
