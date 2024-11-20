@@ -860,7 +860,7 @@ class Client:
         extra_params = {k: v for k, v in extra_params.items() if v is not None}
         return self._create(Entity.Project, params, extra_params)
 
-    def get_roles(self) -> List[Role]:
+    def get_roles(self) -> Dict[str, Role]:
         """
         Returns:
             Roles: Provides information on available roles within an organization.
