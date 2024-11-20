@@ -3,14 +3,15 @@ from typing import Any, Dict, List, Optional
 
 from labelbox.schema.tool_building.classification import (
     Classification,
+    Option,
 )
 from labelbox.schema.tool_building.tool_type import ToolType
 
 
 def _supported_classifications() -> List[Classification]:
-    option_1_text = "This prompt cannot be rated (eg. contains PII, a nonsense prompt, a foreign language, or other scenario that makes the responses impossible to assess reliably). If you simply do not have expertise to tackle this prompt, please skip the task; do not mark it as not rateable"
-    option_2_text = 'This prompt contains a false, offensive, or controversial premise (eg. "why does 1+1=3"?)'
-    option_3_text = "This prompt is not self-contained (i.e. the prompt cannot be understood without additional context about previous turns, account information or images)."
+    option_1_text = "This prompt cannot be rated (eg. contains PII, a nonsense prompt, a foreign language, or other scenario that makes the responses impossible to assess reliably). However, if you simply do not have expertise to tackle this prompt, please skip the task; do not mark it as not rateable."
+    option_2_text = "This prompt contains a false, offensive, or controversial premise (eg. “why does 1+1=3”?)"
+    option_3_text = "This prompt is not self-contained, i.e. the prompt cannot be understood without additional context about previous turns, account information or images."
     options = [
         Option(label=option_1_text, value="not_rateable"),
         Option(label=option_2_text, value="false_offensive_controversial"),

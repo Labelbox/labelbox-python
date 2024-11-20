@@ -5,12 +5,15 @@ import pytest
 
 from labelbox import MediaType, OntologyBuilder, Tool
 from labelbox.orm.model import Entity
+from labelbox.schema.tool_building.classification import Classification
 from labelbox.schema.tool_building.fact_checking_tool import (
     FactCheckingTool,
 )
+from labelbox.schema.tool_building.prompt_issue_tool import PromptIssueTool
 from labelbox.schema.tool_building.step_reasoning_tool import (
     StepReasoningTool,
 )
+from labelbox.schema.tool_building.tool_type import ToolType
 
 
 def test_feature_schema_is_not_archived(client, ontology):
@@ -448,3 +451,40 @@ def test_fact_checking_ontology(chat_evaluation_ontology):
         ],
         "version": 1,
     }
+
+
+def test_prompt_issue_ontology(chat_evaluation_ontology):
+    ontology = chat_evaluation_ontology
+    prompt_issue = None
+    for tool in ontology.normalized["tools"]:
+        if tool["tool"] == "prompt-issue":
+            prompt_issue = tool
+            break
+    assert prompt_issue is not None
+
+    assert prompt_issue["definition"] == {
+        "title": "prompt issue",
+        "value": "prompt_issue",
+        "color": "#ff00ff",
+    }
+    assert prompt_issue["schemaNodeId"] is not None
+    assert prompt_issue["featureSchemaId"] is not None
+    assert len(prompt_issue["classifications"]) == 1
+
+    prompt_issue_tool = None
+    for tool in ontology.tools():
+        if isinstance(tool, PromptIssueTool):
+            prompt_issue_tool = tool
+            break
+    assert prompt_issue_tool is not None
+    # Assertions
+    assert prompt_issue_tool.name == "prompt issue"
+    assert prompt_issue_tool.type == ToolType.PROMPT_ISSUE
+    assert prompt_issue_tool.schema_id is not None
+    assert prompt_issue_tool.feature_schema_id is not None
+
+    # Check classifications
+    assert len(prompt_issue_tool.classifications) == 1
+    classification = prompt_issue_tool.classifications[0]
+    assert classification.class_type == Classification.Type.CHECKLIST
+    assert len(classification.options) == 3  # Check number of options

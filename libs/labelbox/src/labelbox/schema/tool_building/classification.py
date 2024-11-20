@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from lbox.exceptions import InconsistentOntologyException
 
-from labelbox.schema.ontology_building.types import FeatureSchemaId
+from labelbox.schema.tool_building.types import FeatureSchemaId
 
 
 @dataclass
