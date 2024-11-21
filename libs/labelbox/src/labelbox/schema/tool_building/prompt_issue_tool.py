@@ -48,6 +48,26 @@ class PromptIssueTool:
         if self.name.strip() == "":
             raise ValueError("Name cannot be empty")
 
+        if not self._validate_classifications(self.classifications):
+            raise ValueError("Only one checklist classification is supported")
+
+    def __setattr__(self, name, value):
+        if name == "classifications" and not self._validate_classifications(
+            value
+        ):
+            raise ValueError("Classifications are immutable")
+        object.__setattr__(self, name, value)
+
+    def _validate_classifications(
+        self, classifications: List[Classification]
+    ) -> bool:
+        if (
+            len(classifications) != 1
+            or classifications[0].class_type != Classification.Type.CHECKLIST
+        ):
+            return False
+        return True
+
     def asdict(self) -> Dict[str, Any]:
         return {
             "tool": self.type.value,
