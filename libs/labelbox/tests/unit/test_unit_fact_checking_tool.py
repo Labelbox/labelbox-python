@@ -45,9 +45,8 @@ def test_fact_checking_as_dict_default():
 
 def test_step_reasoning_as_dict_with_actions():
     tool = FactCheckingTool(name="Fact Checking Tool")
-    tool.set_unsupported_step_actions([])
-    tool.set_cant_confidently_assess_step_actions([])
-    tool.set_no_factual_information_step_actions([])
+    for variant in tool.definition.variants:
+        variant.set_actions([])
 
     # Get the dictionary representation
     tool_dict = tool.asdict()
@@ -59,11 +58,12 @@ def test_step_reasoning_as_dict_with_actions():
         "required": False,
         "schemaNodeId": None,
         "featureSchemaId": None,
+        "color": None,
         "definition": {
             "variants": [
-                {"id": 0, "name": "Accurate"},
-                {"id": 1, "name": "Inaccurate"},
-                {"id": 2, "name": "Disputed"},
+                {"id": 0, "name": "Accurate", "actions": []},
+                {"id": 1, "name": "Inaccurate", "actions": []},
+                {"id": 2, "name": "Disputed", "actions": []},
                 {
                     "id": 3,
                     "name": "Unsupported",

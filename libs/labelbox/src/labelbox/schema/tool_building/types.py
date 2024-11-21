@@ -1,10 +1,6 @@
-from typing import Annotated, Type
+from typing import Annotated
 
-from pydantic import StringConstraints
+from pydantic import Field
 
-FeatureSchemaId: Type[str] = Annotated[
-    str, StringConstraints(min_length=25, max_length=25)
-]
-SchemaId: Type[str] = Annotated[
-    str, StringConstraints(min_length=25, max_length=25)
-]
+FeatureSchemaId = Annotated[str, Field(min_length=25, max_length=25)]
+SchemaId = Annotated[str, Field(min_length=25, max_length=25)]

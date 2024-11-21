@@ -71,13 +71,17 @@ class LabelingServiceDashboard(_CamelCaseMixin):
     created_at: Optional[datetime] = Field(frozen=True, default=None)
     updated_at: Optional[datetime] = Field(frozen=True, default=None)
     created_by_id: Optional[str] = Field(frozen=True, default=None)
-    status: LabelingServiceStatus = Field(frozen=True, default=None)
+    status: Optional[LabelingServiceStatus] = Field(frozen=True, default=None)
     data_rows_count: int = Field(frozen=True)
     tasks_completed_count: int = Field(frozen=True)
     tasks_remaining_count: Optional[int] = Field(frozen=True, default=None)
     media_type: Optional[MediaType] = Field(frozen=True, default=None)
-    editor_task_type: EditorTaskType = Field(frozen=True, default=None)
-    tags: List[LabelingServiceDashboardTags] = Field(frozen=True, default=None)
+    editor_task_type: Optional[EditorTaskType] = Field(
+        frozen=True, default=None
+    )
+    tags: Optional[List[LabelingServiceDashboardTags]] = Field(
+        frozen=True, default=None
+    )
 
     client: Any  # type Any to avoid circular import from client
 

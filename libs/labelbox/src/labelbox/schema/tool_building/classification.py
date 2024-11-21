@@ -66,7 +66,7 @@ class Classification:
     options: List["Option"] = field(default_factory=list)
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
-    scope: Scope = None
+    scope: Optional[Scope] = None
     ui_mode: Optional[UIMode] = (
         None  # How this classification should be answered (e.g. hotkeys / autocomplete, etc)
     )
@@ -203,7 +203,7 @@ class Option:
                 f"Duplicate nested classification '{option.name}' "
                 f"for option '{self.label}'"
             )
-        self.options.append(option)
+        self.options.append(option)  # type: ignore
 
 
 @dataclass
@@ -305,7 +305,7 @@ class PromptResponseClassification:
             raise InconsistentOntologyException(
                 f"Response Classification '{self.name}' requires options."
             )
-        classification = {
+        classification: Dict[str, Any] = {
             "type": self.class_type.value,
             "instructions": self.instructions,
             "name": self.name,
