@@ -79,10 +79,6 @@ class _BaseStepReasoningTool(ABC):
     required: bool = False
 
     def __post_init__(self):
-        warnings.warn(
-            "This feature is experimental and subject to change.",
-        )
-
         if not self.name.strip():
             raise ValueError("Name is required")
 

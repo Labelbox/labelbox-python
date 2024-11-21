@@ -46,11 +46,9 @@ from labelbox.schema.model import Model
 from labelbox.schema.model_config import ModelConfig
 from labelbox.schema.model_run import DataSplit, ModelRun
 from labelbox.schema.ontology import (
-    Classification,
     FeatureSchema,
     Ontology,
     OntologyBuilder,
-    PromptResponseClassification,
     Tool,
 )
 from labelbox.schema.tool_building.fact_checking_tool import FactCheckingTool
@@ -97,4 +95,5 @@ from labelbox.schema.tool_building.classification import (
     Classification,
     Option,
     ResponseOption,
+    PromptResponseClassification,
 )

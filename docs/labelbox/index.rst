@@ -40,6 +40,7 @@ Labelbox Python SDK Documentation
     pagination
     project
     project-model-config
+    prompt-issue-tool
     quality-mode
     request-client
     resource-tag
@@ -47,7 +48,7 @@ Labelbox Python SDK Documentation
     search-filters
     send-to-annotate-params
     slice
-    step_reasoning_tool
+    step-reasoning-tool
     task
     task-queue
     user
