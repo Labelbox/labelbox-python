@@ -36,7 +36,7 @@ class PromptIssueTool:
 
     name: str
     type: ToolType = field(default=ToolType.PROMPT_ISSUE, init=False)
-    required: bool = False
+    required: bool = False  # This attribute is for consistency with other tools and backend, default is False
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
     color: Optional[str] = None
