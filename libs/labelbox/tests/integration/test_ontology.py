@@ -3,9 +3,9 @@ import time
 
 import pytest
 
-from labelbox import MediaType, OntologyBuilder, Tool
+from labelbox import MediaType, OntologyBuilder, OntologyKind, Tool
 from labelbox.orm.model import Entity
-from labelbox.schema.tool_building.classification import Classification
+from labelbox.schema.tool_building.classification import Classification, Option
 from labelbox.schema.tool_building.fact_checking_tool import (
     FactCheckingTool,
 )
@@ -488,3 +488,33 @@ def test_prompt_issue_ontology(chat_evaluation_ontology):
     classification = prompt_issue_tool.classifications[0]
     assert classification.class_type == Classification.Type.CHECKLIST
     assert len(classification.options) == 3  # Check number of options
+
+
+def test_invalid_prompt_issue_ontology(client):
+    tool = PromptIssueTool(name="Prompt Issue Tool")
+
+    option1 = Option(value="value")
+    radio_class = Classification(
+        class_type=Classification.Type.RADIO,
+        name="radio-class",
+        options=[option1],
+    )
+    text_class = Classification(
+        class_type=Classification.Type.TEXT, name="text-class"
+    )
+
+    tool.classifications.append(radio_class)
+    tool.classifications.append(text_class)
+
+    builder = OntologyBuilder(
+        tools=[tool],
+    )
+    with pytest.raises(
+        ValueError, match="Classifications for Prompt Issue Tool are invalid"
+    ):
+        client.create_ontology(
+            name="plt-1710",
+            media_type=MediaType.Conversational,
+            ontology_kind=OntologyKind.ModelEvaluation,
+            normalized=builder.asdict(),
+        )
