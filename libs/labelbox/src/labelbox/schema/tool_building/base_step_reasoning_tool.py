@@ -76,7 +76,7 @@ class _BaseStepReasoningTool(ABC):
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
     color: Optional[str] = None
-    required: bool = False
+    required: bool = False  # This attribute is for consistency with other tools and backend, default is False
 
     def __post_init__(self):
         if not self.name.strip():

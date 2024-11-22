@@ -36,7 +36,7 @@ class PromptIssueTool:
 
     name: str
     type: ToolType = field(default=ToolType.PROMPT_ISSUE, init=False)
-    required: bool = False
+    required: bool = False  # This attribute is for consistency with other tools and backend, default is False
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
     color: Optional[str] = None
@@ -64,11 +64,20 @@ class PromptIssueTool:
         if (
             len(classifications) != 1
             or classifications[0].class_type != Classification.Type.CHECKLIST
+            or len(classifications[0].options) < 1
         ):
             return False
         return True
 
     def asdict(self) -> Dict[str, Any]:
+        classifications_valid = self._validate_classifications(
+            self.classifications
+        )
+        if not classifications_valid:
+            raise ValueError(
+                "Classifications for Prompt Issue Tool are invalid"
+            )
+
         return {
             "tool": self.type.value,
             "name": self.name,

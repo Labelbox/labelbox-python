@@ -53,6 +53,9 @@ def test_as_dict():
     }
     assert tool_dict == expected_dict
 
+
+def test_classification_validation():
+    tool = PromptIssueTool(name="Prompt Issue Tool")
     with pytest.raises(ValueError):
         tool.classifications = [
             Classification(Classification.Type.TEXT, "prompt_issue")
