@@ -1,7 +1,6 @@
 import datetime
 import labelbox as lb
 from labelbox.client import Client
-from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 from labelbox.schema.enums import AnnotationImportState
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.project import Project
