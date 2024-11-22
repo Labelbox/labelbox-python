@@ -4,7 +4,6 @@ from typing import Any, Dict, Generator
 
 from ...annotation_types.collection import LabelCollection
 from .label import NDLabel
-import copy
 
 logger = logging.getLogger(__name__)
 
