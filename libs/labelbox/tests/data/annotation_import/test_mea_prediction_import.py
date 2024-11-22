@@ -218,9 +218,6 @@ def test_create_from_label_objects(
                 annotations=[
                     ObjectAnnotation(
                         name="polygon",
-                        extra={
-                            "uuid": "6d10fa30-3ea0-4e6c-bbb1-63f5c29fe3e4",
-                        },
                         value=Polygon(
                             points=[
                                 Point(x=147.692, y=118.154),
@@ -233,9 +230,6 @@ def test_create_from_label_objects(
                     ),
                     ObjectAnnotation(
                         name="bbox",
-                        extra={
-                            "uuid": "15b7138f-4bbc-42c5-ae79-45d87b0a3b2a",
-                        },
                         value=Rectangle(
                             start=Point(x=58.0, y=48.0),
                             end=Point(x=70.0, y=113.0),
@@ -243,9 +237,6 @@ def test_create_from_label_objects(
                     ),
                     ObjectAnnotation(
                         name="polyline",
-                        extra={
-                            "uuid": "cf4c6df9-c39c-4fbc-9541-470f6622978a",
-                        },
                         value=Line(
                             points=[
                                 Point(x=147.692, y=118.154),

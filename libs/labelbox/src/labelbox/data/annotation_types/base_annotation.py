@@ -16,4 +16,5 @@ class BaseAnnotation(FeatureSchema, abc.ABC):
 
     def __init__(self, **data):
         super().__init__(**data)
-        self._uuid = data.get("_uuid") or uuid4()
+        extra_uuid = data.get("extra", {}).get("uuid")
+        self._uuid = data.get("_uuid") or extra_uuid or uuid4()
