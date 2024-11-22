@@ -1,7 +1,9 @@
 from collections import defaultdict
+import copy
 from itertools import groupby
 from operator import itemgetter
-from typing import Dict, Generator, List, Tuple, Union
+from typing import Generator, List, Tuple, Union
+from uuid import uuid4
 
 from pydantic import BaseModel
 
@@ -9,8 +11,7 @@ from ...annotation_types.annotation import (
     ClassificationAnnotation,
     ObjectAnnotation,
 )
-from ...annotation_types.collection import LabelCollection, LabelGenerator
-from ...annotation_types.data.generic_data_row_data import GenericDataRowData
+from ...annotation_types.collection import LabelCollection
 from ...annotation_types.label import Label
 from ...annotation_types.llm_prompt_response.prompt import (
     PromptClassificationAnnotation,
@@ -23,7 +24,6 @@ from ...annotation_types.video import (
     VideoMaskAnnotation,
     VideoObjectAnnotation,
 )
-from .base import DataRow
 from .classification import (
     NDChecklistSubclass,
     NDClassification,
@@ -60,142 +60,18 @@ AnnotationType = Union[
 class NDLabel(BaseModel):
     annotations: AnnotationType
 
-    class _Relationship(BaseModel):
-        """This object holds information about the relationship"""
-
-        ndjson: NDRelationship
-        source: str
-        target: str
-
-    class _AnnotationGroup(BaseModel):
-        """Stores all the annotations and relationships per datarow"""
-
-        data_row: DataRow = None
-        ndjson_annotations: Dict[str, AnnotationType] = {}
-        relationships: List["NDLabel._Relationship"] = []
-
-    def to_common(self) -> LabelGenerator:
-        annotation_groups = defaultdict(NDLabel._AnnotationGroup)
-
-        for ndjson_annotation in self.annotations:
-            key = (
-                ndjson_annotation.data_row.id
-                or ndjson_annotation.data_row.global_key
-            )
-            group = annotation_groups[key]
-
-            if isinstance(ndjson_annotation, NDRelationship):
-                group.relationships.append(
-                    NDLabel._Relationship(
-                        ndjson=ndjson_annotation,
-                        source=ndjson_annotation.relationship.source,
-                        target=ndjson_annotation.relationship.target,
-                    )
-                )
-            else:
-                # if this is the first object in this group, we
-                # take note of the DataRow this group belongs to
-                # and store it in the _AnnotationGroupTuple
-                if not group.ndjson_annotations:
-                    group.data_row = ndjson_annotation.data_row
-
-                # if this assertion fails and it's a valid case,
-                # we need to change the value type of
-                # `_AnnotationGroupTuple.ndjson_objects` to accept a list of objects
-                # and adapt the code to support duplicate UUIDs
-                assert (
-                    ndjson_annotation.uuid not in group.ndjson_annotations
-                ), f"UUID '{ndjson_annotation.uuid}' is not unique"
-
-                group.ndjson_annotations[ndjson_annotation.uuid] = (
-                    ndjson_annotation
-                )
-
-        return LabelGenerator(
-            data=self._generate_annotations(annotation_groups)
-        )
-
     @classmethod
     def from_common(
         cls, data: LabelCollection
     ) -> Generator["NDLabel", None, None]:
         for label in data:
+            if all(
+                isinstance(model, RelationshipAnnotation)
+                for model in label.annotations
+            ):
+                yield from cls._create_relationship_annotations(label)
             yield from cls._create_non_video_annotations(label)
             yield from cls._create_video_annotations(label)
-
-    def _generate_annotations(
-        self, annotation_groups: Dict[str, _AnnotationGroup]
-    ) -> Generator[Label, None, None]:
-        for _, group in annotation_groups.items():
-            relationship_annotations: Dict[str, ObjectAnnotation] = {}
-            annotations = []
-            # first, we iterate through all the NDJSON objects and store the
-            # deserialized objects in the _AnnotationGroupTuple
-            # object *if* the object can be used in a relationship
-            for uuid, ndjson_annotation in group.ndjson_annotations.items():
-                if isinstance(ndjson_annotation, NDSegments):
-                    annotations.extend(
-                        NDSegments.to_common(
-                            ndjson_annotation,
-                            ndjson_annotation.name,
-                            ndjson_annotation.schema_id,
-                        )
-                    )
-                elif isinstance(ndjson_annotation, NDVideoMasks):
-                    annotations.append(
-                        NDVideoMasks.to_common(ndjson_annotation)
-                    )
-                elif isinstance(ndjson_annotation, NDObjectType.__args__):
-                    annotation = NDObject.to_common(ndjson_annotation)
-                    annotations.append(annotation)
-                    relationship_annotations[uuid] = annotation
-                elif isinstance(
-                    ndjson_annotation, NDClassificationType.__args__
-                ):
-                    annotations.extend(
-                        NDClassification.to_common(ndjson_annotation)
-                    )
-                elif isinstance(
-                    ndjson_annotation, (NDScalarMetric, NDConfusionMatrixMetric)
-                ):
-                    annotations.append(
-                        NDMetricAnnotation.to_common(ndjson_annotation)
-                    )
-                elif isinstance(ndjson_annotation, NDPromptClassificationType):
-                    annotation = NDPromptClassification.to_common(
-                        ndjson_annotation
-                    )
-                    annotations.append(annotation)
-                elif isinstance(ndjson_annotation, NDMessageTask):
-                    annotations.append(ndjson_annotation.to_common())
-                else:
-                    raise TypeError(
-                        f"Unsupported annotation. {type(ndjson_annotation)}"
-                    )
-
-            # after all the annotations have been discovered, we can now create
-            # the relationship objects and use references to the objects
-            # involved
-            for relationship in group.relationships:
-                try:
-                    source, target = (
-                        relationship_annotations[relationship.source],
-                        relationship_annotations[relationship.target],
-                    )
-                except KeyError:
-                    raise ValueError(
-                        f"Relationship object refers to nonexistent object with UUID '{relationship.source}' and/or '{relationship.target}'"
-                    )
-                annotations.append(
-                    NDRelationship.to_common(
-                        relationship.ndjson, source, target
-                    )
-                )
-
-            yield Label(
-                annotations=annotations,
-                data=GenericDataRowData,
-            )
 
     @staticmethod
     def _get_consecutive_frames(
@@ -317,3 +193,26 @@ class NDLabel(BaseModel):
                 raise TypeError(
                     f"Unable to convert object to MAL format. `{type(getattr(annotation, 'value',annotation))}`"
                 )
+
+    def _create_relationship_annotations(cls, label: Label):
+        relationship_annotations = [
+            annotation
+            for annotation in label.annotations
+            if isinstance(annotation, RelationshipAnnotation)
+        ]
+        for relationship_annotation in relationship_annotations:
+            uuid1 = uuid4()
+            uuid2 = uuid4()
+            source = copy.copy(relationship_annotation.value.source)
+            target = copy.copy(relationship_annotation.value.target)
+            if not isinstance(source, ObjectAnnotation) or not isinstance(
+                target, ObjectAnnotation
+            ):
+                raise TypeError(
+                    f"Unable to create relationship with non ObjectAnnotations. `Source: {type(source)} Target: {type(target)}`"
+                )
+            if not source._uuid:
+                source._uuid = uuid1
+            if not target._uuid:
+                target._uuid = uuid2
+            yield relationship_annotation

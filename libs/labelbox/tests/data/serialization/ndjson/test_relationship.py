@@ -1,165 +1,194 @@
-import json
-
-from labelbox.data.annotation_types.data.generic_data_row_data import (
-    GenericDataRowData,
-)
-
 from labelbox.data.serialization.ndjson.converter import NDJsonConverter
 from labelbox.types import (
     Label,
     ObjectAnnotation,
-    Point,
-    Rectangle,
     RelationshipAnnotation,
     Relationship,
+    TextEntity,
 )
 
 
-def test_relationship():
-    with open("tests/data/assets/ndjson/relationship_import.json", "r") as file:
-        data = json.load(file)
+def test_unidirectional_relationship():
+    ner_source = ObjectAnnotation(
+        name="e1",
+        value=TextEntity(start=10, end=12),
+    )
 
-    res = [
-        Label(
-            data=GenericDataRowData(
-                uid="clf98gj90000qp38ka34yhptl",
-            ),
-            annotations=[
-                ObjectAnnotation(
-                    name="cat",
-                    extra={
-                        "uuid": "d8813907-b15d-4374-bbe6-b9877fb42ccd",
-                    },
-                    value=Rectangle(
-                        start=Point(x=100.0, y=200.0),
-                        end=Point(x=200.0, y=300.0),
-                    ),
-                ),
-                ObjectAnnotation(
-                    name="dog",
-                    extra={
-                        "uuid": "9b1e1249-36b4-4665-b60a-9060e0d18660",
-                    },
-                    value=Rectangle(
-                        start=Point(x=400.0, y=500.0),
-                        end=Point(x=600.0, y=700.0),
-                    ),
-                ),
-                RelationshipAnnotation(
-                    name="is chasing",
-                    extra={"uuid": "0e6354eb-9adb-47e5-8e52-217ed016d948"},
-                    value=Relationship(
-                        source=ObjectAnnotation(
-                            name="dog",
-                            extra={
-                                "uuid": "9b1e1249-36b4-4665-b60a-9060e0d18660",
-                            },
-                            value=Rectangle(
-                                start=Point(x=400.0, y=500.0),
-                                end=Point(x=600.0, y=700.0),
-                            ),
-                        ),
-                        target=ObjectAnnotation(
-                            name="cat",
-                            extra={
-                                "uuid": "d8813907-b15d-4374-bbe6-b9877fb42ccd",
-                            },
-                            value=Rectangle(
-                                extra={},
-                                start=Point(x=100.0, y=200.0),
-                                end=Point(x=200.0, y=300.0),
-                            ),
-                        ),
-                        type=Relationship.Type.UNIDIRECTIONAL,
-                    ),
-                ),
-            ],
+    ner_target = ObjectAnnotation(
+        name="e2",
+        value=TextEntity(start=30, end=35),
+    )
+
+    ner_target2 = ObjectAnnotation(
+        name="e3",
+        value=TextEntity(start=40, end=60),
+    )
+
+    ner_relationship1 = RelationshipAnnotation(
+        name="rel",
+        value=Relationship(
+            source=ner_source,  # UUID is not required for annotation types
+            target=ner_target,
+            type=Relationship.Type.UNIDIRECTIONAL,
         ),
-        Label(
-            data=GenericDataRowData(
-                uid="clf98gj90000qp38ka34yhptl-DIFFERENT",
-            ),
-            annotations=[
-                ObjectAnnotation(
-                    name="cat",
-                    extra={
-                        "uuid": "d8813907-b15d-4374-bbe6-b9877fb42ccd",
-                    },
-                    value=Rectangle(
-                        start=Point(x=100.0, y=200.0),
-                        end=Point(x=200.0, y=300.0),
-                    ),
-                ),
-                ObjectAnnotation(
-                    name="dog",
-                    extra={
-                        "uuid": "9b1e1249-36b4-4665-b60a-9060e0d18660",
-                    },
-                    value=Rectangle(
-                        start=Point(x=400.0, y=500.0),
-                        end=Point(x=600.0, y=700.0),
-                    ),
-                ),
-                RelationshipAnnotation(
-                    name="is chasing",
-                    extra={"uuid": "0e6354eb-9adb-47e5-8e52-217ed016d948"},
-                    value=Relationship(
-                        source=ObjectAnnotation(
-                            name="dog",
-                            extra={
-                                "uuid": "9b1e1249-36b4-4665-b60a-9060e0d18660",
-                            },
-                            value=Rectangle(
-                                start=Point(x=400.0, y=500.0),
-                                end=Point(x=600.0, y=700.0),
-                            ),
-                        ),
-                        target=ObjectAnnotation(
-                            name="cat",
-                            extra={
-                                "uuid": "d8813907-b15d-4374-bbe6-b9877fb42ccd",
-                            },
-                            value=Rectangle(
-                                start=Point(x=100.0, y=200.0),
-                                end=Point(x=200.0, y=300.0),
-                            ),
-                        ),
-                        type=Relationship.Type.UNIDIRECTIONAL,
-                    ),
-                ),
-            ],
+    )
+
+    ner_relationship2 = RelationshipAnnotation(
+        name="rel2",
+        value=Relationship(
+            source=ner_source,  # UUID is not required for annotation types
+            target=ner_target2,
+            type=Relationship.Type.UNIDIRECTIONAL,
         ),
-    ]
-    res = list(NDJsonConverter.serialize(res))
-    assert len(res) == len(data)
+    )
 
-    res_relationship_annotation, res_relationship_second_annotation = [
-        annot for annot in res if "relationship" in annot
-    ]
-    res_source_and_target = [
-        annot for annot in res if "relationship" not in annot
-    ]
-    assert res_relationship_annotation
+    label = Label(
+        data={"uid": "clqbkpy236syk07978v3pscw1"},
+        annotations=[
+            ner_source,
+            ner_target,
+            ner_target2,
+            ner_relationship1,
+            ner_relationship2,
+        ],
+    )
 
-    assert res_relationship_annotation["relationship"]["source"] in [
-        annot["uuid"] for annot in res_source_and_target
-    ]
-    assert res_relationship_annotation["relationship"]["target"] in [
-        annot["uuid"] for annot in res_source_and_target
-    ]
+    serialized_label = list(NDJsonConverter.serialize([label]))
 
-    assert res_relationship_second_annotation
+    ner_source_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == ner_source.name
+    )
+    ner_target_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == ner_target.name
+    )
+    ner_target_2_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == ner_target2.name
+    )
+    rel_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == ner_relationship1.name
+    )
+    rel_2_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == ner_relationship2.name
+    )
+
     assert (
-        res_relationship_second_annotation["relationship"]["source"]
-        != res_relationship_annotation["relationship"]["source"]
+        rel_serialized["relationship"]["source"]
+        == ner_source_serialized["uuid"]
     )
     assert (
-        res_relationship_second_annotation["relationship"]["target"]
-        != res_relationship_annotation["relationship"]["target"]
+        rel_serialized["relationship"]["target"]
+        == ner_target_serialized["uuid"]
     )
-    assert res_relationship_second_annotation["relationship"]["source"] in [
-        annot["uuid"] for annot in res_source_and_target
-    ]
-    assert res_relationship_second_annotation["relationship"]["target"] in [
-        annot["uuid"] for annot in res_source_and_target
-    ]
+    assert (
+        rel_2_serialized["relationship"]["source"]
+        == ner_source_serialized["uuid"]
+    )
+    assert (
+        rel_2_serialized["relationship"]["target"]
+        == ner_target_2_serialized["uuid"]
+    )
+    assert rel_serialized["relationship"]["type"] == "unidirectional"
+    assert rel_2_serialized["relationship"]["type"] == "unidirectional"
+
+
+def test_bidirectional_relationship():
+    ner_source = ObjectAnnotation(
+        name="e1",
+        value=TextEntity(start=10, end=12),
+    )
+
+    ner_target = ObjectAnnotation(
+        name="e2",
+        value=TextEntity(start=30, end=35),
+    )
+
+    ner_target2 = ObjectAnnotation(
+        name="e3",
+        value=TextEntity(start=40, end=60),
+    )
+
+    ner_relationship1 = RelationshipAnnotation(
+        name="rel",
+        value=Relationship(
+            source=ner_source,  # UUID is not required for annotation types
+            target=ner_target,
+            type=Relationship.Type.BIDIRECTIONAL,
+        ),
+    )
+
+    ner_relationship2 = RelationshipAnnotation(
+        name="rel2",
+        value=Relationship(
+            source=ner_source,  # UUID is not required for annotation types
+            target=ner_target2,
+            type=Relationship.Type.BIDIRECTIONAL,
+        ),
+    )
+
+    label = Label(
+        data={"uid": "clqbkpy236syk07978v3pscw1"},
+        annotations=[
+            ner_source,
+            ner_target,
+            ner_target2,
+            ner_relationship1,
+            ner_relationship2,
+        ],
+    )
+
+    serialized_label = list(NDJsonConverter.serialize([label]))
+
+    ner_source_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == ner_source.name
+    )
+    ner_target_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == ner_target.name
+    )
+    ner_target_2_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == ner_target2.name
+    )
+    rel_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == ner_relationship1.name
+    )
+    rel_2_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == ner_relationship2.name
+    )
+
+    assert (
+        rel_serialized["relationship"]["source"]
+        == ner_source_serialized["uuid"]
+    )
+    assert (
+        rel_serialized["relationship"]["target"]
+        == ner_target_serialized["uuid"]
+    )
+    assert (
+        rel_2_serialized["relationship"]["source"]
+        == ner_source_serialized["uuid"]
+    )
+    assert (
+        rel_2_serialized["relationship"]["target"]
+        == ner_target_2_serialized["uuid"]
+    )
+    assert rel_serialized["relationship"]["type"] == "bidirectional"
+    assert rel_2_serialized["relationship"]["type"] == "bidirectional"
