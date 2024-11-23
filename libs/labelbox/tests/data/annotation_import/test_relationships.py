@@ -145,6 +145,7 @@ def configured_project(
     rand_gen,
     data_row_json_by_media_type,
     normalized_ontology_by_media_type_relationship,
+    teardown_helpers,
 ):
     """Configure project for test. Request.param will contain the media type if not present will use Image MediaType. The project will have 10 data rows."""
 
@@ -186,6 +187,10 @@ def configured_project(
     project.global_keys = global_keys
 
     yield project
+    teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
+
+    if dataset:
+        dataset.delete()
 
 
 @pytest.mark.parametrize(
