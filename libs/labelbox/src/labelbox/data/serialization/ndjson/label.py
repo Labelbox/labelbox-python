@@ -190,6 +190,7 @@ class NDLabel(BaseModel):
                     f"Unable to convert object to MAL format. `{type(getattr(annotation, 'value',annotation))}`"
                 )
 
+    @classmethod
     def _create_relationship_annotations(cls, label: Label):
         for annotation in label.annotations:
             if isinstance(annotation, RelationshipAnnotation):
