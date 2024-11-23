@@ -65,11 +65,7 @@ class NDLabel(BaseModel):
         cls, data: LabelCollection
     ) -> Generator["NDLabel", None, None]:
         for label in data:
-            if all(
-                isinstance(model, RelationshipAnnotation)
-                for model in label.annotations
-            ):
-                yield from cls._create_relationship_annotations(label)
+            yield from cls._create_relationship_annotations(label)
             yield from cls._create_non_video_annotations(label)
             yield from cls._create_video_annotations(label)
 
@@ -195,24 +191,20 @@ class NDLabel(BaseModel):
                 )
 
     def _create_relationship_annotations(cls, label: Label):
-        relationship_annotations = [
-            annotation
-            for annotation in label.annotations
-            if isinstance(annotation, RelationshipAnnotation)
-        ]
-        for relationship_annotation in relationship_annotations:
-            uuid1 = uuid4()
-            uuid2 = uuid4()
-            source = copy.copy(relationship_annotation.value.source)
-            target = copy.copy(relationship_annotation.value.target)
-            if not isinstance(source, ObjectAnnotation) or not isinstance(
-                target, ObjectAnnotation
-            ):
-                raise TypeError(
-                    f"Unable to create relationship with non ObjectAnnotations. `Source: {type(source)} Target: {type(target)}`"
-                )
-            if not source._uuid:
-                source._uuid = uuid1
-            if not target._uuid:
-                target._uuid = uuid2
-            yield relationship_annotation
+        for annotation in label.annotations:
+            if isinstance(annotation, RelationshipAnnotation):
+                uuid1 = uuid4()
+                uuid2 = uuid4()
+                source = copy.copy(annotation.value.source)
+                target = copy.copy(annotation.value.target)
+                if not isinstance(source, ObjectAnnotation) or not isinstance(
+                    target, ObjectAnnotation
+                ):
+                    raise TypeError(
+                        f"Unable to create relationship with non ObjectAnnotations. `Source: {type(source)} Target: {type(target)}`"
+                    )
+                if not source._uuid:
+                    source._uuid = uuid1
+                if not target._uuid:
+                    target._uuid = uuid2
+                yield annotation
