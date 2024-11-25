@@ -208,4 +208,4 @@ class NDLabel(BaseModel):
                     source._uuid = uuid1
                 if not target._uuid:
                     target._uuid = uuid2
-                yield annotation
+                yield NDRelationship.from_common(annotation, label.data)
