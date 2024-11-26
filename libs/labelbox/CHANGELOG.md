@@ -1,4 +1,22 @@
 # Changelog
+# Version 6.2.0 (2024-11-26)
+## Added
+* Prompt Issue ontology support([#1917](https://github.com/Labelbox/labelbox-python/pull/1917)), ([#1891](https://github.com/Labelbox/labelbox-python/pull/1891))
+* Fact Checking ontology support([#1883](https://github.com/Labelbox/labelbox-python/pull/1883))
+* Get mal import functions to replace old BulkImportRequest class([#1909](https://github.com/Labelbox/labelbox-python/pull/1909))
+* Deprecation warning to wait_until_done methods([#1913](https://github.com/Labelbox/labelbox-python/pull/1913))
+* Deprecation warning to get_data_row_ids([#1912](https://github.com/Labelbox/labelbox-python/pull/1912))
+
+## Fixed
+* Relationship label bug([#1918](https://github.com/Labelbox/labelbox-python/pull/1918))
+* Import lb-client exceptions for labelbox([#1916](https://github.com/Labelbox/labelbox-python/pull/1916))
+* get_roles return type: Dict[str, Role] (instead of List[Role])([#1904](https://github.com/Labelbox/labelbox-python/pull/1904))
+* Adjusted deprecation message to new standard([#1908](https://github.com/Labelbox/labelbox-python/pull/1908))
+* Support for Client enable_experimental([#1905](https://github.com/Labelbox/labelbox-python/pull/1905))
+
+## Removed
+* Support for Dicom([#1902](https://github.com/Labelbox/labelbox-python/pull/1902)), ([#1903](https://github.com/Labelbox/labelbox-python/pull/1903))
+
 # Version 6.1.0 (2024-11-12)
 ## Added
 * Support for step reasoning ontology tool([#1894](https://github.com/Labelbox/labelbox-python/pull/1894), [#1882](https://github.com/Labelbox/labelbox-python/pull/1882), [#1879](https://github.com/Labelbox/labelbox-python/pull/1879))
