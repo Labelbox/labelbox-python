@@ -8,6 +8,7 @@
 * Deprecation warning to get_data_row_ids([#1912](https://github.com/Labelbox/labelbox-python/pull/1912))
 
 ## Fixed
+* Optimization to relationship code ([#1920](https://github.com/Labelbox/labelbox-python/pull/1920))
 * Relationship label bug([#1918](https://github.com/Labelbox/labelbox-python/pull/1918))
 * Import lb-client exceptions for labelbox([#1916](https://github.com/Labelbox/labelbox-python/pull/1916))
 * get_roles return type: Dict[str, Role] (instead of List[Role])([#1904](https://github.com/Labelbox/labelbox-python/pull/1904))
