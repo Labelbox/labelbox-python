@@ -1,4 +1,5 @@
 import json
+from dataclasses import dataclass
 from io import BytesIO
 from typing import List, Optional
 
@@ -13,18 +14,34 @@ from labelbox.client import Client
 from labelbox.pagination import PaginatedCollection
 
 
+@dataclass
+class UploadReportLine:
+    email: str
+    result: str
+    error: Optional[str] = None
+
+
+@dataclass
+class UploadReport:
+    lines: List[UploadReportLine]
+
+
 class UserGroupUpload:
     def __init__(self, client: Client):
         self.client = client
 
-    def upload_members(self, group_id: str, role: str, emails: List[str]):
+    def upload_members(
+        self, group_id: str, role: str, emails: List[str]
+    ) -> Optional[UploadReport]:
         if len(emails) == 0:
             print("No emails to upload.")
-            return
+            return None
 
         role_id = self._get_role_id(role)
         if role_id is None:
-            raise ResourceNotFoundError(message="The role does not exist.")
+            raise ResourceNotFoundError(
+                message="Could not find a valid role with the name provided. Please make sure the role name is correct."
+            )
 
         buffer = BytesIO()
         buffer.write(b"email\n")  # Header row
@@ -146,11 +163,20 @@ class UserGroupUpload:
 
         return role_id
 
-    def _parse_csv_report(self, csv_report: str) -> List[dict]:
+    def _parse_csv_report(self, csv_report: str) -> UploadReport:
         lines = csv_report.strip().split("\n")
         headers = lines[0].split(",")
-        report_list = []
+        report_lines = []
         for line in lines[1:]:
             values = line.split(",")
-            report_list.append(dict(zip(headers, values)))
-        return report_list
+            row = dict(zip(headers, values))
+            report_lines.append(
+                UploadReportLine(
+                    email=row["Email"],
+                    result=row["Result"],
+                    error=row.get(
+                        "Error"
+                    ),  # Using get() since error is optional
+                )
+            )
+        return UploadReport(lines=report_lines)
