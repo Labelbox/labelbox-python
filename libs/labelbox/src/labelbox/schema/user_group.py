@@ -1,6 +1,6 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Iterator, Set
+from typing import Iterator, List, Set
 
 from lbox.exceptions import (
     MalformedQueryException,
@@ -316,6 +316,9 @@ class UserGroup(BaseModel):
                 message="Failed to delete user group as user group does not exist"
             )
         return result["deleteUserGroup"]["success"]
+
+    def import_members(self, role: str, emails: List[str]):
+        pass
 
     def get_user_groups(self) -> Iterator["UserGroup"]:
         """
