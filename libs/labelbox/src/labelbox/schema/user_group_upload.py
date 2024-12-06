@@ -40,6 +40,7 @@ class UploadReportLine:
     >>>     ]
     >>> }
     """
+
     email: str
     result: str
     error: Optional[str] = None
@@ -48,6 +49,7 @@ class UploadReportLine:
 @dataclass
 class UploadReport:
     """The report of the upload members mutation."""
+
     lines: List[UploadReportLine]
 
 
