@@ -10,7 +10,7 @@ from lbox.exceptions import (
     ResourceNotFoundError,
 )
 
-from labelbox.client import Client
+from labelbox import Client
 from labelbox.pagination import PaginatedCollection
 
 
@@ -168,9 +168,9 @@ class UserGroupUpload:
         if not file_data or not file_data.get("importUsersAsCsvToGroup", None):
             try:
                 errors = response.json().get("errors", [])
-                error_msg = next(iter(errors), {}).get(
-                    "message", "Unknown error"
-                )
+                error_msg = "Unknown error"
+                if errors:
+                    error_msg = errors[0].get("message", "Unknown error")
             except Exception:
                 error_msg = "Unknown error"
             raise LabelboxError("Failed to upload, message: %s" % error_msg)
