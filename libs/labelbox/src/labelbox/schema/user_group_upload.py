@@ -1,4 +1,5 @@
 import json
+import warnings
 from dataclasses import dataclass
 from io import BytesIO
 from typing import List, Optional
@@ -78,6 +79,10 @@ class UserGroupUpload:
 
             For indicvidual email errors, the error message is available in the UploadReport.
         """
+        warnings.warn(
+            "The upload_members for UserGroupUpload is in beta. The method name and signature may change in the future.”",
+        )
+
         if len(emails) == 0:
             print("No emails to upload.")
             return None
