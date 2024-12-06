@@ -16,6 +16,30 @@ from labelbox.pagination import PaginatedCollection
 
 @dataclass
 class UploadReportLine:
+    """A single line in the CSV report of the upload members mutation.
+    Both errors and successes are reported here.
+
+    Example output when using dataclasses.asdict():
+    >>> {
+    >>>     'lines': [
+    >>>         {
+    >>>             'email': '...',
+    >>>             'result': 'Not added',
+    >>>             'error': 'User not found in the current organization'
+    >>>         },
+    >>>         {
+    >>>             'email': '...',
+    >>>             'result': 'Not added',
+    >>>             'error': 'Member already exists in group'
+    >>>         },
+    >>>         {
+    >>>             'email': '...',
+    >>>             'result': 'Added',
+    >>>             'error': ''
+    >>>         }
+    >>>     ]
+    >>> }
+    """
     email: str
     result: str
     error: Optional[str] = None
@@ -23,16 +47,35 @@ class UploadReportLine:
 
 @dataclass
 class UploadReport:
+    """The report of the upload members mutation."""
     lines: List[UploadReportLine]
 
 
 class UserGroupUpload:
+    """Upload members to a user group."""
+
     def __init__(self, client: Client):
         self.client = client
 
     def upload_members(
         self, group_id: str, role: str, emails: List[str]
     ) -> Optional[UploadReport]:
+        """Upload members to a user group.
+
+        Args:
+            group_id: A valid ID of the user group.
+            role: The name of the role to assign to the uploaded members as it appears in the UI on the Import Members popup.
+            emails: The list of emails of the members to upload.
+
+        Returns:
+            UploadReport: The report of the upload members mutation.
+
+        Raises:
+            ResourceNotFoundError: If the role is not found.
+            LabelboxError: If the upload fails.
+
+            For indicvidual email errors, the error message is available in the UploadReport.
+        """
         if len(emails) == 0:
             print("No emails to upload.")
             return None
