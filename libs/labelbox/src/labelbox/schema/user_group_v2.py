@@ -54,7 +54,7 @@ class UploadReport:
     lines: List[UploadReportLine]
 
 
-class UserGroupUpload:
+class UserGroupV2:
     """Upload members to a user group."""
 
     def __init__(self, client: Client):
@@ -80,7 +80,7 @@ class UserGroupUpload:
             For indicvidual email errors, the error message is available in the UploadReport.
         """
         warnings.warn(
-            "The upload_members for UserGroupUpload is in beta. The method name and signature may change in the future.”",
+            "The upload_members for UserGroupV2 is in beta. The method name and signature may change in the future.”",
         )
 
         if len(emails) == 0:

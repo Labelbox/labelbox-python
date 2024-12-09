@@ -52,5 +52,5 @@ Labelbox Python SDK Documentation
     task
     task-queue
     user
-    user-group-upload
+    user-group-v2
     webhook
