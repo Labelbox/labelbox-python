@@ -192,7 +192,7 @@ class UserGroupV2:
 
     def export_members(self, group_id: str) -> Optional[List[Member]]:
         warnings.warn(
-            "The upload_members for UserGroupV2 is in beta. The method name and signature may change in the future.”",
+            "The export_members for UserGroupV2 is in beta. The method name and signature may change in the future.",
         )
 
         if not group_id:
@@ -216,17 +216,18 @@ class UserGroupV2:
             raise ResourceNotFoundError(message="The user group is not found.")
         data = result["userGroupV2"]
 
-        # Parse CSV string into list of members
-        csv_lines = data["membersAsCSV"].strip().split("\n")
-        members_list = []
+        return self._parse_members_csv(data["membersAsCSV"])
 
+    def _parse_members_csv(self, csv_data: str) -> List[Member]:
+        csv_lines = csv_data.strip().split("\n")
+        if not csv_lines:
+            return []
+
+        members_list = []
         # Skip header row
         for email in csv_lines[1:]:
-            members_list.append(
-                Member(
-                    email=email.strip(),
-                )
-            )
+            if email.strip():  # Skip empty lines
+                members_list.append(Member(email=email.strip()))
 
         return members_list
 
