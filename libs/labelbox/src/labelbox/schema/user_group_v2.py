@@ -54,6 +54,13 @@ class UploadReport:
     lines: List[UploadReportLine]
 
 
+@dataclass
+class Member:
+    """A member of a user group."""
+
+    email: str
+
+
 class UserGroupV2:
     """Upload members to a user group."""
 
@@ -109,7 +116,7 @@ class UserGroupV2:
                 "text/csv",
             )
         }
-        query = """mutation ImportMembersToGroup(
+        query = """mutation ImportMembersToGroupPyPi(
                     $roleId: ID!
                     $file: Upload!
                     $where: WhereUniqueIdInput!
@@ -182,6 +189,46 @@ class UserGroupV2:
 
         csv_report = file_data["importUsersAsCsvToGroup"]["csvReport"]
         return self._parse_csv_report(csv_report)
+
+    def export_members(self, group_id: str) -> Optional[List[Member]]:
+        warnings.warn(
+            "The upload_members for UserGroupV2 is in beta. The method name and signature may change in the future.”",
+        )
+
+        if not group_id:
+            raise ValueError("Group id is required")
+
+        query = """query GetExportMembersAsCSVPyPi(
+            $id: ID!
+            ) {
+            userGroupV2(where: { id: $id }) {
+                id
+                membersAsCSV
+            }
+        }
+        """
+        params = {
+            "id": group_id,
+        }
+
+        result = self.client.execute(query, params)
+        if result["userGroupV2"] is None:
+            raise ResourceNotFoundError(message="The user group is not found.")
+        data = result["userGroupV2"]
+
+        # Parse CSV string into list of members
+        csv_lines = data["membersAsCSV"].strip().split("\n")
+        members_list = []
+
+        # Skip header row
+        for email in csv_lines[1:]:
+            members_list.append(
+                Member(
+                    email=email.strip(),
+                )
+            )
+
+        return members_list
 
     def _get_role_id(self, role_name: str) -> Optional[str]:
         role_id = None
