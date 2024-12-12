@@ -1,4 +1,12 @@
 # Changelog
+# Version 6.3.0 (2024-12-12)
+## Added
+* Group member upload([#1924](https://github.com/Labelbox/labelbox-python/pull/1924))
+* Group member export([#1925](https://github.com/Labelbox/labelbox-python/pull/1925))
+
+## Note
+* For security reasons, the `Invite` class does not contain actual invite id (uid) any more. This change affects all sdk releases
+
 # Version 6.2.0 (2024-11-26)
 ## Added
 * Prompt Issue ontology support([#1917](https://github.com/Labelbox/labelbox-python/pull/1917)), ([#1891](https://github.com/Labelbox/labelbox-python/pull/1891))
