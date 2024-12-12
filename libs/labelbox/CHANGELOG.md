@@ -5,7 +5,7 @@
 * Group member export([#1925](https://github.com/Labelbox/labelbox-python/pull/1925))
 
 ## Note
-* For security reasons, the `Invite` class does not contain actual invite id (uid) any more. This change affects all sdk releases
+* The `Invite` class no longer returns the invite ID (uid).
 
 # Version 6.2.0 (2024-11-26)
 ## Added
