@@ -63,6 +63,9 @@ def create_project_invite(
     queries.cancel_invite(client, invite.uid)
 
 
+@pytest.mark.skip(
+    "TODO: Update this test, creating an invite will no longer return an invite id. Ref: PLT-2202"
+)
 def test_org_invite(client, organization, environ, queries, org_invite):
     invite, invite_limit = org_invite
     role = client.get_roles()["LABELER"]
