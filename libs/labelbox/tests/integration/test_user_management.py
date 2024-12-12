@@ -1,9 +1,26 @@
-import pytest
+from typing import Optional
 
-from labelbox import ProjectRole
+import pytest
 from faker import Faker
 
+from labelbox import ProjectRole
+from labelbox.schema.invite import Invite
+
 faker = Faker()
+
+
+def find_invite_and_id_by_email(
+    queries, client, invite_email
+) -> Optional[Invite]:
+    """For security reasons, invite uid is not returned for a query for a single invite.
+    This function is a workaround to find the invite uid by email using another query that returns all invites.
+    """
+    outstanding_invites = queries.get_invites(client)
+
+    for outstanding_invite in outstanding_invites:
+        if outstanding_invite.email == invite_email:
+            return outstanding_invite
+    return None
 
 
 @pytest.fixture
@@ -27,7 +44,9 @@ def org_invite(client, organization, environ, queries):
 
     yield invite, invite_limit
 
-    queries.cancel_invite(client, invite.uid)
+    found_invite = find_invite_and_id_by_email(queries, client, invite.email)
+    assert found_invite is not None, "Invite not found"
+    queries.cancel_invite(client, found_invite.uid)
 
 
 @pytest.fixture
@@ -60,12 +79,18 @@ def create_project_invite(
 
     yield invite
 
-    queries.cancel_invite(client, invite.uid)
+    found_invite = find_invite_and_id_by_email(queries, client, invite.email)
+    assert found_invite is not None, "Invite not found"
+    queries.cancel_invite(client, found_invite.uid)
 
 
 def test_org_invite(client, organization, environ, queries, org_invite):
     invite, invite_limit = org_invite
     role = client.get_roles()["LABELER"]
+
+    assert (
+        invite.uid == "invited"
+    )  # for security reasons we don't return the invite uid
 
     if environ.value == "prod":
         invite_limit_after = organization.invite_limit()
@@ -73,17 +98,13 @@ def test_org_invite(client, organization, environ, queries, org_invite):
         assert invite_limit.remaining - invite_limit_after.remaining == 1
         # An invite shouldn't effect the user count until after it is accepted
 
-    outstanding_invites = queries.get_invites(client)
-    in_list = False
+    found_invite = find_invite_and_id_by_email(queries, client, invite.email)
 
-    for outstanding_invite in outstanding_invites:
-        if outstanding_invite.uid == invite.uid:
-            in_list = True
-            org_role = outstanding_invite.organization_role_name.lower()
-            assert (
-                org_role == role.name.lower()
-            ), "Role should be labeler. Found {org_role} "
-    assert in_list, "Invite not found"
+    assert found_invite is not None, "Invite not found"
+    org_role = found_invite.organization_role_name.lower()
+    assert (
+        org_role == role.name.lower()
+    ), "Role should be labeler. Found {org_role} "
 
 
 def test_cancel_invite(
@@ -96,6 +117,10 @@ def test_cancel_invite(
         "".join(faker.random_letters(26))
     )
     invite = organization.invite_user(dummy_email, role)
+    found_invite = find_invite_and_id_by_email(queries, client, invite.email)
+    assert found_invite is not None, "Invite not found"
+    invite.uid = found_invite.uid  # for security reasons we don't return the invite uid directly but need it in order to cancel the invite
+
     queries.cancel_invite(client, invite.uid)
     outstanding_invites = [i.uid for i in queries.get_invites(client)]
     assert invite.uid not in outstanding_invites
