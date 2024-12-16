@@ -25,6 +25,8 @@ from labelbox.schema.tool_building.tool_type import ToolType
 from labelbox.schema.tool_building.tool_type_mapping import (
     map_tool_type_to_tool_cls,
 )
+from labelbox.schema.tool_building.types import FeatureSchemaAttributes
+
 
 
 class DeleteFeatureFromOntologyResult:
@@ -42,7 +44,6 @@ class FeatureSchema(DbObject):
     name = Field.String("name")
     color = Field.String("name")
     normalized = Field.Json("normalized")
-
 
 @dataclass
 class Tool:
@@ -73,6 +74,7 @@ class Tool:
         classifications: (list)
         schema_id: (str)
         feature_schema_id: (str)
+        attributes: (list)
     """
 
     class Type(Enum):
@@ -95,7 +97,7 @@ class Tool:
     classifications: List[Classification] = field(default_factory=list)
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
-
+    attributes: Optional[FeatureSchemaAttributes] = None
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
         return cls(
@@ -109,6 +111,7 @@ class Tool:
                 for c in dictionary["classifications"]
             ],
             color=dictionary["color"],
+            attributes=dictionary.get("attributes", None),
         )
 
     def asdict(self) -> Dict[str, Any]:
@@ -122,6 +125,7 @@ class Tool:
             ],
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id,
+            "attributes": self.attributes,
         }
 
     def add_classification(self, classification: Classification) -> None:

@@ -6,6 +6,7 @@
 #   features: []
 #   all-features: true
 #   with-sources: false
+#   generate-hashes: false
 
 -e file:libs/labelbox
 -e file:libs/lbox-clients
@@ -54,7 +55,7 @@ mypy==1.10.1
     # via labelbox
 mypy-extensions==1.0.0
     # via mypy
-numpy==1.24.4
+numpy==2.0.2
     # via labelbox
     # via opencv-python-headless
     # via shapely

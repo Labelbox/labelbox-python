@@ -6,6 +6,7 @@
 #   features: []
 #   all-features: true
 #   with-sources: false
+#   generate-hashes: false
 
 -e file:libs/labelbox
 -e file:libs/lbox-clients
@@ -133,7 +134,7 @@ nbconvert==7.16.4
 nbformat==5.10.4
     # via nbclient
     # via nbconvert
-numpy==1.24.4
+numpy==2.0.2
     # via labelbox
     # via opencv-python-headless
     # via pandas
@@ -147,7 +148,7 @@ packaging==24.1
     # via pytest-cases
     # via pytest-rerunfailures
     # via sphinx
-pandas==2.0.3
+pandas==2.2.3
 pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.4
