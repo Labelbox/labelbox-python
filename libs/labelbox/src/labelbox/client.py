@@ -1073,7 +1073,6 @@ class Client:
             ["rootSchemaNodes", "nextCursor"],
         )
 
-# TODO tkerr:
     def create_ontology_from_feature_schemas(
         self,
         name,
@@ -1332,7 +1331,6 @@ class Client:
                 + str(response.json()["message"])
             )
 
-# TODO tkerr: 
     def create_ontology(
         self,
         name,

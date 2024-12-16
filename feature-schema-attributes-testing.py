@@ -8,15 +8,15 @@ from libs.labelbox.src.labelbox.schema.ontology_kind import OntologyKind
 import json
 
 
-# client = Client(
-#     api_key=os.environ.get('STAGE_API_KEY'),
-#     endpoint="https://app.lb-stage.xyz/api/_gql/graphql",
-#     rest_endpoint="https://app.lb-stage.xyz/api/api/v1")
-
 client = Client(
-    api_key=os.environ.get('LOCALHOST_API_KEY'),
-    endpoint="http://localhost:8080/graphql",
-    rest_endpoint="http://localhost:3000/api/api/v1")
+    api_key=os.environ.get('STAGE_API_KEY'),
+    endpoint="https://app.lb-stage.xyz/api/_gql/graphql",
+    rest_endpoint="https://app.lb-stage.xyz/api/api/v1")
+
+# client = Client(
+#     api_key=os.environ.get('LOCALHOST_API_KEY'),
+#     endpoint="http://localhost:8080/graphql",
+#     rest_endpoint="http://localhost:3000/api/api/v1")
 
 builder = OntologyBuilder(
 
@@ -97,10 +97,19 @@ builder = OntologyBuilder(
 # client.create_ontology('Image ontology with requires connection classes', builder.asdict(), media_type=MediaType.Image)
 
 
-feature_schema = client.upsert_feature_schema(Tool(name='Auto OCR from upsert feature schema', tool=Tool.Type.BBOX, attributes=[FeatureSchemaAttribute(attributeName='auto-ocr', attributeValue='true')]).asdict())
-fetched_feature_schema = client.get_feature_schema(feature_schema.uid)
-feature_schemas_with_name = client.get_feature_schemas('Auto OCR')
+# feature_schema = client.upsert_feature_schema(Tool(name='Testing', tool=Tool.Type.BBOX, attributes=[FeatureSchemaAttribute(attributeName='auto-ocr', attributeValue='true')]).asdict())
+# print(feature_schema)
+# fetched_feature_schema = client.get_feature_schema(feature_schema.uid)
+# feature_schemas_with_name = client.get_feature_schemas('Auto OCR')
 
-# Iterate over the feature schemas
-for schema in feature_schemas_with_name:
-    print(schema)
+# # Iterate over the feature schemas
+# for schema in feature_schemas_with_name:
+#     print(schema)
+
+# ontology = client.create_ontology_from_feature_schemas('Ontology from feature schemas', ['cm4rc1nl90h36070782v9hlpt'])
+
+# feature_schema = client.update_feature_schema_title('cm4rc1nl90h36070782v9hlpt', 'This is a new title - did it remove the feature schema attributes? UPDATED')
+# client.delete_unused_feature_schema('cm4rhzhn7026e07wm2az681di')
+
+feature_schema = client.create_feature_schema(normalized={'tool': 'rectangle',  'name': 'cat', 'color': 'black', 'attributes': [{'attributeName': 'auto-ocr', 'attributeValue': 'true'}]})
+print(feature_schema)
