@@ -1242,9 +1242,6 @@ class Client:
             endpoint, json={"normalized": json.dumps(feature_schema)}
         )
 
-        print('json.dumps(feature_schema)')
-        print(json.dumps(feature_schema))
-
         if response.status_code == requests.codes.ok:
             return self.get_feature_schema(response.json()["schemaId"])
         else:
