@@ -225,7 +225,6 @@ def feature_schema_cat_normalized(name_for_read):
         "name": name_for_read,
         "color": "black",
         "classifications": [],
-        "attributes": [] # TODO tkerr: Finish
     }
 
 

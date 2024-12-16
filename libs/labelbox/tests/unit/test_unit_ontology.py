@@ -15,6 +15,7 @@ _SAMPLE_ONTOLOGY = {
             "color": "#FF0000",
             "tool": "polygon",
             "classifications": [],
+            "attributes": None
         },
         {
             "schemaNodeId": None,
@@ -24,6 +25,7 @@ _SAMPLE_ONTOLOGY = {
             "color": "#FF0000",
             "tool": "superpixel",
             "classifications": [],
+            "attributes": None
         },
         {
             "schemaNodeId": None,
@@ -32,6 +34,7 @@ _SAMPLE_ONTOLOGY = {
             "name": "bbox",
             "color": "#FF0000",
             "tool": "rectangle",
+            "attributes": None,
             "classifications": [
                 {
                     "schemaNodeId": None,
@@ -56,6 +59,7 @@ _SAMPLE_ONTOLOGY = {
                                     "name": "nested nested text",
                                     "type": "text",
                                     "options": [],
+                                    "attributes": None
                                 }
                             ],
                         },
@@ -67,6 +71,7 @@ _SAMPLE_ONTOLOGY = {
                             "options": [],
                         },
                     ],
+                    "attributes": None
                 },
                 {
                     "schemaNodeId": None,
@@ -76,6 +81,7 @@ _SAMPLE_ONTOLOGY = {
                     "name": "nested text",
                     "type": "text",
                     "options": [],
+                    "attributes": None
                 },
             ],
         },
@@ -87,6 +93,7 @@ _SAMPLE_ONTOLOGY = {
             "color": "#FF0000",
             "tool": "point",
             "classifications": [],
+            "attributes": None
         },
         {
             "schemaNodeId": None,
@@ -96,6 +103,7 @@ _SAMPLE_ONTOLOGY = {
             "color": "#FF0000",
             "tool": "line",
             "classifications": [],
+            "attributes": None
         },
         {
             "schemaNodeId": None,
@@ -105,6 +113,7 @@ _SAMPLE_ONTOLOGY = {
             "color": "#FF0000",
             "tool": "named-entity",
             "classifications": [],
+            "attributes": None
         },
     ],
     "classifications": [
@@ -117,6 +126,7 @@ _SAMPLE_ONTOLOGY = {
             "type": "radio",
             "scope": "global",
             "uiMode": "searchable",
+            "attributes": None,
             "options": [
                 {
                     "schemaNodeId": None,

@@ -95,8 +95,6 @@ class Classification:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> "Classification":
-        print('attributes:')
-        print(dictionary.get("attributes", None))
         return cls(
             class_type=Classification.Type(dictionary["type"]),
             name=dictionary["name"],
@@ -109,7 +107,7 @@ class Classification:
             schema_id=dictionary.get("schemaNodeId", None),
             feature_schema_id=dictionary.get("featureSchemaId", None),
             scope=cls.Scope(dictionary.get("scope", cls.Scope.GLOBAL)),
-            attributes=FeatureSchemaAttributes(dictionary.get("attributes", None)),
+            attributes=dictionary.get("attributes", None),
         )
 
     def asdict(self, is_subclass: bool = False) -> Dict[str, Any]:
