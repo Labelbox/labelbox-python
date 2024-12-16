@@ -1405,7 +1405,7 @@ class Project(DbObject, Updateable, Deletable):
     def move_data_rows_to_task_queue(
         self,
         data_row_ids: DataRowIdentifiers,
-        task_queue_id: Optional[str] = None,
+        task_queue_id: Union[str, None],
     ):
         """
 
