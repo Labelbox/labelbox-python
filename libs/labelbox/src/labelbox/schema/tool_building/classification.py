@@ -8,7 +8,6 @@ from lbox.exceptions import InconsistentOntologyException
 from labelbox.schema.tool_building.types import FeatureSchemaId, FeatureSchemaAttributes
 
 
-# TODO tkerr: Update all these tools & classifications to use attributes
 @dataclass
 class Classification:
     """
