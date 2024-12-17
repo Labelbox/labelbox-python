@@ -4,6 +4,7 @@ import pytest
 from lbox.exceptions import InconsistentOntologyException
 
 from labelbox import Classification, OntologyBuilder, Option, Tool
+from labelbox.schema.tool_building.types import FeatureSchemaAttribute
 
 _SAMPLE_ONTOLOGY = {
     "tools": [
@@ -34,7 +35,12 @@ _SAMPLE_ONTOLOGY = {
             "name": "bbox",
             "color": "#FF0000",
             "tool": "rectangle",
-            "attributes": None,
+            "attributes": [
+                FeatureSchemaAttribute(
+                    attriubteName="auto-ocr",
+                    attributeValue="true"
+                )
+            ],
             "classifications": [
                 {
                     "schemaNodeId": None,
@@ -71,7 +77,12 @@ _SAMPLE_ONTOLOGY = {
                             "options": [],
                         },
                     ],
-                    "attributes": None,
+                    "attributes": [
+                        FeatureSchemaAttribute(
+                            attributeName="requires-connection",
+                            attributeValue="true"
+                        )
+                    ],
                 },
                 {
                     "schemaNodeId": None,
