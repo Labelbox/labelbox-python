@@ -1,11 +1,10 @@
 import os
-from libs.labelbox.src.labelbox import Client
-from libs.labelbox.src.labelbox.schema.ontology import OntologyBuilder, Tool
-from libs.labelbox.src.labelbox.schema.tool_building.classification import Classification, Option
-from libs.labelbox.src.labelbox.schema.tool_building.types import FeatureSchemaAttribute
-from libs.labelbox.src.labelbox.schema.media_type import MediaType
-from libs.labelbox.src.labelbox.schema.ontology_kind import OntologyKind
-import json
+from labelbox import Client
+from labelbox.schema.ontology import OntologyBuilder, Tool, PromptIssueTool
+from labelbox.schema.tool_building.classification import Classification, Option
+from labelbox.schema.tool_building.types import FeatureSchemaAttribute
+from labelbox.schema.media_type import MediaType
+from labelbox.schema.ontology_kind import OntologyKind
 
 
 client = Client(
@@ -48,7 +47,7 @@ builder = OntologyBuilder(
   ]
 )
 
-# client.create_ontology("Auto OCR ontology", builder.asdict(), media_type=MediaType.Document)
+# client.create_ontology("Auto OCR ontology from sdk", builder.asdict(), media_type=MediaType.Document)
 
 builder = OntologyBuilder(
   classifications=[
@@ -78,7 +77,7 @@ builder = OntologyBuilder(
       scope=Classification.Scope.GLOBAL,
       attributes=[
         FeatureSchemaAttribute(
-          attributeName="required-connection",
+          attributeName="requires-connection",
           attributeValue="true"
         )
       ],
@@ -111,5 +110,48 @@ builder = OntologyBuilder(
 # feature_schema = client.update_feature_schema_title('cm4rc1nl90h36070782v9hlpt', 'This is a new title - did it remove the feature schema attributes? UPDATED')
 # client.delete_unused_feature_schema('cm4rhzhn7026e07wm2az681di')
 
-feature_schema = client.create_feature_schema(normalized={'tool': 'rectangle',  'name': 'cat', 'color': 'black', 'attributes': [{'attributeName': 'auto-ocr', 'attributeValue': 'true'}]})
-print(feature_schema)
+# feature_schema = client.create_feature_schema(normalized={'tool': 'rectangle',  'name': 'cat', 'color': 'black', 'attributes': [{'attributeName': 'auto-ocr', 'attributeValue': 'true'}]})
+# print(feature_schema)
+
+# classification = Classification.from_dict({
+#     "name": "Test Classification",
+#     "instructions": "Test instructions",
+#     "type": "text",  # or "checklist" or other valid Classification.Type values
+#     "scope": "index",  # or "index" for Classification.Scope values
+#     "required": False,  # optional
+#     "attributes": [  # optional
+#         {
+#             "attributeName": "prompt-message-scope",
+#             "attributeValue": "true"
+#         }
+#     ],
+#     "options": []
+# })
+
+# tool = Tool.from_dict({
+#     "name": "Test Tool",
+#     "type": "rectangle",  # or "checklist" or other valid Classification.Type values
+#     "required": False,  # optional
+#     "attributes": [  # optional
+#         {
+#             "attributeName": "auto-ocr",
+#             "attributeValue": "true"
+#         }
+#     ],
+#     "options": []
+# })
+
+tool = PromptIssueTool.from_dict({
+    "name": "Test Tool",
+    "type": "rectangle",  # or "checklist" or other valid Classification.Type values
+    "required": False,  # optional
+    "attributes": [  # optional
+        {
+            "attributeName": "auto-ocr",
+            "attributeValue": "true"
+        }
+    ],
+    "options": [],
+})
+
+# print(tool)
