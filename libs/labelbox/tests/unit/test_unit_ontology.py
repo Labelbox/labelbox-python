@@ -36,9 +36,10 @@ _SAMPLE_ONTOLOGY = {
             "color": "#FF0000",
             "tool": "rectangle",
             "attributes": [
-                FeatureSchemaAttribute(
-                    attriubteName="auto-ocr", attributeValue="true"
-                )
+                {
+                    "attributeName": "auto-ocr",
+                    "attributeValue": "true",
+                }
             ],
             "classifications": [
                 {
@@ -77,10 +78,10 @@ _SAMPLE_ONTOLOGY = {
                         },
                     ],
                     "attributes": [
-                        FeatureSchemaAttribute(
-                            attributeName="requires-connection",
-                            attributeValue="true",
-                        )
+                        {
+                            "attributeName": "requires-connection",
+                            "attributeValue": "true",
+                        }
                     ],
                 },
                 {

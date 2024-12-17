@@ -3,12 +3,22 @@ from pydantic import Field
 from typing import TypedDict
 
 
-class FeatureSchemaAttribute(TypedDict):
+from dataclasses import dataclass
+
+
+@dataclass
+class FeatureSchemaAttribute:
     attributeName: str
     attributeValue: str
 
+    def asdict(self):
+        return {
+            "attributeName": self.attributeName,
+            "attributeValue": self.attributeValue,
+        }
 
-FeatureSchemaAttriubte = Annotated[FeatureSchemaAttribute, Field()]
+
+FeatureSchemaAttribute = Annotated[FeatureSchemaAttribute, Field()]
 
 FeatureSchemaId = Annotated[str, Field(min_length=25, max_length=25)]
 SchemaId = Annotated[str, Field(min_length=25, max_length=25)]

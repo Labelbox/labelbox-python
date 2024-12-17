@@ -8,6 +8,7 @@ from lbox.exceptions import InconsistentOntologyException
 from labelbox.schema.tool_building.types import (
     FeatureSchemaId,
     FeatureSchemaAttributes,
+    FeatureSchemaAttribute,
 )
 
 
@@ -112,7 +113,15 @@ class Classification:
             schema_id=dictionary.get("schemaNodeId", None),
             feature_schema_id=dictionary.get("featureSchemaId", None),
             scope=cls.Scope(dictionary.get("scope", cls.Scope.GLOBAL)),
-            attributes=dictionary.get("attributes", None),
+            attributes=[
+                FeatureSchemaAttribute(
+                    attributeName=attr["attributeName"],
+                    attributeValue=attr["attributeValue"],
+                )
+                for attr in dictionary.get("attributes", []) or []
+            ]
+            if dictionary.get("attributes")
+            else None,
         )
 
     def asdict(self, is_subclass: bool = False) -> Dict[str, Any]:
@@ -128,7 +137,7 @@ class Classification:
             "options": [o.asdict() for o in self.options],
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id,
-            "attributes": self.attributes
+            "attributes": [a.asdict() for a in self.attributes]
             if self.attributes is not None
             else None,
         }

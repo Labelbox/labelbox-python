@@ -25,7 +25,10 @@ from labelbox.schema.tool_building.tool_type import ToolType
 from labelbox.schema.tool_building.tool_type_mapping import (
     map_tool_type_to_tool_cls,
 )
-from labelbox.schema.tool_building.types import FeatureSchemaAttributes
+from labelbox.schema.tool_building.types import (
+    FeatureSchemaAttribute,
+    FeatureSchemaAttributes,
+)
 import warnings
 
 
@@ -119,7 +122,15 @@ class Tool:
                 for c in dictionary["classifications"]
             ],
             color=dictionary["color"],
-            attributes=dictionary.get("attributes", None),
+            attributes=[
+                FeatureSchemaAttribute(
+                    attributeName=attr["attributeName"],
+                    attributeValue=attr["attributeValue"],
+                )
+                for attr in dictionary.get("attributes", []) or []
+            ]
+            if dictionary.get("attributes")
+            else None,
         )
 
     def asdict(self) -> Dict[str, Any]:
@@ -133,7 +144,9 @@ class Tool:
             ],
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id,
-            "attributes": self.attributes,
+            "attributes": [a.asdict() for a in self.attributes]
+            if self.attributes is not None
+            else None,
         }
 
     def add_classification(self, classification: Classification) -> None:
