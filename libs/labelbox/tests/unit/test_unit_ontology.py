@@ -37,8 +37,7 @@ _SAMPLE_ONTOLOGY = {
             "tool": "rectangle",
             "attributes": [
                 FeatureSchemaAttribute(
-                    attriubteName="auto-ocr",
-                    attributeValue="true"
+                    attriubteName="auto-ocr", attributeValue="true"
                 )
             ],
             "classifications": [
@@ -80,7 +79,7 @@ _SAMPLE_ONTOLOGY = {
                     "attributes": [
                         FeatureSchemaAttribute(
                             attributeName="requires-connection",
-                            attributeValue="true"
+                            attributeValue="true",
                         )
                     ],
                 },
