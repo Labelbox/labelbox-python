@@ -1,5 +1,5 @@
 from typing import Annotated, List
-from pydantic import Field, BaseModel
+from pydantic import Field
 from typing import TypedDict
 
 
