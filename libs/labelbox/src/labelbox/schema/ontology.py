@@ -26,6 +26,7 @@ from labelbox.schema.tool_building.tool_type_mapping import (
     map_tool_type_to_tool_cls,
 )
 from labelbox.schema.tool_building.types import FeatureSchemaAttributes
+import warnings
 
 
 class DeleteFeatureFromOntologyResult:
@@ -98,6 +99,12 @@ class Tool:
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
     attributes: Optional[FeatureSchemaAttributes] = None
+
+    def __post_init__(self):
+        if self.attributes is not None:
+            warnings.warn(
+                "Attributes are an experimental feature and may change in the future."
+            )
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
