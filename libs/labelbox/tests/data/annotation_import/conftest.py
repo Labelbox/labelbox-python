@@ -1598,9 +1598,9 @@ def text_inference_index_mmc(
 def video_checklist_inference(prediction_id_mapping):
     checklists = []
     for feature in prediction_id_mapping:
-        if "checklist" not in feature:
+        if "checklist_index" not in feature:
             continue
-        checklist = feature["checklist"].copy()
+        checklist = feature["checklist_index"].copy()
         checklist.update(
             {
                 "answers": [
@@ -2203,27 +2203,99 @@ def expected_export_v2_text():
 @pytest.fixture()
 def expected_export_v2_video():
     expected_annotations = {
-        "frames": {},
-        "segments": {"<cuid>": [[7, 13], [18, 19]]},
-        "key_frame_feature_map": {},
-        "classifications": [
-            {
-                "name": "checklist",
-                "value": "checklist",
-                "checklist_answers": [
+        "classifications": [],
+        "frames": {
+            "7": {
+                "objects": {},
+                "classifications": [
                     {
-                        "name": "first_checklist_answer",
-                        "value": "first_checklist_answer",
-                        "classifications": [],
-                    },
+                        "name": "checklist_index",
+                        "value": "checklist_index", 
+                        "checklist_answers": [
+                            {
+                                "name": "first_checklist_answer",
+                                "value": "first_checklist_answer",
+                                "classifications": []
+                            },
+                            {
+                                "name": "second_checklist_answer", 
+                                "value": "second_checklist_answer",
+                                "classifications": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            "13": {
+                "objects": {},
+                "classifications": [
                     {
-                        "name": "second_checklist_answer",
-                        "value": "second_checklist_answer",
-                        "classifications": [],
-                    },
-                ],
+                        "name": "checklist_index",
+                        "value": "checklist_index",
+                        "checklist_answers": [
+                            {
+                                "name": "first_checklist_answer",
+                                "value": "first_checklist_answer", 
+                                "classifications": []
+                            },
+                            {
+                                "name": "second_checklist_answer",
+                                "value": "second_checklist_answer",
+                                "classifications": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            "18": {
+                "objects": {},
+                "classifications": [
+                    {
+                        "name": "checklist_index",
+                        "value": "checklist_index",
+                        "checklist_answers": [
+                            {
+                                "name": "first_checklist_answer",
+                                "value": "first_checklist_answer",
+                                "classifications": []
+                            },
+                            {
+                                "name": "second_checklist_answer",
+                                "value": "second_checklist_answer",
+                                "classifications": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            "19": {
+                "objects": {},
+                "classifications": [
+                    {
+                        "name": "checklist_index",
+                        "value": "checklist_index",
+                        "checklist_answers": [
+                            {
+                                "name": "first_checklist_answer",
+                                "value": "first_checklist_answer",
+                                "classifications": []
+                            },
+                            {
+                                "name": "second_checklist_answer",
+                                "value": "second_checklist_answer",
+                                "classifications": []
+                            }
+                        ]
+                    }
+                ]
             }
-        ],
+        },
+        "segments": {
+            "<cuid>": [[7, 13], [18, 19]],
+        },
+        "key_frame_feature_map": {
+            "<cuid>": [7, 13, 18, 19],
+        },
     }
     return expected_annotations
 
