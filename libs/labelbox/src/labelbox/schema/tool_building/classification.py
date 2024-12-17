@@ -96,7 +96,7 @@ class Classification:
                 self.instructions = self.name
         if self.attributes is not None:
             warnings.warn(
-                "Attributes are an experimental feature and may change in the future."
+                "The attributes for Classifications are in beta. The attribute name and signature may change in the future."
             )
 
     @classmethod

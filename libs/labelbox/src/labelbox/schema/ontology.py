@@ -106,7 +106,7 @@ class Tool:
     def __post_init__(self):
         if self.attributes is not None:
             warnings.warn(
-                "Attributes are an experimental feature and may change in the future."
+                "The attributes for Tools are in beta. The attribute name and signature may change in the future."
             )
 
     @classmethod
