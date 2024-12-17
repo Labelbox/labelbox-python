@@ -114,10 +114,7 @@ class Classification:
             feature_schema_id=dictionary.get("featureSchemaId", None),
             scope=cls.Scope(dictionary.get("scope", cls.Scope.GLOBAL)),
             attributes=[
-                FeatureSchemaAttribute(
-                    attributeName=attr["attributeName"],
-                    attributeValue=attr["attributeValue"],
-                )
+                FeatureSchemaAttribute.from_dict(attr)
                 for attr in dictionary.get("attributes", []) or []
             ]
             if dictionary.get("attributes")

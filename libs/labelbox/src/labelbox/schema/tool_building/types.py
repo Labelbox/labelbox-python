@@ -5,6 +5,8 @@ from typing import TypedDict
 
 from dataclasses import dataclass
 
+from typing import Any, Dict, List
+
 
 @dataclass
 class FeatureSchemaAttribute:
@@ -16,6 +18,13 @@ class FeatureSchemaAttribute:
             "attributeName": self.attributeName,
             "attributeValue": self.attributeValue,
         }
+
+    @classmethod
+    def from_dict(cls, dictionary: Dict[str, Any]) -> "FeatureSchemaAttribute":
+        return cls(
+            attributeName=dictionary["attributeName"],
+            attributeValue=dictionary["attributeValue"],
+        )
 
 
 FeatureSchemaAttribute = Annotated[FeatureSchemaAttribute, Field()]
