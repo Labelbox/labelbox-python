@@ -5,7 +5,10 @@ from typing import Any, Dict, List, Optional, Union
 
 from lbox.exceptions import InconsistentOntologyException
 
-from labelbox.schema.tool_building.types import FeatureSchemaId, FeatureSchemaAttributes
+from labelbox.schema.tool_building.types import (
+    FeatureSchemaId,
+    FeatureSchemaAttributes,
+)
 
 
 @dataclass
@@ -91,7 +94,9 @@ class Classification:
             if self.instructions is None:
                 self.instructions = self.name
         if self.attributes is not None:
-            warnings.warn('Attributes are an experimental feature and may change in the future.')
+            warnings.warn(
+                "Attributes are an experimental feature and may change in the future."
+            )
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> "Classification":
@@ -123,7 +128,9 @@ class Classification:
             "options": [o.asdict() for o in self.options],
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id,
-            "attributes": self.attributes if self.attributes is not None else None,
+            "attributes": self.attributes
+            if self.attributes is not None
+            else None,
         }
         if (
             self.class_type == self.Type.RADIO

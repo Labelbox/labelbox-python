@@ -47,7 +47,7 @@ def test_as_dict():
                 "schemaNodeId": None,
                 "featureSchemaId": None,
                 "scope": "global",
-                "attributes": None
+                "attributes": None,
             }
         ],
         "color": None,

@@ -28,7 +28,6 @@ from labelbox.schema.tool_building.tool_type_mapping import (
 from labelbox.schema.tool_building.types import FeatureSchemaAttributes
 
 
-
 class DeleteFeatureFromOntologyResult:
     archived: bool
     deleted: bool
@@ -44,6 +43,7 @@ class FeatureSchema(DbObject):
     name = Field.String("name")
     color = Field.String("name")
     normalized = Field.Json("normalized")
+
 
 @dataclass
 class Tool:
@@ -98,6 +98,7 @@ class Tool:
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
     attributes: Optional[FeatureSchemaAttributes] = None
+
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
         return cls(

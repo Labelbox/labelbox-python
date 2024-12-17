@@ -15,7 +15,7 @@ _SAMPLE_ONTOLOGY = {
             "color": "#FF0000",
             "tool": "polygon",
             "classifications": [],
-            "attributes": None
+            "attributes": None,
         },
         {
             "schemaNodeId": None,
@@ -25,7 +25,7 @@ _SAMPLE_ONTOLOGY = {
             "color": "#FF0000",
             "tool": "superpixel",
             "classifications": [],
-            "attributes": None
+            "attributes": None,
         },
         {
             "schemaNodeId": None,
@@ -59,7 +59,7 @@ _SAMPLE_ONTOLOGY = {
                                     "name": "nested nested text",
                                     "type": "text",
                                     "options": [],
-                                    "attributes": None
+                                    "attributes": None,
                                 }
                             ],
                         },
@@ -71,7 +71,7 @@ _SAMPLE_ONTOLOGY = {
                             "options": [],
                         },
                     ],
-                    "attributes": None
+                    "attributes": None,
                 },
                 {
                     "schemaNodeId": None,
@@ -81,7 +81,7 @@ _SAMPLE_ONTOLOGY = {
                     "name": "nested text",
                     "type": "text",
                     "options": [],
-                    "attributes": None
+                    "attributes": None,
                 },
             ],
         },
@@ -93,7 +93,7 @@ _SAMPLE_ONTOLOGY = {
             "color": "#FF0000",
             "tool": "point",
             "classifications": [],
-            "attributes": None
+            "attributes": None,
         },
         {
             "schemaNodeId": None,
@@ -103,7 +103,7 @@ _SAMPLE_ONTOLOGY = {
             "color": "#FF0000",
             "tool": "line",
             "classifications": [],
-            "attributes": None
+            "attributes": None,
         },
         {
             "schemaNodeId": None,
@@ -113,7 +113,7 @@ _SAMPLE_ONTOLOGY = {
             "color": "#FF0000",
             "tool": "named-entity",
             "classifications": [],
-            "attributes": None
+            "attributes": None,
         },
     ],
     "classifications": [
