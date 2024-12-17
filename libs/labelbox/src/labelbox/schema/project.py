@@ -1403,7 +1403,9 @@ class Project(DbObject, Updateable, Deletable):
         ]
 
     def move_data_rows_to_task_queue(
-        self, data_row_ids: DataRowIdentifiers, task_queue_id: str
+        self,
+        data_row_ids: DataRowIdentifiers,
+        task_queue_id: Optional[str] = None,
     ):
         """
 
@@ -1412,7 +1414,7 @@ class Project(DbObject, Updateable, Deletable):
         Args:
             data_row_ids: a list of data row ids to be moved. This should be a DataRowIdentifiers object
                 DataRowIdentifier objects are lists of ids or global keys. A DataIdentifier object can be a UniqueIds or GlobalKeys class.
-            task_queue_id: the task queue id to be moved to, or None to specify the "Done" queue
+            task_queue_id: the task queue id to be moved to, or None to specify the "Done" queue. Defaults to None.
 
         Returns:
             None if successful, or a raised error on failure
