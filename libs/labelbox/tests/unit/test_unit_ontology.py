@@ -4,7 +4,6 @@ import pytest
 from lbox.exceptions import InconsistentOntologyException
 
 from labelbox import Classification, OntologyBuilder, Option, Tool
-from labelbox.schema.tool_building.types import FeatureSchemaAttribute
 
 _SAMPLE_ONTOLOGY = {
     "tools": [

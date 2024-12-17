@@ -1,6 +1,5 @@
 from typing import Annotated, List
 from pydantic import Field
-from typing import TypedDict
 
 
 from dataclasses import dataclass
