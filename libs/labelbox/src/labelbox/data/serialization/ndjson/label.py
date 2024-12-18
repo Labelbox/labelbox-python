@@ -2,7 +2,7 @@ from collections import defaultdict
 import copy
 from itertools import groupby
 from operator import itemgetter
-from typing import Generator, List, Tuple, Union
+from typing import Generator, List, Tuple, Union, Iterator, Dict
 from uuid import uuid4
 
 from pydantic import BaseModel
@@ -24,6 +24,7 @@ from ...annotation_types.video import (
     VideoMaskAnnotation,
     VideoObjectAnnotation,
 )
+from labelbox.types import DocumentRectangle, DocumentEntity
 from .classification import (
     NDChecklistSubclass,
     NDClassification,
@@ -61,9 +62,7 @@ class NDLabel(BaseModel):
     annotations: AnnotationType
 
     @classmethod
-    def from_common(
-        cls, data: LabelCollection
-    ) -> Generator["NDLabel", None, None]:
+    def from_common(cls, data: LabelCollection) -> Generator["NDLabel", None, None]:
         for label in data:
             yield from cls._create_relationship_annotations(label)
             yield from cls._create_non_video_annotations(label)
@@ -127,16 +126,12 @@ class NDLabel(BaseModel):
             if isinstance(
                 annot, (VideoClassificationAnnotation, VideoObjectAnnotation)
             ):
-                video_annotations[annot.feature_schema_id or annot.name].append(
-                    annot
-                )
+                video_annotations[annot.feature_schema_id or annot.name].append(annot)
             elif isinstance(annot, VideoMaskAnnotation):
                 yield NDObject.from_common(annotation=annot, data=label.data)
 
         for annotation_group in video_annotations.values():
-            segment_frame_ranges = cls._get_segment_frame_ranges(
-                annotation_group
-            )
+            segment_frame_ranges = cls._get_segment_frame_ranges(annotation_group)
             if isinstance(annotation_group[0], VideoClassificationAnnotation):
                 annotation = annotation_group[0]
                 frames_data = []
@@ -169,6 +164,7 @@ class NDLabel(BaseModel):
                     VideoClassificationAnnotation,
                     VideoObjectAnnotation,
                     VideoMaskAnnotation,
+                    RelationshipAnnotation,
                 ),
             )
         ]
@@ -179,8 +175,6 @@ class NDLabel(BaseModel):
                 yield NDObject.from_common(annotation, label.data)
             elif isinstance(annotation, (ScalarMetric, ConfusionMatrixMetric)):
                 yield NDMetricAnnotation.from_common(annotation, label.data)
-            elif isinstance(annotation, RelationshipAnnotation):
-                yield NDRelationship.from_common(annotation, label.data)
             elif isinstance(annotation, PromptClassificationAnnotation):
                 yield NDPromptClassification.from_common(annotation, label.data)
             elif isinstance(annotation, MessageEvaluationTaskAnnotation):
@@ -191,19 +185,35 @@ class NDLabel(BaseModel):
                 )
 
     @classmethod
-    def _create_relationship_annotations(cls, label: Label):
+    def _create_relationship_annotations(
+        cls, label: Label
+    ) -> Generator[NDRelationship, None, None]:
         for annotation in label.annotations:
             if isinstance(annotation, RelationshipAnnotation):
                 uuid1 = uuid4()
                 uuid2 = uuid4()
                 source = copy.copy(annotation.value.source)
                 target = copy.copy(annotation.value.target)
-                if not isinstance(source, ObjectAnnotation) or not isinstance(
-                    target, ObjectAnnotation
-                ):
+
+                # Check if source type is valid based on target type
+                if isinstance(target.value, (DocumentRectangle, DocumentEntity)):
+                    if not isinstance(
+                        source, (ObjectAnnotation, ClassificationAnnotation)
+                    ):
+                        raise TypeError(
+                            f"Unable to create relationship with invalid source. For PDF targets, "
+                            f"source must be ObjectAnnotation or ClassificationAnnotation. Got: {type(source)}"
+                        )
+                elif not isinstance(source, ObjectAnnotation):
                     raise TypeError(
-                        f"Unable to create relationship with non ObjectAnnotations. `Source: {type(source)} Target: {type(target)}`"
+                        f"Unable to create relationship with non ObjectAnnotation source: {type(source)}"
                     )
+
+                if not isinstance(target, ObjectAnnotation):
+                    raise TypeError(
+                        f"Unable to create relationship with non ObjectAnnotation target: {type(target)}"
+                    )
+
                 if not source._uuid:
                     source._uuid = uuid1
                 if not target._uuid:

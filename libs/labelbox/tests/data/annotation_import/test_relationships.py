@@ -10,7 +10,17 @@ from labelbox.types import (
     RelationshipAnnotation,
     Relationship,
     TextEntity,
+    DocumentRectangle,
+    DocumentEntity,
+    Point,
+    Text,
+    ClassificationAnnotation,
+    DocumentTextSelection,
+    Radio,
+    ClassificationAnswer,
+    Checklist,
 )
+from labelbox.data.serialization.ndjson import NDJsonConverter
 import pytest
 
 
@@ -169,9 +179,7 @@ def configured_project(
     data_row_data = []
 
     for _ in range(3):
-        data_row_data.append(
-            data_row_json_by_media_type[media_type](rand_gen(str))
-        )
+        data_row_data.append(data_row_json_by_media_type[media_type](rand_gen(str)))
 
     task = dataset.create_data_rows(data_row_data)
     task.wait_till_done()
@@ -220,3 +228,100 @@ def test_import_media_types(
 
     assert label_import.state == AnnotationImportState.FINISHED
     assert len(label_import.errors) == 0
+
+
+def test_valid_classification_relationships():
+    def create_pdf_annotation(target_type: str) -> ObjectAnnotation:
+        if target_type == "bbox":
+            return ObjectAnnotation(
+                name="bbox",
+                value=DocumentRectangle(
+                    start=Point(x=0, y=0),
+                    end=Point(x=0.5, y=0.5),
+                    page=1,
+                    unit="PERCENT",
+                ),
+            )
+        elif target_type == "entity":
+            return ObjectAnnotation(
+                name="entity",
+                value=DocumentEntity(
+                    page=1,
+                    textSelections=[
+                        DocumentTextSelection(token_ids=[], group_id="", page=1)
+                    ],
+                ),
+            )
+        raise ValueError(f"Unknown target type: {target_type}")
+
+    def verify_relationship(source: ClassificationAnnotation, target: ObjectAnnotation):
+        relationship = RelationshipAnnotation(
+            name="relationship",
+            value=Relationship(
+                source=source,
+                target=target,
+                type=Relationship.Type.UNIDIRECTIONAL,
+            ),
+        )
+        label = Label(data={"global_key": "global_key"}, annotations=[relationship])
+        result = list(NDJsonConverter.serialize([label]))
+        assert len(result) == 1
+
+    # Test case 1: Text Classification -> DocumentRectangle
+    text_source = ClassificationAnnotation(name="text", value=Text(answer="test"))
+    verify_relationship(text_source, create_pdf_annotation("bbox"))
+
+    # Test case 2: Text Classification -> DocumentEntity
+    verify_relationship(text_source, create_pdf_annotation("entity"))
+
+    # Test case 3: Radio Classification -> DocumentRectangle
+    radio_source = ClassificationAnnotation(
+        name="sub_radio_question",
+        value=Radio(
+            answer=ClassificationAnswer(
+                name="first_sub_radio_answer",
+                classifications=[
+                    ClassificationAnnotation(
+                        name="second_sub_radio_question",
+                        value=Radio(
+                            answer=ClassificationAnswer(name="second_sub_radio_answer")
+                        ),
+                    )
+                ],
+            )
+        ),
+    )
+    verify_relationship(radio_source, create_pdf_annotation("bbox"))
+
+    # Test case 4: Checklist Classification -> DocumentEntity
+    checklist_source = ClassificationAnnotation(
+        name="sub_checklist_question",
+        value=Checklist(
+            answer=[ClassificationAnswer(name="first_sub_checklist_answer")]
+        ),
+    )
+    verify_relationship(checklist_source, create_pdf_annotation("entity"))
+
+
+def test_classification_relationship_restrictions():
+    """Test all relationship validation error messages."""
+    text = ClassificationAnnotation(name="text", value=Text(answer="test"))
+    point = ObjectAnnotation(name="point", value=Point(x=1, y=1))
+
+    # Test case: Classification -> Point (invalid)
+    # Should fail because classifications can only connect to PDF targets
+    relationship = RelationshipAnnotation(
+        name="relationship",
+        value=Relationship(
+            source=text,
+            target=point,
+            type=Relationship.Type.UNIDIRECTIONAL,
+        ),
+    )
+
+    with pytest.raises(
+        TypeError,
+        match="Unable to create relationship with non ObjectAnnotation source: .*",
+    ):
+        label = Label(data={"global_key": "test_key"}, annotations=[relationship])
+        list(NDJsonConverter.serialize([label]))
