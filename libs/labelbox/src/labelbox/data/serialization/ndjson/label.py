@@ -188,6 +188,20 @@ class NDLabel(BaseModel):
     def _create_relationship_annotations(
         cls, label: Label
     ) -> Generator[NDRelationship, None, None]:
+        """Creates relationship annotations following validation rules for source and target types.
+
+        Args:
+            label: Label containing relationship annotations to be processed
+
+        Yields:
+            NDRelationship: Validated relationship annotations in NDJSON format
+
+        Raises:
+            TypeError: If source/target types violate the validation rules:
+                - Invalid source type for PDF target
+                - Non-ObjectAnnotation source for non-PDF target
+                - Non-ObjectAnnotation target
+        """
         for annotation in label.annotations:
             if isinstance(annotation, RelationshipAnnotation):
                 uuid1 = uuid4()
