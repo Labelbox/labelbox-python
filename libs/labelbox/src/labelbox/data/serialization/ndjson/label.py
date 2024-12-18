@@ -62,7 +62,9 @@ class NDLabel(BaseModel):
     annotations: AnnotationType
 
     @classmethod
-    def from_common(cls, data: LabelCollection) -> Generator["NDLabel", None, None]:
+    def from_common(
+        cls, data: LabelCollection
+    ) -> Generator["NDLabel", None, None]:
         for label in data:
             yield from cls._create_relationship_annotations(label)
             yield from cls._create_non_video_annotations(label)
@@ -126,12 +128,16 @@ class NDLabel(BaseModel):
             if isinstance(
                 annot, (VideoClassificationAnnotation, VideoObjectAnnotation)
             ):
-                video_annotations[annot.feature_schema_id or annot.name].append(annot)
+                video_annotations[annot.feature_schema_id or annot.name].append(
+                    annot
+                )
             elif isinstance(annot, VideoMaskAnnotation):
                 yield NDObject.from_common(annotation=annot, data=label.data)
 
         for annotation_group in video_annotations.values():
-            segment_frame_ranges = cls._get_segment_frame_ranges(annotation_group)
+            segment_frame_ranges = cls._get_segment_frame_ranges(
+                annotation_group
+            )
             if isinstance(annotation_group[0], VideoClassificationAnnotation):
                 annotation = annotation_group[0]
                 frames_data = []
@@ -197,10 +203,12 @@ class NDLabel(BaseModel):
             NDRelationship: Validated relationship annotations in NDJSON format
 
         Raises:
-            TypeError: If source/target types violate the validation rules:
-                - Invalid source type for PDF target
-                - Non-ObjectAnnotation source for non-PDF target
-                - Non-ObjectAnnotation target
+            TypeError: If source/target types are invalid:
+                - Source:
+                    - For PDF target annotations (DocumentRectangle, DocumentEntity): source must be ObjectAnnotation or ClassificationAnnotation
+                    - For other target annotations: source must be ObjectAnnotation
+                - Target:
+                    - Target must always be ObjectAnnotation
         """
         for annotation in label.annotations:
             if isinstance(annotation, RelationshipAnnotation):
@@ -210,7 +218,9 @@ class NDLabel(BaseModel):
                 target = copy.copy(annotation.value.target)
 
                 # Check if source type is valid based on target type
-                if isinstance(target.value, (DocumentRectangle, DocumentEntity)):
+                if isinstance(
+                    target.value, (DocumentRectangle, DocumentEntity)
+                ):
                     if not isinstance(
                         source, (ObjectAnnotation, ClassificationAnnotation)
                     ):

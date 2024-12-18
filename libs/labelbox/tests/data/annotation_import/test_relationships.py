@@ -179,7 +179,9 @@ def configured_project(
     data_row_data = []
 
     for _ in range(3):
-        data_row_data.append(data_row_json_by_media_type[media_type](rand_gen(str)))
+        data_row_data.append(
+            data_row_json_by_media_type[media_type](rand_gen(str))
+        )
 
     task = dataset.create_data_rows(data_row_data)
     task.wait_till_done()
@@ -254,7 +256,9 @@ def test_valid_classification_relationships():
             )
         raise ValueError(f"Unknown target type: {target_type}")
 
-    def verify_relationship(source: ClassificationAnnotation, target: ObjectAnnotation):
+    def verify_relationship(
+        source: ClassificationAnnotation, target: ObjectAnnotation
+    ):
         relationship = RelationshipAnnotation(
             name="relationship",
             value=Relationship(
@@ -263,12 +267,16 @@ def test_valid_classification_relationships():
                 type=Relationship.Type.UNIDIRECTIONAL,
             ),
         )
-        label = Label(data={"global_key": "global_key"}, annotations=[relationship])
+        label = Label(
+            data={"global_key": "global_key"}, annotations=[relationship]
+        )
         result = list(NDJsonConverter.serialize([label]))
         assert len(result) == 1
 
     # Test case 1: Text Classification -> DocumentRectangle
-    text_source = ClassificationAnnotation(name="text", value=Text(answer="test"))
+    text_source = ClassificationAnnotation(
+        name="text", value=Text(answer="test")
+    )
     verify_relationship(text_source, create_pdf_annotation("bbox"))
 
     # Test case 2: Text Classification -> DocumentEntity
@@ -284,7 +292,9 @@ def test_valid_classification_relationships():
                     ClassificationAnnotation(
                         name="second_sub_radio_question",
                         value=Radio(
-                            answer=ClassificationAnswer(name="second_sub_radio_answer")
+                            answer=ClassificationAnswer(
+                                name="second_sub_radio_answer"
+                            )
                         ),
                     )
                 ],
@@ -323,5 +333,7 @@ def test_classification_relationship_restrictions():
         TypeError,
         match="Unable to create relationship with non ObjectAnnotation source: .*",
     ):
-        label = Label(data={"global_key": "test_key"}, annotations=[relationship])
+        label = Label(
+            data={"global_key": "test_key"}, annotations=[relationship]
+        )
         list(NDJsonConverter.serialize([label]))
