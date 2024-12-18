@@ -194,7 +194,7 @@ class NDLabel(BaseModel):
     def _create_relationship_annotations(
         cls, label: Label
     ) -> Generator[NDRelationship, None, None]:
-        """Creates relationship annotations following validation rules for source and target types.
+        """Creates relationship annotations.
 
         Args:
             label: Label containing relationship annotations to be processed
