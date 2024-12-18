@@ -5,7 +5,11 @@ from typing import Any, Dict, List, Optional, Union
 
 from lbox.exceptions import InconsistentOntologyException
 
-from labelbox.schema.tool_building.types import FeatureSchemaId
+from labelbox.schema.tool_building.types import (
+    FeatureSchemaId,
+    FeatureSchemaAttributes,
+    FeatureSchemaAttribute,
+)
 
 
 @dataclass
@@ -42,6 +46,7 @@ class Classification:
         schema_id: (str)
         feature_schema_id: (str)
         scope: (str)
+        attributes: (list)
     """
 
     class Type(Enum):
@@ -70,6 +75,7 @@ class Classification:
     ui_mode: Optional[UIMode] = (
         None  # How this classification should be answered (e.g. hotkeys / autocomplete, etc)
     )
+    attributes: Optional[FeatureSchemaAttributes] = None
 
     def __post_init__(self):
         if self.name is None:
@@ -88,6 +94,10 @@ class Classification:
         else:
             if self.instructions is None:
                 self.instructions = self.name
+        if self.attributes is not None:
+            warnings.warn(
+                "The attributes for Classifications are in beta. The attribute name and signature may change in the future."
+            )
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> "Classification":
@@ -103,6 +113,12 @@ class Classification:
             schema_id=dictionary.get("schemaNodeId", None),
             feature_schema_id=dictionary.get("featureSchemaId", None),
             scope=cls.Scope(dictionary.get("scope", cls.Scope.GLOBAL)),
+            attributes=[
+                FeatureSchemaAttribute.from_dict(attr)
+                for attr in dictionary.get("attributes", []) or []
+            ]
+            if dictionary.get("attributes")
+            else None,
         )
 
     def asdict(self, is_subclass: bool = False) -> Dict[str, Any]:
@@ -118,6 +134,9 @@ class Classification:
             "options": [o.asdict() for o in self.options],
             "schemaNodeId": self.schema_id,
             "featureSchemaId": self.feature_schema_id,
+            "attributes": [a.asdict() for a in self.attributes]
+            if self.attributes is not None
+            else None,
         }
         if (
             self.class_type == self.Type.RADIO

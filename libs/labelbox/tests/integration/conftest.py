@@ -25,6 +25,7 @@ from labelbox import (
 from labelbox.schema.data_row import DataRowMetadataField
 from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.user import User
+from labelbox.schema.tool_building.types import FeatureSchemaAttribute
 
 
 @pytest.fixture
@@ -549,6 +550,76 @@ def point():
         tool=Tool.Type.POINT,
         name="name",
         color="#ff0000",
+    )
+
+
+@pytest.fixture
+def auto_ocr_text_value_class():
+    return Classification(
+        class_type=Classification.Type.TEXT,
+        name="Auto OCR Text Value",
+        instructions="Text value for ocr bboxes",
+        scope=Classification.Scope.GLOBAL,
+        required=False,
+        attributes=[
+            FeatureSchemaAttribute(
+                attributeName="auto-ocr-text-value", attributeValue="true"
+            )
+        ],
+    )
+
+
+@pytest.fixture
+def auto_ocr_bbox(auto_ocr_text_value_class):
+    return Tool(
+        tool=Tool.Type.BBOX,
+        name="Auto ocr bbox",
+        color="ff0000",
+        attributes=[
+            FeatureSchemaAttribute(
+                attributeName="auto-ocr", attributeValue="true"
+            )
+        ],
+        classifications=[auto_ocr_text_value_class],
+    )
+
+
+@pytest.fixture
+def requires_connection_classification():
+    return Classification(
+        name="Requires connection radio",
+        instructions="Classification that requires a connection",
+        class_type=Classification.Type.RADIO,
+        attributes=[
+            FeatureSchemaAttribute(
+                attributeName="requires-connection", attributeValue="true"
+            )
+        ],
+        options=[Option(value="A"), Option(value="B")],
+    )
+
+
+@pytest.fixture
+def requires_connection_classification_feature_schema(
+    client, requires_connection_classification
+):
+    created_feature_schema = client.upsert_feature_schema(
+        requires_connection_classification.asdict()
+    )
+    yield created_feature_schema
+    client.delete_unused_feature_schema(
+        created_feature_schema.normalized["featureSchemaId"]
+    )
+
+
+@pytest.fixture
+def auto_ocr_bbox_feature_schema(client, auto_ocr_bbox):
+    created_feature_schema = client.upsert_feature_schema(
+        auto_ocr_bbox.asdict()
+    )
+    yield created_feature_schema
+    client.delete_unused_feature_schema(
+        created_feature_schema.normalized["featureSchemaId"]
     )
 
 

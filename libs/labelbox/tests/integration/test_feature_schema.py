@@ -115,3 +115,29 @@ def test_does_not_include_used_feature_schema(client, feature_schema):
     assert feature_schema_id not in unused_feature_schemas
 
     client.delete_unused_ontology(ontology.uid)
+
+
+def test_upsert_tool_with_attributes(auto_ocr_bbox_feature_schema):
+    auto_ocr_attributes = auto_ocr_bbox_feature_schema.normalized["attributes"]
+    auto_ocr_text_value_attributes = auto_ocr_bbox_feature_schema.normalized[
+        "classifications"
+    ][0]["attributes"]
+    assert auto_ocr_attributes == [
+        {"attributeName": "auto-ocr", "attributeValue": "true"}
+    ]
+    assert auto_ocr_text_value_attributes == [
+        {"attributeName": "auto-ocr-text-value", "attributeValue": "true"}
+    ]
+
+
+def test_upsert_classification_with_attributes(
+    requires_connection_classification_feature_schema,
+):
+    requires_connection_attributes = (
+        requires_connection_classification_feature_schema.normalized[
+            "attributes"
+        ]
+    )
+    assert requires_connection_attributes == [
+        {"attributeName": "requires-connection", "attributeValue": "true"}
+    ]
