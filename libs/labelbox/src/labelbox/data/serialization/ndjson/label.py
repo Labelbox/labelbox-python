@@ -233,6 +233,7 @@ class NDLabel(BaseModel):
                         f"Unable to create relationship with non ObjectAnnotation source: {type(source)}"
                     )
 
+                # Check if target type is valid
                 if not isinstance(target, ObjectAnnotation):
                     raise TypeError(
                         f"Unable to create relationship with non ObjectAnnotation target: {type(target)}"
