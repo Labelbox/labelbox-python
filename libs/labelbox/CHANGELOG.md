@@ -1,4 +1,8 @@
 # Changelog
+# Version 6.4.0 (2024-12-19)
+* Add feature schema attributes to support auto ocr tool in ontologies([#1930](https://github.com/Labelbox/labelbox-python/pull/1930))
+* Move to task queue task id to be optional with default as None for better type support ([#1929](https://github.com/Labelbox/labelbox-python/pull/1929))
+
 # Version 6.3.0 (2024-12-12)
 ## Added
 * Group member upload([#1924](https://github.com/Labelbox/labelbox-python/pull/1924))

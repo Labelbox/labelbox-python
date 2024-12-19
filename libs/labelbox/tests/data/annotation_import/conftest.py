@@ -2210,21 +2210,21 @@ def expected_export_v2_video():
                 "classifications": [
                     {
                         "name": "checklist_index",
-                        "value": "checklist_index", 
+                        "value": "checklist_index",
                         "checklist_answers": [
                             {
                                 "name": "first_checklist_answer",
                                 "value": "first_checklist_answer",
-                                "classifications": []
+                                "classifications": [],
                             },
                             {
-                                "name": "second_checklist_answer", 
+                                "name": "second_checklist_answer",
                                 "value": "second_checklist_answer",
-                                "classifications": []
-                            }
-                        ]
+                                "classifications": [],
+                            },
+                        ],
                     }
-                ]
+                ],
             },
             "13": {
                 "objects": {},
@@ -2235,17 +2235,17 @@ def expected_export_v2_video():
                         "checklist_answers": [
                             {
                                 "name": "first_checklist_answer",
-                                "value": "first_checklist_answer", 
-                                "classifications": []
+                                "value": "first_checklist_answer",
+                                "classifications": [],
                             },
                             {
                                 "name": "second_checklist_answer",
                                 "value": "second_checklist_answer",
-                                "classifications": []
-                            }
-                        ]
+                                "classifications": [],
+                            },
+                        ],
                     }
-                ]
+                ],
             },
             "18": {
                 "objects": {},
@@ -2257,16 +2257,16 @@ def expected_export_v2_video():
                             {
                                 "name": "first_checklist_answer",
                                 "value": "first_checklist_answer",
-                                "classifications": []
+                                "classifications": [],
                             },
                             {
                                 "name": "second_checklist_answer",
                                 "value": "second_checklist_answer",
-                                "classifications": []
-                            }
-                        ]
+                                "classifications": [],
+                            },
+                        ],
                     }
-                ]
+                ],
             },
             "19": {
                 "objects": {},
@@ -2278,17 +2278,17 @@ def expected_export_v2_video():
                             {
                                 "name": "first_checklist_answer",
                                 "value": "first_checklist_answer",
-                                "classifications": []
+                                "classifications": [],
                             },
                             {
                                 "name": "second_checklist_answer",
                                 "value": "second_checklist_answer",
-                                "classifications": []
-                            }
-                        ]
+                                "classifications": [],
+                            },
+                        ],
                     }
-                ]
-            }
+                ],
+            },
         },
         "segments": {
             "<cuid>": [[7, 13], [18, 19]],
