@@ -315,6 +315,7 @@ class DataRow(DbObject, Updateable, BulkDeletable):
                 "interpolated_frames": False,
                 "all_projects": False,
                 "all_model_runs": False,
+                "predictions": False,
             }
         )
 

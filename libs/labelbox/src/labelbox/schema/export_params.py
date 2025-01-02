@@ -29,6 +29,7 @@ class CatalogExportParams(DataRowParams):
     interpolated_frames: Optional[bool]
     all_projects: Optional[bool]
     all_model_runs: Optional[bool]
+    predictions: Optional[bool]
 
 
 class ModelRunExportParams(DataRowParams):
