@@ -392,6 +392,7 @@ class Dataset(DbObject, Updateable, Deletable):
                 "interpolated_frames": False,
                 "all_projects": False,
                 "all_model_runs": False,
+                "predictions": False,
             }
         )
         validate_catalog_export_params(_params)
