@@ -107,11 +107,14 @@ class UserGroupV2:
         # Reset pointer to start of stream
         buffer.seek(0)
 
-        multipart_file_field = "1"
+        # Use 0-based indexing as per common convention
+        multipart_file_field = "0"
         gql_file_field = "file"
+
+        # Prepare the file content
         files = {
             multipart_file_field: (
-                f"{multipart_file_field}.csv",
+                "members.csv",  # More descriptive filename
                 buffer,
                 "text/csv",
             )
@@ -128,25 +131,24 @@ class UserGroupV2:
                     }
                 }
             """
-        params = {
-            "roleId": role_id,
-            gql_file_field: None,
-            "where": {"id": group_id},
+        # Construct the multipart request following the spec
+        operations = {
+            "query": query,
+            "variables": {
+                "roleId": role_id,
+                gql_file_field: None,  # Placeholder for file
+                "where": {"id": group_id},
+            },
         }
 
+        # Map file to the variable
+        map_data = {multipart_file_field: [f"variables.{gql_file_field}"]}
+
         request_data = {
-            "operations": json.dumps(
-                {
-                    "variables": params,
-                    "query": query,
-                }
-            ),
-            "map": (
-                None,
-                json.dumps(
-                    {multipart_file_field: [f"variables.{gql_file_field}"]}
-                ),
-            ),
+            "operations": json.dumps(operations),
+            "map": json.dumps(
+                map_data
+            ),  # Remove the unnecessary (None, ...) tuple
         }
 
         client = self.client
