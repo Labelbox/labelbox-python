@@ -179,7 +179,12 @@ class Client:
 
         Args:
             query (str): The query to execute.
-            variables (dict): Variables to pass to the query.
+            params (dict): Variables to pass to the query.
+            data (dict): Includes the query and variables as well as the map for file upload multipart/form-data requests as per GraphQL multipart request specification.
+            files (dict): File descriptors to pass to the query for file upload multipart/form-data requests.
+            timeout (float): Timeout for the request.
+            experimental (bool): Whether to use experimental features.
+            error_log_key (str): Key to use for error logging.
             raise_return_resource_not_found (bool): If True, raise a
                 ResourceNotFoundError if the query returns None.
             error_handlers (dict): A dictionary mapping graphql error code to handler functions.
@@ -187,6 +192,8 @@ class Client:
 
         Returns:
             dict: The response from the server.
+
+        See UserGroupV2.upload_members for an example of how to use this method for file upload.
         """
         return self._request_client.execute(
             query,
