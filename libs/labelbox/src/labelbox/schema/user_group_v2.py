@@ -4,9 +4,7 @@ from dataclasses import dataclass
 from io import BytesIO
 from typing import List, Optional
 
-import requests
 from lbox.exceptions import (
-    InternalServerError,
     LabelboxError,
     ResourceNotFoundError,
 )
@@ -151,42 +149,10 @@ class UserGroupV2:
             ),  # Remove the unnecessary (None, ...) tuple
         }
 
-        client = self.client
-        headers = dict(client.connection.headers)
-        headers.pop("Content-Type", None)
-        request = requests.Request(
-            "POST",
-            client.endpoint,
-            headers=headers,
-            data=request_data,
-            files=files,
-        )
-
-        prepped: requests.PreparedRequest = request.prepare()
-
-        response = client.connection.send(prepped)
-
-        if response.status_code == 502:
-            error_502 = "502 Bad Gateway"
-            raise InternalServerError(error_502)
-        elif response.status_code == 503:
-            raise InternalServerError(response.text)
-        elif response.status_code == 520:
-            raise InternalServerError(response.text)
-
-        try:
-            file_data = response.json().get("data", None)
-        except ValueError as e:  # response is not valid JSON
-            raise LabelboxError("Failed to upload, unknown cause", e)
+        file_data = self.client.execute(data=request_data, files=files)
 
         if not file_data or not file_data.get("importUsersAsCsvToGroup", None):
-            try:
-                errors = response.json().get("errors", [])
-                error_msg = "Unknown error"
-                if errors:
-                    error_msg = errors[0].get("message", "Unknown error")
-            except Exception:
-                error_msg = "Unknown error"
+            error_msg = "Unknown error"
             raise LabelboxError("Failed to upload, message: %s" % error_msg)
 
         csv_report = file_data["importUsersAsCsvToGroup"]["csvReport"]
