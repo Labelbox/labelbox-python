@@ -264,42 +264,7 @@ class Client:
             if (filename and content_type)
             else content
         }
-        headers = self.connection.headers.copy()
-        headers.pop("Content-Type", None)
-        request = requests.Request(
-            "POST",
-            self.endpoint,
-            headers=headers,
-            data=request_data,
-            files=files,
-        )
-
-        prepped: requests.PreparedRequest = request.prepare()
-
-        response = self.connection.send(prepped)
-
-        if response.status_code == 502:
-            error_502 = "502 Bad Gateway"
-            raise InternalServerError(error_502)
-        elif response.status_code == 503:
-            raise InternalServerError(response.text)
-        elif response.status_code == 520:
-            raise InternalServerError(response.text)
-
-        try:
-            file_data = response.json().get("data", None)
-        except ValueError as e:  # response is not valid JSON
-            raise LabelboxError("Failed to upload, unknown cause", e)
-
-        if not file_data or not file_data.get("uploadFile", None):
-            try:
-                errors = response.json().get("errors", [])
-                error_msg = next(iter(errors), {}).get(
-                    "message", "Unknown error"
-                )
-            except Exception:
-                error_msg = "Unknown error"
-            raise LabelboxError("Failed to upload, message: %s" % error_msg)
+        file_data = self.execute(data=request_data, files=files)
 
         return file_data["uploadFile"]["url"]
 
