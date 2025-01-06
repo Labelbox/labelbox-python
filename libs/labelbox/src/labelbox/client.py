@@ -179,7 +179,12 @@ class Client:
 
         Args:
             query (str): The query to execute.
-            variables (dict): Variables to pass to the query.
+            params (dict): Variables to pass to the query.
+            data (dict): Includes the query and variables as well as the map for file upload multipart/form-data requests as per GraphQL multipart request specification.
+            files (dict): File descriptors to pass to the query for file upload multipart/form-data requests.
+            timeout (float): Timeout for the request.
+            experimental (bool): Whether to use experimental features.
+            error_log_key (str): Key to use for error logging.
             raise_return_resource_not_found (bool): If True, raise a
                 ResourceNotFoundError if the query returns None.
             error_handlers (dict): A dictionary mapping graphql error code to handler functions.
@@ -187,6 +192,8 @@ class Client:
 
         Returns:
             dict: The response from the server.
+
+        See UserGroupV2.upload_members for an example of how to use this method for file upload.
         """
         return self._request_client.execute(
             query,
@@ -264,42 +271,7 @@ class Client:
             if (filename and content_type)
             else content
         }
-        headers = self.connection.headers.copy()
-        headers.pop("Content-Type", None)
-        request = requests.Request(
-            "POST",
-            self.endpoint,
-            headers=headers,
-            data=request_data,
-            files=files,
-        )
-
-        prepped: requests.PreparedRequest = request.prepare()
-
-        response = self.connection.send(prepped)
-
-        if response.status_code == 502:
-            error_502 = "502 Bad Gateway"
-            raise InternalServerError(error_502)
-        elif response.status_code == 503:
-            raise InternalServerError(response.text)
-        elif response.status_code == 520:
-            raise InternalServerError(response.text)
-
-        try:
-            file_data = response.json().get("data", None)
-        except ValueError as e:  # response is not valid JSON
-            raise LabelboxError("Failed to upload, unknown cause", e)
-
-        if not file_data or not file_data.get("uploadFile", None):
-            try:
-                errors = response.json().get("errors", [])
-                error_msg = next(iter(errors), {}).get(
-                    "message", "Unknown error"
-                )
-            except Exception:
-                error_msg = "Unknown error"
-            raise LabelboxError("Failed to upload, message: %s" % error_msg)
+        file_data = self.execute(data=request_data, files=files)
 
         return file_data["uploadFile"]["url"]
 
