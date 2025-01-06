@@ -23,10 +23,11 @@ def mmc_data_row(dataset):
 
 
 @pytest.fixture
-def mmc_data_row_all(dataset, make_metadata_fields, embedding):
+def mmc_data_row_all(dataset, make_metadata_fields, embedding, rand_gen):
     data = ModelEvaluationTemplate()
     data.row_data.rootMessageIds = ["root1"]
-    data.global_key = "global_key"
+    global_key = f"global_key_{rand_gen(str)}"
+    data.global_key = global_key
     vector = [random.uniform(1.0, 2.0) for _ in range(embedding.dims)]
     data.embeddings = [{"embedding_id": embedding.id, "vector": vector}]
     data.metadata_fields = make_metadata_fields
@@ -39,7 +40,7 @@ def mmc_data_row_all(dataset, make_metadata_fields, embedding):
 
     data_row = list(dataset.data_rows())[0]
 
-    yield data_row
+    yield data_row, global_key
 
     data_row.delete()
 
@@ -57,7 +58,7 @@ def test_mmc(mmc_data_row):
 
 
 def test_mmc_all(mmc_data_row_all, embedding, constants):
-    data_row = mmc_data_row_all
+    data_row, global_key = mmc_data_row_all
     assert json.loads(data_row.row_data) == {
         "type": "application/vnd.labelbox.conversational.model-chat-evaluation",
         "draft": True,
@@ -66,7 +67,7 @@ def test_mmc_all(mmc_data_row_all, embedding, constants):
         "messages": {},
         "version": 2,
     }
-    assert data_row.global_key == "global_key"
+    assert data_row.global_key == global_key
     metadata_fields = data_row.metadata_fields
     metadata = data_row.metadata
     assert len(metadata_fields) == 3
