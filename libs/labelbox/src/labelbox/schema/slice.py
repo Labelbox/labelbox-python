@@ -55,7 +55,6 @@ class Slice(DbObject):
         def __get_pydantic_core_schema__(
             self, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
-            print(source)
             return core_schema.no_info_after_validator_function(
                 self._validate,
                 core_schema.dict_schema(),
