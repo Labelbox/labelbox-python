@@ -1,6 +1,6 @@
 import json
 import warnings
-from dataclasses import dataclass
+from pydantic.dataclasses import dataclass
 from io import BytesIO
 from typing import List, Optional
 

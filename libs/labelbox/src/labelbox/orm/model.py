@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from pydantic.dataclasses import dataclass
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Dict, List, Type, Union
 

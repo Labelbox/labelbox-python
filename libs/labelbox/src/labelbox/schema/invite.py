@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from pydantic.dataclasses import dataclass
 
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from pydantic.dataclasses import dataclass
 from typing import Dict, Optional, TYPE_CHECKING
 
 from labelbox.orm.model import Field

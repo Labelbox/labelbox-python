@@ -2,7 +2,7 @@ import json
 import os
 import tempfile
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from pydantic.dataclasses import dataclass
 from enum import Enum
 from functools import lru_cache
 from typing import (

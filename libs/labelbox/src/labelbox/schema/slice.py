@@ -1,5 +1,7 @@
-from dataclasses import dataclass
-from typing import Optional, Tuple, Union
+from pydantic import ConfigDict, GetCoreSchemaHandler
+from pydantic.dataclasses import dataclass
+from pydantic_core import core_schema
+from typing import Any, Optional, Tuple, Union
 import warnings
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
@@ -46,6 +48,35 @@ class Slice(DbObject):
                 "id": self.id.key,
                 "global_key": self.global_key.key if self.global_key else None,
             }
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            self, source: type[Any], handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            print(source)
+            return core_schema.no_info_after_validator_function(
+                self._validate,
+                core_schema.dict_schema(),
+                serialization=core_schema.plain_serializer_function_ser_schema(
+                    lambda x: x.to_hash(),
+                    return_schema=core_schema.dict_schema(),
+                ),
+            )
+
+        @classmethod
+        def _validate(cls, value: Any) -> Any:
+            if isinstance(value, cls):
+                return value
+            if isinstance(value, dict):
+                id_val = value.get("id")
+                if id_val is None:
+                    raise ValueError(
+                        f"Missing required 'id' field in dict {value}"
+                    )
+                return cls(id=id_val, global_key=value.get("global_key"))
+            raise ValueError(f"Cannot convert {value} to {cls.__name__}")
 
 
 class CatalogSlice(Slice):

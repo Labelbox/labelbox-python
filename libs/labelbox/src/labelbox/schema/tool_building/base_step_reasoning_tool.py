@@ -1,6 +1,7 @@
 import warnings
 from abc import ABC
-from dataclasses import dataclass, field
+from pydantic.dataclasses import dataclass
+from dataclasses import field
 from typing import Any, Dict, List, Optional, Set
 
 from labelbox.schema.tool_building.tool_type import ToolType

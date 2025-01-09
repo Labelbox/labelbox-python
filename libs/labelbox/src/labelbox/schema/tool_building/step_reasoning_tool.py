@@ -1,4 +1,5 @@
-from dataclasses import dataclass, field
+from pydantic.dataclasses import dataclass
+from dataclasses import field
 from enum import Enum
 
 from labelbox.schema.tool_building.base_step_reasoning_tool import (

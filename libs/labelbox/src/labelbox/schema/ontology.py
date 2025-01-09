@@ -2,7 +2,8 @@
 
 import colorsys
 import json
-from dataclasses import dataclass, field
+from pydantic.dataclasses import dataclass
+from dataclasses import field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
