@@ -6,6 +6,8 @@
 #   features: []
 #   all-features: true
 #   with-sources: false
+#   generate-hashes: false
+#   universal: false
 
 -e file:libs/labelbox
 -e file:libs/lbox-clients
@@ -43,7 +45,7 @@ idna==3.7
 imagesize==1.4.1
     # via labelbox
     # via sphinx
-importlib-metadata==8.0.0
+importlib-metadata==8.5.0
     # via sphinx
     # via typeguard
 jinja2==3.1.4
@@ -54,7 +56,7 @@ mypy==1.10.1
     # via labelbox
 mypy-extensions==1.0.0
     # via mypy
-numpy==1.24.4
+numpy==2.0.2
     # via labelbox
     # via opencv-python-headless
     # via shapely
@@ -83,7 +85,7 @@ pygeotile==1.0.6
     # via labelbox
 pygments==2.18.0
     # via sphinx
-pyproj==3.5.0
+pyproj==3.6.1
     # via labelbox
 python-dateutil==2.9.0.post0
     # via labelbox
@@ -121,7 +123,7 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 strenum==0.4.15
     # via labelbox
-tomli==2.0.1
+tomli==2.2.1
     # via mypy
 tqdm==4.66.4
     # via labelbox
@@ -135,5 +137,5 @@ typing-extensions==4.12.2
     # via typeguard
 urllib3==2.2.2
     # via requests
-zipp==3.19.2
+zipp==3.21.0
     # via importlib-metadata

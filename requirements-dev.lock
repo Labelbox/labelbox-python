@@ -6,6 +6,8 @@
 #   features: []
 #   all-features: true
 #   with-sources: false
+#   generate-hashes: false
+#   universal: false
 
 -e file:libs/labelbox
 -e file:libs/lbox-clients
@@ -57,7 +59,7 @@ defusedxml==0.7.1
 docutils==0.20.1
     # via sphinx
     # via sphinx-rtd-theme
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
     # via pytest
 execnet==2.1.1
     # via pytest-xdist
@@ -133,7 +135,7 @@ nbconvert==7.16.4
 nbformat==5.10.4
     # via nbclient
     # via nbconvert
-numpy==1.24.4
+numpy==2.0.2
     # via labelbox
     # via opencv-python-headless
     # via pandas
@@ -147,7 +149,7 @@ packaging==24.1
     # via pytest-cases
     # via pytest-rerunfailures
     # via sphinx
-pandas==2.0.3
+pandas==2.2.3
 pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.4
@@ -196,7 +198,7 @@ pygments==2.18.0
     # via rich
     # via sphinx
 pyjwt==2.9.0
-pyproj==3.5.0
+pyproj==3.6.1
     # via labelbox
 pytest==8.2.2
     # via pytest-cov
@@ -235,7 +237,7 @@ requests==2.32.3
 rich==12.6.0
     # via databooks
     # via typer
-rpds-py==0.19.0
+rpds-py==0.22.3
     # via jsonschema
     # via referencing
 rsa==4.9
