@@ -4,9 +4,7 @@ from dataclasses import dataclass
 from io import BytesIO
 from typing import List, Optional
 
-import requests
 from lbox.exceptions import (
-    InternalServerError,
     LabelboxError,
     ResourceNotFoundError,
 )
@@ -107,11 +105,14 @@ class UserGroupV2:
         # Reset pointer to start of stream
         buffer.seek(0)
 
-        multipart_file_field = "1"
+        # Use 0-based indexing as per common convention
+        multipart_file_field = "0"
         gql_file_field = "file"
+
+        # Prepare the file content
         files = {
             multipart_file_field: (
-                f"{multipart_file_field}.csv",
+                "members.csv",  # More descriptive filename
                 buffer,
                 "text/csv",
             )
@@ -128,63 +129,30 @@ class UserGroupV2:
                     }
                 }
             """
-        params = {
-            "roleId": role_id,
-            gql_file_field: None,
-            "where": {"id": group_id},
+        # Construct the multipart request following the spec
+        operations = {
+            "query": query,
+            "variables": {
+                "roleId": role_id,
+                gql_file_field: None,  # Placeholder for file
+                "where": {"id": group_id},
+            },
         }
+
+        # Map file to the variable
+        map_data = {multipart_file_field: [f"variables.{gql_file_field}"]}
 
         request_data = {
-            "operations": json.dumps(
-                {
-                    "variables": params,
-                    "query": query,
-                }
-            ),
-            "map": (
-                None,
-                json.dumps(
-                    {multipart_file_field: [f"variables.{gql_file_field}"]}
-                ),
-            ),
+            "operations": json.dumps(operations),
+            "map": json.dumps(
+                map_data
+            ),  # Remove the unnecessary (None, ...) tuple
         }
 
-        client = self.client
-        headers = dict(client.connection.headers)
-        headers.pop("Content-Type", None)
-        request = requests.Request(
-            "POST",
-            client.endpoint,
-            headers=headers,
-            data=request_data,
-            files=files,
-        )
-
-        prepped: requests.PreparedRequest = request.prepare()
-
-        response = client.connection.send(prepped)
-
-        if response.status_code == 502:
-            error_502 = "502 Bad Gateway"
-            raise InternalServerError(error_502)
-        elif response.status_code == 503:
-            raise InternalServerError(response.text)
-        elif response.status_code == 520:
-            raise InternalServerError(response.text)
-
-        try:
-            file_data = response.json().get("data", None)
-        except ValueError as e:  # response is not valid JSON
-            raise LabelboxError("Failed to upload, unknown cause", e)
+        file_data = self.client.execute(data=request_data, files=files)
 
         if not file_data or not file_data.get("importUsersAsCsvToGroup", None):
-            try:
-                errors = response.json().get("errors", [])
-                error_msg = "Unknown error"
-                if errors:
-                    error_msg = errors[0].get("message", "Unknown error")
-            except Exception:
-                error_msg = "Unknown error"
+            error_msg = "Unknown error"
             raise LabelboxError("Failed to upload, message: %s" % error_msg)
 
         csv_report = file_data["importUsersAsCsvToGroup"]["csvReport"]
