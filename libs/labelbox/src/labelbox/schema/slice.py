@@ -202,6 +202,7 @@ class CatalogSlice(Slice):
                     "modelRunIds": _params.get("model_run_ids", None),
                     "allProjects": _params.get("all_projects", False),
                     "allModelRuns": _params.get("all_model_runs", False),
+                    "includePredictions": _params.get("predictions", False),
                 },
                 "streamable": streamable,
             }
