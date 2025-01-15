@@ -1,4 +1,9 @@
 # Changelog
+# Version 3.78.2 (2025-01-15)
+## Fixed
+* Exporter encoding
+  * NOTE: backported from v.5.2.1
+
 # Version 3.78.1 (2024-09-10)
 ## Fixed
 * Labeling dashboard query for tags
