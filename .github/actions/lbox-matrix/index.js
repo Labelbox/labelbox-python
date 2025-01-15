@@ -26838,9 +26838,12 @@ try {
     },    
   ];
   const testMatrix = [];
+  const excludeRegex = /lbox-example/;
+
   const packages = files.map(file => {
     return file.split('/')[1];
-  });
+  }).filter(pkg => pkg !== null && !excludeRegex.test(pkg));
+
   const uniquePackages = [... new Set(packages)];
   uniquePackages.forEach(package => {
     startingMatrix.forEach(matrixItem => {

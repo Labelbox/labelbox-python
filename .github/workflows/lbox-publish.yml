@@ -54,7 +54,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # ref: ${{ inputs.tag }}
           ref: ${{ inputs.tag }}
       - name: Install the latest version of rye
         uses: eifinger/setup-rye@v2
