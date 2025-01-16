@@ -37,7 +37,7 @@ jobs:
           list-files: 'json'
           filters: |
             lbox:
-              - 'libs/lbox*/**'
+              - 'libs/lbox-!(example)/**'
       - id: matrix
         uses: ./.github/actions/lbox-matrix
         with:
@@ -138,6 +138,7 @@ jobs:
     permissions:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
+      contents: read
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -146,7 +147,10 @@ jobs:
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: artifact/
+          packages-dir: ./artifact
+          verbose: true
+          print-hash: true
+          attestations: false
   container-publish:
     runs-on: ubuntu-latest
     needs: ['build', 'path-filter']
