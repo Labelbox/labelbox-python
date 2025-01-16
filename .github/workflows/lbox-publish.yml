@@ -37,7 +37,7 @@ jobs:
           list-files: 'json'
           filters: |
             lbox:
-              - 'libs/lbox*/**'
+              - 'libs/lbox-!(example)/**'
       - id: matrix
         uses: ./.github/actions/lbox-matrix
         with:
@@ -147,6 +147,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: artifact/
+          verbose: true
   container-publish:
     runs-on: ubuntu-latest
     needs: ['build', 'path-filter']
