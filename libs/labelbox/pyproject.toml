@@ -1,6 +1,6 @@
 [project]
 name = "labelbox"
-version = "6.5.0"
+version = "6.6.0"
 description = "Labelbox Python API"
 authors = [{ name = "Labelbox", email = "engineering@labelbox.com" }]
 dependencies = [
@@ -12,10 +12,10 @@ dependencies = [
     "tqdm>=4.66.2",
     "geojson>=3.1.0",
     "mypy==1.10.1",
-    "lbox-clients==1.1.1",
+    "lbox-clients==1.1.2",
 ]
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9,<3.14"
 classifiers = [
     # How mature is this project?
     "Development Status :: 5 - Production/Stable",
@@ -33,6 +33,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 keywords = ["ml", "ai", "labelbox", "labeling", "llm", "machinelearning", "edu"]
 

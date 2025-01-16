@@ -1,6 +1,6 @@
 [project]
 name = "lbox-clients"
-version = "1.1.1"
+version = "1.1.2"
 description = "This module contains client sdk uses to conntect to the Labelbox API and backends"
 authors = [
     { name = "Labelbox", email = "engineering@labelbox.com" }
@@ -29,6 +29,7 @@ classifiers=[
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 keywords = ["ml", "ai", "labelbox", "labeling", "llm", "machinelearning", "edu"]
 

@@ -1,4 +1,13 @@
 # Changelog
+# Version 6.6.0 (2025-01-14)
+## Added
+* Support for python 3.13([#1940](https://github.com/Labelbox/labelbox-python/pull/1940))
+  * Note minimum numpy version that supports python 3.13 is 2.1
+* Include predictions in slice export([#1939](https://github.com/Labelbox/labelbox-python/pull/1939))
+
+## Fixed
+* GraphQL upload SSL configuration([#1937](https://github.com/Labelbox/labelbox-python/pull/1937))
+
 # Version 6.5.0 (2025-01-03)
 ## Added
 * Support include predictions in catalog exports([#1935](https://github.com/Labelbox/labelbox-python/pull/1935))
