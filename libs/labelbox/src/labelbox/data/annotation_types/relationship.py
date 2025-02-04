@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 from pydantic import BaseModel
 from enum import Enum
 from labelbox.data.annotation_types.annotation import (
@@ -16,6 +16,7 @@ class Relationship(BaseModel):
     source: Union[ObjectAnnotation, ClassificationAnnotation]
     target: ObjectAnnotation
     type: Type = Type.UNIDIRECTIONAL
+    read_only: Optional[bool]
 
 
 class RelationshipAnnotation(BaseAnnotation):

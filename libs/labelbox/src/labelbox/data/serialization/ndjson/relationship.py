@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 from .base import NDAnnotation, DataRow
 from ...annotation_types.data import GenericDataRowData
@@ -13,7 +14,7 @@ class _Relationship(BaseModel):
     source: str
     target: str
     type: str
-
+    read_only: Optional[bool]
 
 class NDRelationship(NDAnnotation):
     relationship: _Relationship
@@ -50,5 +51,6 @@ class NDRelationship(NDAnnotation):
                 source=str(relationship.source._uuid),
                 target=str(relationship.target._uuid),
                 type=relationship.type.value,
+                read_only=relationship.read_only,
             ),
         )
