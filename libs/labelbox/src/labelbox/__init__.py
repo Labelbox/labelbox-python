@@ -1,6 +1,6 @@
 name = "labelbox"
 
-__version__ = "6.6.0"
+__version__ = "6.7.0"
 
 from labelbox.client import Client
 from labelbox.schema.annotation_import import (
