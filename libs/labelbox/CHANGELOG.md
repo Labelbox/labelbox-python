@@ -3,9 +3,6 @@
 ## Added
 * MAL and GT support for pdf relationships([#1932](https://github.com/Labelbox/labelbox-python/pull/1932))
 
-## Fixed
-* GraphQL upload SSL configuration([#1937](https://github.com/Labelbox/labelbox-python/pull/1937))
-
 # Version 6.6.0 (2025-01-14)
 ## Added
 * Support for python 3.13([#1940](https://github.com/Labelbox/labelbox-python/pull/1940))
