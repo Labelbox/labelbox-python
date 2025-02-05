@@ -192,3 +192,82 @@ def test_bidirectional_relationship():
     )
     assert rel_serialized["relationship"]["type"] == "bidirectional"
     assert rel_2_serialized["relationship"]["type"] == "bidirectional"
+
+
+def test_readonly_relationships():
+    ner_source = ObjectAnnotation(
+        name="e1",
+        value=TextEntity(start=10, end=12),
+    )
+
+    ner_target = ObjectAnnotation(
+        name="e2",
+        value=TextEntity(start=30, end=35),
+    )
+
+    # Test unidirectional relationship with readonly=True
+    readonly_relationship = RelationshipAnnotation(
+        name="readonly_rel",
+        value=Relationship(
+            source=ner_source,
+            target=ner_target,
+            type=Relationship.Type.UNIDIRECTIONAL,
+            readonly=True,
+        ),
+    )
+
+    # Test bidirectional relationship with readonly=False
+    non_readonly_relationship = RelationshipAnnotation(
+        name="non_readonly_rel",
+        value=Relationship(
+            source=ner_source,
+            target=ner_target,
+            type=Relationship.Type.BIDIRECTIONAL,
+            readonly=False,
+        ),
+    )
+
+    label = Label(
+        data={"uid": "clqbkpy236syk07978v3pscw1"},
+        annotations=[
+            ner_source,
+            ner_target,
+            readonly_relationship,
+            non_readonly_relationship,
+        ],
+    )
+
+    serialized_label = list(NDJsonConverter.serialize([label]))
+
+    ner_source_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == ner_source.name
+    )
+    ner_target_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == ner_target.name
+    )
+    readonly_rel_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == readonly_relationship.name
+    )
+    non_readonly_rel_serialized = next(
+        annotation
+        for annotation in serialized_label
+        if annotation["name"] == non_readonly_relationship.name
+    )
+
+    # Verify readonly relationship
+    assert readonly_rel_serialized["relationship"]["source"] == ner_source_serialized["uuid"]
+    assert readonly_rel_serialized["relationship"]["target"] == ner_target_serialized["uuid"]
+    assert readonly_rel_serialized["relationship"]["type"] == "unidirectional"
+    assert readonly_rel_serialized["relationship"]["readonly"] is True
+
+    # Verify non-readonly relationship
+    assert non_readonly_rel_serialized["relationship"]["source"] == ner_source_serialized["uuid"]
+    assert non_readonly_rel_serialized["relationship"]["target"] == ner_target_serialized["uuid"]
+    assert non_readonly_rel_serialized["relationship"]["type"] == "bidirectional"
+    assert non_readonly_rel_serialized["relationship"]["readonly"] is False
