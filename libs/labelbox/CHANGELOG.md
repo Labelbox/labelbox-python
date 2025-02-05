@@ -1,7 +1,7 @@
 # Changelog
-# Version 6.7.0 (2025-02-04)
+# Version 6.7.0 (2025-02-05)
 ## Added
-* MAL and GT support for pdf relationships([#1932](https://github.com/Labelbox/labelbox-python/pull/1932))
+* MAL support for pdf relationships([#1932](https://github.com/Labelbox/labelbox-python/pull/1932))
 
 # Version 6.6.0 (2025-01-14)
 ## Added
