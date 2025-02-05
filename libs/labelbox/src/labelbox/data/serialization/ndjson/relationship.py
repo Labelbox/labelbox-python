@@ -14,7 +14,7 @@ class _Relationship(BaseModel):
     source: str
     target: str
     type: str
-    read_only: Optional[bool]
+    readonly: Optional[bool] = None
 
 class NDRelationship(NDAnnotation):
     relationship: _Relationship
@@ -51,6 +51,6 @@ class NDRelationship(NDAnnotation):
                 source=str(relationship.source._uuid),
                 target=str(relationship.target._uuid),
                 type=relationship.type.value,
-                read_only=relationship.read_only,
+                readonly=relationship.readonly,
             ),
         )

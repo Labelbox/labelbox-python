@@ -16,7 +16,7 @@ class Relationship(BaseModel):
     source: Union[ObjectAnnotation, ClassificationAnnotation]
     target: ObjectAnnotation
     type: Type = Type.UNIDIRECTIONAL
-    read_only: Optional[bool]
+    readonly: Optional[bool] = None
 
 
 class RelationshipAnnotation(BaseAnnotation):
