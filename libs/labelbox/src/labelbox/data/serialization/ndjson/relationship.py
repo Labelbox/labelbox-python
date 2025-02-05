@@ -31,6 +31,7 @@ class NDRelationship(NDAnnotation):
                 source=source,
                 target=target,
                 type=Relationship.Type(annotation.relationship.type),
+                readonly=annotation.relationship.readonly,
             ),
             extra={"uuid": annotation.uuid},
             feature_schema_id=annotation.schema_id,
