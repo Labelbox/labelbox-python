@@ -337,3 +337,72 @@ def test_classification_relationship_restrictions():
             data={"global_key": "test_key"}, annotations=[relationship]
         )
         list(NDJsonConverter.serialize([label]))
+
+
+def test_relationship_readonly_default_none():
+    """Test that relationship readonly field defaults to None when not specified."""
+    source = ObjectAnnotation(
+        name="e1",
+        value=TextEntity(start=10, end=12),
+    )
+    target = ObjectAnnotation(
+        name="e2",
+        value=TextEntity(start=30, end=35),
+    )
+
+    relationship = RelationshipAnnotation(
+        name="rel",
+        value=Relationship(
+            source=source,
+            target=target,
+            type=Relationship.Type.UNIDIRECTIONAL,
+        ),
+    )
+    assert relationship.value.readonly is None
+
+
+def test_relationship_readonly_explicit_false():
+    """Test that relationship readonly field can be explicitly set to False."""
+    source = ObjectAnnotation(
+        name="e1",
+        value=TextEntity(start=10, end=12),
+    )
+    target = ObjectAnnotation(
+        name="e2",
+        value=TextEntity(start=30, end=35),
+    )
+
+    relationship = RelationshipAnnotation(
+        name="rel",
+        value=Relationship(
+            source=source,
+            target=target,
+            type=Relationship.Type.UNIDIRECTIONAL,
+            readonly=False,
+        ),
+    )
+    assert relationship.value.readonly is False
+
+
+def test_relationship_readonly_explicit_true():
+    """Test that setting relationship readonly=True triggers a warning."""
+    source = ObjectAnnotation(
+        name="e1",
+        value=TextEntity(start=10, end=12),
+    )
+    target = ObjectAnnotation(
+        name="e2",
+        value=TextEntity(start=30, end=35),
+    )
+
+    with pytest.warns(UserWarning, match="Creating a relationship with readonly=True is in beta.*"):
+        relationship = RelationshipAnnotation(
+            name="rel",
+            value=Relationship(
+                source=source,
+                target=target,
+                type=Relationship.Type.UNIDIRECTIONAL,
+                readonly=True,
+            ),
+        )
+    assert relationship.value.readonly is True
