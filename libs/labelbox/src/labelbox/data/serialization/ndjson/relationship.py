@@ -16,6 +16,7 @@ class _Relationship(BaseModel):
     type: str
     readonly: Optional[bool] = None
 
+
 class NDRelationship(NDAnnotation):
     relationship: _Relationship
 

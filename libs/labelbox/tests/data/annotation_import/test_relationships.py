@@ -395,7 +395,10 @@ def test_relationship_readonly_explicit_true():
         value=TextEntity(start=30, end=35),
     )
 
-    with pytest.warns(UserWarning, match="Creating a relationship with readonly=True is in beta.*"):
+    with pytest.warns(
+        UserWarning,
+        match="Creating a relationship with readonly=True is in beta.*",
+    ):
         relationship = RelationshipAnnotation(
             name="rel",
             value=Relationship(

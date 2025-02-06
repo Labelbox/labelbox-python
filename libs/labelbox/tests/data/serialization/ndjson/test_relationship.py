@@ -261,13 +261,27 @@ def test_readonly_relationships():
     )
 
     # Verify readonly relationship
-    assert readonly_rel_serialized["relationship"]["source"] == ner_source_serialized["uuid"]
-    assert readonly_rel_serialized["relationship"]["target"] == ner_target_serialized["uuid"]
+    assert (
+        readonly_rel_serialized["relationship"]["source"]
+        == ner_source_serialized["uuid"]
+    )
+    assert (
+        readonly_rel_serialized["relationship"]["target"]
+        == ner_target_serialized["uuid"]
+    )
     assert readonly_rel_serialized["relationship"]["type"] == "unidirectional"
     assert readonly_rel_serialized["relationship"]["readonly"] is True
 
     # Verify non-readonly relationship
-    assert non_readonly_rel_serialized["relationship"]["source"] == ner_source_serialized["uuid"]
-    assert non_readonly_rel_serialized["relationship"]["target"] == ner_target_serialized["uuid"]
-    assert non_readonly_rel_serialized["relationship"]["type"] == "bidirectional"
+    assert (
+        non_readonly_rel_serialized["relationship"]["source"]
+        == ner_source_serialized["uuid"]
+    )
+    assert (
+        non_readonly_rel_serialized["relationship"]["target"]
+        == ner_target_serialized["uuid"]
+    )
+    assert (
+        non_readonly_rel_serialized["relationship"]["type"] == "bidirectional"
+    )
     assert non_readonly_rel_serialized["relationship"]["readonly"] is False

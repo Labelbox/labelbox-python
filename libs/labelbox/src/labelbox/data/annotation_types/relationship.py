@@ -19,7 +19,7 @@ class Relationship(BaseModel):
     type: Type = Type.UNIDIRECTIONAL
     readonly: Optional[bool] = None
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def check_readonly(self):
         if self.readonly is True:
             warnings.warn(
