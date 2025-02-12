@@ -437,7 +437,10 @@ def test_relationship_missing_source_validation():
         value=TextEntity(start=30, end=35),
     )
 
-    with pytest.raises(ValueError, match="Either source or source_ontology_name must be provided"):
+    with pytest.raises(
+        ValueError,
+        match="Either source or source_ontology_name must be provided",
+    ):
         RelationshipAnnotation(
             name="rel",
             value=Relationship(
@@ -458,7 +461,10 @@ def test_relationship_both_sources_validation():
         value=TextEntity(start=30, end=35),
     )
 
-    with pytest.raises(ValueError, match="Only one of 'source' or 'source_ontology_name' may be provided"):
+    with pytest.raises(
+        ValueError,
+        match="Only one of 'source' or 'source_ontology_name' may be provided",
+    ):
         RelationshipAnnotation(
             name="rel",
             value=Relationship(

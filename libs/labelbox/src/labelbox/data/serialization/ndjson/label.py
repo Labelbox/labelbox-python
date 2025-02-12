@@ -230,7 +230,10 @@ class NDLabel(BaseModel):
                             f"Unable to create relationship with invalid source. For PDF targets, "
                             f"source must be ObjectAnnotation or ClassificationAnnotation. Got: {type(source)}"
                         )
-                    if source is None and annotation.value.source_ontology_name is None:
+                    if (
+                        source is None
+                        and annotation.value.source_ontology_name is None
+                    ):
                         raise ValueError(
                             "Unable to create relationship - either source or source_ontology_name must be provided"
                         )

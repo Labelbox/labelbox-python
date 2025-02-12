@@ -383,7 +383,8 @@ def test_source_ontology_name_relationship():
 
     # Verify relationship with source_ontology_name
     assert (
-        ontology_rel_serialized["relationship"]["sourceOntologyName"] == "Person"
+        ontology_rel_serialized["relationship"]["sourceOntologyName"]
+        == "Person"
     )
     assert (
         ontology_rel_serialized["relationship"]["target"]
@@ -404,7 +405,10 @@ def test_source_ontology_name_relationship():
         )
         assert False, "Expected ValueError for providing both source and source_ontology_name"
     except Exception as e:
-        assert "Value error, Only one of 'source' or 'source_ontology_name' may be provided" in str(e)
+        assert (
+            "Value error, Only one of 'source' or 'source_ontology_name' may be provided"
+            in str(e)
+        )
 
     # Test that providing neither source nor source_ontology_name raises an error
     try:
@@ -417,4 +421,7 @@ def test_source_ontology_name_relationship():
         )
         assert False, "Expected ValueError for providing neither source nor source_ontology_name"
     except Exception as e:
-        assert "Value error, Either source or source_ontology_name must be provided" in str(e)
+        assert (
+            "Value error, Either source or source_ontology_name must be provided"
+            in str(e)
+        )

@@ -53,7 +53,9 @@ class NDRelationship(NDAnnotation):
             name=annotation.name,
             dataRow=DataRow(id=data.uid, global_key=data.global_key),
             relationship=_Relationship(
-                source=str(relationship.source._uuid) if relationship.source else None,
+                source=str(relationship.source._uuid)
+                if relationship.source
+                else None,
                 target=str(relationship.target._uuid),
                 sourceOntologyName=relationship.source_ontology_name,
                 type=relationship.type.value,
