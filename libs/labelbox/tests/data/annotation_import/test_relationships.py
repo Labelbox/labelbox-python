@@ -409,3 +409,68 @@ def test_relationship_readonly_explicit_true():
             ),
         )
     assert relationship.value.readonly is True
+
+
+def test_relationship_source_ontology_name():
+    """Test that relationship can be created with source_ontology_name instead of source."""
+    target = ObjectAnnotation(
+        name="e2",
+        value=TextEntity(start=30, end=35),
+    )
+
+    relationship = RelationshipAnnotation(
+        name="rel",
+        value=Relationship(
+            source_ontology_name="test_source",
+            target=target,
+            type=Relationship.Type.UNIDIRECTIONAL,
+        ),
+    )
+    assert relationship.value.source_ontology_name == "test_source"
+    assert relationship.value.source is None
+
+
+def test_relationship_missing_source_validation():
+    """Test that relationship requires either source or source_ontology_name."""
+    target = ObjectAnnotation(
+        name="e2",
+        value=TextEntity(start=30, end=35),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Either source or source_ontology_name must be provided",
+    ):
+        RelationshipAnnotation(
+            name="rel",
+            value=Relationship(
+                target=target,
+                type=Relationship.Type.UNIDIRECTIONAL,
+            ),
+        )
+
+
+def test_relationship_both_sources_validation():
+    """Test that relationship cannot have both source and source_ontology_name."""
+    source = ObjectAnnotation(
+        name="e1",
+        value=TextEntity(start=10, end=12),
+    )
+    target = ObjectAnnotation(
+        name="e2",
+        value=TextEntity(start=30, end=35),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Only one of 'source' or 'source_ontology_name' may be provided",
+    ):
+        RelationshipAnnotation(
+            name="rel",
+            value=Relationship(
+                source=source,
+                source_ontology_name="test_source",
+                target=target,
+                type=Relationship.Type.UNIDIRECTIONAL,
+            ),
+        )

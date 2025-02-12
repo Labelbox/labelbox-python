@@ -209,6 +209,8 @@ class NDLabel(BaseModel):
                     - For other target annotations: source must be ObjectAnnotation
                 - Target:
                     - Target must always be ObjectAnnotation
+            ValueError: If relationship validation fails:
+                - For PDF target annotations: either source or source_ontology_name must be provided
         """
         for annotation in label.annotations:
             if isinstance(annotation, RelationshipAnnotation):
@@ -221,12 +223,19 @@ class NDLabel(BaseModel):
                 if isinstance(
                     target.value, (DocumentRectangle, DocumentEntity)
                 ):
-                    if not isinstance(
+                    if source is not None and not isinstance(
                         source, (ObjectAnnotation, ClassificationAnnotation)
                     ):
                         raise TypeError(
                             f"Unable to create relationship with invalid source. For PDF targets, "
                             f"source must be ObjectAnnotation or ClassificationAnnotation. Got: {type(source)}"
+                        )
+                    if (
+                        source is None
+                        and annotation.value.source_ontology_name is None
+                    ):
+                        raise ValueError(
+                            "Unable to create relationship - either source or source_ontology_name must be provided"
                         )
                 elif not isinstance(source, ObjectAnnotation):
                     raise TypeError(
@@ -239,7 +248,7 @@ class NDLabel(BaseModel):
                         f"Unable to create relationship with non ObjectAnnotation target: {type(target)}"
                     )
 
-                if not source._uuid:
+                if source is not None and not source._uuid:
                     source._uuid = uuid1
                 if not target._uuid:
                     target._uuid = uuid2

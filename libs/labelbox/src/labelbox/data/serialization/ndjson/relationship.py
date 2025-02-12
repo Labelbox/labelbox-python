@@ -11,10 +11,11 @@ SUPPORTED_ANNOTATIONS = NDObjectType
 
 
 class _Relationship(BaseModel):
-    source: str
+    source: Optional[str] = None
     target: str
     type: str
     readonly: Optional[bool] = None
+    sourceOntologyName: Optional[str] = None
 
 
 class NDRelationship(NDAnnotation):
@@ -25,11 +26,13 @@ class NDRelationship(NDAnnotation):
         annotation: "NDRelationship",
         source: SUPPORTED_ANNOTATIONS,
         target: SUPPORTED_ANNOTATIONS,
+        source_ontology_name: Optional[str] = None,
     ) -> RelationshipAnnotation:
         return RelationshipAnnotation(
             name=annotation.name,
             value=Relationship(
                 source=source,
+                source_ontology_name=source_ontology_name,
                 target=target,
                 type=Relationship.Type(annotation.relationship.type),
                 readonly=annotation.relationship.readonly,
@@ -50,8 +53,11 @@ class NDRelationship(NDAnnotation):
             name=annotation.name,
             dataRow=DataRow(id=data.uid, global_key=data.global_key),
             relationship=_Relationship(
-                source=str(relationship.source._uuid),
+                source=str(relationship.source._uuid)
+                if relationship.source
+                else None,
                 target=str(relationship.target._uuid),
+                sourceOntologyName=relationship.source_ontology_name,
                 type=relationship.type.value,
                 readonly=relationship.readonly,
             ),
