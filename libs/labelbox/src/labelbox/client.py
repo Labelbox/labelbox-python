@@ -1808,7 +1808,6 @@ class Client:
 
     def get_catalog(self) -> Catalog:
         return Catalog(client=self)
-    
 
     def get_catalog_slices(self) -> List[CatalogSlice]:
         """
@@ -1829,12 +1828,9 @@ class Client:
             """
         res = self.execute(query_str)
         return [CatalogSlice(self, sl) for sl in res["catalogSavedQueries"]]
-    
 
     def get_catalog_slice(
-        self,
-        slice_id: Optional[str] = None,
-        slice_name: Optional[str] = None
+        self, slice_id: Optional[str] = None, slice_name: Optional[str] = None
     ) -> Union[CatalogSlice, List[CatalogSlice]]:
         """
         Fetches a Slice using either the slice ID or the slice name.
@@ -1844,17 +1840,19 @@ class Client:
             slice_name (Optional[str]): The name of the Slice.
 
         Returns:
-            Union[CatalogSlice, List[CatalogSlice], ModelSlice, List[ModelSlice]]: 
+            Union[CatalogSlice, List[CatalogSlice], ModelSlice, List[ModelSlice]]:
                 The corresponding Slice object or list of Slice objects.
 
         Raises:
             ValueError: If neither or both id and name are provided.
             ResourceNotFoundError: If the slice is not found.
         """
-        if (slice_id is None and slice_name is None) or (slice_id is not None and slice_name is not None):
+        if (slice_id is None and slice_name is None) or (
+            slice_id is not None and slice_name is not None
+        ):
             raise ValueError("Provide exactly one of id or name")
 
-        if slice_id is not None:            
+        if slice_id is not None:
             query_str = """query getSavedQueryPyApi($id: ID!) {
                     getSavedQuery(id: $id) {
                         id
@@ -1866,13 +1864,13 @@ class Client:
                     }
                 }
             """
-            
+
             res = self.execute(query_str, {"id": slice_id})
             if res is None:
                 raise ResourceNotFoundError(CatalogSlice, {"id": slice_id})
-            
+
             return CatalogSlice(self, res["getSavedQuery"])
-        
+
         else:
             slices = self.get_catalog_slices()
             matches = [s for s in slices if s.name == slice_name]
@@ -1883,7 +1881,6 @@ class Client:
                 return matches
             else:
                 return matches[0]
-            
 
     def is_feature_schema_archived(
         self, ontology_id: str, feature_schema_id: str
