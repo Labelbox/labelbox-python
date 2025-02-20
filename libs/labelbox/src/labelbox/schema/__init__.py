@@ -26,4 +26,3 @@ import labelbox.schema.identifiable
 import labelbox.schema.catalog
 import labelbox.schema.ontology_kind
 import labelbox.schema.project_overview
-
