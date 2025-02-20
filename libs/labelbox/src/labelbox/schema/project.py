@@ -327,6 +327,13 @@ class Project(DbObject, Updateable, Deletable):
         """
         Label = Entity.Label
 
+        if datasets or order_by:
+            warnings.warn(
+                "The datasets and order_by arguments are deprecated and will be removed in the next major release.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         if datasets is not None:
             where = " where:{dataRow: {dataset: {id_in: [%s]}}}" % ", ".join(
                 '"%s"' % dataset.uid for dataset in datasets

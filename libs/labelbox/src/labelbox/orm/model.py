@@ -29,9 +29,6 @@ class Field:
     These `Comparison` objects can then be used for filtering:
         >>> project = client.get_projects(comparison)
 
-    Also exposes the ordering property used for sorting:
-        >>> labels = project.labels(order_by=Label.label.asc)
-
     Attributes:
         field_type (Field.Type): The type of the field.
         name (str): name that the attribute has in client-side Python objects

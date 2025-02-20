@@ -41,17 +41,6 @@ def test_label_update(configured_project_with_label):
     assert label.label == "something else"
 
 
-def test_label_filter_order(configured_project_with_label, label_helpers):
-    project, _, _, label = configured_project_with_label
-
-    project.create_label()
-    label_helpers.wait_for_labels(project, 2)
-
-    list_asc = list(project.labels(order_by=Label.created_at.asc))
-    list_desc = list(project.labels(order_by=Label.created_at.desc))
-    assert list_asc == list_desc[::-1]
-
-
 def test_label_bulk_deletion(configured_project_with_label):
     project, _, _, _ = configured_project_with_label
 
