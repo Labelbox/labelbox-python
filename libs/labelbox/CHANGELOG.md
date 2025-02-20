@@ -1,4 +1,16 @@
 # Changelog
+Version 6.8.0 (2025-02-20)
+### Added Support for Source Ontology Names in Relationships
+
+Added the ability to specify relationships using `source_ontology_name` instead of a concrete source annotation. This enhancement is particularly useful for PDF document annotations where you can create relationships referencing ontology classes directly.
+
+Key changes:
+- Added optional `source_ontology_name` field to `Relationship` class
+- Made `source` field optional
+- Added validation to ensure either `source` or `source_ontology_name` is provided, but not both
+### Added search by name for `get_catalog_slice`
+### Added `get_catalog_slices` to get all slices
+
 # Version 6.7.0 (2025-02-06)
 ## Added
 * MAL support for pdf relationships (beta)([#1932](https://github.com/Labelbox/labelbox-python/pull/1932))
