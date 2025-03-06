@@ -6,6 +6,7 @@ from labelbox.orm.model import Field
 
 
 class AttachmentType(str, Enum):
+    AUDIO = "AUDIO"
     VIDEO = "VIDEO"
     IMAGE = "IMAGE"
     IMAGE_OVERLAY = "IMAGE_OVERLAY"
@@ -20,7 +21,7 @@ class AssetAttachment(DbObject):
     """Asset attachment provides extra context about an asset while labeling.
 
     Attributes:
-        attachment_type (str): IMAGE, VIDEO, IMAGE_OVERLAY, HTML, RAW_TEXT, TEXT_URL, or PDF_URL.
+        attachment_type (str): AUDIO, VIDEO, IMAGE, IMAGE_OVERLAY, HTML, RAW_TEXT, TEXT_URL, or PDF_URL.
         attachment_value (str): URL to an external file or a string of text
         attachment_name (str): The name of the attachment
     """
