@@ -1,6 +1,5 @@
 import time
 
-
 from labelbox import DataRow, ExportTask, StreamType
 
 
@@ -117,3 +116,22 @@ class TestExportDataRow:
         assert (
             export_task.get_total_lines(stream_type=StreamType.RESULT) is None
         )
+
+    def test_cancel_export_task(
+        self, client, data_row, wait_for_data_row_processing
+    ):
+        data_row = wait_for_data_row_processing(client, data_row)
+        time.sleep(7)  # temp fix for ES indexing delay
+        export_task = DataRow.export(
+            client=client,
+            data_rows=[data_row],
+            task_name="TestExportDataRow:test_cancel_export_task",
+        )
+
+        # Cancel the task before it completes
+        success = client.cancel_task(export_task.uid)
+        assert success is True
+
+        # Verify the task was cancelled
+        cancelled_task = client.get_task_by_id(export_task.uid)
+        assert cancelled_task.status in ["CANCELING", "CANCELED"]

@@ -2389,3 +2389,26 @@ class Client:
 
         task._user = user
         return task
+
+    def cancel_task(self, task_id: str) -> bool:
+        """
+        Cancels a task with the given ID.
+
+        Args:
+            task_id (str): The ID of the task to cancel.
+
+        Returns:
+            bool: True if the task was successfully cancelled.
+
+        Raises:
+            LabelboxError: If the task could not be cancelled.
+        """
+        mutation_str = """
+        mutation CancelTaskPyApi($id: ID!) {
+            cancelBulkOperationJob(id: $id) {
+                success
+            }
+        }
+        """
+        res = self.execute(mutation_str, {"id": task_id})
+        return res["cancelBulkOperationJob"]["success"]
