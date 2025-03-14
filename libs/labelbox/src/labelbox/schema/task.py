@@ -14,6 +14,7 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.schema.internal.datarow_upload_constants import (
     DOWNLOAD_RESULT_PAGE_SIZE,
 )
+from labelbox.schema.taskstatus import TaskStatus
 
 if TYPE_CHECKING:
     from labelbox import User
@@ -45,6 +46,9 @@ class Task(DbObject):
     created_at = Field.DateTime("created_at")
     name = Field.String("name")
     status = Field.String("status")
+    status_type = Field.Enum(
+        TaskStatus, "status_type", "status"
+    )  # additional status for filtering
     completion_percentage = Field.Float("completion_percentage")
     result_url = Field.String("result_url", "result")
     errors_url = Field.String("errors_url", "errors")
