@@ -1,4 +1,9 @@
 # Changelog
+# Version 6.9.0 (2025-03-17)
+## Added 
+* Provide support to cancel tasks ([#1957](https://github.com/Labelbox/labelbox-python/pull/1957))
+* Added support for AUDIO attachment type ([#1956](https://github.com/Labelbox/labelbox-python/pull/1956))
+
 Version 6.8.0 (2025-02-20)
 ### Added Support for Source Ontology Names in Relationships
 
