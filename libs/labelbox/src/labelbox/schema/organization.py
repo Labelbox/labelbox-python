@@ -52,6 +52,7 @@ class Organization(DbObject):
     projects = Relationship.ToMany("Project", True)
     webhooks = Relationship.ToMany("Webhook", False)
     resource_tags = Relationship.ToMany("ResourceTags", False)
+    tasks = Relationship.ToMany("Task", False, "tasks")
 
     def invite_user(
         self,
