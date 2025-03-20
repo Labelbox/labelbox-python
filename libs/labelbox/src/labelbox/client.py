@@ -2403,7 +2403,7 @@ class Client:
             List[str]: List of cancelable task types in snake_case format
         """
         if self._cancelable_task_types is None:
-            query = """query GetCancelableTaskTypes {
+            query = """query GetCancelableTaskTypesPyApi {
                 cancelableTaskTypes
             }"""
 
