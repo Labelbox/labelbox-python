@@ -79,6 +79,7 @@ from labelbox.schema.send_to_annotate_params import (
 from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.task import DataUpsertTask, Task
 from labelbox.schema.user import User
+from labelbox.schema.taskstatus import TaskStatus
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,9 @@ class Client:
     Provides functions for querying and creating
     top-level data objects (Projects, Datasets).
     """
+
+    # Class variable to cache task types
+    _cancelable_task_types = None
 
     def __init__(
         self,
@@ -2390,9 +2394,31 @@ class Client:
         task._user = user
         return task
 
+    def _get_cancelable_task_types(self):
+        """Internal method that returns a list of task types that can be canceled.
+
+        The result is cached after the first call to avoid unnecessary API requests.
+
+        Returns:
+            List[str]: List of cancelable task types in snake_case format
+        """
+        if self._cancelable_task_types is None:
+            query = """query GetCancelableTaskTypes {
+                cancelableTaskTypes
+            }"""
+
+            result = self.execute(query).get("cancelableTaskTypes", [])
+            # Reformat to kebab case
+            self._cancelable_task_types = [
+                utils.snake_case(task_type).replace("_", "-")
+                for task_type in result
+            ]
+
+        return self._cancelable_task_types
+
     def cancel_task(self, task_id: str) -> bool:
         """
-        Cancels a task with the given ID.
+        Cancels a task with the given ID if the task type is cancelable and the task is in progress.
 
         Args:
             task_id (str): The ID of the task to cancel.
@@ -2401,8 +2427,26 @@ class Client:
             bool: True if the task was successfully cancelled.
 
         Raises:
-            LabelboxError: If the task could not be cancelled.
+            LabelboxError: If the task could not be cancelled, if the task type is not cancelable,
+                or if the task is not in progress.
+            ResourceNotFoundError: If the task does not exist (raised by get_task_by_id).
         """
+        # Get the task object to check its type and status
+        task = self.get_task_by_id(task_id)
+
+        # Check if task type is cancelable
+        cancelable_types = self._get_cancelable_task_types()
+        if task.type not in cancelable_types:
+            raise LabelboxError(
+                f"Task type '{task.type}' cannot be cancelled. Cancelable types are: {cancelable_types}"
+            )
+
+        # Check if task is in progress
+        if task.status_type != TaskStatus.In_Progress:
+            raise LabelboxError(
+                f"Task cannot be cancelled because it is not in progress. Current status: {task.status}"
+            )
+
         mutation_str = """
         mutation CancelTaskPyApi($id: ID!) {
             cancelBulkOperationJob(id: $id) {
