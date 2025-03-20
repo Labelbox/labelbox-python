@@ -148,7 +148,7 @@ class TestExportDataRow:
 
         # Check if task is listed "in progress" in organization's tasks
         org_tasks_in_progress = organization.tasks(
-            where=Task.status_type == TaskStatus.In_Progress
+            where=Task.status_as_enum == TaskStatus.In_Progress
         )
         retrieved_task_in_progress = next(
             (t for t in org_tasks_in_progress if t.uid == export_task.uid), ""
@@ -159,7 +159,7 @@ class TestExportDataRow:
 
         # Check if task is listed "complete" in user's created tasks
         user_tasks_complete = user.created_tasks(
-            where=Task.status_type == TaskStatus.Complete
+            where=Task.status_as_enum == TaskStatus.Complete
         )
         retrieved_task_complete = next(
             (t for t in user_tasks_complete if t.uid == export_task.uid), ""

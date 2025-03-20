@@ -46,8 +46,8 @@ class Task(DbObject):
     created_at = Field.DateTime("created_at")
     name = Field.String("name")
     status = Field.String("status")
-    status_type = Field.Enum(
-        TaskStatus, "status_type", "status"
+    status_as_enum = Field.Enum(
+        TaskStatus, "status_as_enum", "status"
     )  # additional status for filtering
     completion_percentage = Field.Float("completion_percentage")
     result_url = Field.String("result_url", "result")

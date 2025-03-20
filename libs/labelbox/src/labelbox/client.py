@@ -2442,7 +2442,7 @@ class Client:
             )
 
         # Check if task is in progress
-        if task.status_type != TaskStatus.In_Progress:
+        if task.status_as_enum != TaskStatus.In_Progress:
             raise LabelboxError(
                 f"Task cannot be cancelled because it is not in progress. Current status: {task.status}"
             )
