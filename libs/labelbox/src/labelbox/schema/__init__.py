@@ -27,3 +27,5 @@ import labelbox.schema.catalog
 import labelbox.schema.ontology_kind
 import labelbox.schema.project_overview
 import labelbox.schema.taskstatus
+import labelbox.schema.api_key
+import labelbox.schema.timeunit
