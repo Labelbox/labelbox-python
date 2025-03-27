@@ -330,24 +330,22 @@ class ApiKey(DbObject):
             )
 
         validity_seconds = 0
-        if validity > 0:
-            if not isinstance(time_unit, TimeUnit):
-                raise ValueError(
-                    "time_unit must be a valid TimeUnit enum value"
-                )
-
-            validity_seconds = validity * time_unit.value
-
-            if validity_seconds < TimeUnit.MINUTE.value:
-                raise ValueError("Minimum validity period is 1 minute")
-
-            max_seconds = 25 * TimeUnit.WEEK.value
-            if validity_seconds > max_seconds:
-                raise ValueError(
-                    "Maximum validity period is 6 months (or 25 weeks)"
-                )
-        else:
+        if validity < 0:
             raise ValueError("validity must be a positive integer")
+
+        if not isinstance(time_unit, TimeUnit):
+            raise ValueError("time_unit must be a valid TimeUnit enum value")
+
+        validity_seconds = validity * time_unit.value
+
+        if validity_seconds < TimeUnit.MINUTE.value:
+            raise ValueError("Minimum validity period is 1 minute")
+
+        max_seconds = 25 * TimeUnit.WEEK.value
+        if validity_seconds > max_seconds:
+            raise ValueError(
+                "Maximum validity period is 6 months (or 25 weeks)"
+            )
 
         query_str = """
          mutation CreateUserApiKeyPyApi($name: String!, $userEmail: String!, $role: String, $validitySeconds: Int) {
@@ -379,17 +377,7 @@ class ApiKey(DbObject):
             return api_key_result
 
         except Exception as e:
-            if (
-                "permission" in str(e).lower()
-                or "unauthorized" in str(e).lower()
-            ):
-                raise LabelboxError(
-                    f"Permission denied: You don't have sufficient permissions to create API keys. Original error: {str(e)}"
-                )
-            else:
-                error_message = f"Failed to create API key: {str(e)}"
-                logger.error(error_message)
-                raise LabelboxError(error_message) from e
+            raise LabelboxError(str(e)) from e
 
     @staticmethod
     def get_api_key(client: "Client", api_key_id: str) -> Optional["ApiKey"]:

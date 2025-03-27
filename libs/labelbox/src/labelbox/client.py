@@ -2466,6 +2466,7 @@ class Client:
         role: Union[Role, str],
         validity: int = 0,
         time_unit: TimeUnit = TimeUnit.SECOND,
+        refresh_cache: bool = False,
     ) -> Dict[str, str]:
         """Creates a new API key.
 
@@ -2475,6 +2476,7 @@ class Client:
             role (Union[Role, str]): The role object or role ID to assign to the API key.
             validity (int, optional): The validity period of the API key. Defaults to 0 (no expiration).
             time_unit (TimeUnit, optional): The time unit for the validity period. Defaults to TimeUnit.SECOND.
+            refresh_cache (bool, optional): Whether to refresh cached permissions and roles. Defaults to False.
 
         Returns:
             Dict[str, str]: A dictionary containing the created API key information.
@@ -2482,6 +2484,13 @@ class Client:
         warnings.warn(
             "The creation of API keys is currently in alpha and its behavior may change in future releases.",
         )
+        if refresh_cache:
+            # Clear cached attributes if they exist
+            if hasattr(self, "_cached_current_user_permissions"):
+                delattr(self, "_cached_current_user_permissions")
+            if hasattr(self, "_cached_available_api_key_roles"):
+                delattr(self, "_cached_available_api_key_roles")
+
         return ApiKey.create_api_key(
             self, name, user, role, validity, time_unit
         )

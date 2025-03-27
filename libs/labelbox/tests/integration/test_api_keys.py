@@ -1,10 +1,54 @@
 import uuid
 import pytest
+import os
 
 from labelbox.schema.timeunit import TimeUnit
 from labelbox.schema.api_key import ApiKey
 from lbox.exceptions import LabelboxError
 # The creation of API keys requires a feature flag to be enabled.
+
+
+@pytest.mark.skipif(
+    condition=os.environ["LABELBOX_TEST_ENVIRON"] != "prod",
+    reason="Admin permissions are required to create API keys",
+)
+def test_create_api_key_success(client):
+    # Create a test API key
+    key_name = f"Test Key {uuid.uuid4()}"
+    user_email = client.get_user().email
+
+    assert (
+        client.get_user().org_role().name == "Admin"
+    ), "User must be an admin to create API keys"
+
+    # Get available roles and use the first one
+    available_roles = ApiKey._get_available_api_key_roles(client)
+    assert (
+        len(available_roles) > 0
+    ), "No available roles found for API key creation"
+
+    # Create the API key with a short validity period
+    api_key_result = client.create_api_key(
+        name=key_name,
+        user=user_email,
+        role=available_roles[0],
+        validity=5,
+        time_unit=TimeUnit.MINUTE,
+    )
+
+    # Verify the response format
+    assert isinstance(
+        api_key_result, dict
+    ), "API key result should be a dictionary"
+    assert "id" in api_key_result, "API key result should contain an 'id' field"
+    assert (
+        "jwt" in api_key_result
+    ), "API key result should contain a 'jwt' field"
+
+    # Verify the JWT token format (should be a JWT string)
+    jwt = api_key_result["jwt"]
+    assert isinstance(jwt, str), "JWT should be a string"
+    assert jwt.count(".") == 2, "JWT should have three parts separated by dots"
 
 
 def test_create_api_key_failed(client):
@@ -132,7 +176,7 @@ def test_create_api_key_invalid_validity_values(client):
             validity=0,
             time_unit=TimeUnit.MINUTE,
         )
-    assert "validity must be a positive integer" in str(excinfo.value).lower()
+    assert "minimum validity period is 1 minute" in str(excinfo.value).lower()
 
     # Days (exceeding 6 months)
     with pytest.raises(ValueError) as excinfo:
@@ -185,9 +229,15 @@ def test_create_api_key_invalid_time_unit(client):
     assert "valid TimeUnit" in str(excinfo.value)
 
 
+@pytest.mark.skipif(
+    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "prod",
+    reason="Accounts with sdmin permission can create API keys",
+)
 def test_create_api_key_insufficient_permissions(client):
     """Test that creating an API key fails when the user has insufficient permissions."""
     user_email = client.get_user().email
+
+    assert client.get_user().org_role().name == "Admin"
 
     # Attempt to create another API key using the limited permissions client
     # This should fail due to insufficient permissions
@@ -200,5 +250,4 @@ def test_create_api_key_insufficient_permissions(client):
             time_unit=TimeUnit.MINUTE,
         )
 
-    # Check for the exact "Permission denied" error message
-    assert "Permission denied" in str(excinfo.value)
+    assert "192" in str(excinfo.value)
