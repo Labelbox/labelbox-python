@@ -7,6 +7,7 @@ from labelbox.orm.db_object import DbObject, Entity, query
 from labelbox.orm.model import Field, Relationship
 from labelbox.schema.invite import InviteLimit
 from labelbox.schema.resource_tag import ResourceTag
+from labelbox.pagination import PaginatedCollection
 
 if TYPE_CHECKING:
     from labelbox import (
@@ -243,3 +244,24 @@ class Organization(DbObject):
         return (
             None if not len(default_integration) else default_integration.pop()
         )
+
+    def get_invites(self) -> PaginatedCollection:
+        """
+        Retrieves all invites for this organization.
+
+        Returns:
+            PaginatedCollection: A collection of Invite objects for the organization.
+        """
+        return Entity.Invite.get_invites(self.client)
+
+    def get_project_invites(self, project_id: str) -> PaginatedCollection:
+        """
+        Retrieves all invites for a specific project in this organization.
+
+        Args:
+            project_id (str): The ID of the project to get invites for.
+
+        Returns:
+            PaginatedCollection: A collection of Invite objects for the specified project.
+        """
+        return Entity.Invite.get_project_invites(self.client, project_id)
