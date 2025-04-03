@@ -80,6 +80,8 @@ from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.task import DataUpsertTask, Task
 from labelbox.schema.user import User
 from labelbox.schema.taskstatus import TaskStatus
+from labelbox.schema.api_key import ApiKey
+from labelbox.schema.timeunit import TimeUnit
 
 logger = logging.getLogger(__name__)
 
@@ -2456,3 +2458,61 @@ class Client:
         """
         res = self.execute(mutation_str, {"id": task_id})
         return res["cancelBulkOperationJob"]["success"]
+
+    def create_api_key(
+        self,
+        name: str,
+        user: Union[User, str],
+        role: Union[Role, str],
+        validity: int = 0,
+        time_unit: TimeUnit = TimeUnit.SECOND,
+        refresh_cache: bool = False,
+    ) -> Dict[str, str]:
+        """Creates a new API key.
+
+        Args:
+            name (str): The name of the API key.
+            user (Union[User, str]): The user object or user ID to associate with the API key.
+            role (Union[Role, str]): The role object or role ID to assign to the API key.
+            validity (int, optional): The validity period of the API key. Defaults to 0 (no expiration).
+            time_unit (TimeUnit, optional): The time unit for the validity period. Defaults to TimeUnit.SECOND.
+            refresh_cache (bool, optional): Whether to refresh cached permissions and roles. Defaults to False.
+
+        Returns:
+            Dict[str, str]: A dictionary containing the created API key information.
+        """
+        warnings.warn(
+            "The creation of API keys is currently in alpha and its behavior may change in future releases.",
+        )
+        if refresh_cache:
+            # Clear cached attributes if they exist
+            if hasattr(self, "_cached_current_user_permissions"):
+                delattr(self, "_cached_current_user_permissions")
+            if hasattr(self, "_cached_available_api_key_roles"):
+                delattr(self, "_cached_available_api_key_roles")
+
+        return ApiKey.create_api_key(
+            self, name, user, role, validity, time_unit
+        )
+
+    def get_api_keys(self, include_expired: bool = False) -> List[ApiKey]:
+        """Retrieves all API keys accessible to the current user.
+
+        Args:
+            include_revoked (bool, optional): Whether to include revoked API keys. Defaults to True.
+
+        Returns:
+            List[ApiKey]: A list of ApiKey objects.
+        """
+        return ApiKey.get_api_keys(self, include_expired)
+
+    def get_api_key(self, api_key_id: str) -> Optional[ApiKey]:
+        """Retrieves a single API key by its ID.
+
+        Args:
+            api_key_id (str): The unique ID of the API key.
+
+        Returns:
+            Optional[ApiKey]: The corresponding ApiKey object if found, otherwise None.
+        """
+        return ApiKey.get_api_key(self, api_key_id)
