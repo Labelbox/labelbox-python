@@ -2,7 +2,6 @@ import pytest
 from faker import Faker
 from labelbox.schema.media_type import MediaType
 from labelbox import ProjectRole
-import time
 
 faker = Faker()
 
@@ -58,8 +57,6 @@ def project_invite(client, test_project, dummy_email):
 
 def test_get_organization_invites(client, org_invite):
     """Test retrieving all organization invites"""
-    # Add a small delay to ensure invite is created
-    time.sleep(1)
 
     organization = client.get_organization()
     invites = organization.get_invites()
@@ -73,8 +70,6 @@ def test_get_organization_invites(client, org_invite):
 
 def test_get_project_invites(client, test_project, project_invite):
     """Test retrieving project-specific invites"""
-    # Add a small delay to ensure invite is created
-    time.sleep(1)
 
     organization = client.get_organization()
     project_invites = organization.get_project_invites(test_project.uid)
@@ -99,9 +94,6 @@ def test_cancel_invite(client, dummy_email):
     role = client.get_roles()["LABELER"]
     organization = client.get_organization()
     organization.invite_user(dummy_email, role)
-
-    # Add a small delay to ensure invite is created
-    time.sleep(1)
 
     # Find the actual invite by email
     invites = organization.get_invites()
@@ -130,9 +122,6 @@ def test_cancel_project_invite(client, test_project, dummy_email):
     organization.invite_user(
         dummy_email, roles["NONE"], project_roles=[project_role]
     )
-
-    # Add a small delay to ensure invite is created
-    time.sleep(1)
 
     # Find the actual invite by email
     invites = organization.get_invites()
@@ -171,9 +160,6 @@ def test_project_invite_after_project_deletion(client, dummy_email):
     organization.invite_user(
         dummy_email, roles["NONE"], project_roles=[project_role1, project_role2]
     )
-
-    # Add a small delay to ensure invite is created
-    time.sleep(1)
 
     # Delete one project
     project1.delete()
