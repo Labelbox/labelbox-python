@@ -324,7 +324,9 @@ class ApiKey(DbObject):
             raise ValueError("role must be a Role object or a valid role name")
 
         allowed_roles = ApiKey._get_available_api_key_roles(client)
-        if role_name not in allowed_roles:
+        # Normalize the allowed roles to lowercase for case-insensitive comparison
+        normalized_allowed_roles = [r.lower() for r in allowed_roles]
+        if role_name.lower() not in normalized_allowed_roles:
             raise ValueError(
                 f"Invalid role specified. Allowed roles are: {allowed_roles}"
             )
