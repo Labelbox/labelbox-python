@@ -1,4 +1,11 @@
 # Changelog
+# Version 6.10.0 (2025-04-04)
+## Added
+* API keys Management: ([#1961](https://github.com/Labelbox/labelbox-python/pull/1961))
+* Get invitations: ([#1962](https://github.com/Labelbox/labelbox-python/pull/1962))
+* Add tasks to organization and TaskStatus to filter tasks: ([#1958](https://github.com/Labelbox/labelbox-python/pull/1958))
+
+
 # Version 6.9.0 (2025-03-17)
 ## Added 
 * Provide support to cancel tasks ([#1957](https://github.com/Labelbox/labelbox-python/pull/1957))
