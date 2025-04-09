@@ -125,7 +125,6 @@ matplotlib-inline==0.1.7
 mistune==3.0.2
     # via nbconvert
 mypy==1.10.1
-    # via labelbox
 mypy-extensions==1.0.0
     # via black
     # via mypy
