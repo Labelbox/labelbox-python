@@ -50,7 +50,9 @@ class ApiKey(DbObject):
         if not hasattr(self, "_created_by"):
             self._created_by = (
                 self.client._get_single(User, self.created_by_user_id)
-                if self.created_by_user_id
+                if self.created_by_user_id is not None
+                else self.client._get_single(User, self.user_id)
+                if self.user_id is not None
                 else None
             )
         return self._created_by
