@@ -4,7 +4,7 @@ import colorsys
 import json
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
 
 from lbox.exceptions import InconsistentOntologyException
 
@@ -71,6 +71,15 @@ class Tool:
             instructions = "Classification Example")
         tool.add_classification(classification)
 
+        relationship_tool = Tool(
+            tool = Tool.Type.RELATIONSHIP,
+            name = "Relationship Tool Example",
+            constraints = [
+                ("source_tool_feature_schema_id_1", "target_tool_feature_schema_id_1"),
+                ("source_tool_feature_schema_id_2", "target_tool_feature_schema_id_2")
+            ]
+        )
+
     Attributes:
         tool: (Tool.Type)
         name: (str)
@@ -80,6 +89,7 @@ class Tool:
         schema_id: (str)
         feature_schema_id: (str)
         attributes: (list)
+        constraints: (list of [str, str]) (only available for RELATIONSHIP tool type)
     """
 
     class Type(Enum):
@@ -103,8 +113,14 @@ class Tool:
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
     attributes: Optional[FeatureSchemaAttributes] = None
+    constraints: Optional[Tuple[str, str]] = None
 
     def __post_init__(self):
+        if self.constraints is not None and self.tool != Tool.Type.RELATIONSHIP:
+            warnings.warn(
+                "The constraints attribute is only available for Relationship tool. The provided constraints will be ignored."
+            )
+            self.constraints = None
         if self.attributes is not None:
             warnings.warn(
                 "The attributes for Tools are in beta. The attribute name and signature may change in the future."
@@ -112,12 +128,13 @@ class Tool:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
+        tool = Tool.Type(dictionary["tool"])
         return cls(
             name=dictionary["name"],
             schema_id=dictionary.get("schemaNodeId", None),
             feature_schema_id=dictionary.get("featureSchemaId", None),
             required=dictionary.get("required", False),
-            tool=Tool.Type(dictionary["tool"]),
+            tool=tool,
             classifications=[
                 Classification.from_dict(c)
                 for c in dictionary["classifications"]
@@ -128,6 +145,9 @@ class Tool:
                 for attr in dictionary.get("attributes", []) or []
             ]
             if dictionary.get("attributes")
+            else None,
+            constraints=dictionary.get("constraints", None)
+            if tool == Tool.Type.RELATIONSHIP
             else None,
         )
 
@@ -144,6 +164,9 @@ class Tool:
             "featureSchemaId": self.feature_schema_id,
             "attributes": [a.asdict() for a in self.attributes]
             if self.attributes is not None
+            else None,
+            "constraints": self.constraints
+            if self.constraints is not None
             else None,
         }
 
