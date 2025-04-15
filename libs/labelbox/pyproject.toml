@@ -11,7 +11,6 @@ dependencies = [
     "strenum>=0.4.15",
     "tqdm>=4.66.2",
     "geojson>=3.1.0",
-    "mypy==1.10.1",
     "lbox-clients==1.1.2",
 ]
 readme = "README.md"
