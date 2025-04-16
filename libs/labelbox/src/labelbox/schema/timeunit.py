@@ -14,8 +14,8 @@ class TimeUnit(Enum):
         WEEK (int): 604800 seconds (7 days)
     """
 
-    SECOND: int = 1
-    MINUTE: int = 60
-    HOUR: int = 60 * 60
-    DAY: int = 24 * 60 * 60
-    WEEK: int = 7 * 24 * 60 * 60
+    SECOND = 1
+    MINUTE = 60
+    HOUR = 60 * 60
+    DAY = 24 * 60 * 60
+    WEEK = 7 * 24 * 60 * 60
