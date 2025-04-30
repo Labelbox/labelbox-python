@@ -228,24 +228,3 @@ def test_create_api_key_invalid_time_unit(client):
         )
     assert "valid TimeUnit" in str(excinfo.value)
 
-# Not removing test completely as perhaps the original author on the test could elaborate more
-# Disabling for the CI
-@pytest.mark.skip(reason="Test does not make sense as there is no client with restricted permissions")
-def test_create_api_key_insufficient_permissions(client):
-    """Test that creating an API key fails when the user has insufficient permissions."""
-    user_email = client.get_user().email
-
-    assert client.get_user().org_role().name == "Admin"
-
-    # Attempt to create another API key using the limited permissions client
-    # This should fail due to insufficient permissions
-    with pytest.raises(LabelboxError) as excinfo:
-        client.create_api_key(
-            name=f"Test Key {uuid.uuid4()}",
-            user=user_email,
-            role="Admin",
-            validity=5,
-            time_unit=TimeUnit.MINUTE,
-        )
-
-    assert "192" in str(excinfo.value)
