@@ -227,4 +227,3 @@ def test_create_api_key_invalid_time_unit(client):
             time_unit="days",  # String instead of TimeUnit enum
         )
     assert "valid TimeUnit" in str(excinfo.value)
-
