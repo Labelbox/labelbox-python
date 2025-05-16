@@ -18,8 +18,8 @@ class FoundryClient:
                 $name: String!, $modelId: ID!, $ontologyId: ID!, $description: String, $inferenceParams: Json!, $classToSchemaId: Json!
             ){{
                 createModelFoundryApp(input: {{
-                    name: $name 
-                    modelId: $modelId 
+                    name: $name
+                    modelId: $modelId
                     ontologyId: $ontologyId
                     description: $description
                     inferenceParams: $inferenceParams
@@ -89,6 +89,7 @@ class FoundryClient:
             "classToSchemaId": app.class_to_schema_id,
             "inferenceParams": app.inference_params,
             "ontologyId": app.ontology_id,
+            "modelAppId": app.id,
         }
 
         data_rows_key = (
