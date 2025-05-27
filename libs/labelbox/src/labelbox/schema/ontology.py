@@ -71,15 +71,6 @@ class Tool:
             instructions = "Classification Example")
         tool.add_classification(classification)
 
-        relationship_tool = Tool(
-            tool = Tool.Type.RELATIONSHIP,
-            name = "Relationship Tool Example",
-            constraints = [
-                ("source_tool_feature_schema_id_1", "target_tool_feature_schema_id_1"),
-                ("source_tool_feature_schema_id_2", "target_tool_feature_schema_id_2")
-            ]
-        )
-
     Attributes:
         tool: (Tool.Type)
         name: (str)
@@ -89,7 +80,6 @@ class Tool:
         schema_id: (str)
         feature_schema_id: (str)
         attributes: (list)
-        constraints: (list of [str, str]) (only available for RELATIONSHIP tool type)
     """
 
     class Type(Enum):
@@ -113,14 +103,8 @@ class Tool:
     schema_id: Optional[str] = None
     feature_schema_id: Optional[str] = None
     attributes: Optional[FeatureSchemaAttributes] = None
-    constraints: Optional[Tuple[str, str]] = None
 
     def __post_init__(self):
-        if self.constraints is not None and self.tool != Tool.Type.RELATIONSHIP:
-            warnings.warn(
-                "The constraints attribute is only available for Relationship tool. The provided constraints will be ignored."
-            )
-            self.constraints = None
         if self.attributes is not None:
             warnings.warn(
                 "The attributes for Tools are in beta. The attribute name and signature may change in the future."
@@ -128,13 +112,12 @@ class Tool:
 
     @classmethod
     def from_dict(cls, dictionary: Dict[str, Any]) -> Dict[str, Any]:
-        tool = Tool.Type(dictionary["tool"])
         return cls(
             name=dictionary["name"],
             schema_id=dictionary.get("schemaNodeId", None),
             feature_schema_id=dictionary.get("featureSchemaId", None),
             required=dictionary.get("required", False),
-            tool=tool,
+            tool=Tool.Type(dictionary["tool"]),
             classifications=[
                 Classification.from_dict(c)
                 for c in dictionary["classifications"]
@@ -145,9 +128,6 @@ class Tool:
                 for attr in dictionary.get("attributes", []) or []
             ]
             if dictionary.get("attributes")
-            else None,
-            constraints=dictionary.get("constraints", None)
-            if tool == Tool.Type.RELATIONSHIP
             else None,
         )
 
@@ -165,9 +145,6 @@ class Tool:
             "attributes": [a.asdict() for a in self.attributes]
             if self.attributes is not None
             else None,
-            "constraints": self.constraints
-            if self.constraints is not None
-            else None,
         }
 
     def add_classification(self, classification: Classification) -> None:
@@ -177,6 +154,56 @@ class Tool:
                 f"for tool '{self.name}'"
             )
         self.classifications.append(classification)
+
+@dataclass
+class RelationshipTool(Tool):
+    """
+    A relationship tool to be added to a Project's ontology.
+
+    To instantiate, the "tool" and "name" parameters must
+    be passed in.
+
+    The "classifications" parameter holds a list of Classification objects.
+    This can be used to add nested classifications to a tool.
+
+    Example(s):
+        tool = RelationshipTool(
+            name = "Relationship Tool example")
+            constraints = [
+                ("source_tool_feature_schema_id_1", "target_tool_feature_schema_id_1"),
+                ("source_tool_feature_schema_id_2", "target_tool_feature_schema_id_2")
+            ]
+        )
+        classification = Classification(
+            class_type = Classification.Type.TEXT,
+            instructions = "Classification Example")
+        tool.add_classification(classification)
+
+    Attributes:
+        tool: Tool.Type.RELATIONSHIP
+        name: (str)
+        required: (bool)
+        color: (str)
+        classifications: (list)
+        schema_id: (str)
+        feature_schema_id: (str)
+        attributes: (list)
+        constraints: (list of [str, str])
+    """
+
+    tool: Type = Tool.Type.RELATIONSHIP
+    constraints: Optional[List[Tuple[str, str]]] = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.tool != Tool.Type.RELATIONSHIP:
+            raise ValueError("RelationshipTool can only be used with Tool.Type.RELATIONSHIP")
+
+    def asdict(self) -> Dict[str, Any]:
+        result = super().asdict()
+        if self.constraints is not None:
+            result["constraints"] = self.constraints
+        return result
 
 
 """
@@ -188,6 +215,8 @@ def tool_cls_from_type(tool_type: str):
     tool_cls = map_tool_type_to_tool_cls(tool_type)
     if tool_cls is not None:
         return tool_cls
+    if tool_type == Tool.Type.RELATIONSHIP:
+        return RelationshipTool
     return Tool
 
 
