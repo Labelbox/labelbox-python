@@ -4,8 +4,6 @@ import os
 
 from labelbox.schema.timeunit import TimeUnit
 from labelbox.schema.api_key import ApiKey
-from lbox.exceptions import LabelboxError
-# The creation of API keys requires a feature flag to be enabled.
 
 
 @pytest.mark.skipif(
