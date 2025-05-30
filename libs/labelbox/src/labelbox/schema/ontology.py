@@ -155,56 +155,6 @@ class Tool:
             )
         self.classifications.append(classification)
 
-@dataclass
-class RelationshipTool(Tool):
-    """
-    A relationship tool to be added to a Project's ontology.
-
-    The "tool" parameter is automatically set to Tool.Type.RELATIONSHIP
-    and doesn't need to be passed during instantiation.
-
-    The "classifications" parameter holds a list of Classification objects.
-    This can be used to add nested classifications to a tool.
-
-    Example(s):
-        tool = RelationshipTool(
-            name = "Relationship Tool example",
-            constraints = [
-                ("source_tool_feature_schema_id_1", "target_tool_feature_schema_id_1"),
-                ("source_tool_feature_schema_id_2", "target_tool_feature_schema_id_2")
-            ]
-        )
-        classification = Classification(
-            class_type = Classification.Type.TEXT,
-            instructions = "Classification Example")
-        tool.add_classification(classification)
-
-    Attributes:
-        tool: Tool.Type.RELATIONSHIP (automatically set)
-        name: (str)
-        required: (bool)
-        color: (str)
-        classifications: (list)
-        schema_id: (str)
-        feature_schema_id: (str)
-        attributes: (list)
-        constraints: (list of [str, str])
-    """
-
-    constraints: Optional[List[Tuple[str, str]]] = None
-
-    def __post_init__(self):
-        # Ensure tool type is set to RELATIONSHIP
-        self.tool = Tool.Type.RELATIONSHIP
-        super().__post_init__()
-
-    def asdict(self) -> Dict[str, Any]:
-        result = super().asdict()
-        if self.constraints is not None:
-            result["constraints"] = self.constraints
-        return result
-
-
 """
 The following 2 functions help to bridge the gap between the step reasoning all other tool ontologies.
 """
