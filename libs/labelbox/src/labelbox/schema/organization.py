@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from lbox.exceptions import LabelboxError
 
@@ -8,10 +8,15 @@ from labelbox.orm.model import Field, Relationship
 from labelbox.schema.invite import InviteLimit
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.pagination import PaginatedCollection
+from labelbox.schema.iam_integration import (
+    AwsIamIntegrationSettings,
+    GcpIamIntegrationSettings,
+    AzureIamIntegrationSettings,
+    IAMIntegration,
+)
 
 if TYPE_CHECKING:
     from labelbox import (
-        IAMIntegration,
         Invite,
         InviteLimit,
         ProjectRole,
@@ -244,6 +249,31 @@ class Organization(DbObject):
         return (
             None if not len(default_integration) else default_integration.pop()
         )
+
+    def create_iam_integration(
+        self,
+        name: str,
+        settings: Union[
+            AwsIamIntegrationSettings,
+            GcpIamIntegrationSettings,
+            AzureIamIntegrationSettings,
+        ],
+    ) -> "IAMIntegration":
+        """Creates a new IAM integration for the organization.
+
+        Args:
+            settings: Provider-specific settings for the integration:
+                - AwsIamIntegrationSettings: name, role_arn, read_bucket (optional)
+                - GcpIamIntegrationSettings: name, read_bucket
+                - AzureIamIntegrationSettings: name, read_container_url, tenant_id
+
+        Returns:
+            IAMIntegration: The created integration
+
+        Raises:
+            ValueError: If unsupported settings type is provided
+        """
+        return IAMIntegration.create(self.client, name, settings)
 
     def get_invites(self) -> PaginatedCollection:
         """
