@@ -62,7 +62,13 @@ class Mask(Geometry):
         if not holes.is_valid:
             holes = holes.buffer(0)
 
-        return external_polygons.difference(holes).__geo_interface__
+        result = external_polygons.difference(holes)
+
+        # Ensure consistent MultiPolygon output across Python versions
+        if hasattr(result, "geom_type") and result.geom_type == "Polygon":
+            result = MultiPolygon([result])
+
+        return result.__geo_interface__
 
     def draw(
         self,
