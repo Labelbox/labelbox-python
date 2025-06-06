@@ -59,6 +59,7 @@ from labelbox.schema.project_overview import (
     ProjectOverview,
     ProjectOverviewDetailed,
 )
+from labelbox.schema.workflow import ProjectWorkflow
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
@@ -1701,6 +1702,45 @@ class Project(DbObject, Updateable, Deletable):
 
         """
         return LabelingServiceDashboard.get(self.client, self.uid)
+
+    def get_workflow(self):
+        """Get the workflow configuration for this project.
+
+        Workflows are automatically created when projects are created.
+
+        Returns:
+            ProjectWorkflow: A ProjectWorkflow object containing the project workflow information.
+        """
+        warnings.warn(
+            "Workflow Management is currently in alpha and its behavior may change in future releases.",
+        )
+
+        return ProjectWorkflow.get_workflow(self.client, self.uid)
+
+    def clone_workflow_from(self, source_project_id: str) -> "ProjectWorkflow":
+        """Clones a workflow from another project to this project.
+
+        Args:
+            source_project_id (str): The ID of the project to clone the workflow from
+
+        Returns:
+            ProjectWorkflow: The cloned workflow in this project
+        """
+        warnings.warn(
+            "Workflow Management is currently in alpha and its behavior may change in future releases.",
+        )
+
+        # Get the source workflow
+        source_workflow = ProjectWorkflow.get_workflow(
+            self.client, source_project_id
+        )
+
+        # Use copy_workflow_structure to clone the workflow
+        return ProjectWorkflow.copy_workflow_structure(
+            source_workflow=source_workflow,
+            target_client=self.client,
+            target_project_id=self.uid,
+        )
 
 
 class ProjectMember(DbObject):
