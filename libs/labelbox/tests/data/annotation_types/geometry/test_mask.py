@@ -5,6 +5,7 @@ import cv2
 
 from labelbox.data.annotation_types import Point, Rectangle, Mask, MaskData
 from pydantic import ValidationError
+from shapely.geometry import MultiPolygon, Polygon
 
 
 def test_mask():
@@ -18,112 +19,53 @@ def test_mask():
 
     mask1 = Mask(mask=mask_data, color=(255, 255, 255))
 
-    expected1 = {
-        "type": "MultiPolygon",
-        "coordinates": [
-            (
-                (
-                    (0.0, 0.0),
-                    (0.0, 1.0),
-                    (0.0, 2.0),
-                    (0.0, 3.0),
-                    (0.0, 4.0),
-                    (0.0, 5.0),
-                    (0.0, 6.0),
-                    (0.0, 7.0),
-                    (0.0, 8.0),
-                    (0.0, 9.0),
-                    (0.0, 10.0),
-                    (1.0, 10.0),
-                    (2.0, 10.0),
-                    (3.0, 10.0),
-                    (4.0, 10.0),
-                    (5.0, 10.0),
-                    (6.0, 10.0),
-                    (7.0, 10.0),
-                    (8.0, 10.0),
-                    (9.0, 10.0),
-                    (10.0, 10.0),
-                    (10.0, 9.0),
-                    (10.0, 8.0),
-                    (10.0, 7.0),
-                    (10.0, 6.0),
-                    (10.0, 5.0),
-                    (10.0, 4.0),
-                    (10.0, 3.0),
-                    (10.0, 2.0),
-                    (10.0, 1.0),
-                    (10.0, 0.0),
-                    (9.0, 0.0),
-                    (8.0, 0.0),
-                    (7.0, 0.0),
-                    (6.0, 0.0),
-                    (5.0, 0.0),
-                    (4.0, 0.0),
-                    (3.0, 0.0),
-                    (2.0, 0.0),
-                    (1.0, 0.0),
-                    (0.0, 0.0),
-                ),
-            )
-        ],
-    }
-    assert mask1.geometry == expected1
-    assert mask1.shapely.__geo_interface__ == expected1
+    # Create expected geometry - a simple rectangle from (0,0) to (10,10)
+    # Using geometric equality instead of exact coordinate comparison
+    # to handle different coordinate ordering between OpenCV versions
+    expected_polygon1 = Polygon(
+        [(0.0, 0.0), (0.0, 10.0), (10.0, 10.0), (10.0, 0.0), (0.0, 0.0)]
+    )
+    expected_multipolygon1 = MultiPolygon([expected_polygon1])
+
+    # Use geometric equality - both polygons represent the same shape
+    assert mask1.shapely.equals(
+        expected_multipolygon1
+    ), f"Geometry mismatch: expected area {expected_multipolygon1.area}, got area {mask1.shapely.area}"
+
+    # Verify that the geometry has correct area and bounds
+    assert (
+        abs(mask1.shapely.area - 100.0) < 1e-6
+    ), f"Expected area 100, got {mask1.shapely.area}"
+    assert mask1.shapely.bounds == (
+        0.0,
+        0.0,
+        10.0,
+        10.0,
+    ), f"Expected bounds (0,0,10,10), got {mask1.shapely.bounds}"
 
     mask2 = Mask(mask=mask_data, color=(0, 255, 255))
-    expected2 = {
-        "type": "MultiPolygon",
-        "coordinates": [
-            (
-                (
-                    (20.0, 20.0),
-                    (20.0, 21.0),
-                    (20.0, 22.0),
-                    (20.0, 23.0),
-                    (20.0, 24.0),
-                    (20.0, 25.0),
-                    (20.0, 26.0),
-                    (20.0, 27.0),
-                    (20.0, 28.0),
-                    (20.0, 29.0),
-                    (20.0, 30.0),
-                    (21.0, 30.0),
-                    (22.0, 30.0),
-                    (23.0, 30.0),
-                    (24.0, 30.0),
-                    (25.0, 30.0),
-                    (26.0, 30.0),
-                    (27.0, 30.0),
-                    (28.0, 30.0),
-                    (29.0, 30.0),
-                    (30.0, 30.0),
-                    (30.0, 29.0),
-                    (30.0, 28.0),
-                    (30.0, 27.0),
-                    (30.0, 26.0),
-                    (30.0, 25.0),
-                    (30.0, 24.0),
-                    (30.0, 23.0),
-                    (30.0, 22.0),
-                    (30.0, 21.0),
-                    (30.0, 20.0),
-                    (29.0, 20.0),
-                    (28.0, 20.0),
-                    (27.0, 20.0),
-                    (26.0, 20.0),
-                    (25.0, 20.0),
-                    (24.0, 20.0),
-                    (23.0, 20.0),
-                    (22.0, 20.0),
-                    (21.0, 20.0),
-                    (20.0, 20.0),
-                ),
-            )
-        ],
-    }
-    assert mask2.geometry == expected2
-    assert mask2.shapely.__geo_interface__ == expected2
+
+    # Create expected geometry for the second rectangle from (20,20) to (30,30)
+    expected_polygon2 = Polygon(
+        [(20.0, 20.0), (20.0, 30.0), (30.0, 30.0), (30.0, 20.0), (20.0, 20.0)]
+    )
+    expected_multipolygon2 = MultiPolygon([expected_polygon2])
+
+    assert mask2.shapely.equals(
+        expected_multipolygon2
+    ), f"Geometry mismatch: expected area {expected_multipolygon2.area}, got area {mask2.shapely.area}"
+
+    # Verify that the geometry has correct area and bounds
+    assert (
+        abs(mask2.shapely.area - 100.0) < 1e-6
+    ), f"Expected area 100, got {mask2.shapely.area}"
+    assert mask2.shapely.bounds == (
+        20.0,
+        20.0,
+        30.0,
+        30.0,
+    ), f"Expected bounds (20,20,30,30), got {mask2.shapely.bounds}"
+
     gt_mask = cv2.cvtColor(
         cv2.imread("tests/data/assets/mask.png"), cv2.COLOR_BGR2RGB
     )
