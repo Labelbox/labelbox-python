@@ -644,6 +644,7 @@ class ProjectWorkflow(BaseModel):
         name: str = "Review task",
         instructions: Optional[str] = None,
         group_assignment: Optional[Union[str, List[str], Any]] = None,
+        max_contributions_per_user: Optional[int] = None,
         **kwargs,
     ) -> ReviewNode: ...
 
