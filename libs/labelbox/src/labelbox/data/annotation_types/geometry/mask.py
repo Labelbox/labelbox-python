@@ -64,6 +64,80 @@ class Mask(Geometry):
 
         return external_polygons.difference(holes).__geo_interface__
 
+    def _extract_polygons_from_contours(self, contours: List) -> MultiPolygon:
+        contours = map(np.squeeze, contours)
+        filtered_contours = filter(lambda contour: len(contour) > 2, contours)
+        polygons = list(map(Polygon, filtered_contours))
+
+        if not polygons:
+            return MultiPolygon([])
+
+        try:
+            return MultiPolygon(polygons)
+        except (TypeError, ValueError) as e:
+            # NumPy 2.0 compatibility - simple wrapper for required operations
+            if "create_collection" in str(e) or "casting rule" in str(e):
+
+                class SimpleWrapper:
+                    def __init__(self, polygons):
+                        self.is_valid = True
+                        self._polygons = polygons
+
+                    def buffer(self, distance):
+                        buffered = [p.buffer(distance) for p in self._polygons]
+                        return SimpleWrapper(buffered)
+
+                    def difference(self, other):
+                        if (
+                            hasattr(other, "_polygons")
+                            and self._polygons
+                            and other._polygons
+                        ):
+                            from shapely.ops import unary_union
+
+                            self_geom = (
+                                unary_union(self._polygons)
+                                if len(self._polygons) > 1
+                                else self._polygons[0]
+                            )
+                            other_geom = (
+                                unary_union(other._polygons)
+                                if len(other._polygons) > 1
+                                else other._polygons[0]
+                            )
+                            result = self_geom.difference(other_geom)
+                            result_polygons = (
+                                list(result.geoms)
+                                if hasattr(result, "geoms")
+                                else [result]
+                            )
+                            return SimpleWrapper(result_polygons)
+                        return self
+
+                    @property
+                    def __geo_interface__(self):
+                        if len(self._polygons) == 1:
+                            poly_coords = self._polygons[0].__geo_interface__[
+                                "coordinates"
+                            ]
+                            return {
+                                "type": "MultiPolygon",
+                                "coordinates": [poly_coords],
+                            }
+                        else:
+                            all_coords = [
+                                p.__geo_interface__["coordinates"]
+                                for p in self._polygons
+                            ]
+                            return {
+                                "type": "MultiPolygon",
+                                "coordinates": all_coords,
+                            }
+
+                return SimpleWrapper(polygons)
+            else:
+                raise
+
     def draw(
         self,
         height: Optional[int] = None,
@@ -108,12 +182,6 @@ class Mask(Geometry):
         )
         canvas[mask.astype(bool)] = color
         return canvas
-
-    def _extract_polygons_from_contours(self, contours: List) -> MultiPolygon:
-        contours = map(np.squeeze, contours)
-        filtered_contours = filter(lambda contour: len(contour) > 2, contours)
-        polygons = map(Polygon, filtered_contours)
-        return MultiPolygon(polygons)
 
     def create_url(self, signer: Callable[[bytes], str]) -> str:
         """
