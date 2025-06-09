@@ -294,3 +294,33 @@ def test_classification_using_instructions_instead_of_name_shows_warning():
 def test_classification_without_name_raises_error():
     with pytest.raises(ValueError):
         Classification(class_type=Classification.Type.TEXT)
+
+
+@pytest.mark.parametrize(
+    "class_type, is_likert_scale, should_include",
+    [
+        (Classification.Type.RADIO, True, True),
+        (Classification.Type.RADIO, False, False),
+        (Classification.Type.CHECKLIST, True, False),
+        (Classification.Type.TEXT, True, False),
+    ],
+)
+def test_is_likert_scale_serialization(
+    class_type, is_likert_scale, should_include
+):
+    c = Classification(
+        class_type=class_type, name="test", is_likert_scale=is_likert_scale
+    )
+    if class_type in Classification._REQUIRES_OPTIONS:
+        c.add_option(Option(value="option1"))
+    result = c.asdict()
+    assert ("isLikertScale" in result) == should_include
+
+
+def test_option_position_auto_assignment():
+    c = Classification(class_type=Classification.Type.RADIO, name="test")
+    o1, o2 = Option(value="first"), Option(value="second")
+    c.add_option(o1)
+    c.add_option(o2)
+    assert o1.position == 0 and o2.position == 1
+    assert c.asdict()["options"][0]["position"] == 0
