@@ -30,6 +30,7 @@ from labelbox.schema.tool_building.types import (
     FeatureSchemaAttributes,
 )
 import warnings
+from labelbox.schema.project import MediaType
 
 
 class DeleteFeatureFromOntologyResult:
@@ -195,6 +196,7 @@ class Ontology(DbObject):
     normalized = Field.Json("normalized")
     object_schema_count = Field.Int("object_schema_count")
     classification_schema_count = Field.Int("classification_schema_count")
+    media_type = Field.Enum(MediaType, "media_type", "mediaType")
 
     projects = Relationship.ToMany("Project", True)
     created_by = Relationship.ToOne("User", False, "created_by")

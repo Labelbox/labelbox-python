@@ -59,6 +59,7 @@ from labelbox.schema.project_overview import (
     ProjectOverview,
     ProjectOverviewDetailed,
 )
+from labelbox.schema.workflow import ProjectWorkflow
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
 from labelbox.schema.task_queue import TaskQueue
@@ -666,14 +667,30 @@ class Project(DbObject, Updateable, Deletable):
     def connect_ontology(self, ontology) -> None:
         """
         Connects the ontology to the project. If an editor is not setup, it will be connected as well.
+        This method can be used to change the project's ontology.
 
         Note: For live chat model evaluation projects, the editor setup is skipped because it is automatically setup when the project is created.
 
         Args:
             ontology (Ontology): The ontology to attach to the project
+
+        Raises:
+            ValueError: If ontology and project have different media types and ontology has a media type set
         """
-        if not self.is_empty_ontology():
-            raise ValueError("Ontology already connected to project.")
+        # Check media type compatibility
+        if (
+            self.media_type != ontology.media_type
+            and not ontology.media_type == MediaType.Unknown
+        ):
+            raise ValueError(
+                "Ontology and project must share the same type, unless the ontology has no type."
+            )
+
+        # Check if project has labels and warn user
+        if self.get_label_count() > 0:
+            warnings.warn(
+                "Project has labels. The new ontology must contain all annotation types."
+            )
 
         if (
             self.labeling_frontend() is None
@@ -1701,6 +1718,45 @@ class Project(DbObject, Updateable, Deletable):
 
         """
         return LabelingServiceDashboard.get(self.client, self.uid)
+
+    def get_workflow(self):
+        """Get the workflow configuration for this project.
+
+        Workflows are automatically created when projects are created.
+
+        Returns:
+            ProjectWorkflow: A ProjectWorkflow object containing the project workflow information.
+        """
+        warnings.warn(
+            "Workflow Management is currently in alpha and its behavior may change in future releases.",
+        )
+
+        return ProjectWorkflow.get_workflow(self.client, self.uid)
+
+    def clone_workflow_from(self, source_project_id: str) -> "ProjectWorkflow":
+        """Clones a workflow from another project to this project.
+
+        Args:
+            source_project_id (str): The ID of the project to clone the workflow from
+
+        Returns:
+            ProjectWorkflow: The cloned workflow in this project
+        """
+        warnings.warn(
+            "Workflow Management is currently in alpha and its behavior may change in future releases.",
+        )
+
+        # Get the source workflow
+        source_workflow = ProjectWorkflow.get_workflow(
+            self.client, source_project_id
+        )
+
+        # Use copy_workflow_structure to clone the workflow
+        return ProjectWorkflow.copy_workflow_structure(
+            source_workflow=source_workflow,
+            target_client=self.client,
+            target_project_id=self.uid,
+        )
 
 
 class ProjectMember(DbObject):

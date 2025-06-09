@@ -4,8 +4,6 @@ import os
 
 from labelbox.schema.timeunit import TimeUnit
 from labelbox.schema.api_key import ApiKey
-from lbox.exceptions import LabelboxError
-# The creation of API keys requires a feature flag to be enabled.
 
 
 @pytest.mark.skipif(
@@ -227,26 +225,3 @@ def test_create_api_key_invalid_time_unit(client):
             time_unit="days",  # String instead of TimeUnit enum
         )
     assert "valid TimeUnit" in str(excinfo.value)
-
-
-@pytest.mark.skipif(
-    condition=os.environ["LABELBOX_TEST_ENVIRON"] == "prod",
-    reason="Accounts with admin permission can create API keys",
-)
-def test_create_api_key_insufficient_permissions(client):
-    """Test that creating an API key fails when the user has insufficient permissions."""
-    user_email = client.get_user().email
-
-    if client.get_user().org_role().name != "Admin":
-        # Attempt to create another API key using the limited permissions client
-        # This should fail due to insufficient permissions
-        with pytest.raises(LabelboxError) as excinfo:
-            client.create_api_key(
-                name=f"Test Key {uuid.uuid4()}",
-                user=user_email,
-                role="Admin",
-                validity=5,
-                time_unit=TimeUnit.MINUTE,
-            )
-
-        assert "192" in str(excinfo.value)

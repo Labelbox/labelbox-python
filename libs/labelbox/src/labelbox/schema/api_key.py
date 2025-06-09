@@ -45,14 +45,22 @@ class ApiKey(DbObject):
         """Gets the User who created this API key.
 
         Returns:
-            Optional[User]: The User who created this API key, or None if not available
+            Optional[User]: The User who created this API key, or None if not available.
         """
         if not hasattr(self, "_created_by"):
+            # Use created_by_user_id if present, otherwise fall back to user_id
+            # (typically needed for older API keys where created_by_user_id is NULL)
+            user_id_to_fetch = (
+                self.created_by_user_id
+                if self.created_by_user_id is not None
+                else self.user_id
+            )
             self._created_by = (
-                self.client._get_single(User, self.created_by_user_id)
-                if self.created_by_user_id
+                self.client._get_single(User, user_id_to_fetch)
+                if user_id_to_fetch
                 else None
             )
+
         return self._created_by
 
     @property
