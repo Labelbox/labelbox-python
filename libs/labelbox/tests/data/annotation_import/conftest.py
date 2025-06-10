@@ -2337,7 +2337,10 @@ def expected_export_v2_conversation():
                 "name": "text_index",
                 "value": "text_index",
                 "message_id": "0",
-                "conversational_text_answer": {"content": "free form text..."},
+                "conversational_text_answer": {
+                    "content": "free form text...",
+                    "classifications": [],
+                },
             },
         ],
         "relationships": [],
@@ -2655,7 +2658,10 @@ def expected_exports_v2_mmc(mmc_example_data_row_message_ids):
                 "name": "text_index",
                 "value": "text_index",
                 "message_id": some_parent_id,
-                "conversational_text_answer": {"content": "free form text..."},
+                "conversational_text_answer": {
+                    "content": "free form text...",
+                    "classifications": [],
+                },
             },
         ],
         "relationships": [],
