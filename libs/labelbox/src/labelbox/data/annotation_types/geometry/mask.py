@@ -37,6 +37,7 @@ class Mask(Geometry):
 
     @property
     def geometry(self) -> Dict[str, Tuple[int, int, int]]:
+        # Extract mask contours and build geometry
         mask = self.draw(color=1)
         contours, hierarchy = cv2.findContours(
             image=mask, mode=cv2.RETR_TREE, method=cv2.CHAIN_APPROX_NONE
@@ -62,7 +63,74 @@ class Mask(Geometry):
         if not holes.is_valid:
             holes = holes.buffer(0)
 
-        return external_polygons.difference(holes).__geo_interface__
+        # Get geometry result
+        result_geometry = external_polygons.difference(holes)
+
+        # Ensure consistent MultiPolygon format across shapely versions
+        if (
+            hasattr(result_geometry, "geom_type")
+            and result_geometry.geom_type == "Polygon"
+        ):
+            result_geometry = MultiPolygon([result_geometry])
+
+        # Get the geo interface and ensure consistent coordinate format
+        geometry_dict = result_geometry.__geo_interface__
+
+        # Normalize coordinates to ensure deterministic output across platforms
+        if "coordinates" in geometry_dict:
+            geometry_dict = self._normalize_polygon_coordinates(geometry_dict)
+
+        return geometry_dict
+
+    def _normalize_polygon_coordinates(self, geometry_dict):
+        """Ensure consistent polygon coordinate format across platforms and shapely versions"""
+
+        def clean_ring(ring):
+            """Normalize ring coordinates to ensure consistent output across shapely versions"""
+            if not ring or len(ring) < 3:
+                return ring
+
+            # Convert to tuples
+            coords = [tuple(float(x) for x in coord) for coord in ring]
+
+            # Remove the closing duplicate (last coordinate that equals first)
+            if len(coords) > 1 and coords[0] == coords[-1]:
+                coords = coords[:-1]
+
+            # Remove any other consecutive duplicates
+            cleaned = []
+            for coord in coords:
+                if not cleaned or cleaned[-1] != coord:
+                    cleaned.append(coord)
+
+            # For shapely 2.1.1 compatibility: ensure we start with the minimum coordinate
+            # to get consistent ring orientation and starting point
+            if len(cleaned) >= 3:
+                min_idx = min(range(len(cleaned)), key=lambda i: cleaned[i])
+                cleaned = cleaned[min_idx:] + cleaned[:min_idx]
+
+            # Close the ring properly
+            if len(cleaned) >= 3:
+                cleaned.append(cleaned[0])
+
+            return cleaned
+
+        result = geometry_dict.copy()
+        if geometry_dict["type"] == "MultiPolygon":
+            normalized_coords = []
+            for polygon in geometry_dict["coordinates"]:
+                normalized_polygon = []
+                for ring in polygon:
+                    cleaned_ring = clean_ring(ring)
+                    if (
+                        len(cleaned_ring) >= 4
+                    ):  # Minimum for a valid closed ring
+                        normalized_polygon.append(tuple(cleaned_ring))
+                if normalized_polygon:
+                    normalized_coords.append(tuple(normalized_polygon))
+            result["coordinates"] = normalized_coords
+
+        return result
 
     def draw(
         self,
