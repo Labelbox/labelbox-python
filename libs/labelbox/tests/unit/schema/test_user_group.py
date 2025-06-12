@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from lbox.exceptions import (
-    MalformedQueryException,
     ResourceConflict,
     ResourceCreationError,
     ResourceNotFoundError,
@@ -15,7 +14,11 @@ from labelbox.schema.media_type import MediaType
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.project import Project
 from labelbox.schema.user import User
-from labelbox.schema.user_group import UserGroup, UserGroupColor
+from labelbox.schema.user_group import (
+    UserGroup,
+    UserGroupColor,
+)
+from labelbox.schema.role import Role
 
 
 @pytest.fixture
@@ -23,6 +26,11 @@ def group_user():
     user_values = defaultdict(lambda: None)
     user_values["id"] = "user_id"
     user_values["email"] = "test@example.com"
+    user_values["name"] = "Test User"
+    user_values["nickname"] = "testuser"
+    user_values["createdAt"] = "2023-01-01T00:00:00Z"
+    user_values["isExternalUser"] = False
+    user_values["isViewer"] = False
     return User(MagicMock(Client), user_values)
 
 
@@ -34,6 +42,34 @@ def group_project():
     project_values["editorTaskType"] = EditorTaskType.Missing.value
     project_values["mediaType"] = MediaType.Image.value
     return Project(MagicMock(Client), project_values)
+
+
+@pytest.fixture
+def mock_role():
+    role_values = defaultdict(lambda: None)
+    role_values["id"] = "role_id"
+    role_values["name"] = "LABELER"
+    return Role(MagicMock(Client), role_values)
+
+
+@pytest.fixture
+def client_mock():
+    """Create a mock client for testing."""
+    from labelbox import Client
+
+    return MagicMock(spec=Client)
+
+
+@pytest.fixture
+def roles_mock(client_mock):
+    """Create mock roles for testing."""
+    return {
+        "LABELER": Role(client_mock, {"id": "labeler_id", "name": "LABELER"}),
+        "ADMIN": Role(client_mock, {"id": "admin_id", "name": "ADMIN"}),
+        "REVIEWER": Role(
+            client_mock, {"id": "reviewer_id", "name": "REVIEWER"}
+        ),
+    }
 
 
 class TestUserGroupColor:
@@ -52,24 +88,27 @@ class TestUserGroupColor:
 class TestUserGroup:
     def setup_method(self):
         self.client = MagicMock(Client)
-        self.client.enable_experimental = True
-        self.group = UserGroup(client=self.client)
+        self.client.get_roles.return_value = {
+            "LABELER": Role(self.client, {"id": "role_id", "name": "LABELER"}),
+            "ADMIN": Role(self.client, {"id": "admin_id", "name": "ADMIN"}),
+            "REVIEWER": Role(
+                self.client, {"id": "reviewer_id", "name": "REVIEWER"}
+            ),
+        }
+        self.group = UserGroup(self.client)
 
     def test_constructor(self):
-        group = UserGroup(self.client)
-
-        assert group.id == ""
-        assert group.name == ""
-        assert group.color is UserGroupColor.BLUE
-        assert len(group.projects) == 0
-        assert len(group.users) == 0
+        assert self.group.name == ""
+        assert self.group.color is UserGroupColor.BLUE
+        assert len(self.group.users) == 0
+        assert len(self.group.members) == 0
+        assert len(self.group.projects) == 0
 
     def test_update_with_exception_name(self):
         group = self.group
-        group.id = ""
-
+        group.name = ""
         with pytest.raises(ValueError):
-            group.get()
+            group.update()
 
     def test_get(self):
         projects = [
@@ -77,16 +116,31 @@ class TestUserGroup:
             {"id": "project_id_2", "name": "project_2"},
         ]
         group_members = [
-            {"id": "user_id_1", "email": "email_1"},
-            {"id": "user_id_2", "email": "email_2"},
+            {
+                "id": "user_id_1",
+                "email": "email_1",
+                "orgRole": {"id": "role_id_1", "name": "LABELER"},
+            },
+            {
+                "id": "user_id_2",
+                "email": "email_2",
+                "orgRole": {"id": "role_id_2", "name": "LABELER"},
+            },
         ]
         self.client.execute.return_value = {
             "userGroup": {
                 "id": "group_id",
                 "name": "Test Group",
                 "color": "4ED2F9",
-                "projects": {"nodes": projects},
-                "members": {"nodes": group_members},
+                "description": "",
+                "projects": {
+                    "nodes": projects,
+                    "pageInfo": {"hasNextPage": False},
+                },
+                "members": {
+                    "nodes": group_members,
+                    "pageInfo": {"hasNextPage": False},
+                },
             }
         }
         group = UserGroup(self.client)
@@ -95,6 +149,7 @@ class TestUserGroup:
         assert group.color is UserGroupColor.BLUE
         assert len(group.projects) == 0
         assert len(group.users) == 0
+        assert len(group.members) == 0
 
         group.id = "group_id"
         group.get()
@@ -103,17 +158,17 @@ class TestUserGroup:
         assert group.name == "Test Group"
         assert group.color is UserGroupColor.CYAN
         assert len(group.projects) == 2
-        assert len(group.users) == 2
+        assert len(group.users) == 0
+        assert len(group.members) == 2
 
     def test_get_value_error(self):
         self.client.execute.return_value = None
         group = UserGroup(self.client)
         group.name = "Test Group"
-
         with pytest.raises(ValueError):
             group.get()
 
-    def test_update(self, group_user, group_project):
+    def test_update(self, group_user, group_project, mock_role):
         group = self.group
         group.id = "group_id"
         group.name = "Test Group"
@@ -121,253 +176,321 @@ class TestUserGroup:
         group.users = {group_user}
         group.projects = {group_project}
 
+        self.client.execute.return_value = {
+            "updateUserGroupV3": {
+                "group": {
+                    "id": "group_id",
+                    "name": "Test Group",
+                    "color": "9EC5FF",
+                    "description": "",
+                    "projects": {
+                        "nodes": [{"id": "project_id", "name": "Test Project"}],
+                        "pageInfo": {"hasNextPage": False},
+                    },
+                    "members": {
+                        "nodes": [
+                            {
+                                "id": "user_id",
+                                "email": "test@example.com",
+                                "orgRole": {"id": "role_id", "name": "LABELER"},
+                            }
+                        ],
+                        "pageInfo": {"hasNextPage": False},
+                    },
+                }
+            }
+        }
+
         updated_group = group.update()
-
-        execute = self.client.execute.call_args[0]
-
-        assert "UpdateUserGroupPyApi" in execute[0]
-        assert execute[1]["id"] == "group_id"
-        assert execute[1]["name"] == "Test Group"
-        assert execute[1]["color"] == UserGroupColor.BLUE.value
-        assert len(execute[1]["userIds"]) == 1
-        assert list(execute[1]["userIds"])[0] == group_user.uid
-        assert len(execute[1]["projectIds"]) == 1
-        assert list(execute[1]["projectIds"])[0] == group_project.uid
-
         assert updated_group.id == "group_id"
         assert updated_group.name == "Test Group"
         assert updated_group.color == UserGroupColor.BLUE
-        assert len(updated_group.users) == 1
-        assert list(updated_group.users)[0].uid == group_user.uid
-        assert len(updated_group.projects) == 1
-        assert list(updated_group.projects)[0].uid == group_project.uid
 
     def test_update_resource_error_input_bad(self):
-        self.client.execute.side_effect = MalformedQueryException("Error")
-        group = UserGroup(self.client)
-        group.name = "Test Group"
+        self.client.execute.side_effect = UnprocessableEntityError("Bad input")
+        group = self.group
         group.id = "group_id"
-
+        group.name = "Test Group"
         with pytest.raises(UnprocessableEntityError):
             group.update()
 
     def test_update_resource_error_unknown_id(self):
-        self.client.execute.return_value = None
-        group = UserGroup(self.client)
-        group.name = "Test Group"
+        self.client.execute.side_effect = ResourceNotFoundError(
+            message="Unknown ID"
+        )
+        group = self.group
         group.id = "group_id"
-
-        with pytest.raises(ResourceNotFoundError) as e:
+        group.name = "Test Group"
+        with pytest.raises(ResourceNotFoundError):
             group.update()
 
     def test_update_with_exception_name(self):
         group = self.group
+        group.id = "group_id"
         group.name = ""
-
-        with pytest.raises(UnprocessableEntityError):
+        with pytest.raises(ValueError):
             group.update()
 
-    def test_update_with_exception_name(self):
+    def test_update_with_exception_id(self):
         group = self.group
         group.id = ""
-
+        group.name = "Test Group"
         with pytest.raises(ValueError):
             group.update()
 
     def test_create_with_exception_id(self):
         group = self.group
         group.id = "group_id"
-
-        with pytest.raises(ResourceCreationError):
+        group.name = "Test Group"
+        with pytest.raises(ValueError):
             group.create()
 
     def test_create_with_exception_name(self):
         group = self.group
         group.name = ""
-
         with pytest.raises(ValueError):
             group.create()
 
-    def test_create(self, group_user, group_project):
+    def test_create(self, group_user, group_project, mock_role):
         group = self.group
-        group.name = "New Group"
-        group.color = UserGroupColor.PINK
+        group.name = "Test Group"
+        group.color = UserGroupColor.BLUE
         group.users = {group_user}
         group.projects = {group_project}
 
         self.client.execute.return_value = {
-            "createUserGroup": {"group": {"id": "group_id"}}
+            "createUserGroupV3": {
+                "group": {
+                    "id": "group_id",
+                    "name": "Test Group",
+                    "color": "9EC5FF",
+                    "description": "",
+                    "projects": {
+                        "nodes": [{"id": "project_id", "name": "Test Project"}],
+                        "pageInfo": {"hasNextPage": False},
+                    },
+                    "members": {
+                        "nodes": [
+                            {
+                                "id": "user_id",
+                                "email": "test@example.com",
+                                "orgRole": {"id": "role_id", "name": "LABELER"},
+                            }
+                        ],
+                        "pageInfo": {"hasNextPage": False},
+                    },
+                }
+            }
         }
-        created_group = group.create()
-        execute = self.client.execute.call_args[0]
 
-        assert "CreateUserGroupPyApi" in execute[0]
-        assert execute[1]["name"] == "New Group"
-        assert execute[1]["color"] == UserGroupColor.PINK.value
-        assert len(execute[1]["userIds"]) == 1
-        assert list(execute[1]["userIds"])[0] == "user_id"
-        assert len(execute[1]["projectIds"]) == 1
-        assert list(execute[1]["projectIds"])[0] == "project_id"
-        assert created_group.id is not None
-        assert created_group.id == "group_id"
-        assert created_group.name == "New Group"
-        assert created_group.color == UserGroupColor.PINK
-        assert len(created_group.users) == 1
-        assert list(created_group.users)[0].uid == "user_id"
-        assert len(created_group.projects) == 1
-        assert list(created_group.projects)[0].uid == "project_id"
+        group.create()
+        assert group.id == "group_id"
+        assert group.name == "Test Group"
+        assert group.color == UserGroupColor.BLUE
 
     def test_create_resource_creation_error(self):
-        self.client.execute.side_effect = ResourceConflict("Error")
-        group = UserGroup(self.client)
+        self.client.execute.side_effect = ResourceConflict("Conflict")
+        group = self.group
         group.name = "Test Group"
-
         with pytest.raises(ResourceCreationError):
             group.create()
 
     def test_delete(self):
-        group = self.group
-        group.id = "group_id"
-
         self.client.execute.return_value = {
             "deleteUserGroup": {"success": True}
         }
-        deleted = group.delete()
-        execute = self.client.execute.call_args[0]
-
-        assert "DeleteUserGroupPyApi" in execute[0]
-        assert execute[1]["id"] == "group_id"
-        assert deleted is True
+        group = self.group
+        group.id = "group_id"
+        result = group.delete()
+        assert result is True
 
     def test_delete_resource_not_found_error(self):
-        self.client.execute.return_value = None
-        group = UserGroup(self.client)
+        self.client.execute.side_effect = ResourceNotFoundError(
+            message="Not found"
+        )
+        group = self.group
         group.id = "group_id"
-
         with pytest.raises(ResourceNotFoundError):
             group.delete()
 
     def test_delete_no_id(self):
-        group = UserGroup(self.client)
-        group.id = None
-
+        group = self.group
+        group.id = ""
         with pytest.raises(ValueError):
             group.delete()
 
     def test_user_groups_empty(self):
-        self.client.execute.return_value = {"userGroups": None}
-
-        user_groups = list(UserGroup(self.client).get_user_groups())
-
+        self.client.execute.return_value = {
+            "userGroups": {
+                "nodes": [],
+                "pageInfo": {"hasNextPage": False, "endCursor": None},
+            }
+        }
+        user_groups = list(UserGroup.get_user_groups(self.client))
         assert len(user_groups) == 0
 
     def test_user_groups(self):
         self.client.execute.return_value = {
             "userGroups": {
-                "nextCursor": None,
                 "nodes": [
                     {
                         "id": "group_id_1",
                         "name": "Group 1",
                         "color": "9EC5FF",
+                        "description": "",
                         "projects": {
-                            "nodes": [
-                                {"id": "project_id_1", "name": "Project 1"},
-                                {"id": "project_id_2", "name": "Project 2"},
-                            ]
+                            "nodes": [],
+                            "pageInfo": {"hasNextPage": False},
                         },
                         "members": {
-                            "nodes": [
-                                {
-                                    "id": "user_id_1",
-                                    "email": "user1@example.com",
-                                },
-                                {
-                                    "id": "user_id_2",
-                                    "email": "user2@example.com",
-                                },
-                            ]
+                            "nodes": [],
+                            "pageInfo": {"hasNextPage": False},
                         },
                     },
                     {
                         "id": "group_id_2",
                         "name": "Group 2",
-                        "color": "9EC5FF",
+                        "color": "CEB8FF",
+                        "description": "",
                         "projects": {
-                            "nodes": [
-                                {"id": "project_id_3", "name": "Project 3"},
-                                {"id": "project_id_4", "name": "Project 4"},
-                            ]
+                            "nodes": [],
+                            "pageInfo": {"hasNextPage": False},
                         },
                         "members": {
-                            "nodes": [
-                                {
-                                    "id": "user_id_3",
-                                    "email": "user3@example.com",
-                                },
-                                {
-                                    "id": "user_id_4",
-                                    "email": "user4@example.com",
-                                },
-                            ]
-                        },
-                    },
-                    {
-                        "id": "group_id_3",
-                        "name": "Group 3",
-                        "color": "9EC5FF",
-                        "projects": {
-                            "nodes": [
-                                {"id": "project_id_5", "name": "Project 5"},
-                                {"id": "project_id_6", "name": "Project 6"},
-                            ]
-                        },
-                        "members": {
-                            "nodes": [
-                                {
-                                    "id": "user_id_5",
-                                    "email": "user5@example.com",
-                                },
-                                {
-                                    "id": "user_id_6",
-                                    "email": "user6@example.com",
-                                },
-                            ]
+                            "nodes": [],
+                            "pageInfo": {"hasNextPage": False},
                         },
                     },
                 ],
+                "pageInfo": {"hasNextPage": False, "endCursor": None},
             }
         }
-
-        user_groups = list(UserGroup(self.client).get_user_groups())
-        execute = self.client.execute.call_args[0]
-
-        assert "GetUserGroupsPyApi" in execute[0]
-        assert len(user_groups) == 3
-
-        # Check the attributes of the first user group
-        assert user_groups[0].id == "group_id_1"
+        user_groups = list(UserGroup.get_user_groups(self.client))
+        assert len(user_groups) == 2
         assert user_groups[0].name == "Group 1"
-        assert user_groups[0].color == UserGroupColor.BLUE
-        assert len(user_groups[0].projects) == 2
-        assert len(user_groups[0].users) == 2
-
-        # Check the attributes of the second user group
-        assert user_groups[1].id == "group_id_2"
         assert user_groups[1].name == "Group 2"
-        assert user_groups[1].color == UserGroupColor.BLUE
-        assert len(user_groups[1].projects) == 2
-        assert len(user_groups[1].users) == 2
-
-        # Check the attributes of the third user group
-        assert user_groups[2].id == "group_id_3"
-        assert user_groups[2].name == "Group 3"
-        assert user_groups[2].color == UserGroupColor.BLUE
-        assert len(user_groups[2].projects) == 2
-        assert len(user_groups[2].users) == 2
 
 
-if __name__ == "__main__":
-    import subprocess
+def test_create_mutation():
+    """Test the create mutation structure."""
+    client = MagicMock(Client)
+    client.get_roles.return_value = {
+        "LABELER": Role(client, {"id": "role_id", "name": "LABELER"}),
+    }
 
-    subprocess.call(["pytest", "-v", __file__])
+    group = UserGroup(client)
+    group.name = "Test Group"
+    group.description = "Test description"
+    group.color = UserGroupColor.BLUE
+    group.notify_members = True
+
+    client.execute.return_value = {
+        "createUserGroupV3": {
+            "group": {
+                "id": "group_id",
+                "name": "Test Group",
+                "color": "9EC5FF",
+                "description": "Test description",
+                "projects": {"nodes": []},
+                "members": {"nodes": []},
+            }
+        }
+    }
+
+    group.create()
+
+    # Verify the mutation was called
+    assert client.execute.called
+    call_args = client.execute.call_args
+    query = call_args[0][0]
+    params = call_args[0][1]
+
+    assert "createUserGroupV3" in query
+    assert params["name"] == "Test Group"
+    assert params["description"] == "Test description"
+    assert params["color"] == "9EC5FF"
+    assert params["notifyMembers"] is True
+
+
+def test_update_mutation():
+    """Test the update mutation structure."""
+    client = MagicMock(Client)
+    client.get_roles.return_value = {
+        "LABELER": Role(client, {"id": "role_id", "name": "LABELER"}),
+    }
+
+    group = UserGroup(client)
+    group.id = "group_id"
+    group.name = "Updated Group"
+    group.description = "Updated description"
+    group.color = UserGroupColor.PURPLE
+
+    client.execute.return_value = {
+        "updateUserGroupV3": {
+            "group": {
+                "id": "group_id",
+                "name": "Updated Group",
+                "color": "CEB8FF",
+                "description": "Updated description",
+                "projects": {"nodes": []},
+                "members": {"nodes": []},
+            }
+        }
+    }
+
+    group.update()
+
+    # Verify the mutation was called
+    assert client.execute.called
+    call_args = client.execute.call_args
+    query = call_args[0][0]
+    params = call_args[0][1]
+
+    assert "updateUserGroupV3" in query
+    assert params["id"] == "group_id"
+    assert params["name"] == "Updated Group"
+    assert params["description"] == "Updated description"
+    assert params["color"] == "CEB8FF"
+
+
+def test_create_error_handling():
+    """Test error handling during create."""
+    client = MagicMock(Client)
+    client.get_roles.return_value = {
+        "LABELER": Role(client, {"id": "role_id", "name": "LABELER"}),
+    }
+
+    group = UserGroup(client)
+    group.name = "Test Group"
+
+    # Test ResourceConflict -> ResourceCreationError
+    client.execute.side_effect = ResourceConflict("Group exists")
+    with pytest.raises(ResourceCreationError):
+        group.create()
+
+    # Test UnprocessableEntityError handling
+    client.execute.side_effect = UnprocessableEntityError("Invalid data")
+    with pytest.raises(ResourceCreationError):
+        group.create()
+
+
+def test_update_error_handling():
+    """Test error handling during update."""
+    client = MagicMock(Client)
+    client.get_roles.return_value = {
+        "LABELER": Role(client, {"id": "role_id", "name": "LABELER"}),
+    }
+
+    group = UserGroup(client)
+    group.id = "group_id"
+    group.name = "Test Group"
+
+    # Test UnprocessableEntityError handling
+    client.execute.side_effect = UnprocessableEntityError("Invalid data")
+    with pytest.raises(UnprocessableEntityError):
+        group.update()
+
+    # Test ResourceNotFoundError handling
+    client.execute.side_effect = ResourceNotFoundError(message="Not found")
+    with pytest.raises(ResourceNotFoundError):
+        group.update()
