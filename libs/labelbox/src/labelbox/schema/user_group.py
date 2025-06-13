@@ -162,18 +162,19 @@ class UserGroup(BaseModel):
         )
 
     def model_post_init(self, __context: Any) -> None:
-        """Set default_role to LABELER if not specified.
+        """Validate that default_role is set when users field is used.
 
         Args:
             __context: Pydantic context (unused).
+
+        Raises:
+            ValueError: If users is set but default_role is not provided.
         """
-        if self.default_role is None:
-            try:
-                roles = self.client.get_roles()
-                self.default_role = roles.get("LABELER")
-            except Exception:
-                # Silently fail if roles cannot be retrieved
-                pass
+        # Validate that default_role is set when legacy users field is used
+        if self.users and self.default_role is None:
+            raise ValueError(
+                "default_role must be set when using the 'users' field."
+            )
 
     def get(self) -> UserGroup:
         """Reload the user group information from the server.
@@ -245,35 +246,34 @@ class UserGroup(BaseModel):
                     f"Project {project.uid} not found or inaccessible"
                 )
 
-        # Get default role if not set
-        if not self.default_role:
-            roles = self.client.get_roles()
-            self.default_role = roles.get("LABELER")
-            if not self.default_role:
-                raise ValueError("Unable to get default role for users")
+        # Validate default_role is set when legacy users field is used
+        if self.users and self.default_role is None:
+            raise ValueError(
+                "default_role must be set when using the 'users' field."
+            )
 
         # Filter eligible users and build user roles
         eligible_users = self._filter_project_based_users()
         user_roles = self._build_user_roles(eligible_users)
 
         query = """
-        mutation UpdateUserGroupPyApi($id: ID!, $name: String!, $color: String!, $projectIds: [ID!]!, $userRoles: [UserRoleInput!], $description: String, $notifyMembers: Boolean) {
+        mutation UpdateUserGroupPyApi($id: ID!, $name: String!, $description: String, $color: String!, $projectIds: [ID!]!, $userRoles: [UserRoleInput!], $notifyMembers: Boolean) {
             updateUserGroupV3(
                 where: { id: $id }
                 data: {
                     name: $name
+                    description: $description
                     color: $color
                     projectIds: $projectIds
                     userRoles: $userRoles
-                    description: $description
                     notifyMembers: $notifyMembers
                 }
             ) {
                 group {
                     id
                     name
-                    color
                     description
+                    color
                     projects { nodes { id name } totalCount }
                     members { 
                         nodes { id email orgRole { id name } } 
@@ -287,10 +287,10 @@ class UserGroup(BaseModel):
         params = {
             "id": self.id,
             "name": self.name,
+            "description": self.description,
             "color": self.color.value,
             "projectIds": [project.uid for project in self.projects],
             "userRoles": user_roles,
-            "description": self.description,
             "notifyMembers": self.notify_members,
         }
 
@@ -334,19 +334,19 @@ class UserGroup(BaseModel):
                     f"Project {project.uid} not found or inaccessible"
                 )
 
-        # Get default role if not set
-        if not self.default_role:
-            roles = self.client.get_roles()
-            self.default_role = roles.get("LABELER")
-            if not self.default_role:
-                raise ValueError("Unable to get default role for users")
+        # Validate default_role is set when legacy users field is used
+        if self.users and self.default_role is None:
+            raise ValueError(
+                "default_role must be explicitly set when using the 'users' field. "
+                "This ensures you are aware of what role will be assigned to legacy users."
+            )
 
         # Filter eligible users and build user roles
         eligible_users = self._filter_project_based_users()
         user_roles = self._build_user_roles(eligible_users)
 
         query = """
-        mutation CreateUserGroupPyApi($description: String, $color: String!, $name: String!, $projectIds: [ID!], $userRoles: [UserRoleInput!], $roleId: String, $searchQuery: AlignerrSearchServiceQuery, $notifyMembers: Boolean) {
+        mutation CreateUserGroupPyApi($name: String!, $description: String, $color: String!, $projectIds: [ID!], $userRoles: [UserRoleInput!], $notifyMembers: Boolean, $roleId: String, $searchQuery: AlignerrSearchServiceQuery) {
             createUserGroupV3(
                 data: {
                     name: $name
@@ -354,36 +354,34 @@ class UserGroup(BaseModel):
                     color: $color
                     projectIds: $projectIds
                     userRoles: $userRoles
-                    searchQuery: $searchQuery
-                    roleId: $roleId
                     notifyMembers: $notifyMembers
+                    roleId: $roleId
+                    searchQuery: $searchQuery
                 }
             ) {
                 group {
                     id
                     name
+                    description
                     color
                     updatedAt
                     createdByUserName
-                    description
-                    __typename
                     projects { nodes { id name } totalCount }
                     members { 
                         nodes { id email orgRole { id name } } 
                         totalCount 
                     }
                 }
-                __typename
             }
         }
         """
 
         params = {
             "name": self.name,
+            "description": self.description,
             "color": self.color.value,
             "projectIds": [project.uid for project in self.projects],
             "userRoles": user_roles,
-            "description": self.description,
             "notifyMembers": self.notify_members,
             "roleId": None,
             "searchQuery": None,
@@ -505,7 +503,7 @@ class UserGroup(BaseModel):
 
         user_ids = [user.uid for user in all_users]
         query = """
-        query CheckUserOrgRoles($userIds: [ID!]!) {
+        query CheckUserOrgRolesPyApi($userIds: [ID!]!) {
             users(where: {id_in: $userIds}) {
                 id
                 orgRole { id name }

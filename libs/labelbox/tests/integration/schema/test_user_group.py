@@ -145,6 +145,10 @@ def test_create_user_group_advanced(client, project_pack):
     projects = project_pack
     user = users[0]
     project = projects[0]
+
+    # Must set default_role when using users field
+    roles = client.get_roles()
+    user_group.default_role = roles["LABELER"]
     user_group.users.add(user)
     user_group.projects.add(project)
 
@@ -182,6 +186,8 @@ def test_create_user_group_advanced(client, project_pack):
             or "internal server error" in creation_error.lower()
             or "workspace wide role" in creation_error.lower()
             or "conflicts with the group role" in creation_error.lower()
+            or "default_role must be"
+            in creation_error.lower()  # New validation error
         )
 
 
@@ -496,6 +502,31 @@ def test_usergroup_functionality_demonstration(client, project_pack):
             user_group.delete()
         except:
             pass
+
+
+def test_validation_users_without_default_role(client, project_pack):
+    """Test that using users field without default_role raises ValidationError."""
+    if not list(client.get_users()):
+        pytest.skip("No users available for testing")
+
+    group_name = f"{data.name()}_{int(time.time())}"
+    user_group = UserGroup(client)
+    user_group.name = group_name
+    user_group.color = (
+        UserGroupColor.RED
+        if hasattr(UserGroupColor, "RED")
+        else UserGroupColor.PINK
+    )
+    user_group.projects.add(project_pack[0])
+
+    users = list(client.get_users())
+    user_group.users.add(users[0])
+    # Deliberately NOT setting default_role
+
+    with pytest.raises(
+        ValueError, match="default_role must be.*when using the 'users' field"
+    ):
+        user_group.create()
 
 
 if __name__ == "__main__":

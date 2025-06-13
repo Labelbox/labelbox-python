@@ -104,6 +104,37 @@ class TestUserGroup:
         assert len(self.group.members) == 0
         assert len(self.group.projects) == 0
 
+    def test_constructor_validation_error_users_without_default_role(
+        self, group_user
+    ):
+        """Test that constructor fails when users are provided but default_role is None"""
+        from pydantic import ValidationError
+
+        with pytest.raises(
+            ValidationError,
+            match="default_role must be set when using the 'users' field",
+        ):
+            UserGroup(
+                client=self.client,
+                name="Test Group",
+                users={group_user},
+                # default_role not provided - should raise ValueError
+            )
+
+    def test_constructor_with_users_and_default_role(
+        self, group_user, mock_role
+    ):
+        """Test that constructor works when both users and default_role are provided"""
+        group = UserGroup(
+            client=self.client,
+            name="Test Group",
+            users={group_user},
+            default_role=mock_role,
+        )
+        assert group.name == "Test Group"
+        assert len(group.users) == 1
+        assert group.default_role == mock_role
+
     def test_update_with_exception_name(self):
         group = self.group
         group.name = ""
@@ -152,6 +183,9 @@ class TestUserGroup:
         assert len(group.members) == 0
 
         group.id = "group_id"
+        # Set default_role so that members can be created from response
+        roles = self.client.get_roles.return_value
+        group.default_role = roles["LABELER"]
         group.get()
 
         assert group.id == "group_id"
@@ -175,6 +209,7 @@ class TestUserGroup:
         group.color = UserGroupColor.BLUE
         group.users = {group_user}
         group.projects = {group_project}
+        group.default_role = mock_role
 
         self.client.execute.return_value = {
             "updateUserGroupV3": {
@@ -205,6 +240,51 @@ class TestUserGroup:
         assert updated_group.id == "group_id"
         assert updated_group.name == "Test Group"
         assert updated_group.color == UserGroupColor.BLUE
+
+    def test_update_validation_error_no_default_role(self, group_user):
+        """Test that update fails when users field is set but default_role is None"""
+        group = self.group
+        group.id = "group_id"
+        group.name = "Test Group"
+        group.users = {group_user}
+        # Don't set default_role - should raise ValueError
+
+        with pytest.raises(
+            ValueError,
+            match="default_role must be set when using the 'users' field",
+        ):
+            group.update()
+
+    def test_update_without_users_no_default_role_required(self, group_project):
+        """Test that update works when users field is empty and no default_role is set"""
+        group = self.group
+        group.id = "group_id"
+        group.name = "Test Group"
+        group.projects = {group_project}
+        # Don't set users or default_role - should work fine
+
+        self.client.execute.return_value = {
+            "updateUserGroupV3": {
+                "group": {
+                    "id": "group_id",
+                    "name": "Test Group",
+                    "color": "9EC5FF",
+                    "description": "",
+                    "projects": {
+                        "nodes": [{"id": "project_id", "name": "Test Project"}],
+                        "pageInfo": {"hasNextPage": False},
+                    },
+                    "members": {
+                        "nodes": [],
+                        "pageInfo": {"hasNextPage": False},
+                    },
+                }
+            }
+        }
+
+        updated_group = group.update()
+        assert updated_group.id == "group_id"
+        assert updated_group.name == "Test Group"
 
     def test_update_resource_error_input_bad(self):
         self.client.execute.side_effect = UnprocessableEntityError("Bad input")
@@ -238,25 +318,14 @@ class TestUserGroup:
         with pytest.raises(ValueError):
             group.update()
 
-    def test_create_with_exception_id(self):
-        group = self.group
-        group.id = "group_id"
-        group.name = "Test Group"
-        with pytest.raises(ValueError):
-            group.create()
-
-    def test_create_with_exception_name(self):
-        group = self.group
-        group.name = ""
-        with pytest.raises(ValueError):
-            group.create()
-
     def test_create(self, group_user, group_project, mock_role):
         group = self.group
         group.name = "Test Group"
         group.color = UserGroupColor.BLUE
         group.users = {group_user}
         group.projects = {group_project}
+        # Must explicitly set default_role when using users field
+        group.default_role = mock_role
 
         self.client.execute.return_value = {
             "createUserGroupV3": {
@@ -287,6 +356,64 @@ class TestUserGroup:
         assert group.id == "group_id"
         assert group.name == "Test Group"
         assert group.color == UserGroupColor.BLUE
+
+    def test_create_validation_error_no_default_role(self, group_user):
+        """Test that create fails when users field is set but default_role is None"""
+        group = self.group
+        group.name = "Test Group"
+        group.users = {group_user}
+        # Don't set default_role - should raise ValueError
+
+        with pytest.raises(
+            ValueError,
+            match="default_role must be explicitly set when using the 'users' field",
+        ):
+            group.create()
+
+    def test_create_without_users_no_default_role_required(self, group_project):
+        """Test that create works when users field is empty and no default_role is set"""
+        group = self.group
+        group.name = "Test Group"
+        group.projects = {group_project}
+        # Don't set users or default_role - should work fine
+
+        self.client.execute.return_value = {
+            "createUserGroupV3": {
+                "group": {
+                    "id": "group_id",
+                    "name": "Test Group",
+                    "color": "9EC5FF",
+                    "description": "",
+                    "projects": {
+                        "nodes": [{"id": "project_id", "name": "Test Project"}],
+                        "pageInfo": {"hasNextPage": False},
+                    },
+                    "members": {
+                        "nodes": [],
+                        "pageInfo": {"hasNextPage": False},
+                    },
+                }
+            }
+        }
+
+        group.create()
+        assert group.id == "group_id"
+        assert group.name == "Test Group"
+
+    def test_create_with_exception_id(self):
+        """Test that create fails when group already has an ID"""
+        group = self.group
+        group.id = "group_id"
+        group.name = "Test Group"
+        with pytest.raises(ValueError):
+            group.create()
+
+    def test_create_with_exception_name(self):
+        """Test that create fails when group name is empty"""
+        group = self.group
+        group.name = ""
+        with pytest.raises(ValueError):
+            group.create()
 
     def test_create_resource_creation_error(self):
         self.client.execute.side_effect = ResourceConflict("Conflict")
@@ -374,9 +501,6 @@ class TestUserGroup:
 def test_create_mutation():
     """Test the create mutation structure."""
     client = MagicMock(Client)
-    client.get_roles.return_value = {
-        "LABELER": Role(client, {"id": "role_id", "name": "LABELER"}),
-    }
 
     group = UserGroup(client)
     group.name = "Test Group"
@@ -406,18 +530,20 @@ def test_create_mutation():
     params = call_args[0][1]
 
     assert "createUserGroupV3" in query
+    # Verify parameters match new field ordering
     assert params["name"] == "Test Group"
     assert params["description"] == "Test description"
     assert params["color"] == "9EC5FF"
     assert params["notifyMembers"] is True
 
+    # Verify parameter order in query (standardized field order)
+    expected_param_pattern = "$name: String!, $description: String, $color: String!, $projectIds: [ID!], $userRoles: [UserRoleInput!], $notifyMembers: Boolean, $roleId: String, $searchQuery: AlignerrSearchServiceQuery"
+    assert expected_param_pattern.replace(" ", "") in query.replace(" ", "")
+
 
 def test_update_mutation():
     """Test the update mutation structure."""
     client = MagicMock(Client)
-    client.get_roles.return_value = {
-        "LABELER": Role(client, {"id": "role_id", "name": "LABELER"}),
-    }
 
     group = UserGroup(client)
     group.id = "group_id"
@@ -447,10 +573,15 @@ def test_update_mutation():
     params = call_args[0][1]
 
     assert "updateUserGroupV3" in query
+    # Verify parameters match new field ordering
     assert params["id"] == "group_id"
     assert params["name"] == "Updated Group"
     assert params["description"] == "Updated description"
     assert params["color"] == "CEB8FF"
+
+    # Verify parameter order in query (standardized field order)
+    expected_param_pattern = "$id: ID!, $name: String!, $description: String, $color: String!, $projectIds: [ID!]!, $userRoles: [UserRoleInput!], $notifyMembers: Boolean"
+    assert expected_param_pattern.replace(" ", "") in query.replace(" ", "")
 
 
 def test_create_error_handling():
