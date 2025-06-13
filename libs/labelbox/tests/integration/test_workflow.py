@@ -458,7 +458,7 @@ def test_production_logic_node_with_comprehensive_filters(
                 labeling_time.greater_than(1000),
                 review_time.less_than_or_equal(100),
                 dataset.is_one_of(["cm37vyets000z072314wxgt0l"]),
-                annotation.has_any_of(["cm37w0e0500lf0709ba7c42m9"]),
+                annotation.is_one_of(["cm37w0e0500lf0709ba7c42m9"]),
                 consensus_average(0.17, 0.61),
                 model_prediction(
                     [

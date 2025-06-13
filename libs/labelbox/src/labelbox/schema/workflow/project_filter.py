@@ -111,17 +111,6 @@ class ListField:
         """
         return {self._field_name: values, "__operator": "is_not"}
 
-    def has_any_of(self, values: List[str]) -> Dict[str, Any]:
-        """Filter for items that have any of the specified values.
-
-        This is semantically equivalent to is_one_of but provides clearer intent
-        for certain filter types like categories or annotations.
-
-        Args:
-            values: List of IDs to match
-        """
-        return {self._field_name: values}
-
 
 class RangeField:
     """Field class for range-based filters like consensus_average."""
@@ -498,8 +487,8 @@ class ProjectWorkflowFilter(BaseModel):
         filters = ProjectWorkflowFilter([
             labeled_by.is_one_of(["user-123"]),
             dataset.is_one_of(["dataset-456"]),
-            issue_category.has_any_of(["cat1", "cat2"]),
-            annotation.has_any_of(["bbox", "segmentation"]),
+            issue_category.is_one_of(["cat1", "cat2"]),
+            annotation.is_one_of(["bbox", "segmentation"]),
             sample(20),
             labeled_at.between("2024-01-01", "2024-12-31"),
             metadata([condition.contains("tag", "test")]),
