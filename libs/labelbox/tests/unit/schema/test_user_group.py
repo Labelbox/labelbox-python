@@ -192,18 +192,18 @@ class TestUserGroup:
             },
         ]
         self.client.execute.return_value = {
-            "userGroup": {
+            "userGroupV2": {
                 "id": "group_id",
                 "name": "Test Group",
                 "color": "4ED2F9",
                 "description": "",
                 "projects": {
                     "nodes": projects,
-                    "pageInfo": {"hasNextPage": False},
+                    "totalCount": 2,
                 },
                 "members": {
                     "nodes": group_members,
-                    "pageInfo": {"hasNextPage": False},
+                    "totalCount": 2,
                 },
             }
         }
@@ -244,16 +244,41 @@ class TestUserGroup:
         group.projects = {group_project}
         group.default_role = mock_role
 
-        self.client.execute.return_value = {
-            "updateUserGroupV3": {
-                "group": {
+        # Mock the additional methods that make client.execute calls
+        self.client.get_project.return_value = group_project
+
+        self.client.execute.side_effect = [
+            # First call: _filter_project_based_users query
+            {
+                "users": [
+                    {
+                        "id": "user_id",
+                        "orgRole": None,  # Project-based user
+                    }
+                ]
+            },
+            # Second call: update mutation
+            {
+                "updateUserGroupV3": {
+                    "group": {
+                        "id": "group_id",
+                        "name": "Test Group",
+                        "description": "",
+                        "updatedAt": "2023-01-01T00:00:00Z",
+                        "createdByUserName": "Test User",
+                    }
+                }
+            },
+            # Third call: get query
+            {
+                "userGroupV2": {
                     "id": "group_id",
                     "name": "Test Group",
                     "color": "9EC5FF",
                     "description": "",
                     "projects": {
                         "nodes": [{"id": "project_id", "name": "Test Project"}],
-                        "pageInfo": {"hasNextPage": False},
+                        "totalCount": 1,
                     },
                     "members": {
                         "nodes": [
@@ -263,11 +288,14 @@ class TestUserGroup:
                                 "orgRole": {"id": "role_id", "name": "LABELER"},
                             }
                         ],
-                        "pageInfo": {"hasNextPage": False},
+                        "totalCount": 1,
+                        "userGroupRoles": [
+                            {"userId": "user_id", "roleId": "role_id"}
+                        ],
                     },
                 }
-            }
-        }
+            },
+        ]
 
         updated_group = group.update()
         assert updated_group.id == "group_id"
@@ -296,24 +324,38 @@ class TestUserGroup:
         group.projects = {group_project}
         # Don't set users or default_role - should work fine
 
-        self.client.execute.return_value = {
-            "updateUserGroupV3": {
-                "group": {
+        self.client.execute.side_effect = [
+            # First call: update mutation
+            {
+                "updateUserGroupV3": {
+                    "group": {
+                        "id": "group_id",
+                        "name": "Test Group",
+                        "description": "",
+                        "updatedAt": "2023-01-01T00:00:00Z",
+                        "createdByUserName": "Test User",
+                    }
+                }
+            },
+            # Second call: get query
+            {
+                "userGroupV2": {
                     "id": "group_id",
                     "name": "Test Group",
                     "color": "9EC5FF",
                     "description": "",
                     "projects": {
                         "nodes": [{"id": "project_id", "name": "Test Project"}],
-                        "pageInfo": {"hasNextPage": False},
+                        "totalCount": 1,
                     },
                     "members": {
                         "nodes": [],
-                        "pageInfo": {"hasNextPage": False},
+                        "totalCount": 0,
+                        "userGroupRoles": [],
                     },
                 }
-            }
-        }
+            },
+        ]
 
         updated_group = group.update()
         assert updated_group.id == "group_id"
@@ -360,16 +402,41 @@ class TestUserGroup:
         # Must explicitly set default_role when using users field
         group.default_role = mock_role
 
-        self.client.execute.return_value = {
-            "createUserGroupV3": {
-                "group": {
+        # Mock the additional methods that make client.execute calls
+        self.client.get_project.return_value = group_project
+
+        self.client.execute.side_effect = [
+            # First call: _filter_project_based_users query
+            {
+                "users": [
+                    {
+                        "id": "user_id",
+                        "orgRole": None,  # Project-based user
+                    }
+                ]
+            },
+            # Second call: create mutation
+            {
+                "createUserGroupV3": {
+                    "group": {
+                        "id": "group_id",
+                        "name": "Test Group",
+                        "description": "",
+                        "updatedAt": "2023-01-01T00:00:00Z",
+                        "createdByUserName": "Test User",
+                    }
+                }
+            },
+            # Third call: get query
+            {
+                "userGroupV2": {
                     "id": "group_id",
                     "name": "Test Group",
                     "color": "9EC5FF",
                     "description": "",
                     "projects": {
                         "nodes": [{"id": "project_id", "name": "Test Project"}],
-                        "pageInfo": {"hasNextPage": False},
+                        "totalCount": 1,
                     },
                     "members": {
                         "nodes": [
@@ -379,11 +446,14 @@ class TestUserGroup:
                                 "orgRole": {"id": "role_id", "name": "LABELER"},
                             }
                         ],
-                        "pageInfo": {"hasNextPage": False},
+                        "totalCount": 1,
+                        "userGroupRoles": [
+                            {"userId": "user_id", "roleId": "role_id"}
+                        ],
                     },
                 }
-            }
-        }
+            },
+        ]
 
         group.create()
         assert group.id == "group_id"
@@ -410,24 +480,38 @@ class TestUserGroup:
         group.projects = {group_project}
         # Don't set users or default_role - should work fine
 
-        self.client.execute.return_value = {
-            "createUserGroupV3": {
-                "group": {
+        self.client.execute.side_effect = [
+            # First call: create mutation
+            {
+                "createUserGroupV3": {
+                    "group": {
+                        "id": "group_id",
+                        "name": "Test Group",
+                        "description": "",
+                        "updatedAt": "2023-01-01T00:00:00Z",
+                        "createdByUserName": "Test User",
+                    }
+                }
+            },
+            # Second call: get query
+            {
+                "userGroupV2": {
                     "id": "group_id",
                     "name": "Test Group",
                     "color": "9EC5FF",
                     "description": "",
                     "projects": {
                         "nodes": [{"id": "project_id", "name": "Test Project"}],
-                        "pageInfo": {"hasNextPage": False},
+                        "totalCount": 1,
                     },
                     "members": {
                         "nodes": [],
-                        "pageInfo": {"hasNextPage": False},
+                        "totalCount": 0,
+                        "userGroupRoles": [],
                     },
                 }
-            }
-        }
+            },
+        ]
 
         group.create()
         assert group.id == "group_id"
@@ -481,9 +565,10 @@ class TestUserGroup:
 
     def test_user_groups_empty(self):
         self.client.execute.return_value = {
-            "userGroups": {
+            "userGroupsV2": {
+                "totalCount": 0,
+                "nextCursor": None,
                 "nodes": [],
-                "pageInfo": {"hasNextPage": False, "endCursor": None},
             }
         }
         user_groups = list(UserGroup.get_user_groups(self.client))
@@ -491,7 +576,9 @@ class TestUserGroup:
 
     def test_user_groups(self):
         self.client.execute.return_value = {
-            "userGroups": {
+            "userGroupsV2": {
+                "totalCount": 2,
+                "nextCursor": None,
                 "nodes": [
                     {
                         "id": "group_id_1",
@@ -500,11 +587,11 @@ class TestUserGroup:
                         "description": "",
                         "projects": {
                             "nodes": [],
-                            "pageInfo": {"hasNextPage": False},
+                            "totalCount": 0,
                         },
                         "members": {
                             "nodes": [],
-                            "pageInfo": {"hasNextPage": False},
+                            "totalCount": 0,
                         },
                     },
                     {
@@ -514,15 +601,14 @@ class TestUserGroup:
                         "description": "",
                         "projects": {
                             "nodes": [],
-                            "pageInfo": {"hasNextPage": False},
+                            "totalCount": 0,
                         },
                         "members": {
                             "nodes": [],
-                            "pageInfo": {"hasNextPage": False},
+                            "totalCount": 0,
                         },
                     },
                 ],
-                "pageInfo": {"hasNextPage": False, "endCursor": None},
             }
         }
         user_groups = list(UserGroup.get_user_groups(self.client))
@@ -559,26 +645,41 @@ def test_create_mutation():
     group.color = UserGroupColor.BLUE
     group.notify_members = True
 
-    client.execute.return_value = {
-        "createUserGroupV3": {
-            "group": {
+    # Mock responses for both create mutation and get query
+    client.execute.side_effect = [
+        # First call: create mutation
+        {
+            "createUserGroupV3": {
+                "group": {
+                    "id": "group_id",
+                    "name": "Test Group",
+                    "description": "Test description",
+                    "updatedAt": "2023-01-01T00:00:00Z",
+                    "createdByUserName": "Test User",
+                }
+            }
+        },
+        # Second call: get query
+        {
+            "userGroupV2": {
                 "id": "group_id",
                 "name": "Test Group",
                 "color": "9EC5FF",
                 "description": "Test description",
-                "projects": {"nodes": []},
-                "members": {"nodes": []},
+                "projects": {"nodes": [], "totalCount": 0},
+                "members": {"nodes": [], "totalCount": 0, "userGroupRoles": []},
             }
-        }
-    }
+        },
+    ]
 
     group.create()
 
     # Verify the mutation was called
     assert client.execute.called
-    call_args = client.execute.call_args
-    query = call_args[0][0]
-    params = call_args[0][1]
+    # Check the first call (create mutation)
+    first_call_args = client.execute.call_args_list[0]
+    query = first_call_args[0][0]
+    params = first_call_args[0][1]
 
     assert "createUserGroupV3" in query
     # Verify parameters match new field ordering
@@ -602,26 +703,41 @@ def test_update_mutation():
     group.description = "Updated description"
     group.color = UserGroupColor.PURPLE
 
-    client.execute.return_value = {
-        "updateUserGroupV3": {
-            "group": {
+    # Mock responses for both update mutation and get query
+    client.execute.side_effect = [
+        # First call: update mutation
+        {
+            "updateUserGroupV3": {
+                "group": {
+                    "id": "group_id",
+                    "name": "Updated Group",
+                    "description": "Updated description",
+                    "updatedAt": "2023-01-01T00:00:00Z",
+                    "createdByUserName": "Test User",
+                }
+            }
+        },
+        # Second call: get query
+        {
+            "userGroupV2": {
                 "id": "group_id",
                 "name": "Updated Group",
                 "color": "CEB8FF",
                 "description": "Updated description",
-                "projects": {"nodes": []},
-                "members": {"nodes": []},
+                "projects": {"nodes": [], "totalCount": 0},
+                "members": {"nodes": [], "totalCount": 0, "userGroupRoles": []},
             }
-        }
-    }
+        },
+    ]
 
     group.update()
 
     # Verify the mutation was called
     assert client.execute.called
-    call_args = client.execute.call_args
-    query = call_args[0][0]
-    params = call_args[0][1]
+    # Check the first call (update mutation)
+    first_call_args = client.execute.call_args_list[0]
+    query = first_call_args[0][0]
+    params = first_call_args[0][1]
 
     assert "updateUserGroupV3" in query
     # Verify parameters match new field ordering

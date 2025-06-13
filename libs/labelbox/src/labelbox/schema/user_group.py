@@ -224,7 +224,7 @@ class UserGroup(BaseModel):
 
         query = """
             query GetUserGroupPyApi($id: ID!) {
-                userGroup(where: {id: $id}) {
+                userGroupV2(where: {id: $id}) {
                     id
                     name
                     color
@@ -240,16 +240,20 @@ class UserGroup(BaseModel):
                             orgRole { id name }
                         }
                         totalCount
+                        userGroupRoles {
+                            userId
+                            roleId
+                        }
                     }
                 }
             }
         """
 
         result = self.client.execute(query, {"id": self.id})
-        if not result or not result.get("userGroup"):
+        if not result or not result.get("userGroupV2"):
             raise ResourceNotFoundError(message="User group not found")
 
-        group_data = result["userGroup"]
+        group_data = result["userGroupV2"]
         self._update_from_response(group_data)
 
         return self
@@ -306,12 +310,8 @@ class UserGroup(BaseModel):
                     id
                     name
                     description
-                    color
-                    projects { nodes { id name } totalCount }
-                    members { 
-                        nodes { id email orgRole { id name } } 
-                        totalCount 
-                    }
+                    updatedAt
+                    createdByUserName
                 }
             }
         }
@@ -333,7 +333,12 @@ class UserGroup(BaseModel):
                 raise ResourceNotFoundError("Failed to update user group")
 
             group_data = result["updateUserGroupV3"]["group"]
-            self._update_from_response(group_data)
+            # Update basic fields from mutation response
+            self.name = group_data["name"]
+            self.description = group_data.get("description", "")
+
+            # Fetch complete group data including projects and members
+            self.get()
 
         except MalformedQueryException as e:
             raise UnprocessableEntityError("Failed to update user group") from e
@@ -396,14 +401,8 @@ class UserGroup(BaseModel):
                     id
                     name
                     description
-                    color
                     updatedAt
                     createdByUserName
-                    projects { nodes { id name } totalCount }
-                    members { 
-                        nodes { id email orgRole { id name } } 
-                        totalCount 
-                    }
                 }
             }
         }
@@ -440,7 +439,12 @@ class UserGroup(BaseModel):
 
         group_data = result["createUserGroupV3"]["group"]
         self.id = group_data["id"]
-        self._update_from_response(group_data)
+        # Update basic fields from mutation response
+        self.name = group_data["name"]
+        self.description = group_data.get("description", "")
+
+        # Fetch complete group data including projects and members
+        self.get()
 
         return self
 
@@ -473,18 +477,23 @@ class UserGroup(BaseModel):
         return result["deleteUserGroup"]["success"]
 
     @staticmethod
-    def get_user_groups(client: Client) -> Iterator[UserGroup]:
-        """Get all user groups from Labelbox.
+    def get_user_groups(
+        client: Client, page_size: int = 100
+    ) -> Iterator[UserGroup]:
+        """Get all user groups from Labelbox with pagination support.
 
         Args:
             client: Labelbox client for API communication.
+            page_size: Number of groups to fetch per page.
 
         Yields:
             UserGroup instances for each group found.
         """
         query = """
-            query GetUserGroupsPyApi {
-                userGroups {
+            query GetUserGroupsPyApi($first: PageSize, $after: String) {
+                userGroupsV2(first: $first, after: $after) {
+                    totalCount
+                    nextCursor
                     nodes {
                         id
                         name
@@ -492,31 +501,49 @@ class UserGroup(BaseModel):
                         description
                         projects { nodes { id name } totalCount }
                         members { 
-                            nodes { id email orgRole { id name } } 
-                            totalCount 
+                            nodes { 
+                                id 
+                                email 
+                                orgRole { id name }
+                            } 
+                            totalCount
+                            userGroupRoles {
+                                userId
+                                roleId
+                            }
                         }
                     }
                 }
             }
         """
 
-        result = client.execute(query)
-        if not result or not result.get("userGroups"):
-            return
+        cursor = None
+        while True:
+            variables = {"first": page_size}
+            if cursor:
+                variables["after"] = cursor
 
-        for group_data in result["userGroups"]["nodes"]:
-            user_group = UserGroup(client)
-            user_group.id = group_data["id"]
-            user_group.name = group_data["name"]
-            user_group.color = UserGroupColor(group_data["color"])
-            user_group.description = group_data.get("description", "")
-            user_group.projects = user_group._get_projects_set(
-                group_data["projects"]["nodes"]
-            )
-            user_group.members = user_group._get_members_set(
-                group_data["members"]
-            )
-            yield user_group
+            result = client.execute(query, variables)
+            if not result or not result.get("userGroupsV2"):
+                break
+
+            for group_data in result["userGroupsV2"]["nodes"]:
+                user_group = UserGroup(client)
+                user_group.id = group_data["id"]
+                user_group.name = group_data["name"]
+                user_group.color = UserGroupColor(group_data["color"])
+                user_group.description = group_data.get("description", "")
+                user_group.projects = user_group._get_projects_set(
+                    group_data["projects"]["nodes"]
+                )
+                user_group.members = user_group._get_members_set(
+                    group_data["members"]
+                )
+                yield user_group
+
+            cursor = result["userGroupsV2"].get("nextCursor")
+            if not cursor:
+                break
 
     def _filter_project_based_users(self) -> Set[User]:
         """Filter users to only include users eligible for UserGroups.
@@ -699,22 +726,23 @@ class UserGroup(BaseModel):
     ) -> Set[UserGroupMember]:
         """Convert member data from GraphQL response to UserGroupMember objects.
 
-        Since the GraphQL response doesn't include UserGroup role information,
-        we preserve the roles that were originally set in the members list.
-        This means roles are maintained from creation/update operations.
+        Uses the userGroupRoles from the GraphQL response to create UserGroupMember
+        objects with the correct roles.
 
         Args:
             members_data: Dictionary containing member nodes from GraphQL response.
 
         Returns:
-            Set of UserGroupMember objects with preserved roles.
+            Set of UserGroupMember objects with their UserGroup roles.
         """
         members = set()
         member_nodes = members_data.get("nodes", [])
+        user_group_roles = members_data.get("userGroupRoles", [])
 
-        # Create a mapping of existing members by user ID to preserve roles
-        existing_member_roles = {
-            member.user.uid: member.role for member in self.members
+        # Create a mapping from userId to roleId
+        user_role_mapping = {
+            role_data["userId"]: role_data["roleId"]
+            for role_data in user_group_roles
         }
 
         for node in member_nodes:
@@ -724,18 +752,20 @@ class UserGroup(BaseModel):
             user_values["email"] = node["email"]
             user = User(self.client, user_values)
 
-            # Try to preserve the existing role for this user
-            user_id = node["id"]
-            if user_id in existing_member_roles:
-                # Use the preserved role
-                role = existing_member_roles[user_id]
+            # Get the role for this user from the mapping
+            role_id = user_role_mapping.get(node["id"])
+            if role_id:
+                # We need to fetch the role details since we only have the roleId
+                # For now, create a minimal Role object with just the ID
+                role_values: defaultdict[str, Any] = defaultdict(lambda: None)
+                role_values["id"] = role_id
+                # We don't have the role name from this response, so we'll leave it as None
+                # The Role object will fetch the name when needed
+                role = Role(self.client, role_values)
+
                 members.add(UserGroupMember(user=user, role=role))
-            else:
-                # For new members we can't determine the role from the response,
-                # use default role if available
-                if self.default_role:
-                    members.add(
-                        UserGroupMember(user=user, role=self.default_role)
-                    )
+            elif self.default_role:
+                # Fallback to default role if no role mapping found
+                members.add(UserGroupMember(user=user, role=self.default_role))
 
         return members
