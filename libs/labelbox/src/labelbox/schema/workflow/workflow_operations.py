@@ -223,28 +223,6 @@ class WorkflowNodeFactory:
         return node
 
     # Overloaded add_node methods for type safety
-    @staticmethod
-    @overload
-    def add_node(
-        workflow: "ProjectWorkflow",
-        *,
-        type: Literal[NodeType.InitialLabeling],
-        instructions: Optional[str] = None,
-        max_contributions_per_user: Optional[int] = None,
-        **kwargs: Any,
-    ) -> InitialLabelingNode: ...
-
-    @staticmethod
-    @overload
-    def add_node(
-        workflow: "ProjectWorkflow",
-        *,
-        type: Literal[NodeType.InitialRework],
-        instructions: Optional[str] = None,
-        individual_assignment: Optional[Union[str, List[str]]] = None,
-        max_contributions_per_user: Optional[int] = None,
-        **kwargs: Any,
-    ) -> InitialReworkNode: ...
 
     @staticmethod
     @overload
@@ -628,6 +606,26 @@ class WorkflowOperations:
         workflow: "ProjectWorkflow", nodes: List[BaseWorkflowNode]
     ) -> "ProjectWorkflow":
         """Delete specified nodes from the workflow."""
+        # Prevent deletion of initial nodes
+        initial_node_types = [
+            WorkflowDefinitionId.InitialLabelingTask,
+            WorkflowDefinitionId.InitialReworkTask,
+        ]
+
+        for node in nodes:
+            if node.definition_id in initial_node_types:
+                node_type_name = (
+                    "InitialLabeling"
+                    if node.definition_id
+                    == WorkflowDefinitionId.InitialLabelingTask
+                    else "InitialRework"
+                )
+                raise ValueError(
+                    f"Cannot delete {node_type_name} node (ID: {node.id}). "
+                    f"Initial nodes are required for workflow validity. "
+                    f"Use workflow.reset_to_initial_nodes() to create a new workflow instead."
+                )
+
         # Get node IDs to remove
         node_ids = [node.id for node in nodes]
 
@@ -647,12 +645,4 @@ class WorkflowOperations:
         workflow._nodes_cache = None
         workflow._edges_cache = None
 
-        return workflow
-
-    @staticmethod
-    def reset_config(workflow: "ProjectWorkflow") -> "ProjectWorkflow":
-        """Reset the workflow configuration to an empty workflow."""
-        workflow.config = {"nodes": [], "edges": []}
-        workflow._nodes_cache = None
-        workflow._edges_cache = None
         return workflow

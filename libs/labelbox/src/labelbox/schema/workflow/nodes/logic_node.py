@@ -30,7 +30,9 @@ class LogicNode(BaseWorkflowNode):
     """Logic node. One or more instances possible. One input, two outputs (if/else)."""
 
     label: str = Field(
-        default="Logic", description="Display name for the logic node"
+        default="Logic",
+        description="Display name for the logic node",
+        max_length=50,
     )
     filters: List[Dict[str, Any]] = Field(
         default_factory=lambda: [],
@@ -199,7 +201,7 @@ class LogicNode(BaseWorkflowNode):
 
         Args:
             filter_field: FilterField enum value specifying which filter type to remove
-                         (e.g., FilterField.CreatedBy, FilterField.Sample, FilterField.LabelingTime)
+                         (e.g., FilterField.LabeledBy, FilterField.Sample, FilterField.LabelingTime)
 
         Returns:
             LogicNode: Self for method chaining
@@ -209,7 +211,7 @@ class LogicNode(BaseWorkflowNode):
             >>>
             >>> # Type-safe enum approach (required)
             >>> logic.remove_filter(FilterField.Sample)
-            >>> logic.remove_filter(FilterField.CreatedBy)
+            >>> logic.remove_filter(FilterField.LabeledBy)  # Consistent with labeled_by() function
             >>> logic.remove_filter(FilterField.LabelingTime)
             >>> logic.remove_filter(FilterField.Metadata)
         """
@@ -371,7 +373,7 @@ class LogicNode(BaseWorkflowNode):
             >>> logic = workflow.get_node_by_id("some-logic-node-id")
             >>> user_filters = logic.get_filters()
             >>> # Add a new filter
-            >>> user_filters.append(created_by(["new-user-id"]))
+            >>> user_filters.append(labeled_by(["new-user-id"]))
             >>> # Apply the updated filters back to the node
             >>> logic.set_filters(user_filters)
         """
@@ -393,25 +395,25 @@ class LogicNode(BaseWorkflowNode):
 
         Args:
             filter_rule: Filter rule from filter functions
-                        (e.g., created_by(["user_id"]), labeling_time.greater_than(300))
+                        (e.g., labeled_by(["user_id"]), labeling_time.greater_than(300))
 
         Returns:
             LogicNode: Self for method chaining
 
         Example:
-            >>> from labelbox.schema.workflow.project_filter import created_by, labeling_time, metadata, condition
+            >>> from labelbox.schema.workflow.project_filter import labeled_by, labeling_time, metadata, condition
             >>>
-            >>> logic.add_filter(created_by(["user-123"]))
+            >>> logic.add_filter(labeled_by(["user-123"]))
             >>> logic.add_filter(labeling_time.greater_than(300))
             >>> logic.add_filter(metadata([condition.contains("tag", "test")]))
-            >>> # Adding another created_by filter will replace the previous one
-            >>> logic.add_filter(created_by(["user-456"]))  # Replaces previous created_by filter
+            >>> # Adding another labeled_by filter will replace the previous one
+            >>> logic.add_filter(labeled_by(["user-456"]))  # Replaces previous labeled_by filter
         """
         # Validate that this looks like filter function output
         if not self._is_filter_function_output(filter_rule):
             raise ValueError(
                 "add_filter() only accepts output from filter functions. "
-                "Use functions like created_by(), labeling_time.greater_than(), etc."
+                "Use functions like labeled_by(), labeling_time.greater_than(), etc."
             )
 
         # Get the field name from the filter rule to check for existing filters
@@ -455,7 +457,7 @@ class LogicNode(BaseWorkflowNode):
 
         # Map backend field names to FilterField enum values
         backend_to_field = {
-            "CreatedBy": FilterField.CreatedBy,
+            "CreatedBy": FilterField.LabeledBy,  # Backend CreatedBy maps to user-facing LabeledBy
             "Annotation": FilterField.Annotation,
             "LabeledAt": FilterField.LabeledAt,
             "Sample": FilterField.Sample,

@@ -57,7 +57,7 @@ class DoneNode(BaseWorkflowNode):
         and will not flow to any other nodes in the workflow.
     """
 
-    label: str = Field(default="Done")
+    label: str = Field(default="Done", max_length=50)
     definition_id: WorkflowDefinitionId = Field(
         default=WorkflowDefinitionId.Done, frozen=True, alias="definitionId"
     )

@@ -48,7 +48,7 @@ class WorkflowValidator:
             errors.append(
                 {
                     "node_type": "InitialLabelingNode",
-                    "reason": "Workflow must have exactly one InitialLabelingNode, but found 0",
+                    "reason": "Workflow must have exactly one InitialLabelingNode, but found 0. Use workflow.reset_to_initial_nodes() to create required nodes.",
                     "node_id": "missing",
                 }
             )
@@ -57,7 +57,7 @@ class WorkflowValidator:
                 errors.append(
                     {
                         "node_type": "InitialLabelingNode",
-                        "reason": f"Workflow must have exactly one InitialLabelingNode, but found {len(initial_labeling_nodes)}",
+                        "reason": f"Workflow must have exactly one InitialLabelingNode, but found {len(initial_labeling_nodes)}. Use workflow.reset_to_initial_nodes() to create a valid workflow.",
                         "node_id": node.id,
                     }
                 )
@@ -67,7 +67,7 @@ class WorkflowValidator:
             errors.append(
                 {
                     "node_type": "InitialReworkNode",
-                    "reason": "Workflow must have exactly one InitialReworkNode, but found 0",
+                    "reason": "Workflow must have exactly one InitialReworkNode, but found 0. Use workflow.reset_to_initial_nodes() to create required nodes.",
                     "node_id": "missing",
                 }
             )
@@ -76,7 +76,7 @@ class WorkflowValidator:
                 errors.append(
                     {
                         "node_type": "InitialReworkNode",
-                        "reason": f"Workflow must have exactly one InitialReworkNode, but found {len(initial_rework_nodes)}",
+                        "reason": f"Workflow must have exactly one InitialReworkNode, but found {len(initial_rework_nodes)}. Use workflow.reset_to_initial_nodes() to create a valid workflow.",
                         "node_id": node.id,
                     }
                 )
@@ -164,9 +164,6 @@ class WorkflowValidator:
         nodes = workflow.get_nodes()
         edges = workflow.get_edges()
 
-        if not nodes:
-            return workflow
-
         # Build graph for validation
         graph = ProjectWorkflowGraph()
         for edge in edges:
@@ -180,7 +177,7 @@ class WorkflowValidator:
         errors.extend(connection_errors)
 
         # Store validation results
-        workflow._validation_errors = {"validation": errors}
+        workflow._validation_errors = {"errors": errors}
         return workflow
 
     @staticmethod
