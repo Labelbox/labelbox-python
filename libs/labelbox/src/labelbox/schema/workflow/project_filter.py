@@ -302,10 +302,10 @@ def metadata(
     return result
 
 
-def created_by(
+def labeled_by(
     user_ids: List[str], label: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Filter by users who created the labels.
+    """Filter by users who labeled the data.
 
     Args:
         user_ids: List of user IDs
@@ -320,10 +320,13 @@ def created_by(
     return result
 
 
-def labeled_by(
+def created_by(
     user_ids: List[str], label: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Filter by users who labeled the data.
+    """Filter by users who created the labels.
+
+    .. deprecated:: 2.1.0
+        Use `labeled_by()` instead. This function will be removed in a future version.
 
     Args:
         user_ids: List of user IDs
@@ -332,10 +335,15 @@ def labeled_by(
     Returns:
         Dict representing the filter rule
     """
-    result: Dict[str, Any] = {"LabeledBy": user_ids}
-    if label is not None:
-        result["__label"] = label
-    return result
+    import warnings
+
+    warnings.warn(
+        "created_by() is deprecated and will be removed in a future version. "
+        "Use labeled_by() instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return labeled_by(user_ids, label)
 
 
 def annotation(
@@ -575,7 +583,7 @@ class ProjectWorkflowFilter(BaseModel):
 
     Example Usage:
         filters = ProjectWorkflowFilter([
-            created_by(["user-123"]),
+            labeled_by(["user-123"]),
             sample(20),
             labeled_at.between("2024-01-01", "2024-12-31"),
             metadata([condition.contains("tag", "test")]),
@@ -586,7 +594,7 @@ class ProjectWorkflowFilter(BaseModel):
         logic.set_filters(filters)
 
         # Or add individual filters
-        logic.add_filter(created_by(["user-123"]))
+        logic.add_filter(labeled_by(["user-123"]))
     """
 
     rules: List[Dict[str, Any]] = Field(default_factory=lambda: [])
@@ -636,7 +644,7 @@ class ProjectWorkflowFilter(BaseModel):
         if not isinstance(rule, dict) or not rule:
             raise ValueError(
                 "Filters must be created using filter functions. "
-                "Use functions like created_by([...]), metadata([...]), labeled_at.between(...), etc."
+                "Use functions like labeled_by([...]), metadata([...]), labeled_at.between(...), etc."
             )
 
         # Basic structural validation - ensure we have at least one field
