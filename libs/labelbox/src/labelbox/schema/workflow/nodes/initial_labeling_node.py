@@ -59,7 +59,9 @@ class InitialLabelingNode(BaseWorkflowNode):
         and cannot have incoming connections from other nodes.
     """
 
-    label: str = Field(default="Initial labeling task", frozen=True)
+    label: str = Field(
+        default="Initial labeling task", frozen=True, max_length=50
+    )
     filter_logic: Literal["and", "or"] = Field(
         default=DEFAULT_FILTER_LOGIC_AND, alias="filterLogic"
     )
@@ -84,6 +86,7 @@ class InitialLabelingNode(BaseWorkflowNode):
         default=None,
         description="Maximum contributions per user (null means infinite)",
         alias="maxContributionsPerUser",
+        ge=0,
     )
     node_config: List[ConfigEntry] = Field(
         default_factory=lambda: [],

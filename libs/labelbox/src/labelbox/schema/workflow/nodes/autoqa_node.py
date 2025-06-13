@@ -79,7 +79,7 @@ class AutoQANode(BaseWorkflowNode):
         The evaluation results determine automatic routing without human intervention.
     """
 
-    label: str = Field(default="Label Score (AutoQA)")
+    label: str = Field(default="Label Score (AutoQA)", max_length=50)
     filters: List[Dict[str, Any]] = Field(
         default_factory=lambda: [],
         description="Contains the filters for the AutoQA node",

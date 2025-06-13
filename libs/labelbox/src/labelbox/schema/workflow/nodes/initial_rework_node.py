@@ -66,7 +66,9 @@ class InitialReworkNode(BaseWorkflowNode):
         to ensure proper routing in the Labelbox platform.
     """
 
-    label: str = Field(default="Rework (all rejected)", frozen=True)
+    label: str = Field(
+        default="Rework (all rejected)", frozen=True, max_length=50
+    )
     filter_logic: Literal["and", "or"] = Field(
         default=DEFAULT_FILTER_LOGIC_AND, alias="filterLogic"
     )
@@ -100,6 +102,7 @@ class InitialReworkNode(BaseWorkflowNode):
         default=None,
         description="Maximum contributions per user (null means infinite)",
         alias="maxContributionsPerUser",
+        ge=0,
     )
 
     @field_validator("individual_assignment", mode="before")

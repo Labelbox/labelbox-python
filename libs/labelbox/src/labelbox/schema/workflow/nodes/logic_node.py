@@ -30,7 +30,9 @@ class LogicNode(BaseWorkflowNode):
     """Logic node. One or more instances possible. One input, two outputs (if/else)."""
 
     label: str = Field(
-        default="Logic", description="Display name for the logic node"
+        default="Logic",
+        description="Display name for the logic node",
+        max_length=50,
     )
     filters: List[Dict[str, Any]] = Field(
         default_factory=lambda: [],

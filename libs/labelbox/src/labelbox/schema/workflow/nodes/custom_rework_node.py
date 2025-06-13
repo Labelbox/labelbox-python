@@ -81,7 +81,7 @@ class CustomReworkNode(BaseWorkflowNode):
         rework processes and quality checks.
     """
 
-    label: str = Field(default="")
+    label: str = Field(default="", max_length=50)
     node_config: List[ConfigEntry] = Field(
         default_factory=lambda: [],
         description="Contains assignment rules etc.",
@@ -117,6 +117,7 @@ class CustomReworkNode(BaseWorkflowNode):
         default=None,
         description="Maximum contributions per user (null means infinite)",
         alias="maxContributionsPerUser",
+        ge=0,
     )
     # Has one input and one output
     output_else: None = Field(default=None, frozen=True)  # Only one output (if)
