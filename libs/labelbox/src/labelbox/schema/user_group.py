@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, ClassVar, Dict, Iterator, List, Optional, Set
+from typing import Any, Dict, Iterator, List, Optional, Set
 
 from lbox.exceptions import (
     InvalidQueryError,
@@ -108,14 +108,6 @@ class UserGroup(BaseModel):
         Only users with no organization role (orgRole: null) can be added to
         UserGroups. Users with any organization role will be rejected.
     """
-
-    # UserGroup roles that cannot be assigned (from Labelbox business rules)
-    UNASSIGNABLE_USERGROUP_ROLES: ClassVar[Set[str]] = {
-        "ADMIN",
-        "DATA_ADMIN",
-        "READ-ONLY_ADMIN",
-        "TENANT_ADMIN",
-    }
 
     id: str
     name: str
@@ -579,51 +571,22 @@ class UserGroup(BaseModel):
 
         Returns:
             List of user role dictionaries for the GraphQL mutation.
-
-        Raises:
-            ValueError: If any UserGroup roles are invalid/unassignable.
         """
         user_roles: List[Dict[str, str]] = []
-        invalid_roles = []
 
         # Add legacy users with default role
         for user in self.users:
             if user in eligible_users and self.default_role is not None:
-                if (
-                    self.default_role.name.upper()
-                    in self.UNASSIGNABLE_USERGROUP_ROLES
-                ):
-                    invalid_roles.append(
-                        f"Default role '{self.default_role.name}' cannot be assigned in UserGroups"
-                    )
-                else:
-                    user_roles.append(
-                        {"userId": user.uid, "roleId": self.default_role.uid}
-                    )
+                user_roles.append(
+                    {"userId": user.uid, "roleId": self.default_role.uid}
+                )
 
         # Add members with their explicit roles
         for member in self.members:
             if member.user in eligible_users:
-                if (
-                    member.role.name.upper()
-                    in self.UNASSIGNABLE_USERGROUP_ROLES
-                ):
-                    invalid_roles.append(
-                        f"Role '{member.role.name}' for user {member.user.uid} cannot be assigned in UserGroups"
-                    )
-                else:
-                    user_roles.append(
-                        {"userId": member.user.uid, "roleId": member.role.uid}
-                    )
-
-        # Raise error if any invalid roles found
-        if invalid_roles:
-            raise ValueError(
-                f"Cannot create UserGroup with invalid roles.\n"
-                f"Unassignable roles: {', '.join(self.UNASSIGNABLE_USERGROUP_ROLES)}\n"
-                f"Issues found:\n"
-                + "\n".join(f"  • {detail}" for detail in invalid_roles)
-            )
+                user_roles.append(
+                    {"userId": member.user.uid, "roleId": member.role.uid}
+                )
 
         return user_roles
 
