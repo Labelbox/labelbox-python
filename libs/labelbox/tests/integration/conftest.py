@@ -78,17 +78,31 @@ def project_based_user(client, rand_gen):
 
 
 @pytest.fixture
-def project_pack(client):
-    projects = [
-        client.create_project(
-            name=f"user-proj-{idx}",
-            media_type=MediaType.Image,
-        )
-        for idx in range(2)
-    ]
-    yield projects
-    for proj in projects:
-        proj.delete()
+def project_pack(client, rand_gen):
+    import time
+
+    timestamp = int(time.time())
+    projects = []
+
+    try:
+        for idx in range(2):
+            project_name = f"user-proj-{idx}-{timestamp}-{rand_gen(str)[:8]}"
+            project = client.create_project(
+                name=project_name,
+                media_type=MediaType.Image,
+            )
+            projects.append(project)
+
+        yield projects
+
+    finally:
+        # Ensure cleanup happens even if test fails
+        for proj in projects:
+            try:
+                proj.delete()
+            except Exception as e:
+                # Log but don't fail if cleanup fails
+                print(f"Warning: Failed to delete project {proj.uid}: {e}")
 
 
 @pytest.fixture

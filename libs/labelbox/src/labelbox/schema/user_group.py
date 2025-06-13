@@ -1,36 +1,99 @@
+"""UserGroup implementation for Labelbox Python SDK.
+
+This module provides the UserGroup class and related functionality for managing
+user groups in Labelbox.
+"""
+
+from __future__ import annotations
+
 from collections import defaultdict
+from dataclasses import dataclass
 from enum import Enum
-from typing import Iterator, Set
+from typing import Any, Dict, Iterator, List, Optional, Set
 
 from lbox.exceptions import (
+    InvalidQueryError,
     MalformedQueryException,
+    ResourceConflict,
     ResourceCreationError,
     ResourceNotFoundError,
     UnprocessableEntityError,
 )
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from labelbox import Client
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.project import Project
+from labelbox.schema.role import Role
 from labelbox.schema.user import User
+
+# Constants for UserGroup role restrictions
+INVALID_USERGROUP_ROLES = frozenset(["NONE", "TENANT_ADMIN"])
+"""Roles that cannot be assigned to UserGroup members.
+
+- NONE: Project-based role
+- TENANT_ADMIN: Special Administrative role
+"""
+
+
+@dataclass(eq=False)
+class UserGroupMember:
+    """Represents a user with their role in a user group.
+
+    This class encapsulates the relationship between a user and their assigned
+    role within a specific user group.
+
+    Attributes:
+        user: The User object representing the group member.
+        role: The Role object representing the user's role in the group.
+    """
+
+    user: User
+    role: Role
+
+    def __hash__(self) -> int:
+        """Generate hash based on user and role IDs.
+
+        Returns:
+            Hash value for the UserGroupMember instance.
+        """
+        return hash((self.user.uid, self.role.uid))
+
+    def __eq__(self, other: object) -> bool:
+        """Check equality based on user and role IDs.
+
+        Args:
+            other: Object to compare with.
+
+        Returns:
+            True if both user and role IDs match, False otherwise.
+        """
+        if not isinstance(other, UserGroupMember):
+            return False
+        return (
+            self.user.uid == other.user.uid and self.role.uid == other.role.uid
+        )
+
+    def __post_init__(self) -> None:
+        """Validate that the role is allowed for UserGroup members.
+
+        Raises:
+            ValueError: If the role is not allowed in UserGroups.
+        """
+        if self.role and hasattr(self.role, "name"):
+            role_name = self.role.name.upper() if self.role.name else ""
+            if role_name in INVALID_USERGROUP_ROLES:
+                raise ValueError(
+                    f"Role '{role_name}' cannot be assigned to UserGroup members. "
+                    f"UserGroup members cannot have '{role_name}' roles."
+                )
 
 
 class UserGroupColor(Enum):
-    """
-    Enum representing the colors available for a group.
+    """Enum representing the available colors for user groups.
 
-    Attributes:
-        BLUE (str): Hex color code for blue (#9EC5FF).
-        PURPLE (str): Hex color code for purple (#CEB8FF).
-        ORANGE (str): Hex color code for orange (#FFB35F).
-        CYAN (str): Hex color code for cyan (#4ED2F9).
-        PINK (str): Hex color code for pink (#FFAEA9).
-        LIGHT_PINK (str): Hex color code for light pink (#FFA9D5).
-        GREEN (str): Hex color code for green (#3FDC9A).
-        YELLOW (str): Hex color code for yellow (#E7BF00).
-        GRAY (str): Hex color code for gray (#B8C4D3).
+    Each color is represented by its hex color code value.
     """
 
     BLUE = "9EC5FF"
@@ -45,31 +108,38 @@ class UserGroupColor(Enum):
 
 
 class UserGroup(BaseModel):
-    """
-    Represents a user group in Labelbox.
+    """Represents a user group in Labelbox.
+
+    UserGroups allow organizing users and projects together for access control
+    and collaboration. This implementation provides enhanced validation and
+    member management capabilities.
 
     Attributes:
-        id (str): The ID of the user group.
-        name (str): The name of the user group.
-        color (UserGroupColor): The color of the user group.
-        users (Set[UserGroupUser]): The set of users in the user group.
-        projects (Set[UserGroupProject]): The set of projects associated with the user group.
-        client (Client): The Labelbox client object.
+        id: Unique identifier for the user group.
+        name: Display name of the user group.
+        color: Visual color identifier for the group.
+        description: Optional description of the group's purpose.
+        notify_members: Whether to notify members of group changes.
+        default_role: Default role assigned to users added via the legacy users field.
+        users: Legacy set of users (maintained for backward compatibility).
+        members: Set of UserGroupMember objects with explicit roles.
+        projects: Set of projects associated with this group.
+        client: Labelbox client instance for API communication.
 
-    Methods:
-        __init__(self, client: Client)
-        get(self) -> "UserGroup"
-        update(self) -> "UserGroup"
-        create(self) -> "UserGroup"
-        delete(self) -> bool
-        get_user_groups(client: Client) -> Iterator["UserGroup"]
+    Note:
+        Only users with no organization role (orgRole: null) can be added to
+        UserGroups. Users with any organization role will be rejected.
     """
 
     id: str
     name: str
     color: UserGroupColor
-    users: Set[User]
-    projects: Set[Project]
+    description: str = ""
+    notify_members: bool = False
+    default_role: Optional[Role] = None
+    users: Set[User] = Field(default_factory=set)
+    members: Set[UserGroupMember] = Field(default_factory=set)
+    projects: Set[Project] = Field(default_factory=set)
     client: Client
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -79,229 +149,318 @@ class UserGroup(BaseModel):
         id: str = "",
         name: str = "",
         color: UserGroupColor = UserGroupColor.BLUE,
-        users: Set[User] = set(),
-        projects: Set[Project] = set(),
-    ):
-        """
-        Initializes a UserGroup object.
+        description: str = "",
+        notify_members: bool = False,
+        default_role: Optional[Role] = None,
+        users: Optional[Set[User]] = None,
+        members: Optional[Set[UserGroupMember]] = None,
+        projects: Optional[Set[Project]] = None,
+    ) -> None:
+        """Initialize a UserGroup instance.
 
         Args:
-            client (Client): The Labelbox client object.
-            id (str, optional): The ID of the user group. Defaults to an empty string.
-            name (str, optional): The name of the user group. Defaults to an empty string.
-            color (UserGroupColor, optional): The color of the user group. Defaults to UserGroupColor.BLUE.
-            users (Set[User], optional): The set of users in the user group. Defaults to an empty set.
-            projects (Set[Project], optional): The set of projects associated with the user group. Defaults to an empty set.
+            client: Labelbox client for API communication.
+            id: Unique identifier (empty for new groups).
+            name: Display name for the group.
+            color: Visual color identifier.
+            description: Optional description.
+            notify_members: Whether to notify members of changes.
+            default_role: Default role for users added via legacy users field.
+            users: Legacy set of users for backward compatibility.
+            members: Set of members with explicit roles.
+            projects: Set of associated projects.
         """
         super().__init__(
             client=client,
             id=id,
             name=name,
             color=color,
-            users=users,
-            projects=projects,
+            description=description,
+            notify_members=notify_members,
+            default_role=default_role,
+            users=users or set(),
+            members=members or set(),
+            projects=projects or set(),
         )
 
-    def get(self) -> "UserGroup":
-        """
-        Reloads the user group information from the server.
+    def model_post_init(self, __context: Any) -> None:
+        """Validate that default_role is set when users field is used.
 
-        This method sends a GraphQL query to the server to fetch the latest information
-        about the user group, including its name, color, projects, and members. The fetched
-        information is then used to update the corresponding attributes of the `Group` object.
-
-        Returns:
-            UserGroup: The updated `UserGroup` object.
+        Args:
+            __context: Pydantic context (unused).
 
         Raises:
-            ResourceNotFoundError: If the query fails to fetch the group information.
-            ValueError: If the group ID is not provided.
+            ValueError: If users is set but default_role is not provided, or if default_role is invalid.
+        """
+        # Validate that default_role is set when legacy users field is used
+        if self.users and self.default_role is None:
+            raise ValueError(
+                "default_role must be set when using the 'users' field."
+            )
+
+        # Validate that default_role is not an invalid role for UserGroups
+        if self.default_role and hasattr(self.default_role, "name"):
+            role_name = (
+                self.default_role.name.upper() if self.default_role.name else ""
+            )
+            if role_name in INVALID_USERGROUP_ROLES:
+                raise ValueError(
+                    f"default_role cannot be '{role_name}'. "
+                    f"UserGroup members cannot have '{role_name}' roles."
+                )
+
+    def get(self) -> UserGroup:
+        """Reload the user group information from the server.
+
+        Returns:
+            Self with updated information from the server.
+
+        Raises:
+            ValueError: If group ID is not set.
+            ResourceNotFoundError: If the group is not found on the server.
         """
         if not self.id:
             raise ValueError("Group id is required")
+
         query = """
             query GetUserGroupPyApi($id: ID!) {
-                userGroup(where: {id: $id}) {
+                userGroupV2(where: {id: $id}) {
                     id
                     name
                     color
+                    description
                     projects {
-                        nodes {
-                            id
-                            name
-                        }
+                        nodes { id name }
                         totalCount
                     }
                     members {
                         nodes {
                             id
                             email
+                            orgRole { id name }
                         }
                         totalCount
+                        userGroupRoles {
+                            userId
+                            roleId
+                        }
                     }
                 }
-            }        
+            }
         """
-        params = {
-            "id": self.id,
-        }
-        result = self.client.execute(query, params)
-        if not result:
-            raise ResourceNotFoundError(
-                message="Failed to get user group as user group does not exist"
-            )
-        self.name = result["userGroup"]["name"]
-        self.color = UserGroupColor(result["userGroup"]["color"])
-        self.projects = self._get_projects_set(
-            result["userGroup"]["projects"]["nodes"]
-        )
-        self.users = self._get_users_set(
-            result["userGroup"]["members"]["nodes"]
-        )
+
+        result = self.client.execute(query, {"id": self.id})
+        if not result or not result.get("userGroupV2"):
+            raise ResourceNotFoundError(message="User group not found")
+
+        group_data = result["userGroupV2"]
+        self._update_from_response(group_data)
+
         return self
 
-    def update(self) -> "UserGroup":
-        """
-        Updates the group in Labelbox.
+    def update(self) -> UserGroup:
+        """Update the group in Labelbox.
 
         Returns:
-            UserGroup: The updated UserGroup object. (self)
+            Self with updated information from the server.
 
         Raises:
-            ResourceNotFoundError: If the update fails due to unknown user group
-            UnprocessableEntityError: If the update fails due to a malformed input
-            ValueError: If the group id or name is not provided
+            ValueError: If group ID or name is not set, or if projects don't exist.
+            ResourceNotFoundError: If the group or projects are not found.
+            UnprocessableEntityError: If user validation fails.
         """
         if not self.id:
             raise ValueError("Group id is required")
         if not self.name:
             raise ValueError("Group name is required")
+
+        # Validate projects exist
+        for project in self.projects:
+            try:
+                self.client.get_project(project.uid)
+            except ResourceNotFoundError:
+                raise ValueError(
+                    f"Project {project.uid} not found or inaccessible"
+                )
+
+        # Validate default_role is set when legacy users field is used
+        if self.users and self.default_role is None:
+            raise ValueError(
+                "default_role must be set when using the 'users' field."
+            )
+
+        # Filter eligible users and build user roles
+        eligible_users = self._filter_project_based_users()
+        user_roles = self._build_user_roles(eligible_users)
+
         query = """
-        mutation UpdateUserGroupPyApi($id: ID!, $name: String!, $color: String!, $projectIds: [String!]!, $userIds: [String!]!) {
-            updateUserGroup(
-                where: {id: $id}
-                data: {name: $name, color: $color, projectIds: $projectIds, userIds: $userIds}
+        mutation UpdateUserGroupPyApi($id: ID!, $name: String!, $description: String, $color: String!, $projectIds: [ID!]!, $userRoles: [UserRoleInput!], $notifyMembers: Boolean) {
+            updateUserGroupV3(
+                where: { id: $id }
+                data: {
+                    name: $name
+                    description: $description
+                    color: $color
+                    projectIds: $projectIds
+                    userRoles: $userRoles
+                    notifyMembers: $notifyMembers
+                }
             ) {
                 group {
                     id
                     name
-                    color
-                    projects {
-                        nodes {
-                            id
-                            name
-                        }
-                    }
-                    members {
-                        nodes {
-                            id
-                            email
-                        }
-                    }
+                    description
+                    updatedAt
+                    createdByUserName
                 }
             }
         }
         """
+
         params = {
             "id": self.id,
             "name": self.name,
+            "description": self.description,
             "color": self.color.value,
             "projectIds": [project.uid for project in self.projects],
-            "userIds": [user.uid for user in self.users],
+            "userRoles": user_roles,
+            "notifyMembers": self.notify_members,
         }
+
         try:
-            result = self.client.execute(query, params)
+            result = self.client.execute(query, params, experimental=True)
             if not result:
-                raise ResourceNotFoundError(
-                    message="Failed to update user group as user group does not exist"
-                )
+                raise ResourceNotFoundError("Failed to update user group")
+
+            group_data = result["updateUserGroupV3"]["group"]
+            # Update basic fields from mutation response
+            self.name = group_data["name"]
+            self.description = group_data.get("description", "")
+
+            # Fetch complete group data including projects and members
+            self.get()
+
         except MalformedQueryException as e:
             raise UnprocessableEntityError("Failed to update user group") from e
+        except UnprocessableEntityError as e:
+            self._handle_user_validation_error(e, "update")
+
         return self
 
-    def create(self) -> "UserGroup":
-        """
-        Creates a new user group.
-
-        Raises:
-            ResourceCreationError: If the group already exists.
-            ValueError: If the group name is not provided.
+    def create(self) -> UserGroup:
+        """Create a new user group in Labelbox.
 
         Returns:
-            UserGroup: The created user group.
+            Self with ID and updated information from the server.
+
+        Raises:
+            ValueError: If group already has ID, name is invalid, or projects don't exist.
+            ResourceCreationError: If creation fails or user validation fails.
+            ResourceConflict: If a group with the same name already exists.
         """
         if self.id:
-            raise ResourceCreationError("Group already exists")
-        if not self.name:
+            raise ValueError("Cannot create group with existing ID")
+        if not self.name or not self.name.strip():
             raise ValueError("Group name is required")
+
+        # Validate projects exist
+        for project in self.projects:
+            try:
+                self.client.get_project(project.uid)
+            except ResourceNotFoundError:
+                raise ValueError(
+                    f"Project {project.uid} not found or inaccessible"
+                )
+
+        # Validate default_role is set when legacy users field is used
+        if self.users and self.default_role is None:
+            raise ValueError(
+                "default_role must be explicitly set when using the 'users' field. "
+                "This ensures you are aware of what role will be assigned to legacy users."
+            )
+
+        # Filter eligible users and build user roles
+        eligible_users = self._filter_project_based_users()
+        user_roles = self._build_user_roles(eligible_users)
+
         query = """
-        mutation CreateUserGroupPyApi($name: String!, $color: String!, $projectIds: [String!]!, $userIds: [String!]!) {
-            createUserGroup(
+        mutation CreateUserGroupPyApi($name: String!, $description: String, $color: String!, $projectIds: [ID!], $userRoles: [UserRoleInput!], $notifyMembers: Boolean, $roleId: String, $searchQuery: AlignerrSearchServiceQuery) {
+            createUserGroupV3(
                 data: {
-                    name: $name,
-                    color: $color,
-                    projectIds: $projectIds,
-                    userIds: $userIds
+                    name: $name
+                    description: $description
+                    color: $color
+                    projectIds: $projectIds
+                    userRoles: $userRoles
+                    notifyMembers: $notifyMembers
+                    roleId: $roleId
+                    searchQuery: $searchQuery
                 }
             ) {
                 group {
                     id
                     name
-                    color
-                    projects {
-                        nodes {
-                            id
-                            name
-                        }
-                    }
-                    members {
-                        nodes {
-                            id
-                            email
-                        }
-                    }
+                    description
+                    updatedAt
+                    createdByUserName
                 }
             }
         }
         """
+
         params = {
             "name": self.name,
+            "description": self.description,
             "color": self.color.value,
             "projectIds": [project.uid for project in self.projects],
-            "userIds": [user.uid for user in self.users],
+            "userRoles": user_roles,
+            "notifyMembers": self.notify_members,
+            "roleId": None,
+            "searchQuery": None,
         }
-        result = None
-        error = None
+
         try:
-            result = self.client.execute(query, params)
-        except Exception as e:
-            error = e
-        if not result or error:
-            # This is client side only, server doesn't have an equivalent error
+            result = self.client.execute(query, params, experimental=True)
+        except ResourceConflict as e:
             raise ResourceCreationError(
-                f"Failed to create user group, either user group name is in use currently, or provided user or projects don't exist server error: {error}"
+                f"User group with name '{self.name}' already exists"
+            ) from e
+        except (UnprocessableEntityError, InvalidQueryError) as e:
+            self._handle_user_validation_error(e, "create")
+        except Exception as e:
+            raise ResourceCreationError(
+                f"Failed to create user group: {str(e)}"
+            ) from e
+
+        if not result:
+            raise ResourceCreationError(
+                "Failed to create user group - no response from server"
             )
-        result = result["createUserGroup"]["group"]
-        self.id = result["id"]
+
+        group_data = result["createUserGroupV3"]["group"]
+        self.id = group_data["id"]
+        # Update basic fields from mutation response
+        self.name = group_data["name"]
+        self.description = group_data.get("description", "")
+
+        # Fetch complete group data including projects and members
+        self.get()
+
         return self
 
     def delete(self) -> bool:
-        """
-        Deletes the user group from Labelbox.
-
-        This method sends a mutation request to the Labelbox API to delete the user group
-        with the specified ID. If the deletion is successful, it returns True. Otherwise,
-        it raises an UnprocessableEntityError and returns False.
+        """Delete the user group from Labelbox.
 
         Returns:
-            bool: True if the user group was successfully deleted, False otherwise.
+            True if deletion was successful.
 
         Raises:
-            ResourceNotFoundError: If the deletion of the user group fails due to not existing
-            ValueError: If the group ID is not provided.
+            ValueError: If group ID is not set.
+            ResourceNotFoundError: If the group is not found.
         """
         if not self.id:
             raise ValueError("Group id is required")
+
         query = """
         mutation DeleteUserGroupPyApi($id: ID!) {
             deleteUserGroup(where: {id: $id}) {
@@ -309,108 +468,304 @@ class UserGroup(BaseModel):
             }
         }
         """
-        params = {"id": self.id}
-        result = self.client.execute(query, params)
+
+        result = self.client.execute(query, {"id": self.id})
         if not result:
             raise ResourceNotFoundError(
                 message="Failed to delete user group as user group does not exist"
             )
         return result["deleteUserGroup"]["success"]
 
-    def get_user_groups(self) -> Iterator["UserGroup"]:
-        """
-        Gets all user groups in Labelbox.
+    @staticmethod
+    def get_user_groups(
+        client: Client, page_size: int = 100
+    ) -> Iterator[UserGroup]:
+        """Get all user groups from Labelbox with pagination support.
 
         Args:
-            client (Client): The Labelbox client.
+            client: Labelbox client for API communication.
+            page_size: Number of groups to fetch per page.
 
-        Returns:
-            Iterator[UserGroup]: An iterator over the user groups.
+        Yields:
+            UserGroup instances for each group found.
         """
         query = """
-            query GetUserGroupsPyApi($after: String) {
-                userGroups(after: $after) {
+            query GetUserGroupsPyApi($first: PageSize, $after: String) {
+                userGroupsV2(first: $first, after: $after) {
+                    totalCount
+                    nextCursor
                     nodes {
                         id
                         name
                         color
-                        projects {
-                            nodes {
-                                id
-                                name
-                            }
+                        description
+                        projects { nodes { id name } totalCount }
+                        members { 
+                            nodes { 
+                                id 
+                                email 
+                                orgRole { id name }
+                            } 
                             totalCount
-                        }
-                        members {
-                            nodes {
-                                id
-                                email
+                            userGroupRoles {
+                                userId
+                                roleId
                             }
-                            totalCount
                         }
                     }
-                    nextCursor
                 }
             }
         """
-        nextCursor = None
+
+        cursor = None
         while True:
-            userGroups = self.client.execute(query, {"after": nextCursor})[
-                "userGroups"
-            ]
-            if not userGroups:
-                return
-                yield
-            groups = userGroups["nodes"]
-            for group in groups:
-                userGroup = UserGroup(self.client)
-                userGroup.id = group["id"]
-                userGroup.name = group["name"]
-                userGroup.color = UserGroupColor(group["color"])
-                userGroup.users = self._get_users_set(group["members"]["nodes"])
-                userGroup.projects = self._get_projects_set(
-                    group["projects"]["nodes"]
+            variables = {"first": page_size}
+            if cursor:
+                variables["after"] = cursor
+
+            result = client.execute(query, variables)
+            if not result or not result.get("userGroupsV2"):
+                break
+
+            for group_data in result["userGroupsV2"]["nodes"]:
+                user_group = UserGroup(client)
+                user_group.id = group_data["id"]
+                user_group.name = group_data["name"]
+                user_group.color = UserGroupColor(group_data["color"])
+                user_group.description = group_data.get("description", "")
+                user_group.projects = user_group._get_projects_set(
+                    group_data["projects"]["nodes"]
                 )
-                yield userGroup
-            nextCursor = userGroups["nextCursor"]
-            if not nextCursor:
-                return
-                yield
+                user_group.members = user_group._get_members_set(
+                    group_data["members"]
+                )
+                yield user_group
 
-    def _get_users_set(self, user_nodes):
-        """
-        Retrieves a set of User objects from the given user nodes.
+            cursor = result["userGroupsV2"].get("nextCursor")
+            if not cursor:
+                break
 
-        Args:
-            user_nodes (list): A list of user nodes containing user information.
+    def _filter_project_based_users(self) -> Set[User]:
+        """Filter users to only include users eligible for UserGroups.
 
-        Returns:
-            set: A set of User objects.
-        """
-        users = set()
-        for user in user_nodes:
-            user_values = defaultdict(lambda: None)
-            user_values["id"] = user["id"]
-            user_values["email"] = user["email"]
-            users.add(User(self.client, user_values))
-        return users
-
-    def _get_projects_set(self, project_nodes):
-        """
-        Retrieves a set of projects based on the given project nodes.
-
-        Args:
-            project_nodes (list): A list of project nodes.
+        Filters out users with specific admin organization roles that cannot be
+        added to UserGroups. Most users should be eligible.
 
         Returns:
-            set: A set of Project objects.
+            Set of users that are eligible to be added to the group.
+        """
+        all_users = set(self.users)
+        for member in self.members:
+            all_users.add(member.user)
+
+        if not all_users:
+            return set()
+
+        user_ids = [user.uid for user in all_users]
+        query = """
+        query CheckUserOrgRolesPyApi($userIds: [ID!]!) {
+            users(where: {id_in: $userIds}) {
+                id
+                orgRole { id name }
+            }
+        }
+        """
+
+        try:
+            result = self.client.execute(query, {"userIds": user_ids})
+            if not result or "users" not in result:
+                return all_users  # Fallback: let server handle validation
+
+            # Check for users with org roles that cannot be used in UserGroups
+            # Only users with no org role (project-based users) can be assigned to UserGroups
+            eligible_user_ids = set()
+            invalid_users = []
+
+            for user_data in result["users"]:
+                org_role = user_data.get("orgRole")
+                user_id = user_data["id"]
+                user_email = user_data.get("email", "unknown")
+
+                if org_role is None:
+                    # Users with no org role (project-based users) are eligible
+                    eligible_user_ids.add(user_id)
+                else:
+                    # Users with ANY workspace org role cannot be assigned to UserGroups
+                    invalid_users.append(
+                        {
+                            "id": user_id,
+                            "email": user_email,
+                            "org_role": org_role.get("name"),
+                        }
+                    )
+
+            # Raise error if any invalid users found
+            if invalid_users:
+                error_details = []
+                for user in invalid_users:
+                    error_details.append(
+                        f"User {user['id']} ({user['email']}) has org role '{user['org_role']}'"
+                    )
+
+                raise ValueError(
+                    f"Cannot create UserGroup with users who have organization roles. "
+                    f"Only project-based users (no org role) can be assigned to UserGroups.\n"
+                    f"Invalid users:\n"
+                    + "\n".join(f"  • {detail}" for detail in error_details)
+                )
+
+            return {user for user in all_users if user.uid in eligible_user_ids}
+
+        except Exception:
+            return all_users  # Fallback: let server handle validation
+
+    def _build_user_roles(
+        self, eligible_users: Set[User]
+    ) -> List[Dict[str, str]]:
+        """Build user roles array for GraphQL mutation.
+
+        Args:
+            eligible_users: Set of users that passed project-based validation.
+
+        Returns:
+            List of user role dictionaries for the GraphQL mutation.
+        """
+        user_roles: List[Dict[str, str]] = []
+
+        # Add legacy users with default role
+        for user in self.users:
+            if user in eligible_users and self.default_role is not None:
+                user_roles.append(
+                    {"userId": user.uid, "roleId": self.default_role.uid}
+                )
+
+        # Add members with their explicit roles
+        for member in self.members:
+            if member.user in eligible_users:
+                user_roles.append(
+                    {"userId": member.user.uid, "roleId": member.role.uid}
+                )
+
+        return user_roles
+
+    def _update_from_response(self, group_data: Dict[str, Any]) -> None:
+        """Update object state from server response.
+
+        Args:
+            group_data: Dictionary containing group data from GraphQL response.
+        """
+        self.name = group_data["name"]
+        # Handle missing color field in V3 response
+        if "color" in group_data:
+            self.color = UserGroupColor(group_data["color"])
+        self.description = group_data.get("description", "")
+        # notifyMembers field is not available in GraphQL response, so we keep the current value
+        self.projects = self._get_projects_set(group_data["projects"]["nodes"])
+        self.members = self._get_members_set(group_data["members"])
+        self.users = set()  # Clear legacy users
+
+    def _handle_user_validation_error(
+        self, error: Exception, operation: str
+    ) -> None:
+        """Handle user validation errors with helpful messages.
+
+        Args:
+            error: The original exception that occurred.
+            operation: The operation being performed ('create' or 'update').
+
+        Raises:
+            ResourceCreationError: For create operations with validation errors.
+            UnprocessableEntityError: For update operations with validation errors.
+        """
+        error_msg = str(error)
+        if "admin" in error_msg.lower() or "permission" in error_msg.lower():
+            error_class = (
+                ResourceCreationError
+                if operation == "create"
+                else UnprocessableEntityError
+            )
+            raise error_class(
+                f"Cannot {operation} user group: {error_msg}. "
+                "Note: Users with admin organization roles cannot be added to UserGroups. "
+                "Only users with project-based roles (org role 'None') can be added."
+            ) from error
+        else:
+            error_class = (
+                ResourceCreationError
+                if operation == "create"
+                else UnprocessableEntityError
+            )
+            raise error_class(
+                f"Cannot {operation} user group: {error_msg}"
+            ) from error
+
+    def _get_projects_set(
+        self, project_nodes: List[Dict[str, Any]]
+    ) -> Set[Project]:
+        """Convert project nodes from GraphQL response to Project objects.
+
+        Args:
+            project_nodes: List of project dictionaries from GraphQL response.
+
+        Returns:
+            Set of Project objects.
         """
         projects = set()
-        for project in project_nodes:
-            project_values = defaultdict(lambda: None)
-            project_values["id"] = project["id"]
-            project_values["name"] = project["name"]
-            project_values["editorTaskType"] = EditorTaskType.Missing.value
+        for node in project_nodes:
+            project_values: defaultdict[str, Any] = defaultdict(lambda: None)
+            project_values["id"] = node["id"]
+            project_values["name"] = node["name"]
+            # Provide default values for required fields
             project_values["mediaType"] = MediaType.Image.value
+            project_values["editorTaskType"] = EditorTaskType.Missing.value
             projects.add(Project(self.client, project_values))
         return projects
+
+    def _get_members_set(
+        self, members_data: Dict[str, Any]
+    ) -> Set[UserGroupMember]:
+        """Convert member data from GraphQL response to UserGroupMember objects.
+
+        Uses the userGroupRoles from the GraphQL response to create UserGroupMember
+        objects with the correct roles.
+
+        Args:
+            members_data: Dictionary containing member nodes from GraphQL response.
+
+        Returns:
+            Set of UserGroupMember objects with their UserGroup roles.
+        """
+        members = set()
+        member_nodes = members_data.get("nodes", [])
+        user_group_roles = members_data.get("userGroupRoles", [])
+
+        # Create a mapping from userId to roleId
+        user_role_mapping = {
+            role_data["userId"]: role_data["roleId"]
+            for role_data in user_group_roles
+        }
+
+        for node in member_nodes:
+            # Create User with minimal required fields
+            user_values: defaultdict[str, Any] = defaultdict(lambda: None)
+            user_values["id"] = node["id"]
+            user_values["email"] = node["email"]
+            user = User(self.client, user_values)
+
+            # Get the role for this user from the mapping
+            role_id = user_role_mapping.get(node["id"])
+            if role_id:
+                # We need to fetch the role details since we only have the roleId
+                # For now, create a minimal Role object with just the ID
+                role_values: defaultdict[str, Any] = defaultdict(lambda: None)
+                role_values["id"] = role_id
+                # We don't have the role name from this response, so we'll leave it as None
+                # The Role object will fetch the name when needed
+                role = Role(self.client, role_values)
+
+                members.add(UserGroupMember(user=user, role=role))
+            elif self.default_role:
+                # Fallback to default role if no role mapping found
+                members.add(UserGroupMember(user=user, role=self.default_role))
+
+        return members
