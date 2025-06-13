@@ -101,7 +101,7 @@ class ListField:
         Args:
             values: List of IDs to match
         """
-        return {self._field_name: values, "__operator": "is"}
+        return {self._field_name: values}
 
     def is_not_one_of(self, values: List[str]) -> Dict[str, Any]:
         """Filter for items that are NOT one of the specified values.
@@ -171,30 +171,12 @@ class FeatureRangeField:
 batch = ListField("Batch")
 consensus_average = RangeField("ConsensusAverage")
 feature_consensus_average = FeatureRangeField("FeatureConsensusAverage")
-# Note: dataset is a function, not a field object
 
-
-# Function versions for filter functions
-def dataset(
-    dataset_ids: List[str], label: Optional[str] = None
-) -> Dict[str, Any]:
-    """Filter by dataset IDs.
-
-    Args:
-        dataset_ids: List of dataset IDs to filter by
-        label: Optional custom label to display in the UI instead of the default "DS-0" format
-
-    Returns:
-        Dict representing the filter rule
-
-    Examples:
-        dataset(["dataset-123", "dataset-456"])
-        dataset(["dataset-123"], label="My Custom Dataset")
-    """
-    result: Dict[str, Any] = {"Dataset": dataset_ids}
-    if label is not None:
-        result["__label"] = label
-    return result
+# List-based filter field instances
+labeled_by = ListField("CreatedBy")  # Maps to backend CreatedBy field
+dataset = ListField("Dataset")
+issue_category = ListField("IssueCategory")
+annotation = ListField("Annotation")
 
 
 class MetadataCondition:
@@ -302,60 +284,6 @@ def metadata(
     return result
 
 
-def created_by(
-    user_ids: List[str], label: Optional[str] = None
-) -> Dict[str, Any]:
-    """Filter by users who created the labels.
-
-    Args:
-        user_ids: List of user IDs
-        label: Optional custom label to display in the UI
-
-    Returns:
-        Dict representing the filter rule
-    """
-    result: Dict[str, Any] = {"CreatedBy": user_ids}
-    if label is not None:
-        result["__label"] = label
-    return result
-
-
-def labeled_by(
-    user_ids: List[str], label: Optional[str] = None
-) -> Dict[str, Any]:
-    """Filter by users who labeled the data.
-
-    Args:
-        user_ids: List of user IDs
-        label: Optional custom label to display in the UI
-
-    Returns:
-        Dict representing the filter rule
-    """
-    result: Dict[str, Any] = {"LabeledBy": user_ids}
-    if label is not None:
-        result["__label"] = label
-    return result
-
-
-def annotation(
-    schema_node_ids: List[str], label: Optional[str] = None
-) -> Dict[str, Any]:
-    """Filter by annotation schema node IDs.
-
-    Args:
-        schema_node_ids: List of annotation schema node IDs
-        label: Optional custom label to display in the UI
-
-    Returns:
-        Dict representing the filter rule
-    """
-    result: Dict[str, Any] = {"Annotation": schema_node_ids}
-    if label is not None:
-        result["__label"] = label
-    return result
-
-
 def sample(percentage: int, label: Optional[str] = None) -> Dict[str, Any]:
     """Filter by random sample percentage.
 
@@ -378,24 +306,6 @@ def sample(percentage: int, label: Optional[str] = None) -> Dict[str, Any]:
     decimal_value = percentage / 100.0
 
     result: Dict[str, Any] = {"Sample": decimal_value}
-    if label is not None:
-        result["__label"] = label
-    return result
-
-
-def issue_category(
-    category_ids: List[str], label: Optional[str] = None
-) -> Dict[str, Any]:
-    """Filter by issue category IDs.
-
-    Args:
-        category_ids: List of issue category IDs
-        label: Optional custom label to display in the UI
-
-    Returns:
-        Dict representing the filter rule
-    """
-    result: Dict[str, Any] = {"IssueCategory": category_ids}
     if label is not None:
         result["__label"] = label
     return result
@@ -568,14 +478,17 @@ def convert_to_api_format(filter_rule: Dict[str, Any]) -> Dict[str, Any]:
 
 class ProjectWorkflowFilter(BaseModel):
     """
-    Project workflow filter collection that enforces filter function syntax.
+    Project workflow filter collection that enforces filter syntax.
 
-    Only accepts filters created using filter functions in this module.
+    Only accepts filters created using filter field objects and functions in this module.
     This ensures type safety, IDE support, and eliminates manual string construction errors.
 
     Example Usage:
         filters = ProjectWorkflowFilter([
-            created_by(["user-123"]),
+            labeled_by.is_one_of(["user-123"]),
+            dataset.is_one_of(["dataset-456"]),
+            issue_category.is_one_of(["cat1", "cat2"]),
+            annotation.is_one_of(["bbox", "segmentation"]),
             sample(20),
             labeled_at.between("2024-01-01", "2024-12-31"),
             metadata([condition.contains("tag", "test")]),
@@ -586,7 +499,7 @@ class ProjectWorkflowFilter(BaseModel):
         logic.set_filters(filters)
 
         # Or add individual filters
-        logic.add_filter(created_by(["user-123"]))
+        logic.add_filter(labeled_by.is_one_of(["user-123"]))
     """
 
     rules: List[Dict[str, Any]] = Field(default_factory=lambda: [])
@@ -636,7 +549,7 @@ class ProjectWorkflowFilter(BaseModel):
         if not isinstance(rule, dict) or not rule:
             raise ValueError(
                 "Filters must be created using filter functions. "
-                "Use functions like created_by([...]), metadata([...]), labeled_at.between(...), etc."
+                "Use functions like labeled_by([...]), metadata([...]), labeled_at.between(...), etc."
             )
 
         # Basic structural validation - ensure we have at least one field

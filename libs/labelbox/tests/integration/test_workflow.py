@@ -3,7 +3,7 @@ Integration tests for Workflow functionality.
 
 Tests the following workflow operations:
 - Creating workflows with different node types
-- Updating workflows without reset_config()
+- Updating workflows with configuration changes
 - Copying workflows between projects
 - LogicNode filter operations (add/remove/update)
 - Node removal operations with validation
@@ -20,8 +20,8 @@ from labelbox.schema.workflow import (
     ProjectWorkflowFilter,
     WorkflowDefinitionId,
     FilterField,
-    # Import filter functions
-    created_by,
+    LabelingConfig,
+    labeled_by,
     dataset,
     natural_language,
     labeling_time,
@@ -63,22 +63,18 @@ def test_workflow_creation(client, test_projects):
     source_project, _ = test_projects
 
     workflow = source_project.get_workflow()
-    workflow.reset_config()
 
-    # All valid workflows must have both InitialLabelingNode and InitialReworkNode
-    initial_labeling_node = workflow.add_node(
-        type=NodeType.InitialLabeling, instructions="Start labeling here"
+    # Create workflow with required initial nodes
+    initial_nodes = workflow.reset_to_initial_nodes(
+        labeling_config=LabelingConfig(instructions="Start labeling here")
     )
 
-    initial_rework_node = workflow.add_node(type=NodeType.InitialRework)
-
     review_node = workflow.add_node(type=NodeType.Review, name="Review Task")
-
     done_node = workflow.add_node(type=NodeType.Done, name="Done")
 
     # Connect both initial nodes to review node
-    workflow.add_edge(initial_labeling_node, review_node)
-    workflow.add_edge(initial_rework_node, review_node)
+    workflow.add_edge(initial_nodes.labeling, review_node)
+    workflow.add_edge(initial_nodes.rework, review_node)
     workflow.add_edge(review_node, done_node, NodeOutput.Approved)
 
     workflow.update_config(reposition=False)
@@ -111,16 +107,12 @@ def test_workflow_creation_simple(client):
         # Get or create workflow
         workflow = project.get_workflow()
 
-        # Clear config
-        workflow.reset_config()
-
-        # Create workflow nodes
-        initial_labeling = workflow.add_node(
-            type=NodeType.InitialLabeling,
-            instructions="This is the entry point",
+        # Create workflow with required initial nodes
+        initial_nodes = workflow.reset_to_initial_nodes(
+            labeling_config=LabelingConfig(
+                instructions="This is the entry point"
+            )
         )
-
-        initial_rework = workflow.add_node(type=NodeType.InitialRework)
 
         review = workflow.add_node(
             type=NodeType.Review, name="Test review task"
@@ -133,8 +125,8 @@ def test_workflow_creation_simple(client):
         rework = workflow.add_node(type=NodeType.Rework)
 
         # Connect nodes using NodeOutput enum
-        workflow.add_edge(initial_labeling, review)
-        workflow.add_edge(initial_rework, review)
+        workflow.add_edge(initial_nodes.labeling, review)
+        workflow.add_edge(initial_nodes.rework, review)
         workflow.add_edge(review, rework, NodeOutput.Rejected)
         workflow.add_edge(review, done, NodeOutput.Approved)
 
@@ -204,13 +196,10 @@ def test_node_types(client, test_projects):
     source_project, _ = test_projects
 
     workflow = source_project.get_workflow()
-    workflow.reset_config()
 
-    initial_labeling = workflow.add_node(
-        type=NodeType.InitialLabeling, instructions="Start labeling"
+    initial_nodes = workflow.reset_to_initial_nodes(
+        labeling_config=LabelingConfig(instructions="Start labeling")
     )
-
-    initial_rework = workflow.add_node(type=NodeType.InitialRework)
 
     review = workflow.add_node(type=NodeType.Review, name="Review Task")
 
@@ -227,8 +216,8 @@ def test_node_types(client, test_projects):
     done1 = workflow.add_node(type=NodeType.Done, name="Complete 1")
     done2 = workflow.add_node(type=NodeType.Done, name="Complete 2")
 
-    workflow.add_edge(initial_labeling, review)
-    workflow.add_edge(initial_rework, review)
+    workflow.add_edge(initial_nodes.labeling, review)
+    workflow.add_edge(initial_nodes.rework, review)
     workflow.add_edge(review, logic, NodeOutput.Approved)
     workflow.add_edge(logic, rework, NodeOutput.If)
     workflow.add_edge(logic, custom_rework, NodeOutput.Else)
@@ -257,27 +246,25 @@ def test_node_types(client, test_projects):
 
 
 def test_workflow_update_without_reset(client, test_projects):
-    """Test updating an existing workflow without reset_config()."""
+    """Test updating an existing workflow by modifying node properties."""
     source_project, _ = test_projects
 
     # Create initial workflow
     workflow = source_project.get_workflow()
-    workflow.reset_config()
 
-    initial_labeling = workflow.add_node(
-        type=NodeType.InitialLabeling, instructions="Original instructions"
+    initial_nodes = workflow.reset_to_initial_nodes(
+        labeling_config=LabelingConfig(instructions="Original instructions")
     )
-    initial_rework = workflow.add_node(type=NodeType.InitialRework)
     review = workflow.add_node(type=NodeType.Review, name="Original Review")
     done = workflow.add_node(type=NodeType.Done, name="Original Done")
 
-    workflow.add_edge(initial_labeling, review)
-    workflow.add_edge(initial_rework, review)
+    workflow.add_edge(initial_nodes.labeling, review)
+    workflow.add_edge(initial_nodes.rework, review)
     workflow.add_edge(review, done, NodeOutput.Approved)
 
     workflow.update_config(reposition=False)
 
-    # Update workflow without reset_config()
+    # Update workflow by modifying existing nodes
     updated_workflow = source_project.get_workflow()
     nodes = updated_workflow.get_nodes()
 
@@ -335,30 +322,91 @@ def test_workflow_update_without_reset(client, test_projects):
     assert review_nodes[0].name == "Updated Review"
 
 
+def test_workflow_validation_in_update_config(client, test_projects):
+    """Test the mandatory validation behavior in update_config."""
+    source_project, _ = test_projects
+
+    # Create an invalid workflow (missing connections)
+    workflow = source_project.get_workflow()
+
+    # Create workflow with required initial nodes but invalid connections
+    initial_nodes = workflow.reset_to_initial_nodes()
+    # Add a review node with no connections - this should cause validation errors
+    review = workflow.add_node(type=NodeType.Review, name="Unconnected Review")
+
+    # Only connect the initial nodes together, leaving review disconnected
+    workflow.add_edge(
+        initial_nodes.labeling, initial_nodes.rework
+    )  # This is also invalid
+
+    # Test 1: update_config should validate and fail with invalid workflow
+    with pytest.raises(ValueError) as exc_info:
+        workflow.update_config()
+
+    assert "validation errors" in str(exc_info.value).lower()
+    assert "Cannot update workflow configuration" in str(exc_info.value)
+
+    # Test 2: Multiple calls should consistently fail validation
+    with pytest.raises(ValueError) as exc_info:
+        workflow.update_config()
+
+    assert "validation errors" in str(exc_info.value).lower()
+
+    # Test 3: Validation errors should be consistently reported
+    with pytest.raises(ValueError) as exc_info:
+        workflow.update_config()
+
+    # Verify the error message is clear and helpful
+    error_message = str(exc_info.value)
+    assert "validation errors" in error_message.lower()
+    assert "please fix these issues" in error_message.lower()
+
+    # Test 4: Create a valid workflow and test successful update
+    initial_nodes = workflow.reset_to_initial_nodes()
+    review = workflow.add_node(type=NodeType.Review, name="Connected Review")
+    done = workflow.add_node(type=NodeType.Done, name="Final")
+
+    # Create proper connections
+    workflow.add_edge(initial_nodes.labeling, review)
+    workflow.add_edge(initial_nodes.rework, review)
+    workflow.add_edge(review, done, NodeOutput.Approved)
+
+    # This should work without errors
+    result = workflow.update_config()
+    assert result is not None
+
+    # Test successful update - should not raise any exceptions
+    try:
+        workflow.update_config()
+        # If we get here, the update was successful
+        assert True
+    except ValueError:
+        # Should not happen with a valid workflow
+        assert False, "Valid workflow should not raise validation errors"
+
+
 def test_workflow_copy(client, test_projects):
     """Test copying a workflow between projects."""
     source_project, target_project = test_projects
 
     # Create source workflow
     source_workflow = source_project.get_workflow()
-    source_workflow.reset_config()
 
-    initial_labeling = source_workflow.add_node(
-        type=NodeType.InitialLabeling, instructions="Source workflow"
+    initial_nodes = source_workflow.reset_to_initial_nodes(
+        labeling_config=LabelingConfig(instructions="Source workflow")
     )
-    initial_rework = source_workflow.add_node(type=NodeType.InitialRework)
     review = source_workflow.add_node(
         type=NodeType.Review, name="Source Review"
     )
     logic = source_workflow.add_node(
         type=NodeType.Logic,
         name="Source Logic",
-        filters=ProjectWorkflowFilter([created_by(["source-user"])]),
+        filters=ProjectWorkflowFilter([labeled_by.is_one_of(["source-user"])]),
     )
     done = source_workflow.add_node(type=NodeType.Done, name="Source Done")
 
-    source_workflow.add_edge(initial_labeling, review)
-    source_workflow.add_edge(initial_rework, review)
+    source_workflow.add_edge(initial_nodes.labeling, review)
+    source_workflow.add_edge(initial_nodes.rework, review)
     source_workflow.add_edge(review, logic, NodeOutput.Approved)
     source_workflow.add_edge(logic, done, NodeOutput.If)
 
@@ -386,23 +434,19 @@ def test_production_logic_node_with_comprehensive_filters(
     source_project, _ = test_projects
 
     workflow = source_project.get_workflow()
-    workflow.reset_config()
 
     # Create basic workflow structure
-    initial_labeling = workflow.add_node(type=NodeType.InitialLabeling)
-    initial_rework = workflow.add_node(type=NodeType.InitialRework)
+    initial_nodes = workflow.reset_to_initial_nodes()
     done = workflow.add_node(type=NodeType.Done)
 
     # Create production-like logic node with comprehensive filters
-    # Note: match_filters=MatchFilters.Any should set filter_logic="or" but
-    # the backend may not persist this correctly, causing it to default to "and"
     logic = workflow.add_node(
         type=NodeType.Logic,
         name="Production Logic",
         match_filters=MatchFilters.Any,
         filters=ProjectWorkflowFilter(
             [
-                created_by(
+                labeled_by.is_one_of(
                     ["cly7gzohg07zz07v5fqs63zmx", "cl7k7a9x1764808vk6bm1hf8e"]
                 ),
                 metadata([m_condition.contains("tag", ["test"])]),
@@ -413,8 +457,8 @@ def test_production_logic_node_with_comprehensive_filters(
                 ),
                 labeling_time.greater_than(1000),
                 review_time.less_than_or_equal(100),
-                dataset(["cm37vyets000z072314wxgt0l"]),
-                annotation(["cm37w0e0500lf0709ba7c42m9"]),
+                dataset.is_one_of(["cm37vyets000z072314wxgt0l"]),
+                annotation.is_one_of(["cm37w0e0500lf0709ba7c42m9"]),
                 consensus_average(0.17, 0.61),
                 model_prediction(
                     [
@@ -429,8 +473,8 @@ def test_production_logic_node_with_comprehensive_filters(
         ),
     )
 
-    workflow.add_edge(initial_labeling, logic)
-    workflow.add_edge(initial_rework, logic)
+    workflow.add_edge(initial_nodes.labeling, logic)
+    workflow.add_edge(initial_nodes.rework, logic)
     workflow.add_edge(logic, done, NodeOutput.If)
 
     workflow.update_config(reposition=False)
@@ -450,15 +494,13 @@ def test_production_logic_node_with_comprehensive_filters(
         len(filters) >= 10
     ), f"Should have at least 10 filters, got {len(filters)}"
 
-    # The filter_logic may default to "and" even when MatchFilters.Any is specified
-    # This is likely due to backend persistence behavior - the important thing is
-    # that the comprehensive filters are properly set and parsed
+    # Verify filter logic is properly set
     assert production_logic.filter_logic in [
         "and",
         "or",
     ], "Should have valid filter logic"
 
-    # Verify key filter types are present - this is the main test objective
+    # Verify key filter types are present
     filter_fields = [f["field"] for f in filters]
     expected_fields = [
         "CreatedBy",
@@ -468,7 +510,7 @@ def test_production_logic_node_with_comprehensive_filters(
         "LabelingTime",
         "Dataset",
         "ModelPrediction",
-        "NlSearch",  # From natural_language filter
+        "NlSearch",
     ]
     for field in expected_fields:
         assert field in filter_fields, f"Should have {field} filter"
@@ -479,10 +521,8 @@ def test_filter_operations_with_persistence(client, test_projects):
     source_project, _ = test_projects
 
     workflow = source_project.get_workflow()
-    workflow.reset_config()
 
-    initial_labeling = workflow.add_node(type=NodeType.InitialLabeling)
-    initial_rework = workflow.add_node(type=NodeType.InitialRework)
+    initial_nodes = workflow.reset_to_initial_nodes()
     done = workflow.add_node(type=NodeType.Done)
 
     # Create logic node with initial filters
@@ -491,15 +531,15 @@ def test_filter_operations_with_persistence(client, test_projects):
         name="Filter Test",
         filters=ProjectWorkflowFilter(
             [
-                created_by(["user1", "user2"]),
+                labeled_by.is_one_of(["user1", "user2"]),
                 sample(30),
                 labeling_time.greater_than(500),
             ]
         ),
     )
 
-    workflow.add_edge(initial_labeling, logic)
-    workflow.add_edge(initial_rework, logic)
+    workflow.add_edge(initial_nodes.labeling, logic)
+    workflow.add_edge(initial_nodes.rework, logic)
     workflow.add_edge(logic, done, NodeOutput.If)
 
     workflow.update_config(reposition=False)
@@ -518,7 +558,7 @@ def test_filter_operations_with_persistence(client, test_projects):
     ), f"Should start with 3 filters, got {initial_count}"
 
     # Test removing filters with persistence
-    logic_node.remove_filter(FilterField.CreatedBy)
+    logic_node.remove_filter(FilterField.LabeledBy)
     logic_node.remove_filter(FilterField.Sample)
     updated_workflow.update_config(reposition=False)
 
@@ -542,10 +582,10 @@ def test_filter_operations_with_persistence(client, test_projects):
     ), "LabelingTime filter should remain"
     assert (
         "CreatedBy" not in remaining_fields
-    ), "CreatedBy filter should be removed"
+    ), "LabeledBy filter should be removed"
 
     # Test adding filters with persistence
-    logic_after_removal.add_filter(dataset(["new-dataset"]))
+    logic_after_removal.add_filter(dataset.is_one_of(["new-dataset"]))
     logic_after_removal.add_filter(
         metadata([m_condition.starts_with("priority", "high")])
     )
@@ -571,11 +611,9 @@ def test_node_removal_with_validation(client, test_projects):
     source_project, _ = test_projects
 
     workflow = source_project.get_workflow()
-    workflow.reset_config()
 
     # Create workflow with removable nodes
-    initial_labeling = workflow.add_node(type=NodeType.InitialLabeling)
-    initial_rework = workflow.add_node(type=NodeType.InitialRework)
+    initial_nodes = workflow.reset_to_initial_nodes()
     review = workflow.add_node(type=NodeType.Review, name="Primary Review")
     logic = workflow.add_node(
         type=NodeType.Logic,
@@ -592,8 +630,8 @@ def test_node_removal_with_validation(client, test_projects):
     done_final = workflow.add_node(type=NodeType.Done, name="Final")
 
     # Create connections
-    workflow.add_edge(initial_labeling, review)
-    workflow.add_edge(initial_rework, review)
+    workflow.add_edge(initial_nodes.labeling, review)
+    workflow.add_edge(initial_nodes.rework, review)
     workflow.add_edge(review, logic, NodeOutput.Approved)
     workflow.add_edge(logic, done_high, NodeOutput.If)
     workflow.add_edge(logic, secondary_review, NodeOutput.Else)
@@ -661,9 +699,8 @@ def test_node_removal_with_validation(client, test_projects):
     ), "Secondary Rework node should exist"
 
 
-# Remove redundant test - metadata conversion should be unit test
 def test_metadata_multiple_conditions():
-    """Test metadata filter with multiple conditions - unit test for conversion logic."""
+    """Test metadata filter with multiple conditions."""
     multi_filter = {
         "metadata": [
             {"key": "source", "operator": "ends_with", "value": "test1"},
@@ -684,10 +721,8 @@ def test_model_prediction_conditions(client, test_projects):
     source_project, _ = test_projects
 
     workflow = source_project.get_workflow()
-    workflow.reset_config()
 
-    initial_labeling = workflow.add_node(type=NodeType.InitialLabeling)
-    initial_rework = workflow.add_node(type=NodeType.InitialRework)
+    initial_nodes = workflow.reset_to_initial_nodes()
     done = workflow.add_node(type=NodeType.Done)
 
     # Test different model prediction conditions
@@ -712,8 +747,8 @@ def test_model_prediction_conditions(client, test_projects):
     )
 
     # Create connections
-    workflow.add_edge(initial_labeling, logic_none)
-    workflow.add_edge(initial_rework, logic_none)
+    workflow.add_edge(initial_nodes.labeling, logic_none)
+    workflow.add_edge(initial_nodes.rework, logic_none)
     workflow.add_edge(logic_none, logic_one_of, NodeOutput.If)
     workflow.add_edge(logic_one_of, done, NodeOutput.If)
 

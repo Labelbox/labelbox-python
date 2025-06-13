@@ -69,7 +69,7 @@ class ReviewNode(BaseWorkflowNode):
         which default to "and" logic. This allows more flexible routing.
     """
 
-    label: str = Field(default="Review task")
+    label: str = Field(default="Review task", max_length=50)
     # For ReviewNode, filter_logic defaults to "or"
     filter_logic: Literal["and", "or"] = Field(
         default=DEFAULT_FILTER_LOGIC_OR, alias="filterLogic"
@@ -96,6 +96,7 @@ class ReviewNode(BaseWorkflowNode):
         default=None,
         description="Maximum contributions per user (null means infinite)",
         alias="maxContributionsPerUser",
+        ge=0,
     )
     node_config: List[Dict[str, Any]] = Field(
         default_factory=lambda: [],

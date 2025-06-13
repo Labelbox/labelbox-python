@@ -71,7 +71,7 @@ class UnknownWorkflowNode(BaseWorkflowNode):
         as a safety mechanism to prevent data loss during parsing.
     """
 
-    label: str = Field(default="")
+    label: str = Field(default="", max_length=50)
     node_config: Optional[List[Dict[str, Any]]] = Field(
         default=None, alias="config"
     )

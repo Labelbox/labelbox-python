@@ -61,7 +61,7 @@ class ReworkNode(BaseWorkflowNode):
         workflow's initial rework entry point without manual routing.
     """
 
-    label: str = Field(default="Rework")
+    label: str = Field(default="Rework", max_length=50)
     filter_logic: Literal["and", "or"] = Field(
         default=DEFAULT_FILTER_LOGIC_AND, alias="filterLogic"
     )
