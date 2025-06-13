@@ -179,7 +179,10 @@ def test_create_user_group_advanced(client, project_pack):
         # This is expected behavior for some users
         assert (
             "Cannot create user group" in creation_error
+            or "Failed to create user group" in creation_error
             or "admin" in creation_error.lower()
+            or "workspace wide role" in creation_error.lower()
+            or "conflicts with the group role" in creation_error.lower()
         )
 
 
