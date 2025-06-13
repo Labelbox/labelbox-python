@@ -1,3 +1,11 @@
+"""Unit tests for UserGroup functionality.
+
+Note: UserGroup members cannot have certain roles:
+- "NONE" (project-based role) - Users with this role cannot be added to UserGroups
+- "TENANT_ADMIN" - This role cannot be used in UserGroups
+Valid roles for UserGroups include: LABELER, REVIEWER, TEAM_MANAGER, ADMIN, PROJECT_LEAD, etc.
+"""
+
 from collections import defaultdict
 from unittest.mock import MagicMock
 
@@ -17,6 +25,7 @@ from labelbox.schema.user import User
 from labelbox.schema.user_group import (
     UserGroup,
     UserGroupColor,
+    INVALID_USERGROUP_ROLES,
 )
 from labelbox.schema.role import Role
 
@@ -46,9 +55,12 @@ def group_project():
 
 @pytest.fixture
 def mock_role():
+    """Create a mock Role object for testing."""
     role_values = defaultdict(lambda: None)
     role_values["id"] = "role_id"
-    role_values["name"] = "LABELER"
+    role_values["name"] = (
+        "LABELER"  # Use a valid role that can be assigned to UserGroups
+    )
     return Role(MagicMock(Client), role_values)
 
 
@@ -134,6 +146,27 @@ class TestUserGroup:
         assert group.name == "Test Group"
         assert len(group.users) == 1
         assert group.default_role == mock_role
+
+    def test_constructor_validation_error_invalid_default_role(self):
+        """Test that constructor fails when default_role is NONE or TENANT_ADMIN"""
+
+        # Test each invalid role
+        for invalid_role_name in INVALID_USERGROUP_ROLES:
+            # Create a proper Role object with invalid name
+            role_values = defaultdict(lambda: None)
+            role_values["id"] = f"{invalid_role_name.lower()}_role_id"
+            role_values["name"] = invalid_role_name
+            invalid_role = Role(self.client, role_values)
+
+            with pytest.raises(
+                ValueError,
+                match=f"default_role cannot be '{invalid_role_name}'",
+            ):
+                UserGroup(
+                    client=self.client,
+                    name="Test Group",
+                    default_role=invalid_role,
+                )
 
     def test_update_with_exception_name(self):
         group = self.group
@@ -496,6 +529,24 @@ class TestUserGroup:
         assert len(user_groups) == 2
         assert user_groups[0].name == "Group 1"
         assert user_groups[1].name == "Group 2"
+
+    def test_user_group_member_invalid_role_validation(self, group_user):
+        """Test that UserGroupMember fails with invalid roles"""
+        from labelbox.schema.user_group import UserGroupMember
+
+        # Test each invalid role
+        for invalid_role_name in INVALID_USERGROUP_ROLES:
+            # Create a proper Role object with invalid name
+            role_values = defaultdict(lambda: None)
+            role_values["id"] = f"{invalid_role_name.lower()}_role_id"
+            role_values["name"] = invalid_role_name
+            invalid_role = Role(self.client, role_values)
+
+            with pytest.raises(
+                ValueError,
+                match=f"Role '{invalid_role_name}' cannot be assigned to UserGroup members",
+            ):
+                UserGroupMember(user=group_user, role=invalid_role)
 
 
 def test_create_mutation():

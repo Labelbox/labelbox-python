@@ -28,6 +28,14 @@ from labelbox.schema.project import Project
 from labelbox.schema.role import Role
 from labelbox.schema.user import User
 
+# Constants for UserGroup role restrictions
+INVALID_USERGROUP_ROLES = frozenset(["NONE", "TENANT_ADMIN"])
+"""Roles that cannot be assigned to UserGroup members.
+
+- NONE: Project-based role
+- TENANT_ADMIN: Special Administrative role
+"""
+
 
 @dataclass(eq=False)
 class UserGroupMember:
@@ -66,6 +74,20 @@ class UserGroupMember:
         return (
             self.user.uid == other.user.uid and self.role.uid == other.role.uid
         )
+
+    def __post_init__(self) -> None:
+        """Validate that the role is allowed for UserGroup members.
+
+        Raises:
+            ValueError: If the role is not allowed in UserGroups.
+        """
+        if self.role and hasattr(self.role, "name"):
+            role_name = self.role.name.upper() if self.role.name else ""
+            if role_name in INVALID_USERGROUP_ROLES:
+                raise ValueError(
+                    f"Role '{role_name}' cannot be assigned to UserGroup members. "
+                    f"UserGroup members cannot have '{role_name}' roles."
+                )
 
 
 class UserGroupColor(Enum):
@@ -168,13 +190,24 @@ class UserGroup(BaseModel):
             __context: Pydantic context (unused).
 
         Raises:
-            ValueError: If users is set but default_role is not provided.
+            ValueError: If users is set but default_role is not provided, or if default_role is invalid.
         """
         # Validate that default_role is set when legacy users field is used
         if self.users and self.default_role is None:
             raise ValueError(
                 "default_role must be set when using the 'users' field."
             )
+
+        # Validate that default_role is not an invalid role for UserGroups
+        if self.default_role and hasattr(self.default_role, "name"):
+            role_name = (
+                self.default_role.name.upper() if self.default_role.name else ""
+            )
+            if role_name in INVALID_USERGROUP_ROLES:
+                raise ValueError(
+                    f"default_role cannot be '{role_name}'. "
+                    f"UserGroup members cannot have '{role_name}' roles."
+                )
 
     def get(self) -> UserGroup:
         """Reload the user group information from the server.
