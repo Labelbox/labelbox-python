@@ -39,7 +39,14 @@ from labelbox.schema.workflow.edges import (
 from labelbox.schema.workflow.graph import ProjectWorkflowGraph
 
 # Import from monolithic workflow.py file
-from labelbox.schema.workflow.workflow import ProjectWorkflow, NodeType
+from labelbox.schema.workflow.workflow import (
+    ProjectWorkflow,
+    NodeType,
+    InitialNodes,
+)
+
+# Import configuration classes
+from labelbox.schema.workflow.config import LabelingConfig, ReworkConfig
 
 # Import from monolithic project_filter.py file
 from labelbox.schema.workflow.project_filter import (
@@ -93,6 +100,10 @@ __all__ = [
     "NodeType",
     "ProjectWorkflowGraph",
     "ProjectWorkflowFilter",
+    # Workflow configuration
+    "InitialNodes",
+    "LabelingConfig",
+    "ReworkConfig",
     # Filter field objects
     "labeled_by",
     "annotation",

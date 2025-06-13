@@ -19,6 +19,7 @@ from typing import (
     Union,
     Literal,
     overload,
+    NamedTuple,
 )
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
@@ -43,6 +44,7 @@ from labelbox.schema.workflow.nodes import (
     AutoQANode,
 )
 from labelbox.schema.workflow.project_filter import ProjectWorkflowFilter
+from labelbox.schema.workflow.config import LabelingConfig, ReworkConfig
 
 # Import the utility classes
 from labelbox.schema.workflow.workflow_utils import (
@@ -56,6 +58,18 @@ from labelbox.schema.workflow.workflow_operations import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class InitialNodes(NamedTuple):
+    """Container for the two required initial workflow nodes.
+
+    Attributes:
+        labeling: InitialLabeling node for new data entering workflow
+        rework: InitialRework node for rejected data needing corrections
+    """
+
+    labeling: InitialLabelingNode
+    rework: InitialReworkNode
 
 
 def _validate_definition_id(
@@ -475,9 +489,59 @@ class ProjectWorkflow(BaseModel):
             raise ValueError(f"Failed to update workflow: {e}")
 
     # Workflow management operations
-    def reset_config(self) -> "ProjectWorkflow":
-        """Reset the workflow configuration to an empty workflow."""
-        return WorkflowOperations.reset_config(self)
+    def reset_to_initial_nodes(
+        self,
+        labeling_config: Optional[LabelingConfig] = None,
+        rework_config: Optional[ReworkConfig] = None,
+    ) -> InitialNodes:
+        """Reset workflow and create the two required initial nodes.
+
+        Clears all existing nodes and edges, then creates:
+        - InitialLabeling node: Entry point for new data requiring labeling
+        - InitialRework node: Entry point for rejected data requiring corrections
+
+        Args:
+            labeling_config: Configuration for InitialLabeling node
+            rework_config: Configuration for InitialRework node
+
+        Returns:
+            InitialNodes with labeling and rework nodes ready for workflow building
+
+        Example:
+            >>> initial_nodes = workflow.reset_to_initial_nodes(
+            ...     labeling_config=LabelingConfig(instructions="Label all objects", max_contributions_per_user=10),
+            ...     rework_config=ReworkConfig(individual_assignment=["user-id-123"])
+            ... )
+            >>> done = workflow.add_node(type=NodeType.Done)
+            >>> workflow.add_edge(initial_nodes.labeling, done)
+            >>> workflow.add_edge(initial_nodes.rework, done)
+        """
+        # Convert configs to dicts for node creation
+        labeling_dict = (
+            labeling_config.model_dump(exclude_none=True)
+            if labeling_config
+            else {}
+        )
+        rework_dict = (
+            rework_config.model_dump(exclude_none=True) if rework_config else {}
+        )
+
+        # Reset workflow configuration
+        self.config = {"nodes": [], "edges": []}
+        self._nodes_cache = None
+        self._edges_cache = None
+
+        # Create required initial nodes using internal method
+        initial_labeling = cast(
+            InitialLabelingNode,
+            self._create_node_internal(InitialLabelingNode, **labeling_dict),
+        )
+        initial_rework = cast(
+            InitialReworkNode,
+            self._create_node_internal(InitialReworkNode, **rework_dict),
+        )
+
+        return InitialNodes(labeling=initial_labeling, rework=initial_rework)
 
     def delete_nodes(self, nodes: List[BaseWorkflowNode]) -> "ProjectWorkflow":
         """Delete specified nodes from the workflow."""
@@ -635,26 +699,6 @@ class ProjectWorkflow(BaseModel):
         return node
 
     # Type overloads for add_node method with node-specific parameters
-    @overload
-    def add_node(
-        self,
-        *,
-        type: Literal[NodeType.InitialLabeling],
-        instructions: Optional[str] = None,
-        max_contributions_per_user: Optional[int] = None,
-        **kwargs,
-    ) -> InitialLabelingNode: ...
-
-    @overload
-    def add_node(
-        self,
-        *,
-        type: Literal[NodeType.InitialRework],
-        instructions: Optional[str] = None,
-        individual_assignment: Optional[Union[str, List[str]]] = None,
-        max_contributions_per_user: Optional[int] = None,
-        **kwargs,
-    ) -> InitialReworkNode: ...
 
     @overload
     def add_node(
@@ -719,6 +763,13 @@ class ProjectWorkflow(BaseModel):
 
     def add_node(self, *, type: NodeType, **kwargs) -> BaseWorkflowNode:
         """Add a node to the workflow with type-specific parameters."""
+        # Block manual creation of initial nodes
+        if type in [NodeType.InitialLabeling, NodeType.InitialRework]:
+            raise ValueError(
+                f"Cannot create {type.value} nodes via add_node(). "
+                f"Use workflow.reset_to_initial_nodes() instead."
+            )
+
         workflow_def_id = WorkflowDefinitionId(type.value)
         node_class = NODE_TYPE_MAP[workflow_def_id]
 
