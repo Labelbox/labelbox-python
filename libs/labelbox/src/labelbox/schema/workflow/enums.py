@@ -106,7 +106,7 @@ class FilterField(str, Enum):
     """
 
     # User and creation filters
-    CreatedBy = "CreatedBy"
+    LabeledBy = "CreatedBy"  # Maps to backend CreatedBy field
 
     # Annotation and content filters
     Annotation = "Annotation"

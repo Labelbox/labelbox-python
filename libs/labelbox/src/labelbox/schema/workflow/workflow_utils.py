@@ -180,7 +180,7 @@ class WorkflowValidator:
         errors.extend(connection_errors)
 
         # Store validation results
-        workflow._validation_errors = {"validation": errors}
+        workflow._validation_errors = {"errors": errors}
         return workflow
 
     @staticmethod

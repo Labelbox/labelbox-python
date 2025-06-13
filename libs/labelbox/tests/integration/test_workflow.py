@@ -21,7 +21,8 @@ from labelbox.schema.workflow import (
     WorkflowDefinitionId,
     FilterField,
     # Import filter functions
-    created_by,
+    labeled_by,
+    created_by,  # Still works for backward compatibility
     dataset,
     natural_language,
     labeling_time,
@@ -335,6 +336,72 @@ def test_workflow_update_without_reset(client, test_projects):
     assert review_nodes[0].name == "Updated Review"
 
 
+def test_workflow_validation_in_update_config(client, test_projects):
+    """Test the mandatory validation behavior in update_config."""
+    source_project, _ = test_projects
+
+    # Create an invalid workflow (missing connections)
+    workflow = source_project.get_workflow()
+    workflow.reset_config()
+
+    # Add nodes but don't create proper connections (this will be invalid)
+    initial_labeling = workflow.add_node(type=NodeType.InitialLabeling)
+    initial_rework = workflow.add_node(type=NodeType.InitialRework)
+    # Add a review node with no connections - this should cause validation errors
+    review = workflow.add_node(type=NodeType.Review, name="Unconnected Review")
+
+    # Only connect the initial nodes together, leaving review disconnected
+    workflow.add_edge(initial_labeling, initial_rework)  # This is also invalid
+
+    # Test 1: update_config should validate and fail with invalid workflow
+    with pytest.raises(ValueError) as exc_info:
+        workflow.update_config()
+
+    assert "validation errors" in str(exc_info.value).lower()
+    assert "Cannot update workflow configuration" in str(exc_info.value)
+
+    # Test 2: Multiple calls should consistently fail validation
+    with pytest.raises(ValueError) as exc_info:
+        workflow.update_config()
+
+    assert "validation errors" in str(exc_info.value).lower()
+
+    # Test 3: Validation errors should be consistently reported
+    with pytest.raises(ValueError) as exc_info:
+        workflow.update_config()
+
+    # Verify the error message is clear and helpful
+    error_message = str(exc_info.value)
+    assert "validation errors" in error_message.lower()
+    assert "please fix these issues" in error_message.lower()
+
+    # Test 4: Create a valid workflow and test successful update
+    workflow.reset_config()
+
+    initial_labeling = workflow.add_node(type=NodeType.InitialLabeling)
+    initial_rework = workflow.add_node(type=NodeType.InitialRework)
+    review = workflow.add_node(type=NodeType.Review, name="Connected Review")
+    done = workflow.add_node(type=NodeType.Done, name="Final")
+
+    # Create proper connections
+    workflow.add_edge(initial_labeling, review)
+    workflow.add_edge(initial_rework, review)
+    workflow.add_edge(review, done, NodeOutput.Approved)
+
+    # This should work without errors
+    result = workflow.update_config()
+    assert result is not None
+
+    # Test successful update - should not raise any exceptions
+    try:
+        workflow.update_config()
+        # If we get here, the update was successful
+        assert True
+    except ValueError:
+        # Should not happen with a valid workflow
+        assert False, "Valid workflow should not raise validation errors"
+
+
 def test_workflow_copy(client, test_projects):
     """Test copying a workflow between projects."""
     source_project, target_project = test_projects
@@ -353,7 +420,7 @@ def test_workflow_copy(client, test_projects):
     logic = source_workflow.add_node(
         type=NodeType.Logic,
         name="Source Logic",
-        filters=ProjectWorkflowFilter([created_by(["source-user"])]),
+        filters=ProjectWorkflowFilter([labeled_by(["source-user"])]),
     )
     done = source_workflow.add_node(type=NodeType.Done, name="Source Done")
 
@@ -402,7 +469,7 @@ def test_production_logic_node_with_comprehensive_filters(
         match_filters=MatchFilters.Any,
         filters=ProjectWorkflowFilter(
             [
-                created_by(
+                labeled_by(
                     ["cly7gzohg07zz07v5fqs63zmx", "cl7k7a9x1764808vk6bm1hf8e"]
                 ),
                 metadata([m_condition.contains("tag", ["test"])]),
@@ -491,7 +558,9 @@ def test_filter_operations_with_persistence(client, test_projects):
         name="Filter Test",
         filters=ProjectWorkflowFilter(
             [
-                created_by(["user1", "user2"]),
+                created_by(
+                    ["user1", "user2"]
+                ),  # Still works - backward compatibility
                 sample(30),
                 labeling_time.greater_than(500),
             ]
@@ -518,7 +587,7 @@ def test_filter_operations_with_persistence(client, test_projects):
     ), f"Should start with 3 filters, got {initial_count}"
 
     # Test removing filters with persistence
-    logic_node.remove_filter(FilterField.CreatedBy)
+    logic_node.remove_filter(FilterField.LabeledBy)
     logic_node.remove_filter(FilterField.Sample)
     updated_workflow.update_config(reposition=False)
 
@@ -542,7 +611,7 @@ def test_filter_operations_with_persistence(client, test_projects):
     ), "LabelingTime filter should remain"
     assert (
         "CreatedBy" not in remaining_fields
-    ), "CreatedBy filter should be removed"
+    ), "LabeledBy filter should be removed"
 
     # Test adding filters with persistence
     logic_after_removal.add_filter(dataset(["new-dataset"]))

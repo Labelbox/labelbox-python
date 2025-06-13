@@ -390,6 +390,9 @@ class ProjectWorkflow(BaseModel):
     def update_config(self, reposition: bool = True) -> "ProjectWorkflow":
         """Update the workflow configuration on the server.
 
+        This method automatically validates the workflow before updating to ensure
+        data integrity and prevent invalid configurations from being saved.
+
         Args:
             reposition: Whether to automatically reposition nodes before update
 
@@ -397,9 +400,26 @@ class ProjectWorkflow(BaseModel):
             ProjectWorkflow: Updated workflow instance
 
         Raises:
-            ValueError: If the update operation fails
+            ValueError: If validation errors are found or the update operation fails
         """
         try:
+            # Always validate workflow before updating (mandatory for data safety)
+            validation_result = self.check_validity()
+            validation_errors = validation_result.get("errors", [])
+
+            if validation_errors:
+                # Format validation errors for clear user feedback
+                formatted_errors = self.format_validation_errors(
+                    validation_result
+                )
+                logger.error(f"Workflow validation failed: {formatted_errors}")
+
+                # Raise a clear ValueError with validation details
+                raise ValueError(
+                    f"Cannot update workflow configuration due to validation errors:\n{formatted_errors}\n\n"
+                    f"Please fix these issues before updating."
+                )
+
             if reposition:
                 self.reposition_nodes()
 
