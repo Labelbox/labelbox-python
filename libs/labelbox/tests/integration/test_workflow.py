@@ -22,7 +22,6 @@ from labelbox.schema.workflow import (
     FilterField,
     # Import filter functions
     labeled_by,
-    created_by,  # Still works for backward compatibility
     dataset,
     natural_language,
     labeling_time,
@@ -420,7 +419,7 @@ def test_workflow_copy(client, test_projects):
     logic = source_workflow.add_node(
         type=NodeType.Logic,
         name="Source Logic",
-        filters=ProjectWorkflowFilter([labeled_by(["source-user"])]),
+        filters=ProjectWorkflowFilter([labeled_by.is_one_of(["source-user"])]),
     )
     done = source_workflow.add_node(type=NodeType.Done, name="Source Done")
 
@@ -469,7 +468,7 @@ def test_production_logic_node_with_comprehensive_filters(
         match_filters=MatchFilters.Any,
         filters=ProjectWorkflowFilter(
             [
-                labeled_by(
+                labeled_by.is_one_of(
                     ["cly7gzohg07zz07v5fqs63zmx", "cl7k7a9x1764808vk6bm1hf8e"]
                 ),
                 metadata([m_condition.contains("tag", ["test"])]),
@@ -480,8 +479,8 @@ def test_production_logic_node_with_comprehensive_filters(
                 ),
                 labeling_time.greater_than(1000),
                 review_time.less_than_or_equal(100),
-                dataset(["cm37vyets000z072314wxgt0l"]),
-                annotation(["cm37w0e0500lf0709ba7c42m9"]),
+                dataset.is_one_of(["cm37vyets000z072314wxgt0l"]),
+                annotation.has_any_of(["cm37w0e0500lf0709ba7c42m9"]),
                 consensus_average(0.17, 0.61),
                 model_prediction(
                     [
@@ -558,9 +557,7 @@ def test_filter_operations_with_persistence(client, test_projects):
         name="Filter Test",
         filters=ProjectWorkflowFilter(
             [
-                created_by(
-                    ["user1", "user2"]
-                ),  # Still works - backward compatibility
+                labeled_by.is_one_of(["user1", "user2"]),  # New syntax
                 sample(30),
                 labeling_time.greater_than(500),
             ]
@@ -614,7 +611,7 @@ def test_filter_operations_with_persistence(client, test_projects):
     ), "LabeledBy filter should be removed"
 
     # Test adding filters with persistence
-    logic_after_removal.add_filter(dataset(["new-dataset"]))
+    logic_after_removal.add_filter(dataset.is_one_of(["new-dataset"]))
     logic_after_removal.add_filter(
         metadata([m_condition.starts_with("priority", "high")])
     )

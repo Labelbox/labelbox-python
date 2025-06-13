@@ -45,7 +45,6 @@ from labelbox.schema.workflow.workflow import ProjectWorkflow, NodeType
 from labelbox.schema.workflow.project_filter import (
     ProjectWorkflowFilter,
     labeled_by,
-    created_by,  # Deprecated, use labeled_by instead
     annotation,
     dataset,
     issue_category,
@@ -94,13 +93,13 @@ __all__ = [
     "NodeType",
     "ProjectWorkflowGraph",
     "ProjectWorkflowFilter",
-    # Filter construction functions
+    # Filter field objects
     "labeled_by",
-    "created_by",  # Deprecated, use labeled_by instead
     "annotation",
-    "sample",
     "dataset",
     "issue_category",
+    # Filter construction functions
+    "sample",
     "model_prediction",
     "natural_language",
     "labeled_at",
