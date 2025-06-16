@@ -111,8 +111,7 @@ class UserGroup(BaseModel):
     """Represents a user group in Labelbox.
 
     UserGroups allow organizing users and projects together for access control
-    and collaboration. This implementation provides enhanced validation and
-    member management capabilities.
+    and collaboration. Each user is added with an explicit role via UserGroupMember.
 
     Attributes:
         id: Unique identifier for the user group.
@@ -120,8 +119,6 @@ class UserGroup(BaseModel):
         color: Visual color identifier for the group.
         description: Optional description of the group's purpose.
         notify_members: Whether to notify members of group changes.
-        default_role: Default role assigned to users added via the legacy users field.
-        users: Legacy set of users (maintained for backward compatibility).
         members: Set of UserGroupMember objects with explicit roles.
         projects: Set of projects associated with this group.
         client: Labelbox client instance for API communication.
@@ -136,8 +133,6 @@ class UserGroup(BaseModel):
     color: UserGroupColor
     description: str = ""
     notify_members: bool = False
-    default_role: Optional[Role] = None
-    users: Set[User] = Field(default_factory=set)
     members: Set[UserGroupMember] = Field(default_factory=set)
     projects: Set[Project] = Field(default_factory=set)
     client: Client
@@ -151,8 +146,6 @@ class UserGroup(BaseModel):
         color: UserGroupColor = UserGroupColor.BLUE,
         description: str = "",
         notify_members: bool = False,
-        default_role: Optional[Role] = None,
-        users: Optional[Set[User]] = None,
         members: Optional[Set[UserGroupMember]] = None,
         projects: Optional[Set[Project]] = None,
     ) -> None:
@@ -165,8 +158,6 @@ class UserGroup(BaseModel):
             color: Visual color identifier.
             description: Optional description.
             notify_members: Whether to notify members of changes.
-            default_role: Default role for users added via legacy users field.
-            users: Legacy set of users for backward compatibility.
             members: Set of members with explicit roles.
             projects: Set of associated projects.
         """
@@ -177,37 +168,9 @@ class UserGroup(BaseModel):
             color=color,
             description=description,
             notify_members=notify_members,
-            default_role=default_role,
-            users=users or set(),
             members=members or set(),
             projects=projects or set(),
         )
-
-    def model_post_init(self, __context: Any) -> None:
-        """Validate that default_role is set when users field is used.
-
-        Args:
-            __context: Pydantic context (unused).
-
-        Raises:
-            ValueError: If users is set but default_role is not provided, or if default_role is invalid.
-        """
-        # Validate that default_role is set when legacy users field is used
-        if self.users and self.default_role is None:
-            raise ValueError(
-                "default_role must be set when using the 'users' field."
-            )
-
-        # Validate that default_role is not an invalid role for UserGroups
-        if self.default_role and hasattr(self.default_role, "name"):
-            role_name = (
-                self.default_role.name.upper() if self.default_role.name else ""
-            )
-            if role_name in INVALID_USERGROUP_ROLES:
-                raise ValueError(
-                    f"default_role cannot be '{role_name}'. "
-                    f"UserGroup members cannot have '{role_name}' roles."
-                )
 
     def get(self) -> UserGroup:
         """Reload the user group information from the server.
@@ -282,12 +245,6 @@ class UserGroup(BaseModel):
                 raise ValueError(
                     f"Project {project.uid} not found or inaccessible"
                 )
-
-        # Validate default_role is set when legacy users field is used
-        if self.users and self.default_role is None:
-            raise ValueError(
-                "default_role must be set when using the 'users' field."
-            )
 
         # Filter eligible users and build user roles
         eligible_users = self._filter_project_based_users()
@@ -372,19 +329,12 @@ class UserGroup(BaseModel):
                     f"Project {project.uid} not found or inaccessible"
                 )
 
-        # Validate default_role is set when legacy users field is used
-        if self.users and self.default_role is None:
-            raise ValueError(
-                "default_role must be explicitly set when using the 'users' field. "
-                "This ensures you are aware of what role will be assigned to legacy users."
-            )
-
         # Filter eligible users and build user roles
         eligible_users = self._filter_project_based_users()
         user_roles = self._build_user_roles(eligible_users)
 
         query = """
-        mutation CreateUserGroupPyApi($name: String!, $description: String, $color: String!, $projectIds: [ID!], $userRoles: [UserRoleInput!], $notifyMembers: Boolean, $roleId: String, $searchQuery: AlignerrSearchServiceQuery) {
+        mutation CreateUserGroupPyApi($name: String!, $description: String, $color: String!, $projectIds: [ID!]!, $userRoles: [UserRoleInput!]!, $notifyMembers: Boolean, $roleId: String, $searchQuery: AlignerrSearchServiceQuery) {
             createUserGroupV3(
                 data: {
                     name: $name
@@ -415,8 +365,6 @@ class UserGroup(BaseModel):
             "projectIds": [project.uid for project in self.projects],
             "userRoles": user_roles,
             "notifyMembers": self.notify_members,
-            "roleId": None,
-            "searchQuery": None,
         }
 
         try:
@@ -554,7 +502,7 @@ class UserGroup(BaseModel):
         Returns:
             Set of users that are eligible to be added to the group.
         """
-        all_users = set(self.users)
+        all_users = set()
         for member in self.members:
             all_users.add(member.user)
 
@@ -632,13 +580,6 @@ class UserGroup(BaseModel):
         """
         user_roles: List[Dict[str, str]] = []
 
-        # Add legacy users with default role
-        for user in self.users:
-            if user in eligible_users and self.default_role is not None:
-                user_roles.append(
-                    {"userId": user.uid, "roleId": self.default_role.uid}
-                )
-
         # Add members with their explicit roles
         for member in self.members:
             if member.user in eligible_users:
@@ -662,7 +603,6 @@ class UserGroup(BaseModel):
         # notifyMembers field is not available in GraphQL response, so we keep the current value
         self.projects = self._get_projects_set(group_data["projects"]["nodes"])
         self.members = self._get_members_set(group_data["members"])
-        self.users = set()  # Clear legacy users
 
     def _handle_user_validation_error(
         self, error: Exception, operation: str
@@ -764,8 +704,5 @@ class UserGroup(BaseModel):
                 role = Role(self.client, role_values)
 
                 members.add(UserGroupMember(user=user, role=role))
-            elif self.default_role:
-                # Fallback to default role if no role mapping found
-                members.add(UserGroupMember(user=user, role=self.default_role))
 
         return members
