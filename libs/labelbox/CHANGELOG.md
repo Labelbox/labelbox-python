@@ -1,4 +1,21 @@
 # Changelog
+# Version 7.0.0 (2025-06-17)
+## Added
+* Add support for Likert scale ([#1980](https://github.com/Labelbox/labelbox-python/pull/1980))
+* Add creation of IAM integrations ([#1976](https://github.com/Labelbox/labelbox-python/pull/1976))
+* Add workflow management ([#1975](https://github.com/Labelbox/labelbox-python/pull/1975))
+* Add model app ID to model run creation and return it ([#1973](https://github.com/Labelbox/labelbox-python/pull/1973))
+* Add support for project ontology change ([#1972](https://github.com/Labelbox/labelbox-python/pull/1972))
+* Remove `mypy` from dependencies ([#1968](https://github.com/Labelbox/labelbox-python/pull/1968))
+
+## Updated
+* **BREAKING CHANGE** `UserGroup` no longer supports the `users` field - it's been replaced by the `members` field.
+* Update `UserGroup` to fix project membership ([#1986](https://github.com/Labelbox/labelbox-python/pull/1986))
+
+## Fixed
+* `ApiKey.created_by` now correctly displays the `user` for old API keys ([#1967](https://github.com/Labelbox/labelbox-python/pull/1967))
+
+
 # Version 6.10.0 (2025-04-04)
 ## Added
 * API keys Management: ([#1961](https://github.com/Labelbox/labelbox-python/pull/1961))
