@@ -1,5 +1,5 @@
 # Changelog
-# Version 7.0.0 (2025-06-16)
+# Version 7.0.0 (2025-06-17)
 ## Added
 * Add support for Likert scale ([#1980](https://github.com/Labelbox/labelbox-python/pull/1980))
 * Add creation of IAM integrations ([#1976](https://github.com/Labelbox/labelbox-python/pull/1976))
@@ -9,7 +9,7 @@
 * Remove `mypy` from dependencies ([#1968](https://github.com/Labelbox/labelbox-python/pull/1968))
 
 ## Updated
-* **BREAKING CHANGE:** `UserGroup` now requires `default_role` alongside the `users` attribute. If not using `users`, switch to the `members` field instead.
+* **BREAKING CHANGE** `UserGroup` no longer supports the `users` attribute - it's been replaced by the `members` field.
 * Update `UserGroup` to fix project membership ([#1986](https://github.com/Labelbox/labelbox-python/pull/1986))
 
 ## Fixed
