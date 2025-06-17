@@ -9,7 +9,7 @@
 * Remove `mypy` from dependencies ([#1968](https://github.com/Labelbox/labelbox-python/pull/1968))
 
 ## Updated
-* **BREAKING CHANGE** `UserGroup` no longer supports the `users` attribute - it's been replaced by the `members` field.
+* **BREAKING CHANGE** `UserGroup` no longer supports the `users` field - it's been replaced by the `members` field.
 * Update `UserGroup` to fix project membership ([#1986](https://github.com/Labelbox/labelbox-python/pull/1986))
 
 ## Fixed
