@@ -4,7 +4,7 @@ import colorsys
 import json
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Union
 
 from lbox.exceptions import InconsistentOntologyException
 

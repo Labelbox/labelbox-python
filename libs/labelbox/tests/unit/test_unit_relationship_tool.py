@@ -1,10 +1,8 @@
-import pytest
 import uuid
 from unittest.mock import patch
 
 from labelbox.schema.ontology import Tool
 from labelbox.schema.tool_building.relationship_tool import RelationshipTool
-from labelbox.schema.tool_building.classification import Classification
 
 
 def test_basic_instantiation():
