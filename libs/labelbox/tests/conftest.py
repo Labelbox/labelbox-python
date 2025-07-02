@@ -501,14 +501,34 @@ def consensus_project_with_batch(
 
 @pytest.fixture
 def dataset(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
+    # Handle invalid default IAM integrations in test environments gracefully
+    try:
+        dataset = client.create_dataset(name=rand_gen(str))
+    except ValueError as e:
+        if "Integration is not valid" in str(e):
+            # Fallback to creating dataset without IAM integration for tests
+            dataset = client.create_dataset(
+                name=rand_gen(str), iam_integration=None
+            )
+        else:
+            raise e
     yield dataset
     dataset.delete()
 
 
 @pytest.fixture(scope="function")
 def unique_dataset(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
+    # Handle invalid default IAM integrations in test environments gracefully
+    try:
+        dataset = client.create_dataset(name=rand_gen(str))
+    except ValueError as e:
+        if "Integration is not valid" in str(e):
+            # Fallback to creating dataset without IAM integration for tests
+            dataset = client.create_dataset(
+                name=rand_gen(str), iam_integration=None
+            )
+        else:
+            raise e
     yield dataset
     dataset.delete()
 
@@ -857,7 +877,17 @@ def wait_for_label_processing():
 
 @pytest.fixture
 def initial_dataset(client, rand_gen):
-    dataset = client.create_dataset(name=rand_gen(str))
+    # Handle invalid default IAM integrations in test environments gracefully
+    try:
+        dataset = client.create_dataset(name=rand_gen(str))
+    except ValueError as e:
+        if "Integration is not valid" in str(e):
+            # Fallback to creating dataset without IAM integration for tests
+            dataset = client.create_dataset(
+                name=rand_gen(str), iam_integration=None
+            )
+        else:
+            raise e
     yield dataset
 
     dataset.delete()
@@ -865,7 +895,17 @@ def initial_dataset(client, rand_gen):
 
 @pytest.fixture
 def video_data(client, rand_gen, video_data_row, wait_for_data_row_processing):
-    dataset = client.create_dataset(name=rand_gen(str))
+    # Handle invalid default IAM integrations in test environments gracefully
+    try:
+        dataset = client.create_dataset(name=rand_gen(str))
+    except ValueError as e:
+        if "Integration is not valid" in str(e):
+            # Fallback to creating dataset without IAM integration for tests
+            dataset = client.create_dataset(
+                name=rand_gen(str), iam_integration=None
+            )
+        else:
+            raise e
     data_row_ids = []
     data_row = dataset.create_data_row(video_data_row)
     data_row = wait_for_data_row_processing(client, data_row)
@@ -884,7 +924,17 @@ def create_video_data_row(rand_gen):
 
 @pytest.fixture
 def video_data_100_rows(client, rand_gen, wait_for_data_row_processing):
-    dataset = client.create_dataset(name=rand_gen(str))
+    # Handle invalid default IAM integrations in test environments gracefully
+    try:
+        dataset = client.create_dataset(name=rand_gen(str))
+    except ValueError as e:
+        if "Integration is not valid" in str(e):
+            # Fallback to creating dataset without IAM integration for tests
+            dataset = client.create_dataset(
+                name=rand_gen(str), iam_integration=None
+            )
+        else:
+            raise e
     data_row_ids = []
     for _ in range(100):
         data_row = dataset.create_data_row(create_video_data_row(rand_gen))
