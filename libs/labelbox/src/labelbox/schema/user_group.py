@@ -551,9 +551,9 @@ class UserGroup(BaseModel):
         # Raise error if any invalid users found
         if invalid_users:
             error_details = []
-            for user in invalid_users:
+            for user_info in invalid_users:
                 error_details.append(
-                    f"User {user['id']} ({user['email']}) has org role '{user['org_role']}'"
+                    f"User {user_info['id']} ({user_info['email']}) has org role '{user_info['org_role']}'"
                 )
 
             raise ValueError(
