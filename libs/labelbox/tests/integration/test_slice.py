@@ -85,7 +85,7 @@ def test_get_slice(client):
         if s.name in ["Test Slice 1", "Test Slice 2"]
     )
     for slice in slices:
-        _delete_catalog_slice(client, slice.id)
+        _delete_catalog_slice(client, slice.uid)
 
     # Create slices
     slice_id_1 = _create_catalog_slice(
