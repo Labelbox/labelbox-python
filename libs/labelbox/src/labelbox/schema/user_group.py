@@ -679,6 +679,12 @@ class UserGroup(BaseModel):
         member_nodes = members_data.get("nodes", [])
         user_group_roles = members_data.get("userGroupRoles", [])
 
+        # Get all roles to map IDs to names
+        from labelbox.schema.role import get_roles
+
+        all_roles = get_roles(self.client)
+        role_id_to_role = {role.uid: role for role in all_roles.values()}
+
         # Create a mapping from userId to roleId
         user_role_mapping = {
             role_data["userId"]: role_data["roleId"]
@@ -694,15 +700,9 @@ class UserGroup(BaseModel):
 
             # Get the role for this user from the mapping
             role_id = user_role_mapping.get(node["id"])
-            if role_id:
-                # We need to fetch the role details since we only have the roleId
-                # For now, create a minimal Role object with just the ID
-                role_values: defaultdict[str, Any] = defaultdict(lambda: None)
-                role_values["id"] = role_id
-                # We don't have the role name from this response, so we'll leave it as None
-                # The Role object will fetch the name when needed
-                role = Role(self.client, role_values)
-
+            if role_id and role_id in role_id_to_role:
+                # Use the actual Role object with proper name resolution
+                role = role_id_to_role[role_id]
                 members.add(UserGroupMember(user=user, role=role))
 
         return members
