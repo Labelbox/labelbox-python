@@ -41,7 +41,10 @@ def group_user():
     user_values["createdAt"] = "2023-01-01T00:00:00Z"
     user_values["isExternalUser"] = False
     user_values["isViewer"] = False
-    return User(MagicMock(Client), user_values)
+    user = User(MagicMock(Client), user_values)
+    # Mock org_role() to return None (project-based user)
+    user.org_role = MagicMock(return_value=None)
+    return user
 
 
 @pytest.fixture
@@ -237,16 +240,6 @@ class TestUserGroup:
         self.client.get_project.return_value = group_project
 
         self.client.execute.side_effect = [
-            # Mock user roles query response
-            {
-                "users": [
-                    {
-                        "id": "user_id",
-                        "email": "test@example.com",
-                        "orgRole": None,  # Project-based user
-                    }
-                ]
-            },
             # Mock update mutation response
             {
                 "updateUserGroupV3": {
@@ -458,16 +451,6 @@ class TestUserGroup:
         self.client.get_project.return_value = group_project
 
         self.client.execute.side_effect = [
-            # Mock user roles query response
-            {
-                "users": [
-                    {
-                        "id": "user_id",
-                        "email": "test@example.com",
-                        "orgRole": None,  # Project-based user
-                    }
-                ]
-            },
             # Mock create mutation response
             {
                 "createUserGroupV3": {

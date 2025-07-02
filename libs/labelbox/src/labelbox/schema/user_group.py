@@ -230,7 +230,7 @@ class UserGroup(BaseModel):
         Raises:
             ValueError: If group ID or name is not set, or if projects don't exist.
             ResourceNotFoundError: If the group or projects are not found.
-            UnprocessableEntityError: If user validation fails.
+            UnprocessableEntityError: If user validation fails or users have workspace-level org roles.
         """
         if not self.id:
             raise ValueError("Group id is required")
@@ -247,8 +247,11 @@ class UserGroup(BaseModel):
                 )
 
         # Filter eligible users and build user roles
-        eligible_users = self._filter_project_based_users()
-        user_roles = self._build_user_roles(eligible_users)
+        try:
+            eligible_users = self._filter_project_based_users()
+            user_roles = self._build_user_roles(eligible_users)
+        except ValueError as e:
+            raise UnprocessableEntityError(str(e)) from e
 
         query = """
         mutation UpdateUserGroupPyApi($id: ID!, $name: String!, $description: String, $color: String!, $projectIds: [ID!]!, $userRoles: [UserRoleInput!], $notifyMembers: Boolean) {
@@ -312,7 +315,7 @@ class UserGroup(BaseModel):
 
         Raises:
             ValueError: If group already has ID, name is invalid, or projects don't exist.
-            ResourceCreationError: If creation fails or user validation fails.
+            ResourceCreationError: If creation fails, user validation fails, or users have workspace-level org roles.
             ResourceConflict: If a group with the same name already exists.
         """
         if self.id:
@@ -330,8 +333,11 @@ class UserGroup(BaseModel):
                 )
 
         # Filter eligible users and build user roles
-        eligible_users = self._filter_project_based_users()
-        user_roles = self._build_user_roles(eligible_users)
+        try:
+            eligible_users = self._filter_project_based_users()
+            user_roles = self._build_user_roles(eligible_users)
+        except ValueError as e:
+            raise ResourceCreationError(str(e)) from e
 
         query = """
         mutation CreateUserGroupPyApi($name: String!, $description: String, $color: String!, $projectIds: [ID!]!, $userRoles: [UserRoleInput!]!, $notifyMembers: Boolean, $roleId: String, $searchQuery: AlignerrSearchServiceQuery) {
@@ -496,11 +502,14 @@ class UserGroup(BaseModel):
     def _filter_project_based_users(self) -> Set[User]:
         """Filter users to only include users eligible for UserGroups.
 
-        Filters out users with specific admin organization roles that cannot be
-        added to UserGroups. Most users should be eligible.
+        Only project-based users (org role "NONE") can be added to UserGroups.
+        Users with any workspace-level organization role cannot be added.
 
         Returns:
             Set of users that are eligible to be added to the group.
+
+        Raises:
+            ValueError: If any user has a workspace-level organization role.
         """
         all_users = set()
         for member in self.members:
@@ -509,63 +518,52 @@ class UserGroup(BaseModel):
         if not all_users:
             return set()
 
-        user_ids = [user.uid for user in all_users]
-        query = """
-        query CheckUserOrgRolesPyApi($userIds: [ID!]!) {
-            users(where: {id_in: $userIds}) {
-                id
-                orgRole { id name }
-            }
-        }
-        """
+        # Check each user's org role directly
+        invalid_users = []
+        eligible_users = set()
 
-        try:
-            result = self.client.execute(query, {"userIds": user_ids})
-            if not result or "users" not in result:
-                return all_users  # Fallback: let server handle validation
-
-            # Check for users with org roles that cannot be used in UserGroups
-            # Only users with no org role (project-based users) can be assigned to UserGroups
-            eligible_user_ids = set()
-            invalid_users = []
-
-            for user_data in result["users"]:
-                org_role = user_data.get("orgRole")
-                user_id = user_data["id"]
-                user_email = user_data.get("email", "unknown")
-
-                if org_role is None:
-                    # Users with no org role (project-based users) are eligible
-                    eligible_user_ids.add(user_id)
+        for user in all_users:
+            try:
+                # Get the user's organization role directly
+                org_role = user.org_role()
+                if org_role is None or org_role.name.upper() == "NONE":
+                    # Users with no org role or "NONE" role are project-based and eligible
+                    eligible_users.add(user)
                 else:
-                    # Users with ANY workspace org role cannot be assigned to UserGroups
+                    # Users with any workspace org role cannot be assigned to UserGroups
                     invalid_users.append(
                         {
-                            "id": user_id,
-                            "email": user_email,
-                            "org_role": org_role.get("name"),
+                            "id": user.uid,
+                            "email": getattr(user, "email", "unknown"),
+                            "org_role": org_role.name,
                         }
                     )
-
-            # Raise error if any invalid users found
-            if invalid_users:
-                error_details = []
-                for user in invalid_users:
-                    error_details.append(
-                        f"User {user['id']} ({user['email']}) has org role '{user['org_role']}'"
-                    )
-
-                raise ValueError(
-                    f"Cannot create UserGroup with users who have organization roles. "
-                    f"Only project-based users (no org role) can be assigned to UserGroups.\n"
-                    f"Invalid users:\n"
-                    + "\n".join(f"  • {detail}" for detail in error_details)
+            except Exception as e:
+                # If we can't determine the user's role, treat as invalid for safety
+                invalid_users.append(
+                    {
+                        "id": user.uid,
+                        "email": getattr(user, "email", "unknown"),
+                        "org_role": f"unknown (error: {str(e)})",
+                    }
                 )
 
-            return {user for user in all_users if user.uid in eligible_user_ids}
+        # Raise error if any invalid users found
+        if invalid_users:
+            error_details = []
+            for user in invalid_users:
+                error_details.append(
+                    f"User {user['id']} ({user['email']}) has org role '{user['org_role']}'"
+                )
 
-        except Exception:
-            return all_users  # Fallback: let server handle validation
+            raise ValueError(
+                f"Cannot create UserGroup with users who have organization roles. "
+                f"Only project-based users (no org role or role 'NONE') can be assigned to UserGroups.\n"
+                f"Invalid users:\n"
+                + "\n".join(f"  • {detail}" for detail in error_details)
+            )
+
+        return eligible_users
 
     def _build_user_roles(
         self, eligible_users: Set[User]
