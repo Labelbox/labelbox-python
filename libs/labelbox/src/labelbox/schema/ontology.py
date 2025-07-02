@@ -165,6 +165,8 @@ def tool_cls_from_type(tool_type: str):
     tool_cls = map_tool_type_to_tool_cls(tool_type)
     if tool_cls is not None:
         return tool_cls
+    if tool_type == Tool.Type.RELATIONSHIP:
+        return RelationshipTool
     return Tool
 
 
