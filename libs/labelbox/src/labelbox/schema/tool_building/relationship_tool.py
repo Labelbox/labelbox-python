@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from labelbox.schema.ontology import Tool
 
+
 @dataclass
 class RelationshipTool(Tool):
     """
@@ -44,7 +45,12 @@ class RelationshipTool(Tool):
 
     constraints: Optional[List[Tuple[str, str]]] = None
 
-    def __init__(self, name: str, constraints: Optional[List[Tuple[str, str]]] = None, **kwargs):
+    def __init__(
+        self,
+        name: str,
+        constraints: Optional[List[Tuple[str, str]]] = None,
+        **kwargs,
+    ):
         super().__init__(Tool.Type.RELATIONSHIP, name, **kwargs)
         if constraints is not None:
             self.constraints = constraints
@@ -57,7 +63,7 @@ class RelationshipTool(Tool):
     def asdict(self) -> Dict[str, Any]:
         result = super().asdict()
         if self.constraints is not None:
-            result["definition"] = { "constraints": self.constraints }
+            result["definition"] = {"constraints": self.constraints}
         return result
 
     def add_constraint(self, start: Tool, end: Tool) -> None:
@@ -77,8 +83,10 @@ class RelationshipTool(Tool):
         if end.schema_id is None:
             end.schema_id = str(uuid.uuid4())
 
-        self.constraints.append((start.feature_schema_id, end.feature_schema_id))
-    
+        self.constraints.append(
+            (start.feature_schema_id, end.feature_schema_id)
+        )
+
     def set_constraints(self, constraints: List[Tuple[Tool, Tool]]) -> None:
         self.constraints = []
         for constraint in constraints:

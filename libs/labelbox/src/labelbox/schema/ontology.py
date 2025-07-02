@@ -155,6 +155,7 @@ class Tool:
             )
         self.classifications.append(classification)
 
+
 """
 The following 2 functions help to bridge the gap between the step reasoning all other tool ontologies.
 """
