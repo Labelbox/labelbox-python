@@ -22,6 +22,7 @@ from labelbox.types import (
 )
 from labelbox.data.serialization.ndjson import NDJsonConverter
 import pytest
+from ...conftest import create_dataset_robust
 
 
 def validate_iso_format(date_string: str):
@@ -163,7 +164,7 @@ def configured_project(
 
     dataset = None
 
-    dataset = client.create_dataset(name=rand_gen(str))
+    dataset = create_dataset_robust(client, name=rand_gen(str))
 
     project = client.create_project(
         name=f"{media_type}-{rand_gen(str)}", media_type=media_type

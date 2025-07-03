@@ -11,6 +11,7 @@ from labelbox.schema.annotation_import import AnnotationImportState, LabelImport
 from labelbox.schema.model_run import ModelRun
 from labelbox.schema.ontology import Ontology
 from labelbox.schema.project import Project
+from ...conftest import create_dataset_robust
 
 """
 The main fixtures of this library are configured_project and configured_project_by_global_key. Both fixtures generate data rows with a parametrize media type. They create the amount of data rows equal to the DATA_ROW_COUNT variable below. The data rows are generated with a factory fixture that returns a function that allows you to pass a global key. The ontologies are generated normalized and based on the MediaType given (i.e. only features supported by MediaType are created). This ontology is later used to obtain the correct annotations with the prediction_id_mapping and corresponding inferences. Each data row will have all possible annotations attached supported for the MediaType. 
@@ -653,7 +654,7 @@ def _create_response_creation_project(
 ) -> Tuple[Project, Ontology, Dataset]:
     "For response creation projects"
 
-    dataset = client.create_dataset(name=rand_gen(str))
+    dataset = create_dataset_robust(client, name=rand_gen(str))
 
     project = client.create_response_creation_project(
         name=f"{ontology_kind}-{rand_gen(str)}"
@@ -695,7 +696,7 @@ def _create_response_creation_project(
 def llm_prompt_response_creation_dataset_with_data_row(
     client: Client, rand_gen
 ):
-    dataset = client.create_dataset(name=rand_gen(str))
+    dataset = create_dataset_robust(client, name=rand_gen(str))
     global_key = str(uuid.uuid4())
 
     convo_data = {
@@ -752,7 +753,7 @@ def _create_prompt_response_project(
 def _create_offline_mmc_project(
     client: Client, rand_gen, data_row_json, normalized_ontology
 ) -> Tuple[Project, Ontology, Dataset]:
-    dataset = client.create_dataset(name=rand_gen(str))
+    dataset = create_dataset_robust(client, name=rand_gen(str))
 
     project = client.create_offline_model_evaluation_project(
         name=f"offline-mmc-{rand_gen(str)}",
@@ -797,7 +798,7 @@ def _create_project(
 ) -> Tuple[Project, Ontology, Dataset]:
     """Shared function to configure project for integration tests"""
 
-    dataset = client.create_dataset(name=rand_gen(str))
+    dataset = create_dataset_robust(client, name=rand_gen(str))
 
     project = client.create_project(
         name=f"{media_type}-{rand_gen(str)}", media_type=media_type

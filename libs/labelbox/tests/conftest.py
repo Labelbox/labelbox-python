@@ -502,16 +502,7 @@ def consensus_project_with_batch(
 @pytest.fixture
 def dataset(client, rand_gen):
     # Handle invalid default IAM integrations in test environments gracefully
-    try:
-        dataset = client.create_dataset(name=rand_gen(str))
-    except ValueError as e:
-        if "Integration is not valid" in str(e):
-            # Fallback to creating dataset without IAM integration for tests
-            dataset = client.create_dataset(
-                name=rand_gen(str), iam_integration=None
-            )
-        else:
-            raise e
+    dataset = create_dataset_robust(client, name=rand_gen(str))
     yield dataset
     dataset.delete()
 
@@ -519,16 +510,7 @@ def dataset(client, rand_gen):
 @pytest.fixture(scope="function")
 def unique_dataset(client, rand_gen):
     # Handle invalid default IAM integrations in test environments gracefully
-    try:
-        dataset = client.create_dataset(name=rand_gen(str))
-    except ValueError as e:
-        if "Integration is not valid" in str(e):
-            # Fallback to creating dataset without IAM integration for tests
-            dataset = client.create_dataset(
-                name=rand_gen(str), iam_integration=None
-            )
-        else:
-            raise e
+    dataset = create_dataset_robust(client, name=rand_gen(str))
     yield dataset
     dataset.delete()
 
@@ -878,16 +860,7 @@ def wait_for_label_processing():
 @pytest.fixture
 def initial_dataset(client, rand_gen):
     # Handle invalid default IAM integrations in test environments gracefully
-    try:
-        dataset = client.create_dataset(name=rand_gen(str))
-    except ValueError as e:
-        if "Integration is not valid" in str(e):
-            # Fallback to creating dataset without IAM integration for tests
-            dataset = client.create_dataset(
-                name=rand_gen(str), iam_integration=None
-            )
-        else:
-            raise e
+    dataset = create_dataset_robust(client, name=rand_gen(str))
     yield dataset
 
     dataset.delete()
@@ -896,16 +869,7 @@ def initial_dataset(client, rand_gen):
 @pytest.fixture
 def video_data(client, rand_gen, video_data_row, wait_for_data_row_processing):
     # Handle invalid default IAM integrations in test environments gracefully
-    try:
-        dataset = client.create_dataset(name=rand_gen(str))
-    except ValueError as e:
-        if "Integration is not valid" in str(e):
-            # Fallback to creating dataset without IAM integration for tests
-            dataset = client.create_dataset(
-                name=rand_gen(str), iam_integration=None
-            )
-        else:
-            raise e
+    dataset = create_dataset_robust(client, name=rand_gen(str))
     data_row_ids = []
     data_row = dataset.create_data_row(video_data_row)
     data_row = wait_for_data_row_processing(client, data_row)
@@ -925,16 +889,7 @@ def create_video_data_row(rand_gen):
 @pytest.fixture
 def video_data_100_rows(client, rand_gen, wait_for_data_row_processing):
     # Handle invalid default IAM integrations in test environments gracefully
-    try:
-        dataset = client.create_dataset(name=rand_gen(str))
-    except ValueError as e:
-        if "Integration is not valid" in str(e):
-            # Fallback to creating dataset without IAM integration for tests
-            dataset = client.create_dataset(
-                name=rand_gen(str), iam_integration=None
-            )
-        else:
-            raise e
+    dataset = create_dataset_robust(client, name=rand_gen(str))
     data_row_ids = []
     for _ in range(100):
         data_row = dataset.create_data_row(create_video_data_row(rand_gen))
@@ -1326,3 +1281,29 @@ def module_teardown_helpers():
 @pytest.fixture
 def label_helpers():
     return LabelHelpers()
+
+
+def create_dataset_robust(client, **kwargs):
+    """
+    Robust dataset creation that handles invalid default IAM integrations gracefully.
+
+    This is a helper function for tests that need to create datasets directly
+    instead of using fixtures. It falls back to creating datasets without
+    IAM integration when the default integration is invalid.
+
+    Args:
+        client: Labelbox client instance
+        **kwargs: Arguments to pass to create_dataset
+
+    Returns:
+        Dataset: Created dataset
+    """
+    try:
+        return client.create_dataset(**kwargs)
+    except ValueError as e:
+        if "Integration is not valid" in str(e):
+            # Fallback to creating dataset without IAM integration for tests
+            kwargs["iam_integration"] = None
+            return client.create_dataset(**kwargs)
+        else:
+            raise e

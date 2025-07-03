@@ -8,12 +8,13 @@ from labelbox import Dataset
 from labelbox.schema.internal.descriptor_file_creator import (
     DescriptorFileCreator,
 )
+from ..conftest import create_dataset_robust
 
 
 def test_dataset(client, rand_gen):
     # confirm dataset can be created
     name = rand_gen(str)
-    dataset = client.create_dataset(name=name)
+    dataset = create_dataset_robust(client, name=name)
     assert dataset.name == name
     assert dataset.created_by() == client.get_user()
     assert dataset.organization() == client.get_organization()
@@ -52,10 +53,13 @@ def test_dataset(client, rand_gen):
 def dataset_for_filtering(client, rand_gen):
     name_1 = rand_gen(str)
     name_2 = rand_gen(str)
-    d1 = client.create_dataset(name=name_1)
-    d2 = client.create_dataset(name=name_2)
+    d1 = create_dataset_robust(client, name=name_1)
+    d2 = create_dataset_robust(client, name=name_2)
 
     yield name_1, d1, name_2, d2
+
+    d1.delete()
+    d2.delete()
 
 
 def test_dataset_filtering(client, dataset_for_filtering):

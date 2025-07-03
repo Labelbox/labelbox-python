@@ -3,13 +3,14 @@ from copy import copy
 import pytest
 
 from labelbox.schema.dataset import Dataset
+from ..conftest import create_dataset_robust
 
 
 @pytest.fixture
 def data_for_dataset_order_test(client, rand_gen):
     name = rand_gen(str)
-    dataset1 = client.create_dataset(name=name)
-    dataset2 = client.create_dataset(name=name)
+    dataset1 = create_dataset_robust(client, name=name)
+    dataset2 = create_dataset_robust(client, name=name)
 
     yield name
 
