@@ -1,4 +1,11 @@
 # Changelog
+# Version 7.1.0 (2025-07-08)
+## Added
+* Add the ability to specify relationship constraints ([#1992](https://github.com/Labelbox/labelbox-python/pull/1992))
+
+## Fixed
+* Minor fixes to CRUD operations when specifying user groups ([#1993](https://github.com/Labelbox/labelbox-python/pull/1993))
+
 # Version 7.0.0 (2025-06-17)
 ## Added
 * Add support for Likert scale ([#1980](https://github.com/Labelbox/labelbox-python/pull/1980))
