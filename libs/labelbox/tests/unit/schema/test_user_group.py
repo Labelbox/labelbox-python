@@ -41,7 +41,10 @@ def group_user():
     user_values["createdAt"] = "2023-01-01T00:00:00Z"
     user_values["isExternalUser"] = False
     user_values["isViewer"] = False
-    return User(MagicMock(Client), user_values)
+    user = User(MagicMock(Client), user_values)
+    # Mock org_role() to return None (project-based user)
+    user.org_role = MagicMock(return_value=None)
+    return user
 
 
 @pytest.fixture
@@ -100,6 +103,11 @@ class TestUserGroupColor:
 
 class TestUserGroup:
     def setup_method(self):
+        # Reset the global roles cache before each test
+        import labelbox.schema.role as role_module
+
+        role_module._ROLES = None
+
         self.client = MagicMock(Client)
         self.client.get_roles.return_value = {
             "LABELER": Role(self.client, {"id": "role_id", "name": "LABELER"}),
@@ -167,26 +175,36 @@ class TestUserGroup:
                 "orgRole": {"id": "role_id_2", "name": "LABELER"},
             },
         ]
-        self.client.execute.return_value = {
-            "userGroupV2": {
-                "id": "group_id",
-                "name": "Test Group",
-                "color": "4ED2F9",
-                "description": "",
-                "projects": {
-                    "nodes": projects,
-                    "totalCount": 2,
-                },
-                "members": {
-                    "nodes": group_members,
-                    "totalCount": 2,
-                    "userGroupRoles": [
-                        {"userId": "user_id_1", "roleId": "role_id_1"},
-                        {"userId": "user_id_2", "roleId": "role_id_2"},
-                    ],
-                },
-            }
-        }
+        self.client.execute.side_effect = [
+            # Mock userGroupV2 query response first (get() executes this first)
+            {
+                "userGroupV2": {
+                    "id": "group_id",
+                    "name": "Test Group",
+                    "color": "4ED2F9",
+                    "description": "",
+                    "projects": {
+                        "nodes": projects,
+                        "totalCount": 2,
+                    },
+                    "members": {
+                        "nodes": group_members,
+                        "totalCount": 2,
+                        "userGroupRoles": [
+                            {"userId": "user_id_1", "roleId": "role_id_1"},
+                            {"userId": "user_id_2", "roleId": "role_id_2"},
+                        ],
+                    },
+                }
+            },
+            # Mock get_roles query response second (_get_members_set calls this)
+            {
+                "roles": [
+                    {"id": "role_id_1", "name": "LABELER"},
+                    {"id": "role_id_2", "name": "REVIEWER"},
+                ]
+            },
+        ]
         group = UserGroup(self.client)
         assert group.id == ""
         assert group.name == ""
@@ -222,16 +240,6 @@ class TestUserGroup:
         self.client.get_project.return_value = group_project
 
         self.client.execute.side_effect = [
-            # Mock user roles query response
-            {
-                "users": [
-                    {
-                        "id": "user_id",
-                        "email": "test@example.com",
-                        "orgRole": None,  # Project-based user
-                    }
-                ]
-            },
             # Mock update mutation response
             {
                 "updateUserGroupV3": {
@@ -244,7 +252,7 @@ class TestUserGroup:
                     }
                 }
             },
-            # Mock get query response after update
+            # Mock get query response after update (get() executes userGroupV2 first)
             {
                 "userGroupV2": {
                     "id": "group_id",
@@ -269,6 +277,12 @@ class TestUserGroup:
                         ],
                     },
                 }
+            },
+            # Mock get_roles query response (called by _get_members_set)
+            {
+                "roles": [
+                    {"id": "role_id", "name": "LABELER"},
+                ]
             },
         ]
 
@@ -297,7 +311,7 @@ class TestUserGroup:
                     }
                 }
             },
-            # Mock get query response
+            # Mock get query response (get() executes userGroupV2 first)
             {
                 "userGroupV2": {
                     "id": "group_id",
@@ -315,6 +329,8 @@ class TestUserGroup:
                     },
                 }
             },
+            # Mock get_roles query response (even though no members, _get_members_set is still called)
+            {"roles": []},
         ]
 
         group.update()
@@ -356,42 +372,51 @@ class TestUserGroup:
         assert len(user_groups) == 0
 
     def test_user_groups(self):
-        self.client.execute.return_value = {
-            "userGroupsV2": {
-                "totalCount": 2,
-                "nextCursor": None,
-                "nodes": [
-                    {
-                        "id": "group_id_1",
-                        "name": "Group 1",
-                        "color": "9EC5FF",
-                        "description": "",
-                        "projects": {
-                            "nodes": [],
-                            "totalCount": 0,
+        # Mock get_user_groups and get_roles responses
+        # The order is: userGroupsV2 query first, then get_roles when processing groups
+        self.client.execute.side_effect = [
+            # get_user_groups query (first)
+            {
+                "userGroupsV2": {
+                    "totalCount": 2,
+                    "nextCursor": None,
+                    "nodes": [
+                        {
+                            "id": "group_id_1",
+                            "name": "Group 1",
+                            "color": "9EC5FF",
+                            "description": "",
+                            "projects": {
+                                "nodes": [],
+                                "totalCount": 0,
+                            },
+                            "members": {
+                                "nodes": [],
+                                "totalCount": 0,
+                                "userGroupRoles": [],
+                            },
                         },
-                        "members": {
-                            "nodes": [],
-                            "totalCount": 0,
+                        {
+                            "id": "group_id_2",
+                            "name": "Group 2",
+                            "color": "CEB8FF",
+                            "description": "",
+                            "projects": {
+                                "nodes": [],
+                                "totalCount": 0,
+                            },
+                            "members": {
+                                "nodes": [],
+                                "totalCount": 0,
+                                "userGroupRoles": [],
+                            },
                         },
-                    },
-                    {
-                        "id": "group_id_2",
-                        "name": "Group 2",
-                        "color": "CEB8FF",
-                        "description": "",
-                        "projects": {
-                            "nodes": [],
-                            "totalCount": 0,
-                        },
-                        "members": {
-                            "nodes": [],
-                            "totalCount": 0,
-                        },
-                    },
-                ],
-            }
-        }
+                    ],
+                }
+            },
+            # get_roles query (called when processing first group, then cached)
+            {"roles": []},
+        ]
         user_groups = list(UserGroup.get_user_groups(self.client))
         assert len(user_groups) == 2
         assert user_groups[0].name == "Group 1"
@@ -426,16 +451,6 @@ class TestUserGroup:
         self.client.get_project.return_value = group_project
 
         self.client.execute.side_effect = [
-            # Mock user roles query response
-            {
-                "users": [
-                    {
-                        "id": "user_id",
-                        "email": "test@example.com",
-                        "orgRole": None,  # Project-based user
-                    }
-                ]
-            },
             # Mock create mutation response
             {
                 "createUserGroupV3": {
@@ -448,7 +463,7 @@ class TestUserGroup:
                     }
                 }
             },
-            # Mock get query response after create
+            # Mock get query response after create (get() executes userGroupV2 first)
             {
                 "userGroupV2": {
                     "id": "group_id",
@@ -473,6 +488,12 @@ class TestUserGroup:
                         ],
                     },
                 }
+            },
+            # Mock get_roles query response (called by _get_members_set)
+            {
+                "roles": [
+                    {"id": "role_id", "name": "LABELER"},
+                ]
             },
         ]
 
@@ -501,7 +522,7 @@ class TestUserGroup:
                     }
                 }
             },
-            # Mock get query response
+            # Mock get query response (get() executes userGroupV2 first)
             {
                 "userGroupV2": {
                     "id": "group_id",
@@ -519,6 +540,8 @@ class TestUserGroup:
                     },
                 }
             },
+            # Mock get_roles query response (even though no members, _get_members_set is still called)
+            {"roles": []},
         ]
 
         group.create()
@@ -588,7 +611,7 @@ def test_create_mutation():
                 }
             }
         },
-        # Second call: get query
+        # Second call: get query (get() executes userGroupV2 first)
         {
             "userGroupV2": {
                 "id": "group_id",
@@ -599,6 +622,8 @@ def test_create_mutation():
                 "members": {"nodes": [], "totalCount": 0, "userGroupRoles": []},
             }
         },
+        # Third call: get_roles query (called by _get_members_set)
+        {"roles": []},
     ]
 
     group.create()
@@ -646,7 +671,7 @@ def test_update_mutation():
                 }
             }
         },
-        # Second call: get query
+        # Second call: get query (get() executes userGroupV2 first)
         {
             "userGroupV2": {
                 "id": "group_id",
@@ -657,6 +682,8 @@ def test_update_mutation():
                 "members": {"nodes": [], "totalCount": 0, "userGroupRoles": []},
             }
         },
+        # Third call: get_roles query (called by _get_members_set)
+        {"roles": []},
     ]
 
     group.update()
