@@ -11,6 +11,7 @@ from labelbox.schema.iam_integration import (
     GcpIamIntegrationSettings,
     AzureIamIntegrationSettings,
 )
+from ..conftest import create_dataset_robust
 
 
 def delete_iam_integration(client, iam_integration_id: str):
@@ -382,7 +383,7 @@ def test_default_integration():
     Org ID: cl269lvvj78b50zau34s4550z
     Email: jtso+gcp_sdk_tests@labelbox.com"""
     client = Client(api_key=os.environ.get("DA_GCP_LABELBOX_API_KEY"))
-    ds = client.create_dataset(name="new_ds")
+    ds = create_dataset_robust(client, name="new_ds")
     dr = ds.create_data_row(
         row_data="gs://jtso-gcs-sdk-da-tests/nikita-samokhin-D6QS6iv_CTY-unsplash.jpg"
     )
@@ -414,7 +415,9 @@ def test_non_default_integration():
         inte for inte in integrations if "aws-da-test-bucket" in inte.name
     ][0]
     assert integration.valid
-    ds = client.create_dataset(iam_integration=integration, name="new_ds")
+    ds = create_dataset_robust(
+        client, iam_integration=integration, name="new_ds"
+    )
     assert ds.iam_integration().name == "aws-da-test-bucket"
     dr = ds.create_data_row(
         row_data="https://jtso-aws-da-sdk-tests.s3.us-east-2.amazonaws.com/adrian-yu-qkN4D3Rf1gw-unsplash.jpg"
@@ -424,7 +427,7 @@ def test_non_default_integration():
 
 
 def test_no_integration(client, image_url):
-    ds = client.create_dataset(iam_integration=None, name="new_ds")
+    ds = create_dataset_robust(client, iam_integration=None, name="new_ds")
     assert ds.iam_integration() is None
     dr = ds.create_data_row(row_data=image_url)
     assert requests.get(dr.row_data).status_code == 200
@@ -433,7 +436,7 @@ def test_no_integration(client, image_url):
 
 @pytest.mark.skip(reason="Assumes state of account doesn't have integration")
 def test_no_default_integration(client):
-    ds = client.create_dataset(name="new_ds")
+    ds = create_dataset_robust(client, name="new_ds")
     assert ds.iam_integration() is None
     ds.delete()
 
@@ -466,8 +469,8 @@ def test_add_integration_from_object():
         if "aws-da-test-bucket" in integration.name
     ][0]
 
-    ds = client.create_dataset(
-        iam_integration=None, name=f"integration_add_obj-{uuid.uuid4()}"
+    ds = create_dataset_robust(
+        client, iam_integration=None, name=f"integration_add_obj-{uuid.uuid4()}"
     )
 
     # Test set integration with object
@@ -506,8 +509,8 @@ def test_add_integration_from_uid():
         if "aws-da-test-bucket" in integration.name
     ][0]
 
-    ds = client.create_dataset(
-        iam_integration=None, name=f"integration_add_id-{uuid.uuid4()}"
+    ds = create_dataset_robust(
+        client, iam_integration=None, name=f"integration_add_id-{uuid.uuid4()}"
     )
 
     # Test set integration with integration id
@@ -552,8 +555,10 @@ def test_integration_remove():
         if "aws-da-test-bucket" in integration.name
     ][0]
 
-    ds = client.create_dataset(
-        iam_integration=integration, name=f"integration_remove-{uuid.uuid4()}"
+    ds = create_dataset_robust(
+        client,
+        iam_integration=integration,
+        name=f"integration_remove-{uuid.uuid4()}",
     )
 
     # Test unset integration

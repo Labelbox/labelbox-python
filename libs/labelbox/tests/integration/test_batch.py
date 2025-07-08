@@ -10,10 +10,14 @@ from lbox.exceptions import (
 )
 
 from labelbox import Dataset, Project
+from ..conftest import create_dataset_robust
 
 
 def get_data_row_ids(ds: Dataset):
-    return [dr.uid for dr in list(ds.data_rows())]
+    export_task = ds.export()
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    return [dr.json["data_row"]["id"] for dr in stream]
 
 
 def test_create_batch(project: Project, big_dataset_data_row_ids: List[str]):
@@ -243,7 +247,7 @@ def test_list_all_batches(project: Project, client, image_url: str):
     datasets = []
 
     for assets in data:
-        dataset = client.create_dataset(name=str(uuid4()))
+        dataset = create_dataset_robust(client, name=str(uuid4()))
         create_data_rows_task = dataset.create_data_rows(assets)
         create_data_rows_task.wait_till_done()
         datasets.append(dataset)
