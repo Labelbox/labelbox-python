@@ -785,11 +785,16 @@ def test_reset_to_initial_nodes_preserves_existing_ids(client):
         workflow = project.get_workflow()
         initial_nodes = workflow.reset_to_initial_nodes()
 
+        # Create a complete workflow by adding nodes and edges
+        done_node = workflow.add_node(type=NodeType.Done, name="Test Done")
+        workflow.add_edge(initial_nodes.labeling, done_node)
+        workflow.add_edge(initial_nodes.rework, done_node)
+
         # Record the original IDs
         original_labeling_id = initial_nodes.labeling.id
         original_rework_id = initial_nodes.rework.id
 
-        # Update the workflow to save the initial state
+        # Update the workflow to save the initial state (now valid)
         workflow.update_config()
 
         # Reset again with new configuration
@@ -803,6 +808,11 @@ def test_reset_to_initial_nodes_preserves_existing_ids(client):
                 max_contributions_per_user=3,
             ),
         )
+
+        # Rebuild the workflow structure after reset
+        done_node = workflow.add_node(type=NodeType.Done, name="Test Done")
+        workflow.add_edge(new_initial_nodes.labeling, done_node)
+        workflow.add_edge(new_initial_nodes.rework, done_node)
 
         # Verify that the IDs are preserved
         assert new_initial_nodes.labeling.id == original_labeling_id, (
@@ -1013,12 +1023,10 @@ def test_edge_id_format_with_different_handles(client):
             review_node, rework_node, NodeOutput.Rejected
         )
 
-        # Verify edge ID formats
-        expected_approved_id = (
-            f"xy-edge__{review_node.id}approved-{done_node.id}in"
-        )
+        # Verify edge ID formats - NodeOutput.Approved maps to "if", NodeOutput.Rejected maps to "else"
+        expected_approved_id = f"xy-edge__{review_node.id}if-{done_node.id}in"
         expected_rejected_id = (
-            f"xy-edge__{review_node.id}rejected-{rework_node.id}in"
+            f"xy-edge__{review_node.id}else-{rework_node.id}in"
         )
 
         assert (
@@ -1028,9 +1036,9 @@ def test_edge_id_format_with_different_handles(client):
             rejected_edge.id == expected_rejected_id
         ), f"Rejected edge ID format incorrect. Expected: {expected_rejected_id}, Got: {rejected_edge.id}"
 
-        # Verify handle values
-        assert approved_edge.sourceHandle == "approved"
-        assert rejected_edge.sourceHandle == "rejected"
+        # Verify handle values - NodeOutput.Approved maps to "if", NodeOutput.Rejected maps to "else"
+        assert approved_edge.sourceHandle == "if"
+        assert rejected_edge.sourceHandle == "else"
         assert approved_edge.targetHandle == "in"
         assert rejected_edge.targetHandle == "in"
 
