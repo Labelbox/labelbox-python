@@ -1,4 +1,9 @@
 # Changelog
+# Version 7.1.1 (2025-07-09)
+## Fixed
+* `reset_to_initial_nodes()` and `clone_workflow_from()` will not update initial node IDs anymore ([#1999](https://github.com/Labelbox/labelbox-python/pull/1999))
+
+
 # Version 7.1.0 (2025-07-08)
 ## Added
 * Add the ability to specify relationship constraints ([#1992](https://github.com/Labelbox/labelbox-python/pull/1992))
