@@ -35,6 +35,7 @@ from labelbox.schema.workflow import (
     consensus_average,
     review_time,
     labeled_at,
+    ReworkConfig,
 )
 from labelbox.schema.media_type import MediaType
 
@@ -769,3 +770,277 @@ def test_model_prediction_conditions(client, test_projects):
         assert (
             filters[0]["field"] == "ModelPrediction"
         ), "Should have ModelPrediction filter"
+
+
+def test_reset_to_initial_nodes_preserves_existing_ids(client):
+    """Test that reset_to_initial_nodes preserves existing initial node IDs."""
+    # Create a new project for this test
+    project_name = f"ID Preservation Test {uuid.uuid4()}"
+    project = client.create_project(
+        name=project_name, media_type=MediaType.Image
+    )
+
+    try:
+        # Get workflow and create initial nodes
+        workflow = project.get_workflow()
+        initial_nodes = workflow.reset_to_initial_nodes()
+
+        # Create a complete workflow by adding nodes and edges
+        done_node = workflow.add_node(type=NodeType.Done, name="Test Done")
+        workflow.add_edge(initial_nodes.labeling, done_node)
+        workflow.add_edge(initial_nodes.rework, done_node)
+
+        # Record the original IDs
+        original_labeling_id = initial_nodes.labeling.id
+        original_rework_id = initial_nodes.rework.id
+
+        # Update the workflow to save the initial state (now valid)
+        workflow.update_config()
+
+        # Reset again with new configuration
+        new_initial_nodes = workflow.reset_to_initial_nodes(
+            labeling_config=LabelingConfig(
+                instructions="Updated instructions",
+                max_contributions_per_user=5,
+            ),
+            rework_config=ReworkConfig(
+                instructions="Updated rework instructions",
+                max_contributions_per_user=3,
+            ),
+        )
+
+        # Rebuild the workflow structure after reset
+        done_node = workflow.add_node(type=NodeType.Done, name="Test Done")
+        workflow.add_edge(new_initial_nodes.labeling, done_node)
+        workflow.add_edge(new_initial_nodes.rework, done_node)
+
+        # Verify that the IDs are preserved
+        assert new_initial_nodes.labeling.id == original_labeling_id, (
+            f"InitialLabelingNode ID changed from {original_labeling_id} to {new_initial_nodes.labeling.id}. "
+            f"This will break the workflow!"
+        )
+        assert new_initial_nodes.rework.id == original_rework_id, (
+            f"InitialReworkNode ID changed from {original_rework_id} to {new_initial_nodes.rework.id}. "
+            f"This will break the workflow!"
+        )
+
+        # Verify that the configuration was updated
+        assert new_initial_nodes.labeling.instructions == "Updated instructions"
+        assert new_initial_nodes.labeling.max_contributions_per_user == 5
+        assert (
+            new_initial_nodes.rework.instructions
+            == "Updated rework instructions"
+        )
+        assert new_initial_nodes.rework.max_contributions_per_user == 3
+
+        # Save and verify the workflow still works
+        workflow.update_config()
+
+        # Reload the workflow and verify IDs are still preserved
+        reloaded_workflow = project.get_workflow()
+        reloaded_nodes = reloaded_workflow.get_nodes()
+
+        labeling_node = next(
+            n
+            for n in reloaded_nodes
+            if n.definition_id == WorkflowDefinitionId.InitialLabelingTask
+        )
+        rework_node = next(
+            n
+            for n in reloaded_nodes
+            if n.definition_id == WorkflowDefinitionId.InitialReworkTask
+        )
+
+        assert labeling_node.id == original_labeling_id
+        assert rework_node.id == original_rework_id
+
+    finally:
+        project.delete()
+
+
+def test_copy_workflow_preserves_initial_node_ids(client):
+    """Test that copy operations preserve existing initial node IDs."""
+    # Create source and target projects
+    source_project = client.create_project(
+        name=f"Source Project {uuid.uuid4()}", media_type=MediaType.Image
+    )
+    target_project = client.create_project(
+        name=f"Target Project {uuid.uuid4()}", media_type=MediaType.Image
+    )
+
+    try:
+        # Set up source workflow
+        source_workflow = source_project.get_workflow()
+        source_initial = source_workflow.reset_to_initial_nodes()
+        done_node = source_workflow.add_node(type=NodeType.Done)
+        source_workflow.add_edge(source_initial.labeling, done_node)
+        source_workflow.add_edge(source_initial.rework, done_node)
+        source_workflow.update_config()
+
+        # Set up target workflow with its own initial nodes
+        target_workflow = target_project.get_workflow()
+        target_initial = target_workflow.reset_to_initial_nodes()
+
+        # Record original target initial node IDs
+        original_target_labeling_id = target_initial.labeling.id
+        original_target_rework_id = target_initial.rework.id
+
+        # Copy from source to target
+        target_workflow.copy_from(source_workflow)
+
+        # Verify that target's initial node IDs are preserved
+        updated_nodes = target_workflow.get_nodes()
+
+        labeling_node = next(
+            n
+            for n in updated_nodes
+            if n.definition_id == WorkflowDefinitionId.InitialLabelingTask
+        )
+        rework_node = next(
+            n
+            for n in updated_nodes
+            if n.definition_id == WorkflowDefinitionId.InitialReworkTask
+        )
+
+        assert labeling_node.id == original_target_labeling_id, (
+            f"Target InitialLabelingNode ID changed from {original_target_labeling_id} to {labeling_node.id}. "
+            f"This will break the workflow!"
+        )
+        assert rework_node.id == original_target_rework_id, (
+            f"Target InitialReworkNode ID changed from {original_target_rework_id} to {rework_node.id}. "
+            f"This will break the workflow!"
+        )
+
+        # Verify the structure was copied (should have a Done node)
+        done_nodes = [
+            n
+            for n in updated_nodes
+            if n.definition_id == WorkflowDefinitionId.Done
+        ]
+        assert len(done_nodes) == 1, "Done node should have been copied"
+
+    finally:
+        source_project.delete()
+        target_project.delete()
+
+
+def test_edge_id_format_is_correct(client):
+    """Test that edge IDs are generated using the correct format."""
+    # Create a new project for this test
+    project_name = f"Edge ID Format Test {uuid.uuid4()}"
+    project = client.create_project(
+        name=project_name, media_type=MediaType.Image
+    )
+
+    try:
+        # Get workflow and create initial nodes
+        workflow = project.get_workflow()
+        initial_nodes = workflow.reset_to_initial_nodes()
+
+        # Create a done node
+        done_node = workflow.add_node(type=NodeType.Done, name="Test Done")
+
+        # Create edges with different handle types
+        edge1 = workflow.add_edge(
+            initial_nodes.labeling, done_node, NodeOutput.If
+        )
+        edge2 = workflow.add_edge(
+            initial_nodes.rework, done_node, NodeOutput.If
+        )
+
+        # Verify edge ID format: xy-edge__{source}{sourceHandle}-{target}{targetHandle}
+        expected_edge1_id = (
+            f"xy-edge__{initial_nodes.labeling.id}if-{done_node.id}in"
+        )
+        expected_edge2_id = (
+            f"xy-edge__{initial_nodes.rework.id}if-{done_node.id}in"
+        )
+
+        assert (
+            edge1.id == expected_edge1_id
+        ), f"Edge ID format incorrect. Expected: {expected_edge1_id}, Got: {edge1.id}"
+        assert (
+            edge2.id == expected_edge2_id
+        ), f"Edge ID format incorrect. Expected: {expected_edge2_id}, Got: {edge2.id}"
+
+        # Verify edge properties are correct
+        assert edge1.source == initial_nodes.labeling.id
+        assert edge1.target == done_node.id
+        assert edge1.sourceHandle == "if"
+        assert edge1.targetHandle == "in"
+
+        assert edge2.source == initial_nodes.rework.id
+        assert edge2.target == done_node.id
+        assert edge2.sourceHandle == "if"
+        assert edge2.targetHandle == "in"
+
+        # Save and verify the workflow
+        workflow.update_config()
+
+        # Reload workflow and check edge IDs are preserved
+        reloaded_workflow = project.get_workflow()
+        reloaded_edges = reloaded_workflow.get_edges()
+
+        edge_ids = [edge.id for edge in reloaded_edges]
+        assert (
+            expected_edge1_id in edge_ids
+        ), f"Edge ID {expected_edge1_id} not found after reload"
+        assert (
+            expected_edge2_id in edge_ids
+        ), f"Edge ID {expected_edge2_id} not found after reload"
+
+    finally:
+        project.delete()
+
+
+def test_edge_id_format_with_different_handles(client):
+    """Test edge ID format with different source handle types."""
+    # Create a new project for this test
+    project_name = f"Edge Handle Test {uuid.uuid4()}"
+    project = client.create_project(
+        name=project_name, media_type=MediaType.Image
+    )
+
+    try:
+        # Create workflow with review node
+        workflow = project.get_workflow()
+        initial_nodes = workflow.reset_to_initial_nodes()
+
+        review_node = workflow.add_node(
+            type=NodeType.Review, name="Test Review"
+        )
+        done_node = workflow.add_node(type=NodeType.Done, name="Approved")
+        rework_node = workflow.add_node(type=NodeType.Rework, name="Rejected")
+
+        # Connect initial to review
+        workflow.add_edge(initial_nodes.labeling, review_node)
+
+        # Create edges with different handle types
+        approved_edge = workflow.add_edge(
+            review_node, done_node, NodeOutput.Approved
+        )
+        rejected_edge = workflow.add_edge(
+            review_node, rework_node, NodeOutput.Rejected
+        )
+
+        # Verify edge ID formats - NodeOutput.Approved maps to "if", NodeOutput.Rejected maps to "else"
+        expected_approved_id = f"xy-edge__{review_node.id}if-{done_node.id}in"
+        expected_rejected_id = (
+            f"xy-edge__{review_node.id}else-{rework_node.id}in"
+        )
+
+        assert (
+            approved_edge.id == expected_approved_id
+        ), f"Approved edge ID format incorrect. Expected: {expected_approved_id}, Got: {approved_edge.id}"
+        assert (
+            rejected_edge.id == expected_rejected_id
+        ), f"Rejected edge ID format incorrect. Expected: {expected_rejected_id}, Got: {rejected_edge.id}"
+
+        # Verify handle values - NodeOutput.Approved maps to "if", NodeOutput.Rejected maps to "else"
+        assert approved_edge.sourceHandle == "if"
+        assert rejected_edge.sourceHandle == "else"
+        assert approved_edge.targetHandle == "in"
+        assert rejected_edge.targetHandle == "in"
+
+    finally:
+        project.delete()

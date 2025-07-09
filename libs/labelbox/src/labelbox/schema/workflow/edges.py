@@ -5,7 +5,6 @@ between workflow nodes, including edge factories and workflow references.
 """
 
 import logging
-import uuid
 from typing import Dict, Any, Optional, TYPE_CHECKING
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
@@ -25,11 +24,22 @@ class WorkflowEdge(BaseModel):
     from a source node to a target node through specific handles.
 
     Attributes:
-        id: Unique identifier for the edge
+        id: Unique identifier for the edge (format: xy-edge__{source}{sourceHandle}-{target}{targetHandle})
         source: ID of the source node
         target: ID of the target node
-        sourceHandle: Output handle on the source node (e.g., 'if', 'else')
+        sourceHandle: Output handle on the source node (e.g., 'if', 'else', 'approved', 'rejected')
         targetHandle: Input handle on the target node (typically 'in')
+
+    Edge ID Format:
+        Edge IDs follow the pattern: xy-edge__{source}{sourceHandle}-{target}{targetHandle}
+
+        Example: xy-edge__node1if-node2in
+        - Prefix: xy-edge__
+        - Source node ID: node1
+        - Source handle: if
+        - Separator: -
+        - Target node ID: node2
+        - Target handle: in
     """
 
     id: str
@@ -220,7 +230,13 @@ class WorkflowEdgeFactory:
         Returns:
             Created WorkflowEdge instance
         """
-        edge_id = f"edge-{uuid.uuid4()}"
+        # Generate edge ID using the correct format: xy-edge__{source}{sourceHandle}-{target}{targetHandle}
+        source_handle = output_type.value
+        target_handle = "in"
+        edge_id = (
+            f"xy-edge__{source.id}{source_handle}-{target.id}{target_handle}"
+        )
+
         logger.debug(
             f"Creating edge {edge_id} from {source.id} to {target.id} with type {output_type.value}"
         )
@@ -229,8 +245,8 @@ class WorkflowEdgeFactory:
             id=edge_id,
             source=source.id,
             target=target.id,
-            sourceHandle=output_type.value,
-            targetHandle="in",  # Explicitly set targetHandle
+            sourceHandle=source_handle,
+            targetHandle=target_handle,  # Explicitly set targetHandle
         )
         edge.set_workflow_reference(self.workflow)
         return edge
