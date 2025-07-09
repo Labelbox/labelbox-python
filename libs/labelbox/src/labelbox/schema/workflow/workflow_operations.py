@@ -390,7 +390,11 @@ class WorkflowOperations:
         target_client,
         target_project_id: str,
     ) -> "ProjectWorkflow":
-        """Copy the workflow structure from a source workflow to a new project."""
+        """Copy the workflow structure from a source workflow to a new project.
+
+        IMPORTANT: This method preserves existing initial node IDs in the target workflow
+        to prevent workflow breakage. Only non-initial nodes get new IDs.
+        """
         try:
             # Create a new workflow in the target project
             from labelbox.schema.workflow.workflow import ProjectWorkflow
@@ -399,38 +403,74 @@ class WorkflowOperations:
                 target_client, target_project_id
             )
 
+            # Find existing initial nodes in target workflow to preserve their IDs
+            existing_initial_ids = {}
+            for node_data in target_workflow.config.get("nodes", []):
+                definition_id = node_data.get("definitionId")
+                if (
+                    definition_id
+                    == WorkflowDefinitionId.InitialLabelingTask.value
+                ):
+                    existing_initial_ids[
+                        WorkflowDefinitionId.InitialLabelingTask.value
+                    ] = node_data.get("id")
+                elif (
+                    definition_id
+                    == WorkflowDefinitionId.InitialReworkTask.value
+                ):
+                    existing_initial_ids[
+                        WorkflowDefinitionId.InitialReworkTask.value
+                    ] = node_data.get("id")
+
             # Get the source config
             new_config = source_workflow.config.copy()
             old_to_new_id_map = {}
 
-            # Generate new IDs for all nodes
+            # Generate new IDs for all nodes, but preserve existing initial node IDs
             if new_config.get("nodes"):
-                new_config["nodes"] = [
-                    {
-                        **node,
-                        "id": str(uuid.uuid4()),
-                    }
-                    for node in new_config["nodes"]
-                ]
-                # Create mapping of old to new IDs
-                old_to_new_id_map = {
-                    old_node["id"]: new_node["id"]
-                    for old_node, new_node in zip(
-                        source_workflow.config["nodes"], new_config["nodes"]
+                updated_nodes = []
+                for node in new_config["nodes"]:
+                    definition_id = node.get("definitionId")
+                    old_id = node["id"]
+
+                    # Preserve existing initial node IDs, generate new IDs for others
+                    if definition_id in existing_initial_ids:
+                        new_id = existing_initial_ids[definition_id]
+                    else:
+                        new_id = str(uuid.uuid4())
+
+                    old_to_new_id_map[old_id] = new_id
+                    updated_nodes.append(
+                        {
+                            **node,
+                            "id": new_id,
+                        }
                     )
-                }
+
+                new_config["nodes"] = updated_nodes
 
             # Update edges to use the new node IDs
             if new_config.get("edges"):
-                new_config["edges"] = [
-                    {
-                        **edge,
-                        "id": str(uuid.uuid4()),
-                        "source": old_to_new_id_map[edge["source"]],
-                        "target": old_to_new_id_map[edge["target"]],
-                    }
-                    for edge in new_config["edges"]
-                ]
+                updated_edges = []
+                for edge in new_config["edges"]:
+                    source_id = old_to_new_id_map[edge["source"]]
+                    target_id = old_to_new_id_map[edge["target"]]
+                    source_handle = edge.get("sourceHandle", "if")
+                    target_handle = edge.get("targetHandle", "in")
+
+                    # Generate edge ID using correct format: xy-edge__{source}{sourceHandle}-{target}{targetHandle}
+                    edge_id = f"xy-edge__{source_id}{source_handle}-{target_id}{target_handle}"
+
+                    updated_edges.append(
+                        {
+                            **edge,
+                            "id": edge_id,
+                            "source": source_id,
+                            "target": target_id,
+                        }
+                    )
+
+                new_config["edges"] = updated_edges
 
             # Update the target workflow with the new config
             target_workflow.config = new_config
@@ -450,8 +490,31 @@ class WorkflowOperations:
         source_workflow: "ProjectWorkflow",
         auto_layout: bool = True,
     ) -> "ProjectWorkflow":
-        """Copy the nodes and edges from a source workflow to this workflow."""
+        """Copy the nodes and edges from a source workflow to this workflow.
+
+        IMPORTANT: This method preserves existing initial node IDs in the target workflow
+        to prevent workflow breakage. Only non-initial nodes get new IDs.
+        """
         try:
+            # Find existing initial nodes in target workflow to preserve their IDs
+            existing_initial_ids = {}
+            for node_data in workflow.config.get("nodes", []):
+                definition_id = node_data.get("definitionId")
+                if (
+                    definition_id
+                    == WorkflowDefinitionId.InitialLabelingTask.value
+                ):
+                    existing_initial_ids[
+                        WorkflowDefinitionId.InitialLabelingTask.value
+                    ] = node_data.get("id")
+                elif (
+                    definition_id
+                    == WorkflowDefinitionId.InitialReworkTask.value
+                ):
+                    existing_initial_ids[
+                        WorkflowDefinitionId.InitialReworkTask.value
+                    ] = node_data.get("id")
+
             # Create a clean work config (without connections)
             work_config: Dict[str, List[Any]] = {"nodes": [], "edges": []}
 
@@ -463,9 +526,15 @@ class WorkflowOperations:
 
             # First pass: Create all nodes by directly copying configuration
             for source_node_data in source_workflow.config.get("nodes", []):
-                # Generate a new ID for the node
-                new_id = f"node-{uuid.uuid4()}"
+                definition_id = source_node_data.get("definitionId")
                 old_id = source_node_data.get("id")
+
+                # Preserve existing initial node IDs, generate new IDs for others
+                if definition_id in existing_initial_ids:
+                    new_id = existing_initial_ids[definition_id]
+                else:
+                    new_id = f"node-{uuid.uuid4()}"
+
                 id_mapping[old_id] = new_id
 
                 # Create a new node data dictionary by copying the source node
@@ -498,12 +567,18 @@ class WorkflowOperations:
                     continue
 
                 # Create new edge
+                source_handle = source_edge_data.get("sourceHandle", "out")
+                target_handle = source_edge_data.get("targetHandle", "in")
+
+                # Generate edge ID using correct format: xy-edge__{source}{sourceHandle}-{target}{targetHandle}
+                edge_id = f"xy-edge__{id_mapping[source_id]}{source_handle}-{id_mapping[target_id]}{target_handle}"
+
                 new_edge = {
-                    "id": f"edge-{uuid.uuid4()}",
+                    "id": edge_id,
                     "source": id_mapping[source_id],
                     "target": id_mapping[target_id],
-                    "sourceHandle": source_edge_data.get("sourceHandle", "out"),
-                    "targetHandle": source_edge_data.get("targetHandle", "in"),
+                    "sourceHandle": source_handle,
+                    "targetHandle": target_handle,
                 }
 
                 # Add the edge to config

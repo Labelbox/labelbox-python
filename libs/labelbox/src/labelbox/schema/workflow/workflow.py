@@ -496,7 +496,10 @@ class ProjectWorkflow(BaseModel):
     ) -> InitialNodes:
         """Reset workflow and create the two required initial nodes.
 
-        Clears all existing nodes and edges, then creates:
+        IMPORTANT: This method preserves existing initial node IDs to prevent workflow breakage.
+        It only creates new IDs for truly new workflows (first-time setup).
+
+        Clears all non-initial nodes and edges, then creates/updates:
         - InitialLabeling node: Entry point for new data requiring labeling
         - InitialRework node: Entry point for rejected data requiring corrections
 
@@ -526,10 +529,27 @@ class ProjectWorkflow(BaseModel):
             rework_config.model_dump(exclude_none=True) if rework_config else {}
         )
 
-        # Reset workflow configuration
+        # Find existing initial nodes to preserve their IDs
+        existing_labeling_id = None
+        existing_rework_id = None
+
+        for node_data in self.config.get("nodes", []):
+            definition_id = node_data.get("definitionId")
+            if definition_id == WorkflowDefinitionId.InitialLabelingTask.value:
+                existing_labeling_id = node_data.get("id")
+            elif definition_id == WorkflowDefinitionId.InitialReworkTask.value:
+                existing_rework_id = node_data.get("id")
+
+        # Reset workflow configuration (clear all nodes and edges)
         self.config = {"nodes": [], "edges": []}
         self._nodes_cache = None
         self._edges_cache = None
+
+        # Create/recreate initial nodes, preserving existing IDs if they exist
+        if existing_labeling_id:
+            labeling_dict["id"] = existing_labeling_id
+        if existing_rework_id:
+            rework_dict["id"] = existing_rework_id
 
         # Create required initial nodes using internal method
         initial_labeling = cast(
@@ -554,7 +574,11 @@ class ProjectWorkflow(BaseModel):
         target_client,
         target_project_id: str,
     ) -> "ProjectWorkflow":
-        """Copy the workflow structure from a source workflow to a new project."""
+        """Copy the workflow structure from a source workflow to a new project.
+
+        IMPORTANT: This method preserves existing initial node IDs to prevent workflow breakage.
+        Changing initial node IDs will completely break the workflow and require support intervention.
+        """
         return WorkflowOperations.copy_workflow_structure(
             source_workflow, target_client, target_project_id
         )
@@ -562,7 +586,11 @@ class ProjectWorkflow(BaseModel):
     def copy_from(
         self, source_workflow: "ProjectWorkflow", auto_layout: bool = True
     ) -> "ProjectWorkflow":
-        """Copy the nodes and edges from a source workflow to this workflow."""
+        """Copy the nodes and edges from a source workflow to this workflow.
+
+        IMPORTANT: This method preserves existing initial node IDs to prevent workflow breakage.
+        Changing initial node IDs will completely break the workflow and require support intervention.
+        """
         return WorkflowOperations.copy_from(self, source_workflow, auto_layout)
 
     # Layout and display methods
