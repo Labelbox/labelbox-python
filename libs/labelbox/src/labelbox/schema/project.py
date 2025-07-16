@@ -564,15 +564,8 @@ class Project(DbObject, Updateable, Deletable):
 
         Raises:
             ValueError:
-                * project must be setup
                 * instructions file must have a ".pdf" or ".html" extension
         """
-
-        if self.setup_complete is None:
-            raise ValueError(
-                "Cannot attach instructions to a project that has not been set up."
-            )
-
         frontend = self.labeling_frontend()
 
         if frontend.name != "Editor":
@@ -705,7 +698,6 @@ class Project(DbObject, Updateable, Deletable):
             query_str, {"ontologyId": ontology.uid, "projectId": self.uid}
         )
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        self.update(setup_complete=timestamp)
 
     def _connect_default_labeling_front_end(self, ontology_as_dict: dict):
         labeling_frontend = self.labeling_frontend()
