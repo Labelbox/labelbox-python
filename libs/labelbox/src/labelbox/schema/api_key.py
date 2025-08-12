@@ -8,7 +8,7 @@ from labelbox.schema.timeunit import TimeUnit
 from lbox.exceptions import LabelboxError
 
 from labelbox.schema.user import User
-from labelbox.schema.role import Role
+from labelbox.schema.role import Role, format_role
 
 if TYPE_CHECKING:
     from labelbox import Client
@@ -258,7 +258,7 @@ class ApiKey(DbObject):
             if role["name"] in ["None", "Tenant Admin"]:
                 continue
             if all(perm in current_permissions for perm in role["permissions"]):
-                available_roles.append(role["name"])
+                available_roles.append(format_role(role["name"]))
         client._cached_available_api_key_roles = available_roles
         return available_roles
 
@@ -332,9 +332,9 @@ class ApiKey(DbObject):
             raise ValueError("role must be a Role object or a valid role name")
 
         allowed_roles = ApiKey._get_available_api_key_roles(client)
-        # Normalize the allowed roles to lowercase for case-insensitive comparison
-        normalized_allowed_roles = [r.lower() for r in allowed_roles]
-        if role_name.lower() not in normalized_allowed_roles:
+        # Format the input role name consistently with available roles
+        formatted_role_name = format_role(role_name)
+        if formatted_role_name not in allowed_roles:
             raise ValueError(
                 f"Invalid role specified. Allowed roles are: {allowed_roles}"
             )
