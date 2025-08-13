@@ -89,7 +89,7 @@ class FoundryClient:
             "classToSchemaId": app.class_to_schema_id,
             "inferenceParams": app.inference_params,
             "ontologyId": app.ontology_id,
-            "modelAppId": app.id,
+            "modelAppId": app.id or "",
         }
 
         data_rows_key = (
