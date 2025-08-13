@@ -2,7 +2,7 @@
 
 import logging
 from typing import Dict, List, Any, Optional, Literal, Union
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator, ConfigDict
 
 from labelbox.schema.workflow.base import BaseWorkflowNode
 from labelbox.schema.workflow.enums import (
@@ -68,6 +68,8 @@ class ReviewNode(BaseWorkflowNode):
         Review nodes default to "or" filter logic, unlike most other nodes
         which default to "and" logic. This allows more flexible routing.
     """
+
+    model_config = ConfigDict(extra="ignore")
 
     label: str = Field(default="Review task", max_length=50)
     # For ReviewNode, filter_logic defaults to "or"

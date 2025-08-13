@@ -56,7 +56,7 @@ class DoneNode(BaseWorkflowNode):
         Work reaching a DoneNode is considered successfully completed
         and will not flow to any other nodes in the workflow.
     """
-    
+
     model_config = ConfigDict(extra="ignore")
 
     label: str = Field(default="Done", max_length=50)

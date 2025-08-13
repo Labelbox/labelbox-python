@@ -6,7 +6,7 @@ in workflows by applying filter logic to determine routing paths.
 
 import logging
 from typing import Dict, List, Any, Optional, Literal
-from pydantic import Field, model_validator, field_validator
+from pydantic import Field, model_validator, field_validator, ConfigDict
 
 from labelbox.schema.workflow.base import BaseWorkflowNode
 from labelbox.schema.workflow.enums import (
@@ -27,6 +27,7 @@ DEFAULT_EMBEDDING_TYPE = "CLIPV2"
 
 
 class LogicNode(BaseWorkflowNode):
+    model_config = ConfigDict(extra="ignore")
     """Logic node. One or more instances possible. One input, two outputs (if/else)."""
 
     label: str = Field(

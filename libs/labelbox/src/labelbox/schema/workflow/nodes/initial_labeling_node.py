@@ -58,7 +58,7 @@ class InitialLabelingNode(BaseWorkflowNode):
         This node type is automatically positioned as a workflow entry point
         and cannot have incoming connections from other nodes.
     """
-    
+
     model_config = ConfigDict(extra="ignore")
 
     label: str = Field(
