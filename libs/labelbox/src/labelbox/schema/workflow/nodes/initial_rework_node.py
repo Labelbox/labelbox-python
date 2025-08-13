@@ -2,7 +2,7 @@
 
 import logging
 from typing import Dict, List, Any, Optional, Literal, Union
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator, ConfigDict
 
 from labelbox.schema.workflow.base import BaseWorkflowNode
 from labelbox.schema.workflow.enums import (
@@ -65,6 +65,8 @@ class InitialReworkNode(BaseWorkflowNode):
         This node automatically creates API configuration entries for user assignments
         to ensure proper routing in the Labelbox platform.
     """
+
+    model_config = ConfigDict(extra="ignore")
 
     label: str = Field(
         default="Rework (all rejected)", frozen=True, max_length=50

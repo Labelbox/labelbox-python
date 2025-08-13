@@ -2,7 +2,7 @@
 
 import logging
 from typing import Dict, List, Any, Optional, Literal, Union
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator, ConfigDict
 
 from labelbox.schema.workflow.base import BaseWorkflowNode
 from labelbox.schema.workflow.enums import (
@@ -58,6 +58,8 @@ class InitialLabelingNode(BaseWorkflowNode):
         This node type is automatically positioned as a workflow entry point
         and cannot have incoming connections from other nodes.
     """
+
+    model_config = ConfigDict(extra="ignore")
 
     label: str = Field(
         default="Initial labeling task", frozen=True, max_length=50

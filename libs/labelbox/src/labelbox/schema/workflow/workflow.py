@@ -283,10 +283,13 @@ class ProjectWorkflow(BaseModel):
                     node_kwargs["config"] = node_data["config"]
 
                 if "customFields" in node_data:
-                    node_kwargs["customFields"] = node_data["customFields"]
+                    # Handle customFields being None by converting to empty dict
+                    custom_fields = node_data["customFields"]
+                    if custom_fields is None:
+                        custom_fields = {}
+                    node_kwargs["customFields"] = custom_fields
 
                     # Extract instructions from customFields if available
-                    custom_fields = node_data["customFields"]
                     if (
                         isinstance(custom_fields, dict)
                         and "description" in custom_fields

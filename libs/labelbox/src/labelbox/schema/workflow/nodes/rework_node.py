@@ -2,7 +2,7 @@
 
 import logging
 from typing import Dict, List, Any, Optional, Literal
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, ConfigDict
 
 from labelbox.schema.workflow.base import BaseWorkflowNode
 from labelbox.schema.workflow.enums import (
@@ -17,6 +17,7 @@ DEFAULT_FILTER_LOGIC_AND: Literal["and"] = "and"
 
 
 class ReworkNode(BaseWorkflowNode):
+    model_config = ConfigDict(extra="ignore")
     """
     Terminal rework node for sending work back for corrections.
 

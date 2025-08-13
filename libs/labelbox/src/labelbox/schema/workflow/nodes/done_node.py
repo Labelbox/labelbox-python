@@ -2,7 +2,7 @@
 
 import logging
 from typing import Dict, List, Any, Optional
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, ConfigDict
 
 from labelbox.schema.workflow.base import BaseWorkflowNode
 from labelbox.schema.workflow.enums import (
@@ -56,6 +56,8 @@ class DoneNode(BaseWorkflowNode):
         Work reaching a DoneNode is considered successfully completed
         and will not flow to any other nodes in the workflow.
     """
+
+    model_config = ConfigDict(extra="ignore")
 
     label: str = Field(default="Done", max_length=50)
     definition_id: WorkflowDefinitionId = Field(
