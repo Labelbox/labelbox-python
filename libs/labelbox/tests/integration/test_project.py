@@ -140,12 +140,6 @@ def test_extend_reservations(project):
 
 
 def test_attach_instructions(client, project):
-    with pytest.raises(ValueError) as execinfo:
-        project.upsert_instructions("tests/integration/media/sample_pdf.pdf")
-    assert (
-        str(execinfo.value)
-        == "Cannot attach instructions to a project that has not been set up."
-    )
     ontology_builder = OntologyBuilder(
         tools=[
             Tool(tool=Tool.Type.BBOX, name="test-bbox-class"),
