@@ -1,8 +1,13 @@
 # Changelog
+# Version 7.1.2 (2025-08-14)
+## Fixed
+* Project Setup: Remove project setup complete restriction ([#2003](https://github.com/Labelbox/labelbox-python/pull/2002))
+* API key creation: fix support of role with a space in the name ([#2003](https://github.com/Labelbox/labelbox-python/pull/2003))
+* Workflow cloning: Fix validation for some nodes ([#2005](https://github.com/Labelbox/labelbox-python/pull/2005))
+
 # Version 7.1.1 (2025-07-09)
 ## Fixed
 * `reset_to_initial_nodes()` and `clone_workflow_from()` will not update initial node IDs anymore ([#1999](https://github.com/Labelbox/labelbox-python/pull/1999))
-
 
 # Version 7.1.0 (2025-07-08)
 ## Added
