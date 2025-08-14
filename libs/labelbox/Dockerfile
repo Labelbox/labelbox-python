@@ -20,7 +20,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     ffmpeg \
     libfontconfig1 \
     libxrender1 \
-    libgl1-mesa-glx \
+    libgl1 \
+    libglx-mesa0 \
     libgeos-dev \
     gcc \
     && rm -rf /var/lib/apt/lists/*
