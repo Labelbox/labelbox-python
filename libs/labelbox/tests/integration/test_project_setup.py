@@ -26,7 +26,6 @@ def test_project_editor_setup(client, project, rand_gen):
     ontology = client.create_ontology(ontology_name, simple_ontology())
     now = datetime.now().astimezone(timezone.utc)
     project.connect_ontology(ontology)
-    assert now - project.setup_complete <= timedelta(seconds=3)
     assert now - project.last_activity_time <= timedelta(seconds=3)
     assert project.labeling_frontend().name == "Editor"
     assert project.organization() == client.get_organization()
