@@ -65,7 +65,7 @@ class DataRowMetadataSchema(BaseModel):
 DataRowMetadataSchema.model_rebuild()
 
 Embedding: Type[List[float]] = conlist(float, min_length=128, max_length=128)
-String: Type[str] = Field(max_length=65000)
+String: Type[str] = Field()
 
 
 # Metadata base class
