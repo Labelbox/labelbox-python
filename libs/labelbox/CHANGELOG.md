@@ -1,4 +1,8 @@
 # Changelog
+# Version 7.2.0 (2025-08-28)
+## Updated
+* DataRowMetadata: Remove enforcement of character limit ([#2010](https://github.com/Labelbox/labelbox-python/pull/2010))
+
 # Version 7.1.2 (2025-08-14)
 ## Fixed
 * Project Setup: Remove project setup complete restriction ([#2003](https://github.com/Labelbox/labelbox-python/pull/2002))
