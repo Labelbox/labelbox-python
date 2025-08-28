@@ -65,7 +65,6 @@ class DataRowMetadataSchema(BaseModel):
 DataRowMetadataSchema.model_rebuild()
 
 Embedding: Type[List[float]] = conlist(float, min_length=128, max_length=128)
-String: Type[str] = Field(max_length=4096)
 
 
 # Metadata base class
@@ -1010,10 +1009,6 @@ def _validate_parse_text(
     if not isinstance(field.value, str):
         raise ValueError(
             f"Expected a string type for the text field. Found {type(field.value)}"
-        )
-    if len(field.value) > String.metadata[0].max_length:
-        raise ValueError(
-            f"String fields cannot exceed {String.metadata.max_length} characters."
         )
     return [field.model_dump(by_alias=True)]
 
