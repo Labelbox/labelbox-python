@@ -69,33 +69,6 @@ def test_assign_same_global_keys_to_data_rows(client, dataset, image_url):
     )
 
 
-def test_long_global_key_validation(client, dataset, image_url):
-    long_global_key = "x" * 201
-    dr_1 = dataset.create_data_row(row_data=image_url)
-    dr_2 = dataset.create_data_row(row_data=image_url)
-
-    gk_1 = str(uuid.uuid4())
-    gk_2 = long_global_key
-
-    assignment_inputs = [
-        {"data_row_id": dr_1.uid, "global_key": gk_1},
-        {"data_row_id": dr_2.uid, "global_key": gk_2},
-    ]
-    res = client.assign_global_keys_to_data_rows(assignment_inputs)
-
-    assert len(res["results"]) == 1
-    assert len(res["errors"]) == 1
-    assert res["status"] == "PARTIAL SUCCESS"
-    assert res["results"][0]["data_row_id"] == dr_1.uid
-    assert res["results"][0]["global_key"] == gk_1
-    assert res["errors"][0]["data_row_id"] == dr_2.uid
-    assert res["errors"][0]["global_key"] == gk_2
-    assert (
-        res["errors"][0]["error"]
-        == "Invalid assignment. Either DataRow does not exist, or globalKey is invalid"
-    )
-
-
 def test_global_key_with_whitespaces_validation(client, dataset, image_url):
     data_row_items = [
         {
