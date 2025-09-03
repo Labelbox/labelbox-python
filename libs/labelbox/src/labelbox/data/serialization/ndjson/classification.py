@@ -12,6 +12,7 @@ from ....annotated_types import Cuid
 
 from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.video import VideoClassificationAnnotation
+from ...annotation_types.audio import AudioClassificationAnnotation
 from ...annotation_types.llm_prompt_response.prompt import (
     PromptClassificationAnnotation,
     PromptText,
@@ -425,7 +426,7 @@ class NDClassification:
     def from_common(
         cls,
         annotation: Union[
-            ClassificationAnnotation, VideoClassificationAnnotation
+            ClassificationAnnotation, VideoClassificationAnnotation, AudioClassificationAnnotation
         ],
         data: GenericDataRowData,
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
@@ -448,7 +449,7 @@ class NDClassification:
     @staticmethod
     def lookup_classification(
         annotation: Union[
-            ClassificationAnnotation, VideoClassificationAnnotation
+            ClassificationAnnotation, VideoClassificationAnnotation, AudioClassificationAnnotation
         ],
     ) -> Union[NDText, NDChecklist, NDRadio]:
         return {Text: NDText, Checklist: NDChecklist, Radio: NDRadio}.get(

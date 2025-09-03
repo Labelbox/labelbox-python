@@ -24,6 +24,10 @@ from ...annotation_types.video import (
     VideoMaskAnnotation,
     VideoObjectAnnotation,
 )
+from ...annotation_types.audio import (
+    AudioClassificationAnnotation,
+    AudioObjectAnnotation,
+)
 from labelbox.types import DocumentRectangle, DocumentEntity
 from .classification import (
     NDChecklistSubclass,
@@ -69,6 +73,7 @@ class NDLabel(BaseModel):
             yield from cls._create_relationship_annotations(label)
             yield from cls._create_non_video_annotations(label)
             yield from cls._create_video_annotations(label)
+            yield from cls._create_audio_annotations(label)
 
     @staticmethod
     def _get_consecutive_frames(
@@ -160,6 +165,40 @@ class NDLabel(BaseModel):
                 yield NDObject.from_common(segments, label.data)
 
     @classmethod
+    def _create_audio_annotations(
+        cls, label: Label
+    ) -> Generator[Union[NDChecklistSubclass, NDRadioSubclass], None, None]:
+        """Create audio annotations
+        
+        Args:
+            label: Label containing audio annotations to be processed
+            
+        Yields:
+            NDClassification or NDObject: Audio annotations in NDJSON format
+        """
+        audio_annotations = defaultdict(list)
+        for annot in label.annotations:
+            if isinstance(
+                annot, (AudioClassificationAnnotation, AudioObjectAnnotation)
+            ):
+                audio_annotations[annot.feature_schema_id or annot.name].append(
+                    annot
+                )
+
+        for annotation_group in audio_annotations.values():
+            # For audio, treat each annotation as a single frame (no segments needed)
+            if isinstance(annotation_group[0], AudioClassificationAnnotation):
+                annotation = annotation_group[0]
+                # Add frame information to extra (milliseconds)
+                annotation.extra.update({"frame": annotation.frame})
+                yield NDClassification.from_common(annotation, label.data)
+
+            elif isinstance(annotation_group[0], AudioObjectAnnotation):
+                # For audio objects, treat like single video frame
+                annotation = annotation_group[0]
+                yield NDObject.from_common(annotation, label.data)
+
+    @classmethod
     def _create_non_video_annotations(cls, label: Label):
         non_video_annotations = [
             annot
@@ -170,6 +209,8 @@ class NDLabel(BaseModel):
                     VideoClassificationAnnotation,
                     VideoObjectAnnotation,
                     VideoMaskAnnotation,
+                    AudioClassificationAnnotation,
+                    AudioObjectAnnotation,
                     RelationshipAnnotation,
                 ),
             )

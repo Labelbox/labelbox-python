@@ -13,6 +13,7 @@ from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .video import VideoClassificationAnnotation
 from .video import VideoObjectAnnotation, VideoMaskAnnotation
+from .audio import AudioClassificationAnnotation, AudioObjectAnnotation
 from .mmc import MessageEvaluationTaskAnnotation
 from pydantic import BaseModel, field_validator
 
@@ -44,6 +45,8 @@ class Label(BaseModel):
             ClassificationAnnotation,
             ObjectAnnotation,
             VideoMaskAnnotation,
+            AudioClassificationAnnotation,
+            AudioObjectAnnotation,
             ScalarMetric,
             ConfusionMatrixMetric,
             RelationshipAnnotation,
@@ -84,6 +87,27 @@ class Label(BaseModel):
             ):
                 frame_dict[annotation.frame].append(annotation)
         return frame_dict
+
+    def audio_annotations_by_frame(
+        self,
+    ) -> Dict[int, List[Union[AudioObjectAnnotation, AudioClassificationAnnotation]]]:
+        """Get audio annotations organized by frame (millisecond)
+        
+        Returns:
+            Dict[int, List]: Dictionary mapping frame (milliseconds) to list of audio annotations
+            
+        Example:
+            >>> label.audio_annotations_by_frame()
+            {2500: [AudioClassificationAnnotation(...)], 10000: [AudioObjectAnnotation(...)]}
+        """
+        frame_dict = defaultdict(list)
+        for annotation in self.annotations:
+            if isinstance(
+                annotation,
+                (AudioObjectAnnotation, AudioClassificationAnnotation),
+            ):
+                frame_dict[annotation.frame].append(annotation)
+        return dict(frame_dict)
 
     def add_url_to_masks(self, signer) -> "Label":
         """
