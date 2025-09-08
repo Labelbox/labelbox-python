@@ -16,13 +16,13 @@ from labelbox.data.annotation_types.ner import TextEntity
 def test_audio_classification_creation():
     """Test creating audio classification with time range"""
     annotation = AudioClassificationAnnotation.from_time_range(
-        start_sec=2.5,
-        end_sec=4.1,
+        start_ms=2500,
+        end_ms=4100,
         name="speaker_id",
         value=Radio(answer=ClassificationAnswer(name="john"))
     )
     
-    assert annotation.frame == 2500  # 2.5 seconds * 1000
+    assert annotation.frame == 2500  # 2.5 seconds in milliseconds
     assert annotation.start_time == 2.5
     assert annotation.segment_index is None
     assert annotation.name == "speaker_id"
@@ -33,8 +33,8 @@ def test_audio_classification_creation():
 def test_audio_classification_creation_with_segment():
     """Test creating audio classification with segment index"""
     annotation = AudioClassificationAnnotation.from_time_range(
-        start_sec=10.0,
-        end_sec=15.0,
+        start_ms=10000,
+        end_ms=15000,
         name="language",
         value=Radio(answer=ClassificationAnswer(name="english")),
         segment_index=1
@@ -63,8 +63,8 @@ def test_audio_classification_direct_creation():
 def test_audio_object_creation():
     """Test creating audio object annotation"""
     annotation = AudioObjectAnnotation.from_time_range(
-        start_sec=10.0,
-        end_sec=12.5,
+        start_ms=10000,
+        end_ms=12500,
         name="transcription",
         value=lb_types.TextEntity(start=0, end=11)  # "Hello world" has 11 characters
     )
@@ -88,8 +88,8 @@ def test_audio_object_creation_with_classifications():
     )
     
     annotation = AudioObjectAnnotation.from_time_range(
-        start_sec=10.0,
-        end_sec=12.5,
+        start_ms=10000,
+        end_ms=12500,
         name="transcription",
         value=lb_types.TextEntity(start=0, end=11),  # "Hello world" has 11 characters
         classifications=[sub_classification]
@@ -118,37 +118,37 @@ def test_audio_object_direct_creation():
 
 def test_time_conversion_precision():
     """Test time conversion maintains precision"""
-    # Test various time values
+    # Test various time values in milliseconds
     test_cases = [
-        (0.0, 0),
-        (0.001, 1),      # 1 millisecond
-        (1.0, 1000),     # 1 second
-        (1.5, 1500),     # 1.5 seconds
-        (10.123, 10123), # 10.123 seconds
-        (60.0, 60000),   # 1 minute
+        (0, 0.0),
+        (1, 0.001),      # 1 millisecond
+        (1000, 1.0),     # 1 second
+        (1500, 1.5),     # 1.5 seconds
+        (10123, 10.123), # 10.123 seconds
+        (60000, 60.0),   # 1 minute
     ]
     
-    for seconds, expected_milliseconds in test_cases:
+    for milliseconds, expected_seconds in test_cases:
         annotation = AudioClassificationAnnotation.from_time_range(
-            start_sec=seconds,
-            end_sec=seconds + 1.0,
+            start_ms=milliseconds,
+            end_ms=milliseconds + 1000,
             name="test",
             value=Text(answer="test")
         )
-        assert annotation.frame == expected_milliseconds
-        assert annotation.start_time == seconds
+        assert annotation.frame == milliseconds
+        assert annotation.start_time == expected_seconds
 
 
 def test_audio_label_integration():
     """Test audio annotations in Label container"""
     # Create audio annotations
     speaker_annotation = AudioClassificationAnnotation.from_time_range(
-        start_sec=1.0, end_sec=2.0,
+        start_ms=1000, end_ms=2000,
         name="speaker", value=Radio(answer=ClassificationAnswer(name="john"))
     )
     
     transcription_annotation = AudioObjectAnnotation.from_time_range(
-        start_sec=1.0, end_sec=2.0,
+        start_ms=1000, end_ms=2000,
         name="transcription", value=lb_types.TextEntity(start=0, end=5)  # "Hello" has 5 characters
     )
     
@@ -371,8 +371,8 @@ def test_audio_annotation_edge_cases():
     """Test audio annotation edge cases"""
     # Test very long audio (many hours)
     long_annotation = AudioClassificationAnnotation.from_time_range(
-        start_sec=3600.0,  # 1 hour
-        end_sec=7200.0,    # 2 hours
+        start_ms=3600000,  # 1 hour in milliseconds
+        end_ms=7200000,    # 2 hours in milliseconds
         name="long_audio",
         value=Text(answer="very long")
     )
@@ -382,8 +382,8 @@ def test_audio_annotation_edge_cases():
     
     # Test very short audio (milliseconds)
     short_annotation = AudioClassificationAnnotation.from_time_range(
-        start_sec=0.001,  # 1 millisecond
-        end_sec=0.002,    # 2 milliseconds
+        start_ms=1,  # 1 millisecond
+        end_ms=2,    # 2 milliseconds
         name="short_audio",
         value=Text(answer="very short")
     )
@@ -393,8 +393,8 @@ def test_audio_annotation_edge_cases():
     
     # Test zero time
     zero_annotation = AudioClassificationAnnotation.from_time_range(
-        start_sec=0.0,
-        end_sec=0.0,
+        start_ms=0,
+        end_ms=0,
         name="zero_time",
         value=Text(answer="zero")
     )

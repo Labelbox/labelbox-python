@@ -8,7 +8,7 @@ class AudioClassificationAnnotation(ClassificationAnnotation):
     """Audio classification for specific time range
     
     Examples:
-    - Speaker identification from 2.5s to 4.1s
+    - Speaker identification from 2500ms to 4100ms
     - Audio quality assessment for a segment
     - Language detection for audio segments
     
@@ -25,25 +25,25 @@ class AudioClassificationAnnotation(ClassificationAnnotation):
     segment_index: Optional[int] = None
     
     @classmethod
-    def from_time_range(cls, start_sec: float, end_sec: float, **kwargs):
-        """Create from seconds (user-friendly) to frames (internal)
+    def from_time_range(cls, start_ms: int, end_ms: int, **kwargs):
+        """Create from milliseconds (user-friendly) to frames (internal)
         
         Args:
-            start_sec (float): Start time in seconds
-            end_sec (float): End time in seconds  
+            start_ms (int): Start time in milliseconds
+            end_ms (int): End time in milliseconds  
             **kwargs: Additional arguments for the annotation
             
         Returns:
-            AudioClassificationAnnotation: Annotation with frame set to start_sec * 1000
+            AudioClassificationAnnotation: Annotation with frame set to start_ms
             
         Example:
             >>> AudioClassificationAnnotation.from_time_range(
-            ...     start_sec=2.5, end_sec=4.1,
+            ...     start_ms=2500, end_ms=4100,
             ...     name="speaker_id",
             ...     value=lb_types.Radio(answer=lb_types.ClassificationAnswer(name="john"))
             ... )
         """
-        return cls(frame=int(start_sec * 1000), **kwargs)
+        return cls(frame=start_ms, **kwargs)
     
     @property
     def start_time(self) -> float:
@@ -59,8 +59,8 @@ class AudioObjectAnnotation(ObjectAnnotation, ConfidenceNotSupportedMixin, Custo
     """Audio object annotation for specific time range
     
     Examples:
-    - Transcription: "Hello world" from 2.5s to 4.1s
-    - Sound events: "Dog barking" from 10s to 12s
+    - Transcription: "Hello world" from 2500ms to 4100ms
+    - Sound events: "Dog barking" from 10000ms to 12000ms
     - Audio segments with metadata
     
     Args:
@@ -79,25 +79,25 @@ class AudioObjectAnnotation(ObjectAnnotation, ConfidenceNotSupportedMixin, Custo
     segment_index: Optional[int] = None
     
     @classmethod
-    def from_time_range(cls, start_sec: float, end_sec: float, **kwargs):
-        """Create from seconds (user-friendly) to frames (internal)
+    def from_time_range(cls, start_ms: int, end_ms: int, **kwargs):
+        """Create from milliseconds (user-friendly) to frames (internal)
         
         Args:
-            start_sec (float): Start time in seconds
-            end_sec (float): End time in seconds
+            start_ms (int): Start time in milliseconds
+            end_ms (int): End time in milliseconds
             **kwargs: Additional arguments for the annotation
             
         Returns:
-            AudioObjectAnnotation: Annotation with frame set to start_sec * 1000
+            AudioObjectAnnotation: Annotation with frame set to start_ms
             
         Example:
             >>> AudioObjectAnnotation.from_time_range(
-            ...     start_sec=10.0, end_sec=12.5,
+            ...     start_ms=10000, end_ms=12500,
             ...     name="transcription",
             ...     value=lb_types.TextEntity(text="Hello world")
             ... )
         """
-        return cls(frame=int(start_sec * 1000), **kwargs)
+        return cls(frame=start_ms, **kwargs)
     
     @property
     def start_time(self) -> float:
