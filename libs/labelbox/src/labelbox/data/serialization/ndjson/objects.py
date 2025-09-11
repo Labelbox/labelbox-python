@@ -748,7 +748,7 @@ class NDObject:
             return obj.from_common(annotation, data)
         elif isinstance(annotation, AudioObjectAnnotation):
             # Handle audio object annotation like single video frame
-            return cls._handle_single_audio_annotation(annotation, data)
+            return cls._serialize_audio_object_annotation(annotation, data)
 
         subclasses = [
             NDSubclassification.from_common(annot)
@@ -773,8 +773,8 @@ class NDObject:
         )
 
     @classmethod
-    def _handle_single_audio_annotation(cls, annotation: AudioObjectAnnotation, data: GenericDataRowData):
-        """Handle single audio annotation like video frame
+    def _serialize_audio_object_annotation(cls, annotation: AudioObjectAnnotation, data: GenericDataRowData):
+        """Serialize audio object annotation with temporal information
         
         Args:
             annotation: Audio object annotation to process

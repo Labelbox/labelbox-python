@@ -24,6 +24,7 @@ from ...annotation_types.video import (
     VideoMaskAnnotation,
     VideoObjectAnnotation,
 )
+from typing import List
 from ...annotation_types.audio import (
     AudioClassificationAnnotation,
     AudioObjectAnnotation,
@@ -128,47 +129,21 @@ class NDLabel(BaseModel):
     def _create_video_annotations(
         cls, label: Label
     ) -> Generator[Union[NDChecklistSubclass, NDRadioSubclass], None, None]:
-        video_annotations = defaultdict(list)
+        # Handle video mask annotations separately (special case)
         for annot in label.annotations:
-            if isinstance(
-                annot, (VideoClassificationAnnotation, VideoObjectAnnotation)
-            ):
-                video_annotations[annot.feature_schema_id or annot.name].append(
-                    annot
-                )
-            elif isinstance(annot, VideoMaskAnnotation):
+            if isinstance(annot, VideoMaskAnnotation):
                 yield NDObject.from_common(annotation=annot, data=label.data)
-
-        for annotation_group in video_annotations.values():
-            segment_frame_ranges = cls._get_segment_frame_ranges(
-                annotation_group
-            )
-            if isinstance(annotation_group[0], VideoClassificationAnnotation):
-                annotation = annotation_group[0]
-                frames_data = []
-                for frames in segment_frame_ranges:
-                    frames_data.append({"start": frames[0], "end": frames[-1]})
-                annotation.extra.update({"frames": frames_data})
-                yield NDClassification.from_common(annotation, label.data)
-
-            elif isinstance(annotation_group[0], VideoObjectAnnotation):
-                segments = []
-                for start_frame, end_frame in segment_frame_ranges:
-                    segment = []
-                    for annotation in annotation_group:
-                        if (
-                            annotation.keyframe
-                            and start_frame <= annotation.frame <= end_frame
-                        ):
-                            segment.append(annotation)
-                    segments.append(segment)
-                yield NDObject.from_common(segments, label.data)
+        
+        # Use temporal processor for video classifications and objects
+        from .utils.temporal_processor import VideoTemporalProcessor
+        processor = VideoTemporalProcessor()
+        yield from processor.process_annotations(label)
 
     @classmethod
     def _create_audio_annotations(
         cls, label: Label
     ) -> Generator[Union[NDChecklistSubclass, NDRadioSubclass], None, None]:
-        """Create audio annotations
+        """Create audio annotations using generic temporal processor
         
         Args:
             label: Label containing audio annotations to be processed
@@ -176,72 +151,14 @@ class NDLabel(BaseModel):
         Yields:
             NDClassification or NDObject: Audio annotations in NDJSON format
         """
-        audio_annotations = defaultdict(list)
-        for annot in label.annotations:
-            if isinstance(
-                annot, (AudioClassificationAnnotation, AudioObjectAnnotation)
-            ):
-                audio_annotations[annot.feature_schema_id or annot.name].append(
-                    annot
-                )
-
-        for annotation_group in audio_annotations.values():
-            if isinstance(annotation_group[0], AudioClassificationAnnotation):
-                # For TEXT classifications, group them into one feature with multiple keyframes
-                from ...annotation_types.classification.classification import Text
-                if isinstance(annotation_group[0].value, Text):
-                    
-                    # Group all annotations into one feature with multiple keyframes
-                    # Use first annotation as template but create combined content
-                    annotation = annotation_group[0]
-                    frames_data = []
-                    all_tokens = []
-                    
-                    for individual_annotation in annotation_group:
-                        frame = individual_annotation.frame
-                        end_frame = individual_annotation.end_frame if hasattr(individual_annotation, 'end_frame') and individual_annotation.end_frame is not None else frame
-                        frames_data.append({"start": frame, "end": end_frame})
-                        all_tokens.append(individual_annotation.value.answer)
-                    
-                    # For per-token annotations, embed token mapping in the content
-                    # Create a JSON structure that includes both the default text and token mapping
-                    import json
-                    token_mapping = {}
-                    for individual_annotation in annotation_group:
-                        frame = individual_annotation.frame
-                        token_mapping[str(frame)] = individual_annotation.value.answer
-                    
-                    # Embed token mapping in the answer field as JSON
-                    content_with_mapping = {
-                        "default_text": " ".join(all_tokens),  # Fallback text
-                        "token_mapping": token_mapping         # Per-keyframe content
-                    }
-                    from ...annotation_types.classification.classification import Text
-                    annotation.value = Text(answer=json.dumps(content_with_mapping))
-                    
-                    # Update the annotation with frames data
-                    annotation.extra = {"frames": frames_data}
-                    yield NDClassification.from_common(annotation, label.data)
-                else:
-                    # For non-TEXT classifications, process each individually
-                    for annotation in annotation_group:
-                        
-                        # Ensure frame data is properly formatted in extra field
-                        if hasattr(annotation, 'frame') and annotation.frame is not None:
-                            if not annotation.extra:
-                                annotation.extra = {}
-                            
-                            if 'frames' not in annotation.extra:
-                                end_frame = annotation.end_frame if hasattr(annotation, 'end_frame') and annotation.end_frame is not None else annotation.frame
-                                frames_data = [{"start": annotation.frame, "end": end_frame}]
-                                annotation.extra.update({"frames": frames_data})
-                        
-                        yield NDClassification.from_common(annotation, label.data)
-
-            elif isinstance(annotation_group[0], AudioObjectAnnotation):
-                # For audio objects, treat like single video frame
-                annotation = annotation_group[0]
-                yield NDObject.from_common(annotation, label.data)
+        from .utils.temporal_processor import AudioTemporalProcessor
+        
+        # Use processor with configurable behavior
+        processor = AudioTemporalProcessor(
+            group_text_annotations=True,  # Group multiple TEXT annotations into one feature
+            enable_token_mapping=True     # Enable per-keyframe token content
+        )
+        yield from processor.process_annotations(label)
 
     @classmethod
     def _create_non_video_annotations(cls, label: Label):
