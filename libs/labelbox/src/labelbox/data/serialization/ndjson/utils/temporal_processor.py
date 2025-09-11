@@ -5,10 +5,10 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Any, Dict, Generator, List, Union
 
-from ...annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
-from ...annotation_types.label import Label
-from .classification import NDClassificationType, NDClassification
-from .objects import NDObject
+from ....annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
+from ....annotation_types.label import Label
+from ..classification import NDClassificationType, NDClassification
+from ..objects import NDObject
 
 
 class TemporalAnnotationProcessor(ABC):
@@ -92,7 +92,7 @@ class AudioTemporalProcessor(TemporalAnnotationProcessor):
         self.enable_token_mapping = enable_token_mapping
     
     def get_annotation_types(self) -> tuple:
-        from ...annotation_types.audio import AudioClassificationAnnotation, AudioObjectAnnotation
+        from ....annotation_types.audio import AudioClassificationAnnotation, AudioObjectAnnotation
         return (AudioClassificationAnnotation,), (AudioObjectAnnotation,)
     
     def should_group_annotations(self, annotation_group: List) -> bool:
@@ -100,7 +100,7 @@ class AudioTemporalProcessor(TemporalAnnotationProcessor):
         if not self.group_text_annotations:
             return False
             
-        from ...annotation_types.classification.classification import Text
+        from ....annotation_types.classification.classification import Text
         return (isinstance(annotation_group[0].value, Text) and 
                 len(annotation_group) > 1 and 
                 all(hasattr(ann, 'frame') for ann in annotation_group))
@@ -119,7 +119,7 @@ class AudioTemporalProcessor(TemporalAnnotationProcessor):
     
     def prepare_grouped_content(self, annotation_group: List) -> None:
         """Prepare content for grouped audio annotations"""
-        from ...annotation_types.classification.classification import Text
+        from ....annotation_types.classification.classification import Text
         
         if not isinstance(annotation_group[0].value, Text) or not self.enable_token_mapping:
             return
@@ -143,7 +143,7 @@ class VideoTemporalProcessor(TemporalAnnotationProcessor):
     """Processor for video temporal annotations - matches existing behavior"""
     
     def get_annotation_types(self) -> tuple:
-        from ...annotation_types.video import VideoClassificationAnnotation, VideoObjectAnnotation
+        from ....annotation_types.video import VideoClassificationAnnotation, VideoObjectAnnotation
         return (VideoClassificationAnnotation,), (VideoObjectAnnotation,)
     
     def should_group_annotations(self, annotation_group: List) -> bool:
@@ -152,7 +152,7 @@ class VideoTemporalProcessor(TemporalAnnotationProcessor):
     
     def build_frame_data(self, annotation_group: List) -> List[Dict[str, Any]]:
         """Build frame data using existing video segment logic"""
-        from .label import NDLabel  # Import here to avoid circular import
+        from ..label import NDLabel  # Import here to avoid circular import
         
         segment_frame_ranges = NDLabel._get_segment_frame_ranges(annotation_group)
         return [{"start": frames[0], "end": frames[-1]} for frames in segment_frame_ranges]
@@ -163,7 +163,7 @@ class VideoTemporalProcessor(TemporalAnnotationProcessor):
     
     def _process_object_group(self, annotation_group, data):
         """Video objects use segment-based processing"""
-        from .label import NDLabel
+        from ..label import NDLabel
         
         segment_frame_ranges = NDLabel._get_segment_frame_ranges(annotation_group)
         segments = []
