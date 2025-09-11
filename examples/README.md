@@ -169,11 +169,6 @@
       <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/text.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
     </tr>
     <tr>
-      <td>Audio Temporal <span style="color: #ff6b35; font-weight: bold;">NEW!</span></td>
-      <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/audio_temporal.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
-      <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/audio_temporal.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
-    </tr>
-    <tr>
       <td>Tiled</td>
       <td><a href="https://github.com/Labelbox/labelbox-python/tree/develop/examples/annotation_import/tiled.ipynb" target="_blank"><img src="https://img.shields.io/badge/GitHub-100000?logo=github&logoColor=white" alt="Open In Github"></a></td>
       <td><a href="https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/annotation_import/tiled.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></td>
