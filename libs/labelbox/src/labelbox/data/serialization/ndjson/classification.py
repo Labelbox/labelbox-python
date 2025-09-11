@@ -224,7 +224,7 @@ class NDPromptTextSubclass(NDAnswer):
 # ====== End of subclasses
 
 
-class NDText(NDAnnotation, NDTextSubclass):
+class NDText(NDAnnotation, NDTextSubclass, VideoSupported):
     @classmethod
     def from_common(
         cls,
@@ -243,6 +243,7 @@ class NDText(NDAnnotation, NDTextSubclass):
             name=name,
             schema_id=feature_schema_id,
             uuid=uuid,
+            frames=extra.get("frames"),
             message_id=message_id,
             confidence=text.confidence,
             custom_metrics=text.custom_metrics,

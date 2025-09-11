@@ -186,12 +186,57 @@ class NDLabel(BaseModel):
                 )
 
         for annotation_group in audio_annotations.values():
-            # For audio, treat each annotation as a single frame (no segments needed)
             if isinstance(annotation_group[0], AudioClassificationAnnotation):
-                annotation = annotation_group[0]
-                # Add frame information to extra (milliseconds)
-                annotation.extra.update({"frame": annotation.frame})
-                yield NDClassification.from_common(annotation, label.data)
+                # For TEXT classifications, group them into one feature with multiple keyframes
+                from ...annotation_types.classification.classification import Text
+                if isinstance(annotation_group[0].value, Text):
+                    
+                    # Group all annotations into one feature with multiple keyframes
+                    # Use first annotation as template but create combined content
+                    annotation = annotation_group[0]
+                    frames_data = []
+                    all_tokens = []
+                    
+                    for individual_annotation in annotation_group:
+                        frame = individual_annotation.frame
+                        end_frame = individual_annotation.end_frame if hasattr(individual_annotation, 'end_frame') and individual_annotation.end_frame is not None else frame
+                        frames_data.append({"start": frame, "end": end_frame})
+                        all_tokens.append(individual_annotation.value.answer)
+                    
+                    # For per-token annotations, embed token mapping in the content
+                    # Create a JSON structure that includes both the default text and token mapping
+                    import json
+                    token_mapping = {}
+                    for individual_annotation in annotation_group:
+                        frame = individual_annotation.frame
+                        token_mapping[str(frame)] = individual_annotation.value.answer
+                    
+                    # Embed token mapping in the answer field as JSON
+                    content_with_mapping = {
+                        "default_text": " ".join(all_tokens),  # Fallback text
+                        "token_mapping": token_mapping         # Per-keyframe content
+                    }
+                    from ...annotation_types.classification.classification import Text
+                    annotation.value = Text(answer=json.dumps(content_with_mapping))
+                    
+                    # Update the annotation with frames data
+                    annotation.extra = {"frames": frames_data}
+                    yield NDClassification.from_common(annotation, label.data)
+                else:
+                    # For non-TEXT classifications, process each individually
+                    for annotation in annotation_group:
+                        
+                        # Ensure frame data is properly formatted in extra field
+                        if hasattr(annotation, 'frame') and annotation.frame is not None:
+                            if not annotation.extra:
+                                annotation.extra = {}
+                            
+                            if 'frames' not in annotation.extra:
+                                end_frame = annotation.end_frame if hasattr(annotation, 'end_frame') and annotation.end_frame is not None else annotation.frame
+                                frames_data = [{"start": annotation.frame, "end": end_frame}]
+                                annotation.extra.update({"frames": frames_data})
+                        
+                        yield NDClassification.from_common(annotation, label.data)
 
             elif isinstance(annotation_group[0], AudioObjectAnnotation):
                 # For audio objects, treat like single video frame
