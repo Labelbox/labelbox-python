@@ -48,6 +48,7 @@ from .objects import (
     NDVideoMasks,
 )
 from .relationship import NDRelationship
+from .utils.temporal_processor import VideoTemporalProcessor, AudioTemporalProcessor
 
 AnnotationType = Union[
     NDObjectType,
@@ -135,7 +136,6 @@ class NDLabel(BaseModel):
                 yield NDObject.from_common(annotation=annot, data=label.data)
         
         # Use temporal processor for video classifications and objects
-        from .utils.temporal_processor import VideoTemporalProcessor
         processor = VideoTemporalProcessor()
         yield from processor.process_annotations(label)
 
@@ -151,8 +151,6 @@ class NDLabel(BaseModel):
         Yields:
             NDClassification or NDObject: Audio annotations in NDJSON format
         """
-        from .utils.temporal_processor import AudioTemporalProcessor
-        
         # Use processor with configurable behavior
         processor = AudioTemporalProcessor(
             group_text_annotations=True,  # Group multiple TEXT annotations into one feature
