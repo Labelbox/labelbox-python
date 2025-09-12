@@ -171,17 +171,17 @@ class NDLabel(BaseModel):
         cls, label: Label
     ) -> Generator[Union[NDChecklistSubclass, NDRadioSubclass], None, None]:
         """Create audio annotations using generic temporal processor
-        
+
         Args:
             label: Label containing audio annotations to be processed
-            
+
         Yields:
             NDClassification or NDObject: Audio annotations in NDJSON format
         """
         # Use processor with configurable behavior
         processor = AudioTemporalProcessor(
             group_text_annotations=True,  # Group multiple TEXT annotations into one feature
-            enable_token_mapping=True     # Enable per-keyframe token content
+            enable_token_mapping=True,  # Enable per-keyframe token content
         )
         yield from processor.process_annotations(label)
 
@@ -215,7 +215,7 @@ class NDLabel(BaseModel):
                 yield NDMessageTask.from_common(annotation, label.data)
             else:
                 raise TypeError(
-                    f"Unable to convert object to MAL format. `{type(getattr(annotation, 'value',annotation))}`"
+                    f"Unable to convert object to MAL format. `{type(getattr(annotation, 'value', annotation))}`"
                 )
 
     @classmethod

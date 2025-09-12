@@ -8,7 +8,6 @@ from labelbox.data.annotation_types.classification.classification import (
     ClassificationAnswer,
     Radio,
     Text,
-    Checklist,
 )
 from labelbox.data.annotation_types.ner import TextEntity
 
@@ -18,9 +17,9 @@ def test_audio_classification_creation():
     annotation = AudioClassificationAnnotation(
         frame=2500,  # 2.5 seconds in milliseconds
         name="speaker_id",
-        value=Radio(answer=ClassificationAnswer(name="john"))
+        value=Radio(answer=ClassificationAnswer(name="john")),
     )
-    
+
     assert annotation.frame == 2500
     assert annotation.end_frame is None
     assert annotation.segment_index is None
@@ -32,12 +31,12 @@ def test_audio_classification_creation():
 def test_audio_classification_with_time_range():
     """Test creating audio classification with start and end frames"""
     annotation = AudioClassificationAnnotation(
-        frame=2500,      # Start at 2.5 seconds
+        frame=2500,  # Start at 2.5 seconds
         end_frame=4100,  # End at 4.1 seconds
         name="speaker_id",
-        value=Radio(answer=ClassificationAnswer(name="john"))
+        value=Radio(answer=ClassificationAnswer(name="john")),
     )
-    
+
     assert annotation.frame == 2500
     assert annotation.end_frame == 4100
     assert annotation.name == "speaker_id"
@@ -50,9 +49,9 @@ def test_audio_classification_creation_with_segment():
         end_frame=15000,
         name="language",
         value=Radio(answer=ClassificationAnswer(name="english")),
-        segment_index=1
+        segment_index=1,
     )
-    
+
     assert annotation.frame == 10000
     assert annotation.end_frame == 15000
     assert annotation.segment_index == 1
@@ -63,9 +62,9 @@ def test_audio_classification_text_type():
     annotation = AudioClassificationAnnotation(
         frame=5000,  # 5.0 seconds
         name="quality",
-        value=Text(answer="excellent")
+        value=Text(answer="excellent"),
     )
-    
+
     assert annotation.frame == 5000
     assert annotation.name == "quality"
     assert isinstance(annotation.value, Text)
@@ -78,9 +77,11 @@ def test_audio_object_creation():
         frame=10000,
         end_frame=12500,
         name="transcription",
-        value=lb_types.TextEntity(start=0, end=11)  # "Hello world" has 11 characters
+        value=lb_types.TextEntity(
+            start=0, end=11
+        ),  # "Hello world" has 11 characters
     )
-    
+
     assert annotation.frame == 10000
     assert annotation.end_frame == 12500
     assert annotation.keyframe is True
@@ -96,17 +97,17 @@ def test_audio_object_creation_with_classifications():
     sub_classification = AudioClassificationAnnotation(
         frame=10000,
         name="confidence",
-        value=Radio(answer=ClassificationAnswer(name="high"))
+        value=Radio(answer=ClassificationAnswer(name="high")),
     )
-    
+
     annotation = AudioObjectAnnotation(
         frame=10000,
         end_frame=12500,
         name="transcription",
         value=lb_types.TextEntity(start=0, end=11),
-        classifications=[sub_classification]
+        classifications=[sub_classification],
     )
-    
+
     assert len(annotation.classifications) == 1
     assert annotation.classifications[0].name == "confidence"
     assert annotation.classifications[0].frame == 10000
@@ -119,9 +120,9 @@ def test_audio_object_direct_creation():
         name="sound_event",
         value=lb_types.TextEntity(start=0, end=11),
         keyframe=False,
-        segment_index=2
+        segment_index=2,
     )
-    
+
     assert annotation.frame == 7500
     assert annotation.end_frame is None
     assert annotation.keyframe is False
@@ -132,13 +133,13 @@ def test_frame_precision():
     """Test frame values maintain precision"""
     # Test various time values in milliseconds
     test_cases = [0, 1, 1000, 1500, 10123, 60000]
-    
+
     for milliseconds in test_cases:
         annotation = AudioClassificationAnnotation(
             frame=milliseconds,
             end_frame=milliseconds + 1000,
             name="test",
-            value=Text(answer="test")
+            value=Text(answer="test"),
         )
         assert annotation.frame == milliseconds
         assert annotation.end_frame == milliseconds + 1000
@@ -148,28 +149,40 @@ def test_audio_label_integration():
     """Test audio annotations work with Label container"""
     # Create audio annotations
     speaker_annotation = AudioClassificationAnnotation(
-        frame=1000, end_frame=2000,
-        name="speaker", value=Radio(answer=ClassificationAnswer(name="john"))
+        frame=1000,
+        end_frame=2000,
+        name="speaker",
+        value=Radio(answer=ClassificationAnswer(name="john")),
     )
-    
+
     transcription_annotation = AudioObjectAnnotation(
-        frame=1000, end_frame=2000,
-        name="transcription", value=lb_types.TextEntity(start=0, end=5)
+        frame=1000,
+        end_frame=2000,
+        name="transcription",
+        value=lb_types.TextEntity(start=0, end=5),
     )
-    
+
     # Create label with audio annotations
     label = lb_types.Label(
         data={"global_key": "audio_file.mp3"},
-        annotations=[speaker_annotation, transcription_annotation]
+        annotations=[speaker_annotation, transcription_annotation],
     )
-    
+
     # Verify annotations are accessible
     assert len(label.annotations) == 2
-    
+
     # Check annotation types
-    audio_classifications = [ann for ann in label.annotations if isinstance(ann, AudioClassificationAnnotation)]
-    audio_objects = [ann for ann in label.annotations if isinstance(ann, AudioObjectAnnotation)]
-    
+    audio_classifications = [
+        ann
+        for ann in label.annotations
+        if isinstance(ann, AudioClassificationAnnotation)
+    ]
+    audio_objects = [
+        ann
+        for ann in label.annotations
+        if isinstance(ann, AudioObjectAnnotation)
+    ]
+
     assert len(audio_classifications) == 1
     assert len(audio_objects) == 1
     assert audio_classifications[0].name == "speaker"
@@ -183,21 +196,18 @@ def test_audio_annotation_validation():
         AudioClassificationAnnotation(
             frame="invalid",  # Should be int
             name="test",
-            value=Text(answer="test")
+            value=Text(answer="test"),
         )
 
 
 def test_audio_annotation_extra_fields():
     """Test audio annotations can have extra metadata"""
     extra_data = {"source": "automatic", "confidence_score": 0.95}
-    
+
     annotation = AudioClassificationAnnotation(
-        frame=3000,
-        name="quality",
-        value=Text(answer="good"),
-        extra=extra_data
+        frame=3000, name="quality", value=Text(answer="good"), extra=extra_data
     )
-    
+
     assert annotation.extra["source"] == "automatic"
     assert annotation.extra["confidence_score"] == 0.95
 
@@ -208,9 +218,9 @@ def test_audio_annotation_feature_schema():
         frame=4000,
         name="language",
         value=Radio(answer=ClassificationAnswer(name="spanish")),
-        feature_schema_id="1234567890123456789012345"
+        feature_schema_id="1234567890123456789012345",
     )
-    
+
     assert annotation.feature_schema_id == "1234567890123456789012345"
 
 
@@ -220,39 +230,48 @@ def test_audio_annotation_mixed_types():
     audio_annotation = AudioClassificationAnnotation(
         frame=2000,
         name="speaker",
-        value=Radio(answer=ClassificationAnswer(name="john"))
+        value=Radio(answer=ClassificationAnswer(name="john")),
     )
-    
+
     # Video annotation
     video_annotation = lb_types.VideoClassificationAnnotation(
-        frame=10,
-        name="quality",
-        value=Text(answer="good")
+        frame=10, name="quality", value=Text(answer="good")
     )
-    
+
     # Image annotation
     image_annotation = lb_types.ObjectAnnotation(
         name="bbox",
         value=lb_types.Rectangle(
-            start=lb_types.Point(x=0, y=0),
-            end=lb_types.Point(x=100, y=100)
-        )
+            start=lb_types.Point(x=0, y=0), end=lb_types.Point(x=100, y=100)
+        ),
     )
-    
+
     # Create label with mixed types
     label = lb_types.Label(
         data={"global_key": "mixed_media"},
-        annotations=[audio_annotation, video_annotation, image_annotation]
+        annotations=[audio_annotation, video_annotation, image_annotation],
     )
-    
+
     # Verify all annotations are present
     assert len(label.annotations) == 3
-    
+
     # Check types
-    audio_annotations = [ann for ann in label.annotations if isinstance(ann, AudioClassificationAnnotation)]
-    video_annotations = [ann for ann in label.annotations if isinstance(ann, lb_types.VideoClassificationAnnotation)]
-    object_annotations = [ann for ann in label.annotations if isinstance(ann, lb_types.ObjectAnnotation)]
-    
+    audio_annotations = [
+        ann
+        for ann in label.annotations
+        if isinstance(ann, AudioClassificationAnnotation)
+    ]
+    video_annotations = [
+        ann
+        for ann in label.annotations
+        if isinstance(ann, lb_types.VideoClassificationAnnotation)
+    ]
+    object_annotations = [
+        ann
+        for ann in label.annotations
+        if isinstance(ann, lb_types.ObjectAnnotation)
+    ]
+
     assert len(audio_annotations) == 1
     assert len(video_annotations) == 1
     assert len(object_annotations) == 1
@@ -266,9 +285,9 @@ def test_audio_annotation_serialization():
         name="emotion",
         value=Radio(answer=ClassificationAnswer(name="happy")),
         segment_index=3,
-        extra={"confidence": 0.9}
+        extra={"confidence": 0.9},
     )
-    
+
     # Test model_dump
     serialized = annotation.model_dump()
     assert serialized["frame"] == 6000
@@ -276,7 +295,7 @@ def test_audio_annotation_serialization():
     assert serialized["name"] == "emotion"
     assert serialized["segment_index"] == 3
     assert serialized["extra"]["confidence"] == 0.9
-    
+
     # Test model_dump with exclusions
     serialized_excluded = annotation.model_dump(exclude_none=True)
     assert "frame" in serialized_excluded
@@ -293,11 +312,11 @@ def test_audio_annotation_from_dict():
         "name": "topic",
         "value": Text(answer="technology"),
         "segment_index": 2,
-        "extra": {"source": "manual"}
+        "extra": {"source": "manual"},
     }
-    
+
     annotation = AudioClassificationAnnotation(**annotation_data)
-    
+
     assert annotation.frame == 7000
     assert annotation.end_frame == 9000
     assert annotation.name == "topic"
@@ -310,32 +329,30 @@ def test_audio_annotation_edge_cases():
     # Test very long audio (many hours)
     long_annotation = AudioClassificationAnnotation(
         frame=3600000,  # 1 hour in milliseconds
-        end_frame=7200000,    # 2 hours in milliseconds
+        end_frame=7200000,  # 2 hours in milliseconds
         name="long_audio",
-        value=Text(answer="very long")
+        value=Text(answer="very long"),
     )
-    
+
     assert long_annotation.frame == 3600000
     assert long_annotation.end_frame == 7200000
-    
+
     # Test very short audio (milliseconds)
     short_annotation = AudioClassificationAnnotation(
         frame=1,  # 1 millisecond
-        end_frame=2,    # 2 milliseconds
+        end_frame=2,  # 2 milliseconds
         name="short_audio",
-        value=Text(answer="very short")
+        value=Text(answer="very short"),
     )
-    
+
     assert short_annotation.frame == 1
     assert short_annotation.end_frame == 2
-    
+
     # Test zero time
     zero_annotation = AudioClassificationAnnotation(
-        frame=0,
-        name="zero_time",
-        value=Text(answer="zero")
+        frame=0, name="zero_time", value=Text(answer="zero")
     )
-    
+
     assert zero_annotation.frame == 0
     assert zero_annotation.end_frame is None
 
@@ -345,19 +362,19 @@ def test_temporal_annotation_grouping():
     # Create multiple annotations with same name (like tokens)
     tokens = ["Hello", "world", "this", "is", "audio"]
     annotations = []
-    
+
     for i, token in enumerate(tokens):
         start_frame = i * 1000  # 1 second apart
         end_frame = start_frame + 900  # 900ms duration each
-        
+
         annotation = AudioClassificationAnnotation(
             frame=start_frame,
             end_frame=end_frame,
             name="tokens",  # Same name for grouping
-            value=Text(answer=token)
+            value=Text(answer=token),
         )
         annotations.append(annotation)
-    
+
     # Verify all have same name but different content and timing
     assert len(annotations) == 5
     assert all(ann.name == "tokens" for ann in annotations)
@@ -375,23 +392,23 @@ def test_audio_object_types():
     text_obj = AudioObjectAnnotation(
         frame=1000,
         name="transcription",
-        value=TextEntity(start=0, end=5)  # "hello"
+        value=TextEntity(start=0, end=5),  # "hello"
     )
-    
+
     assert isinstance(text_obj.value, TextEntity)
     assert text_obj.value.start == 0
     assert text_obj.value.end == 5
-    
+
     # Test with keyframe and segment settings
     keyframe_obj = AudioObjectAnnotation(
         frame=2000,
         end_frame=3000,
-        name="segment", 
+        name="segment",
         value=TextEntity(start=10, end=15),
         keyframe=True,
-        segment_index=1
+        segment_index=1,
     )
-    
+
     assert keyframe_obj.keyframe is True
     assert keyframe_obj.segment_index == 1
     assert keyframe_obj.frame == 2000

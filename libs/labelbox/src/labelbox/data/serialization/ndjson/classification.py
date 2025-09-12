@@ -401,7 +401,11 @@ class NDClassification:
     @staticmethod
     def to_common(
         annotation: "NDClassificationType",
-    ) -> Union[ClassificationAnnotation, VideoClassificationAnnotation]:
+    ) -> Union[
+        ClassificationAnnotation,
+        VideoClassificationAnnotation,
+        AudioClassificationAnnotation,
+    ]:
         common = ClassificationAnnotation(
             value=annotation.to_common(),
             name=annotation.name,
@@ -416,18 +420,35 @@ class NDClassification:
         results = []
         for frame in annotation.frames:
             for idx in range(frame.start, frame.end + 1, 1):
-                results.append(
-                    VideoClassificationAnnotation(
-                        frame=idx, **common.model_dump(exclude_none=True)
+                # Check if this is an audio annotation by looking at the extra data
+                # Audio annotations will have frame/end_frame in extra, video annotations won't
+                if (
+                    hasattr(annotation, "extra")
+                    and annotation.extra
+                    and "frames" in annotation.extra
+                ):
+                    # This is likely an audio temporal annotation
+                    results.append(
+                        AudioClassificationAnnotation(
+                            frame=idx, **common.model_dump(exclude_none=True)
+                        )
                     )
-                )
+                else:
+                    # This is a video temporal annotation
+                    results.append(
+                        VideoClassificationAnnotation(
+                            frame=idx, **common.model_dump(exclude_none=True)
+                        )
+                    )
         return results
 
     @classmethod
     def from_common(
         cls,
         annotation: Union[
-            ClassificationAnnotation, VideoClassificationAnnotation, AudioClassificationAnnotation
+            ClassificationAnnotation,
+            VideoClassificationAnnotation,
+            AudioClassificationAnnotation,
         ],
         data: GenericDataRowData,
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
@@ -450,7 +471,9 @@ class NDClassification:
     @staticmethod
     def lookup_classification(
         annotation: Union[
-            ClassificationAnnotation, VideoClassificationAnnotation, AudioClassificationAnnotation
+            ClassificationAnnotation,
+            VideoClassificationAnnotation,
+            AudioClassificationAnnotation,
         ],
     ) -> Union[NDText, NDChecklist, NDRadio]:
         return {Text: NDText, Checklist: NDChecklist, Radio: NDRadio}.get(

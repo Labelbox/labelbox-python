@@ -90,12 +90,14 @@ class Label(BaseModel):
 
     def audio_annotations_by_frame(
         self,
-    ) -> Dict[int, List[Union[AudioObjectAnnotation, AudioClassificationAnnotation]]]:
+    ) -> Dict[
+        int, List[Union[AudioObjectAnnotation, AudioClassificationAnnotation]]
+    ]:
         """Get audio annotations organized by frame (millisecond)
-        
+
         Returns:
             Dict[int, List]: Dictionary mapping frame (milliseconds) to list of audio annotations
-            
+
         Example:
             >>> label.audio_annotations_by_frame()
             {2500: [AudioClassificationAnnotation(...)], 10000: [AudioObjectAnnotation(...)]}

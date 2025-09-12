@@ -773,29 +773,31 @@ class NDObject:
         )
 
     @classmethod
-    def _serialize_audio_object_annotation(cls, annotation: AudioObjectAnnotation, data: GenericDataRowData):
+    def _serialize_audio_object_annotation(
+        cls, annotation: AudioObjectAnnotation, data: GenericDataRowData
+    ):
         """Serialize audio object annotation with temporal information
-        
+
         Args:
             annotation: Audio object annotation to process
             data: Data row data
-            
+
         Returns:
             NDObject: Serialized audio object annotation
         """
         # Get the appropriate NDObject subclass based on the annotation value type
         obj = cls.lookup_object(annotation)
-        
+
         # Process sub-classifications if any
         subclasses = [
             NDSubclassification.from_common(annot)
             for annot in annotation.classifications
         ]
-        
+
         # Add frame information to extra (milliseconds)
         extra = annotation.extra.copy() if annotation.extra else {}
         extra.update({"frame": annotation.frame})
-        
+
         # Create the NDObject with frame information
         return obj.from_common(
             str(annotation._uuid),

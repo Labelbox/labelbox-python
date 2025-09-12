@@ -1,17 +1,23 @@
 from typing import Optional
 
-from labelbox.data.annotation_types.annotation import ClassificationAnnotation, ObjectAnnotation
-from labelbox.data.mixins import ConfidenceNotSupportedMixin, CustomMetricsNotSupportedMixin
+from labelbox.data.annotation_types.annotation import (
+    ClassificationAnnotation,
+    ObjectAnnotation,
+)
+from labelbox.data.mixins import (
+    ConfidenceNotSupportedMixin,
+    CustomMetricsNotSupportedMixin,
+)
 
 
 class AudioClassificationAnnotation(ClassificationAnnotation):
     """Audio classification for specific time range
-    
+
     Examples:
     - Speaker identification from 2500ms to 4100ms
     - Audio quality assessment for a segment
     - Language detection for audio segments
-    
+
     Args:
         name (Optional[str]): Name of the classification
         feature_schema_id (Optional[Cuid]): Feature schema identifier
@@ -27,14 +33,18 @@ class AudioClassificationAnnotation(ClassificationAnnotation):
     segment_index: Optional[int] = None
 
 
-class AudioObjectAnnotation(ObjectAnnotation, ConfidenceNotSupportedMixin, CustomMetricsNotSupportedMixin):
+class AudioObjectAnnotation(
+    ObjectAnnotation,
+    ConfidenceNotSupportedMixin,
+    CustomMetricsNotSupportedMixin,
+):
     """Audio object annotation for specific time range
-    
+
     Examples:
     - Transcription: "Hello world" from 2500ms to 4100ms
     - Sound events: "Dog barking" from 10000ms to 12000ms
     - Audio segments with metadata
-    
+
     Args:
         name (Optional[str]): Name of the annotation
         feature_schema_id (Optional[Cuid]): Feature schema identifier
