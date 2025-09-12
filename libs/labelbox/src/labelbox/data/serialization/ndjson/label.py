@@ -48,7 +48,7 @@ from .objects import (
     NDVideoMasks,
 )
 from .relationship import NDRelationship
-from .utils.temporal_processor import VideoTemporalProcessor, AudioTemporalProcessor
+from .utils.temporal_processor import AudioTemporalProcessor
 
 AnnotationType = Union[
     NDObjectType,
@@ -130,14 +130,41 @@ class NDLabel(BaseModel):
     def _create_video_annotations(
         cls, label: Label
     ) -> Generator[Union[NDChecklistSubclass, NDRadioSubclass], None, None]:
-        # Handle video mask annotations separately (special case)
+        video_annotations = defaultdict(list)
         for annot in label.annotations:
-            if isinstance(annot, VideoMaskAnnotation):
+            if isinstance(
+                annot, (VideoClassificationAnnotation, VideoObjectAnnotation)
+            ):
+                video_annotations[annot.feature_schema_id or annot.name].append(
+                    annot
+                )
+            elif isinstance(annot, VideoMaskAnnotation):
                 yield NDObject.from_common(annotation=annot, data=label.data)
-        
-        # Use temporal processor for video classifications and objects
-        processor = VideoTemporalProcessor()
-        yield from processor.process_annotations(label)
+
+        for annotation_group in video_annotations.values():
+            segment_frame_ranges = cls._get_segment_frame_ranges(
+                annotation_group
+            )
+            if isinstance(annotation_group[0], VideoClassificationAnnotation):
+                annotation = annotation_group[0]
+                frames_data = []
+                for frames in segment_frame_ranges:
+                    frames_data.append({"start": frames[0], "end": frames[-1]})
+                annotation.extra.update({"frames": frames_data})
+                yield NDClassification.from_common(annotation, label.data)
+
+            elif isinstance(annotation_group[0], VideoObjectAnnotation):
+                segments = []
+                for start_frame, end_frame in segment_frame_ranges:
+                    segment = []
+                    for annotation in annotation_group:
+                        if (
+                            annotation.keyframe
+                            and start_frame <= annotation.frame <= end_frame
+                        ):
+                            segment.append(annotation)
+                    segments.append(segment)
+                yield NDObject.from_common(segments, label.data)
 
     @classmethod
     def _create_audio_annotations(
