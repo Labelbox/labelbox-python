@@ -6,8 +6,6 @@
 #   features: []
 #   all-features: true
 #   with-sources: false
-#   generate-hashes: false
-#   universal: false
 
 -e file:libs/labelbox
 -e file:libs/lbox-clients
