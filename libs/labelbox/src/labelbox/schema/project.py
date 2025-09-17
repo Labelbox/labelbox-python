@@ -1138,10 +1138,8 @@ class Project(DbObject, Updateable, Deletable):
         params = {
             "projectId": self.uid,
             "modelConfigId": model_config_id,
+            "responseCount": response_count,
         }
-        
-        if response_count is not None:
-            params["responseCount"] = response_count
         try:
             result = self.client.execute(query, params)
         except LabelboxError as e:
