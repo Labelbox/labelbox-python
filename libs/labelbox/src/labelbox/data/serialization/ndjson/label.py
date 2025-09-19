@@ -48,7 +48,6 @@ from .objects import (
     NDVideoMasks,
 )
 from .relationship import NDRelationship
-from .utils.temporal_processor import AudioTemporalProcessor
 
 AnnotationType = Union[
     NDObjectType,
@@ -86,6 +85,46 @@ class NDLabel(BaseModel):
             group = list(map(itemgetter(1), g))
             consecutive.append((group[0], group[-1]))
         return consecutive
+
+    @classmethod
+    def _get_audio_frame_ranges(cls, annotation_group: List[Union[AudioClassificationAnnotation, AudioObjectAnnotation]]) -> List[Tuple[int, int]]:
+        """Get frame ranges for audio annotations (simpler than video segments)"""
+        return [(ann.frame, getattr(ann, 'end_frame', None) or ann.frame) for ann in annotation_group]
+
+    @classmethod
+    def _has_changing_values(cls, annotation_group: List[AudioClassificationAnnotation]) -> bool:
+        """Check if annotations have different values (multi-value per instance)"""
+        if len(annotation_group) <= 1:
+            return False
+        first_value = annotation_group[0].value.answer
+        return any(ann.value.answer != first_value for ann in annotation_group)
+
+    @classmethod
+    def _create_multi_value_annotation(cls, annotation_group: List[AudioClassificationAnnotation], data):
+        """Create annotation with frame-value mapping for changing values"""
+        import json
+        
+        # Build frame data and mapping in one pass
+        frames_data = []
+        frame_mapping = {}
+        
+        for ann in annotation_group:
+            start, end = ann.frame, getattr(ann, 'end_frame', None) or ann.frame
+            frames_data.append({"start": start, "end": end})
+            frame_mapping[str(start)] = ann.value.answer
+        
+        # Create content structure
+        content = json.dumps({
+            "frame_mapping": frame_mapping,
+        })
+        
+        # Update template annotation
+        template = annotation_group[0]
+        from ...annotation_types.classification.classification import Text
+        template.value = Text(answer=content)
+        template.extra = {"frames": frames_data}
+        
+        yield NDClassification.from_common(template, data)
 
     @classmethod
     def _get_segment_frame_ranges(
@@ -170,20 +209,35 @@ class NDLabel(BaseModel):
     def _create_audio_annotations(
         cls, label: Label
     ) -> Generator[Union[NDChecklistSubclass, NDRadioSubclass], None, None]:
-        """Create audio annotations using generic temporal processor
+        """Create audio annotations with multi-value support"""
+        audio_annotations = defaultdict(list)
+        
+        # Collect audio annotations
+        for annot in label.annotations:
+            if isinstance(annot, (AudioClassificationAnnotation, AudioObjectAnnotation)):
+                audio_annotations[annot.feature_schema_id or annot.name].append(annot)
 
-        Args:
-            label: Label containing audio annotations to be processed
+        for annotation_group in audio_annotations.values():
+            frame_ranges = cls._get_audio_frame_ranges(annotation_group)
+            
+            # Process classifications
+            if isinstance(annotation_group[0], AudioClassificationAnnotation):
+                if cls._has_changing_values(annotation_group):
+                    # For audio with changing values, create frame-value mapping
+                    yield from cls._create_multi_value_annotation(annotation_group, label.data)
+                else:
+                    # Standard processing for audio with same values
+                    annotation = annotation_group[0]
+                    frames_data = [{"start": start, "end": end} for start, end in frame_ranges]
+                    annotation.extra.update({"frames": frames_data})
+                    yield NDClassification.from_common(annotation, label.data)
 
-        Yields:
-            NDClassification or NDObject: Audio annotations in NDJSON format
-        """
-        # Use processor with configurable behavior
-        processor = AudioTemporalProcessor(
-            group_text_annotations=True,  # Group multiple TEXT annotations into one feature
-            enable_token_mapping=True,  # Enable per-keyframe token content
-        )
-        yield from processor.process_annotations(label)
+            # Process objects
+            elif isinstance(annotation_group[0], AudioObjectAnnotation):
+                # For audio objects, process individually (simpler than video segments)
+                for annotation in annotation_group:
+                    yield NDObject.from_common(annotation, label.data)
+
 
     @classmethod
     def _create_non_video_annotations(cls, label: Label):
