@@ -14,9 +14,6 @@ from labelbox.data.annotation_types.ner.conversation_entity import (
 from labelbox.data.annotation_types.video import (
     VideoObjectAnnotation,
 )
-from labelbox.data.annotation_types.audio import (
-    AudioObjectAnnotation,
-)
 from labelbox.data.mixins import (
     ConfidenceMixin,
     CustomMetric,
@@ -718,7 +715,6 @@ class NDObject:
             ObjectAnnotation,
             List[List[VideoObjectAnnotation]],
             VideoMaskAnnotation,
-            AudioObjectAnnotation,
         ],
         data: GenericDataRowData,
     ) -> Union[
@@ -746,9 +742,6 @@ class NDObject:
             return obj.from_common(**args)
         elif obj == NDVideoMasks:
             return obj.from_common(annotation, data)
-        elif isinstance(annotation, AudioObjectAnnotation):
-            # Handle audio object annotation like single video frame
-            return cls._serialize_audio_object_annotation(annotation, data)
 
         subclasses = [
             NDSubclassification.from_common(annot)
@@ -770,43 +763,6 @@ class NDObject:
             annotation.extra,
             data,
             **optional_kwargs,
-        )
-
-    @classmethod
-    def _serialize_audio_object_annotation(
-        cls, annotation: AudioObjectAnnotation, data: GenericDataRowData
-    ):
-        """Serialize audio object annotation with temporal information
-
-        Args:
-            annotation: Audio object annotation to process
-            data: Data row data
-
-        Returns:
-            NDObject: Serialized audio object annotation
-        """
-        # Get the appropriate NDObject subclass based on the annotation value type
-        obj = cls.lookup_object(annotation)
-
-        # Process sub-classifications if any
-        subclasses = [
-            NDSubclassification.from_common(annot)
-            for annot in annotation.classifications
-        ]
-
-        # Add frame information to extra (milliseconds)
-        extra = annotation.extra.copy() if annotation.extra else {}
-        extra.update({"frame": annotation.frame})
-
-        # Create the NDObject with frame information
-        return obj.from_common(
-            str(annotation._uuid),
-            annotation.value,
-            subclasses,
-            annotation.name,
-            annotation.feature_schema_id,
-            extra,
-            data,
         )
 
     @staticmethod

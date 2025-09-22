@@ -2,7 +2,6 @@ import pytest
 import labelbox.types as lb_types
 from labelbox.data.annotation_types.audio import (
     AudioClassificationAnnotation,
-    AudioObjectAnnotation,
 )
 from labelbox.data.annotation_types.classification.classification import (
     ClassificationAnswer,
@@ -71,64 +70,6 @@ def test_audio_classification_text_type():
     assert annotation.value.answer == "excellent"
 
 
-def test_audio_object_creation():
-    """Test creating audio object annotation"""
-    annotation = AudioObjectAnnotation(
-        start_frame=10000,
-        end_frame=12500,
-        name="transcription",
-        value=lb_types.TextEntity(
-            start=0, end=11
-        ),  # "Hello world" has 11 characters
-    )
-
-    assert annotation.start_frame == 10000
-    assert annotation.end_frame == 12500
-    assert annotation.keyframe is True
-    assert annotation.segment_index is None
-    assert annotation.name == "transcription"
-    assert isinstance(annotation.value, lb_types.TextEntity)
-    assert annotation.value.start == 0
-    assert annotation.value.end == 11
-
-
-def test_audio_object_creation_with_classifications():
-    """Test creating audio object with sub-classifications"""
-    sub_classification = AudioClassificationAnnotation(
-        start_frame=10000,
-        name="confidence",
-        value=Radio(answer=ClassificationAnswer(name="high")),
-    )
-
-    annotation = AudioObjectAnnotation(
-        start_frame=10000,
-        end_frame=12500,
-        name="transcription",
-        value=lb_types.TextEntity(start=0, end=11),
-        classifications=[sub_classification],
-    )
-
-    assert len(annotation.classifications) == 1
-    assert annotation.classifications[0].name == "confidence"
-    assert annotation.classifications[0].start_frame == 10000
-
-
-def test_audio_object_direct_creation():
-    """Test creating audio object directly with various options"""
-    annotation = AudioObjectAnnotation(
-        start_frame=7500,  # 7.5 seconds
-        name="sound_event",
-        value=lb_types.TextEntity(start=0, end=11),
-        keyframe=False,
-        segment_index=2,
-    )
-
-    assert annotation.start_frame == 7500
-    assert annotation.end_frame is None
-    assert annotation.keyframe is False
-    assert annotation.segment_index == 2
-
-
 def test_frame_precision():
     """Test frame values maintain precision"""
     # Test various time values in milliseconds
@@ -155,21 +96,14 @@ def test_audio_label_integration():
         value=Radio(answer=ClassificationAnswer(name="john")),
     )
 
-    transcription_annotation = AudioObjectAnnotation(
-        start_frame=1000,
-        end_frame=2000,
-        name="transcription",
-        value=lb_types.TextEntity(start=0, end=5),
-    )
-
     # Create label with audio annotations
     label = lb_types.Label(
         data={"global_key": "audio_file.mp3"},
-        annotations=[speaker_annotation, transcription_annotation],
+        annotations=[speaker_annotation],
     )
 
     # Verify annotations are accessible
-    assert len(label.annotations) == 2
+    assert len(label.annotations) == 1
 
     # Check annotation types
     audio_classifications = [
@@ -177,16 +111,9 @@ def test_audio_label_integration():
         for ann in label.annotations
         if isinstance(ann, AudioClassificationAnnotation)
     ]
-    audio_objects = [
-        ann
-        for ann in label.annotations
-        if isinstance(ann, AudioObjectAnnotation)
-    ]
 
     assert len(audio_classifications) == 1
-    assert len(audio_objects) == 1
     assert audio_classifications[0].name == "speaker"
-    assert audio_objects[0].name == "transcription"
 
 
 def test_audio_annotation_validation():
@@ -384,32 +311,3 @@ def test_temporal_annotation_grouping():
     assert annotations[1].start_frame == 1000
     assert annotations[0].end_frame == 900
     assert annotations[1].end_frame == 1900
-
-
-def test_audio_object_types():
-    """Test different types of audio object annotations"""
-    # Text entity (transcription)
-    text_obj = AudioObjectAnnotation(
-        start_frame=1000,
-        name="transcription",
-        value=TextEntity(start=0, end=5),  # "hello"
-    )
-
-    assert isinstance(text_obj.value, TextEntity)
-    assert text_obj.value.start == 0
-    assert text_obj.value.end == 5
-
-    # Test with keyframe and segment settings
-    keyframe_obj = AudioObjectAnnotation(
-        start_frame=2000,
-        end_frame=3000,
-        name="segment",
-        value=TextEntity(start=10, end=15),
-        keyframe=True,
-        segment_index=1,
-    )
-
-    assert keyframe_obj.keyframe is True
-    assert keyframe_obj.segment_index == 1
-    assert keyframe_obj.start_frame == 2000
-    assert keyframe_obj.end_frame == 3000

@@ -27,7 +27,6 @@ from ...annotation_types.video import (
 from typing import List
 from ...annotation_types.audio import (
     AudioClassificationAnnotation,
-    AudioObjectAnnotation,
 )
 from labelbox.types import DocumentRectangle, DocumentEntity
 from .classification import (
@@ -87,7 +86,7 @@ class NDLabel(BaseModel):
         return consecutive
 
     @classmethod
-    def _get_audio_frame_ranges(cls, annotation_group: List[Union[AudioClassificationAnnotation, AudioObjectAnnotation]]) -> List[Tuple[int, int]]:
+    def _get_audio_frame_ranges(cls, annotation_group: List[AudioClassificationAnnotation]) -> List[Tuple[int, int]]:
         """Get frame ranges for audio annotations (simpler than video segments)"""
         return [(ann.start_frame, getattr(ann, 'end_frame', None) or ann.start_frame) for ann in annotation_group]
 
@@ -214,7 +213,7 @@ class NDLabel(BaseModel):
         
         # Collect audio annotations
         for annot in label.annotations:
-            if isinstance(annot, (AudioClassificationAnnotation, AudioObjectAnnotation)):
+            if isinstance(annot, AudioClassificationAnnotation):
                 audio_annotations[annot.feature_schema_id or annot.name].append(annot)
 
         for annotation_group in audio_annotations.values():
@@ -232,11 +231,6 @@ class NDLabel(BaseModel):
                     annotation.extra.update({"frames": frames_data})
                     yield NDClassification.from_common(annotation, label.data)
 
-            # Process objects
-            elif isinstance(annotation_group[0], AudioObjectAnnotation):
-                # For audio objects, process individually (simpler than video segments)
-                for annotation in annotation_group:
-                    yield NDObject.from_common(annotation, label.data)
 
 
     @classmethod
@@ -251,7 +245,6 @@ class NDLabel(BaseModel):
                     VideoObjectAnnotation,
                     VideoMaskAnnotation,
                     AudioClassificationAnnotation,
-                    AudioObjectAnnotation,
                     RelationshipAnnotation,
                 ),
             )

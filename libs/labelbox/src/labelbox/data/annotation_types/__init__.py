@@ -20,7 +20,6 @@ from .video import MaskInstance
 from .video import VideoMaskAnnotation
 
 from .audio import AudioClassificationAnnotation
-from .audio import AudioObjectAnnotation
 
 from .ner import ConversationEntity
 from .ner import DocumentEntity
