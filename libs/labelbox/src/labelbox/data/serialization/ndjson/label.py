@@ -89,7 +89,7 @@ class NDLabel(BaseModel):
     @classmethod
     def _get_audio_frame_ranges(cls, annotation_group: List[Union[AudioClassificationAnnotation, AudioObjectAnnotation]]) -> List[Tuple[int, int]]:
         """Get frame ranges for audio annotations (simpler than video segments)"""
-        return [(ann.frame, getattr(ann, 'end_frame', None) or ann.frame) for ann in annotation_group]
+        return [(ann.start_frame, getattr(ann, 'end_frame', None) or ann.start_frame) for ann in annotation_group]
 
     @classmethod
     def _has_changing_values(cls, annotation_group: List[AudioClassificationAnnotation]) -> bool:
@@ -109,7 +109,7 @@ class NDLabel(BaseModel):
         frame_mapping = {}
         
         for ann in annotation_group:
-            start, end = ann.frame, getattr(ann, 'end_frame', None) or ann.frame
+            start, end = ann.start_frame, getattr(ann, 'end_frame', None) or ann.start_frame
             frames_data.append({"start": start, "end": end})
             frame_mapping[str(start)] = ann.value.answer
         
@@ -199,7 +199,7 @@ class NDLabel(BaseModel):
                     for annotation in annotation_group:
                         if (
                             annotation.keyframe
-                            and start_frame <= annotation.frame <= end_frame
+                            and start_frame <= annotation.start_frame <= end_frame
                         ):
                             segment.append(annotation)
                     segments.append(segment)

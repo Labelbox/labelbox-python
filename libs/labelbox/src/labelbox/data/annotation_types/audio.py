@@ -22,13 +22,13 @@ class AudioClassificationAnnotation(ClassificationAnnotation):
         name (Optional[str]): Name of the classification
         feature_schema_id (Optional[Cuid]): Feature schema identifier
         value (Union[Text, Checklist, Radio]): Classification value
-        frame (int): The frame index in milliseconds (e.g., 2500 = 2.5 seconds)
+        start_frame (int): The frame index in milliseconds (e.g., 2500 = 2.5 seconds)
         end_frame (Optional[int]): End frame in milliseconds (for time ranges)
         segment_index (Optional[int]): Index of audio segment this annotation belongs to
         extra (Dict[str, Any]): Additional metadata
     """
 
-    frame: int
+    start_frame: int
     end_frame: Optional[int] = None
     segment_index: Optional[int] = None
 
@@ -49,7 +49,7 @@ class AudioObjectAnnotation(
         name (Optional[str]): Name of the annotation
         feature_schema_id (Optional[Cuid]): Feature schema identifier
         value (Union[TextEntity, Geometry]): Localization or text content
-        frame (int): The frame index in milliseconds (e.g., 10000 = 10.0 seconds)
+        start_frame (int): The frame index in milliseconds (e.g., 10000 = 10.0 seconds)
         end_frame (Optional[int]): End frame in milliseconds (for time ranges)
         keyframe (bool): Whether this is a keyframe annotation (default: True)
         segment_index (Optional[int]): Index of audio segment this annotation belongs to
@@ -57,7 +57,7 @@ class AudioObjectAnnotation(
         extra (Dict[str, Any]): Additional metadata
     """
 
-    frame: int
+    start_frame: int
     end_frame: Optional[int] = None
     keyframe: bool = True
     segment_index: Optional[int] = None

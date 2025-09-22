@@ -421,7 +421,7 @@ class NDClassification:
         for frame in annotation.frames:
             for idx in range(frame.start, frame.end + 1, 1):
                 # Check if this is an audio annotation by looking at the extra data
-                # Audio annotations will have frame/end_frame in extra, video annotations won't
+                # Audio annotations will have start_frame/end_frame in extra, video annotations won't
                 if (
                     hasattr(annotation, "extra")
                     and annotation.extra
