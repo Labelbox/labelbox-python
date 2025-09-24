@@ -6,6 +6,8 @@
 #   features: []
 #   all-features: true
 #   with-sources: false
+#   generate-hashes: false
+#   universal: false
 
 -e file:libs/labelbox
 -e file:libs/lbox-clients
@@ -82,6 +84,8 @@ pygments==2.18.0
 pyproj==3.6.1
     # via labelbox
 python-dateutil==2.9.0.post0
+    # via labelbox
+pyyaml==6.0.3
     # via labelbox
 requests==2.32.3
     # via google-api-core

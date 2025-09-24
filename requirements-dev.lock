@@ -6,6 +6,8 @@
 #   features: []
 #   all-features: true
 #   with-sources: false
+#   generate-hashes: false
+#   universal: false
 
 -e file:libs/labelbox
 -e file:libs/lbox-clients
@@ -219,6 +221,8 @@ python-dateutil==2.9.0.post0
     # via pandas
 pytz==2024.1
     # via pandas
+pyyaml==6.0.3
+    # via labelbox
 pyzmq==26.0.3
     # via jupyter-client
 referencing==0.35.1
