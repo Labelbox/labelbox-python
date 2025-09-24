@@ -82,6 +82,7 @@ from labelbox.schema.user import User
 from labelbox.schema.taskstatus import TaskStatus
 from labelbox.schema.api_key import ApiKey
 from labelbox.schema.timeunit import TimeUnit
+from labelbox.alignerr import AlignerrWorkspace
 
 logger = logging.getLogger(__name__)
 
@@ -160,6 +161,10 @@ class Client:
     @property
     def app_url(self) -> str:
         return self._request_client.app_url
+
+    @property
+    def alignerr_workspace(self) -> AlignerrWorkspace:
+        return AlignerrWorkspace(self)
 
     def set_sdk_method(self, sdk_method: str):
         self._request_client.sdk_method = sdk_method

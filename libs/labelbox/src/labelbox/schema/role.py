@@ -29,11 +29,18 @@ def format_role(name: str):
 class Role(DbObject):
     name = Field.String("name")
 
+    @classmethod
+    def from_name(cls, client: "Client", name: str) -> "Role":
+        roles = get_roles(client)
+        return roles.get(name.upper())
+
+
 
 class OrgRole(Role): ...
 
 
 class UserRole(Role): ...
+    
 
 
 @dataclass
