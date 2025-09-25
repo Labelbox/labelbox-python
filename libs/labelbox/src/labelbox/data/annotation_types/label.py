@@ -77,36 +77,21 @@ class Label(BaseModel):
 
     def frame_annotations(
         self,
-    ) -> Dict[str, Union[VideoObjectAnnotation, VideoClassificationAnnotation]]:
-        frame_dict = defaultdict(list)
-        for annotation in self.annotations:
-            if isinstance(
-                annotation,
-                (VideoObjectAnnotation, VideoClassificationAnnotation),
-            ):
-                frame_dict[annotation.frame].append(annotation)
-        return frame_dict
-
-    def audio_annotations_by_frame(
-        self,
-    ) -> Dict[
-        int, List[AudioClassificationAnnotation]
-    ]:
-        """Get audio annotations organized by frame (millisecond)
-
+    ) -> Dict[int, Union[VideoObjectAnnotation, VideoClassificationAnnotation, AudioClassificationAnnotation]]:
+        """Get temporal annotations organized by frame
+        
         Returns:
-            Dict[int, List]: Dictionary mapping frame (milliseconds) to list of audio annotations
-
+            Dict[int, List]: Dictionary mapping frame (milliseconds) to list of temporal annotations
+            
         Example:
-            >>> label.audio_annotations_by_frame()
-            {2500: [AudioClassificationAnnotation(...)]}
+            >>> label.frame_annotations()
+            {2500: [VideoClassificationAnnotation(...), AudioClassificationAnnotation(...)]}
         """
         frame_dict = defaultdict(list)
         for annotation in self.annotations:
-            if isinstance(
-                annotation,
-                AudioClassificationAnnotation,
-            ):
+            if isinstance(annotation, (VideoObjectAnnotation, VideoClassificationAnnotation)):
+                frame_dict[annotation.frame].append(annotation)
+            elif isinstance(annotation, AudioClassificationAnnotation):
                 frame_dict[annotation.start_frame].append(annotation)
         return dict(frame_dict)
 

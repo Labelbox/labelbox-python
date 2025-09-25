@@ -12,7 +12,6 @@ from ....annotated_types import Cuid
 
 from ...annotation_types.annotation import ClassificationAnnotation
 from ...annotation_types.video import VideoClassificationAnnotation
-from ...annotation_types.audio import AudioClassificationAnnotation
 from ...annotation_types.llm_prompt_response.prompt import (
     PromptClassificationAnnotation,
     PromptText,
@@ -401,11 +400,7 @@ class NDClassification:
     @staticmethod
     def to_common(
         annotation: "NDClassificationType",
-    ) -> Union[
-        ClassificationAnnotation,
-        VideoClassificationAnnotation,
-        AudioClassificationAnnotation,
-    ]:
+    ) -> Union[ClassificationAnnotation, VideoClassificationAnnotation]:
         common = ClassificationAnnotation(
             value=annotation.to_common(),
             name=annotation.name,
@@ -420,26 +415,11 @@ class NDClassification:
         results = []
         for frame in annotation.frames:
             for idx in range(frame.start, frame.end + 1, 1):
-                # Check if this is an audio annotation by looking at the extra data
-                # Audio annotations will have start_frame/end_frame in extra, video annotations won't
-                if (
-                    hasattr(annotation, "extra")
-                    and annotation.extra
-                    and "frames" in annotation.extra
-                ):
-                    # This is likely an audio temporal annotation
-                    results.append(
-                        AudioClassificationAnnotation(
-                            frame=idx, **common.model_dump(exclude_none=True)
-                        )
+                results.append(
+                    VideoClassificationAnnotation(
+                        frame=idx, **common.model_dump(exclude_none=True)
                     )
-                else:
-                    # This is a video temporal annotation
-                    results.append(
-                        VideoClassificationAnnotation(
-                            frame=idx, **common.model_dump(exclude_none=True)
-                        )
-                    )
+                )
         return results
 
     @classmethod
@@ -448,7 +428,6 @@ class NDClassification:
         annotation: Union[
             ClassificationAnnotation,
             VideoClassificationAnnotation,
-            AudioClassificationAnnotation,
         ],
         data: GenericDataRowData,
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
@@ -473,7 +452,6 @@ class NDClassification:
         annotation: Union[
             ClassificationAnnotation,
             VideoClassificationAnnotation,
-            AudioClassificationAnnotation,
         ],
     ) -> Union[NDText, NDChecklist, NDRadio]:
         return {Text: NDText, Checklist: NDChecklist, Radio: NDRadio}.get(

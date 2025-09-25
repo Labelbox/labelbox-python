@@ -1,4 +1,5 @@
 from typing import Optional
+from pydantic import Field, AliasChoices
 
 from labelbox.data.annotation_types.annotation import (
     ClassificationAnnotation,
@@ -23,7 +24,15 @@ class AudioClassificationAnnotation(ClassificationAnnotation):
         extra (Dict[str, Any]): Additional metadata
     """
 
-    start_frame: int
+    start_frame: int = Field(
+        validation_alias=AliasChoices("start_frame", "frame"),
+        serialization_alias="frame",
+    )
+    end_frame: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("end_frame", "endFrame"),
+        serialization_alias="end_frame",
+    )
     segment_index: Optional[int] = None
 
 
@@ -45,7 +54,14 @@ class AudioTextClassificationAnnotation(ClassificationAnnotation):
         extra (Dict[str, Any]): Additional metadata
     """
 
-    start_frame: int
-    end_frame: int = None
+    start_frame: int = Field(
+        validation_alias=AliasChoices("start_frame", "frame"),
+        serialization_alias="frame",
+    )
+    end_frame: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("end_frame", "endFrame"),
+        serialization_alias="end_frame",
+    )
 
 
