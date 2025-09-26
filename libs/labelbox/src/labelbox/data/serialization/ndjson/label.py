@@ -2,7 +2,7 @@ from collections import defaultdict
 import copy
 from itertools import groupby
 from operator import itemgetter
-from typing import Generator, List, Tuple, Union
+from typing import Any, Dict, Generator, List, Tuple, Union
 from uuid import uuid4
 
 from pydantic import BaseModel
@@ -168,8 +168,8 @@ class NDLabel(BaseModel):
     @classmethod
     def _create_audio_annotations(
         cls, label: Label
-    ) -> Generator[Union[NDChecklistSubclass, NDRadioSubclass], None, None]:
-        """Create audio annotations serialized in Video NDJSON classification format."""
+    ) -> Generator[BaseModel, None, None]:
+        """Create audio annotations grouped by classification name in v2.py format."""
         audio_annotations = defaultdict(list)
 
         # Collect audio annotations by name/schema_id
@@ -177,16 +177,70 @@ class NDLabel(BaseModel):
             if isinstance(annot, AudioClassificationAnnotation):
                 audio_annotations[annot.feature_schema_id or annot.name].append(annot)
 
-        for annotation_group in audio_annotations.values():
-            # Simple grouping: one NDJSON entry per annotation group (same as video)
-            annotation = annotation_group[0]
-            frames_data = []
+        # Create v2.py format for each classification group
+        for classification_name, annotation_group in audio_annotations.items():
+            # Group annotations by value (like v2.py does)
+            value_groups = defaultdict(list)
+            
             for ann in annotation_group:
-                start = ann.start_frame
-                end = getattr(ann, "end_frame", None) or ann.start_frame
-                frames_data.append({"start": start, "end": end})
-            annotation.extra.update({"frames": frames_data})
-            yield NDClassification.from_common(annotation, label.data)
+                # Extract value based on classification type for grouping
+                if hasattr(ann.value, 'answer'):
+                    if isinstance(ann.value.answer, list):
+                        # Checklist classification - convert list to string for grouping
+                        value = str(sorted([item.name for item in ann.value.answer]))
+                    elif hasattr(ann.value.answer, 'name'):
+                        # Radio classification - ann.value.answer is ClassificationAnswer with name
+                        value = ann.value.answer.name
+                    else:
+                        # Text classification
+                        value = ann.value.answer
+                else:
+                    value = str(ann.value)
+                
+                # Group by value
+                value_groups[value].append(ann)
+            
+            # Create answer items with grouped frames (like v2.py)
+            answer_items = []
+            for value, annotations_with_same_value in value_groups.items():
+                frames = []
+                for ann in annotations_with_same_value:
+                    frames.append({"start": ann.start_frame, "end": ann.end_frame})
+                
+                # Extract the actual value for the output (not the grouping key)
+                first_ann = annotations_with_same_value[0]
+                
+                # Use different field names based on classification type
+                if hasattr(first_ann.value, 'answer') and isinstance(first_ann.value.answer, list):
+                    # Checklist - use "name" field (like v2.py)
+                    answer_items.append({
+                        "name": first_ann.value.answer[0].name,  # Single item for now
+                        "frames": frames
+                    })
+                elif hasattr(first_ann.value, 'answer') and hasattr(first_ann.value.answer, 'name'):
+                    # Radio - use "name" field (like v2.py)
+                    answer_items.append({
+                        "name": first_ann.value.answer.name,
+                        "frames": frames
+                    })
+                else:
+                    # Text - use "value" field (like v2.py)
+                    answer_items.append({
+                        "value": first_ann.value.answer,
+                        "frames": frames
+                    })
+            
+            # Create a simple Pydantic model for the v2.py format
+            class AudioNDJSON(BaseModel):
+                name: str
+                answer: List[Dict[str, Any]]
+                dataRow: Dict[str, str]
+            
+            yield AudioNDJSON(
+                name=classification_name,
+                answer=answer_items,
+                dataRow={"globalKey": label.data.global_key}
+            )
 
 
 

@@ -60,22 +60,6 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
         return res
 
 
-class FrameLocation(BaseModel):
-    end: int
-    start: int
-
-
-class VideoSupported(BaseModel):
-    # Note that frames are only allowed as top level inferences for video
-    frames: Optional[List[FrameLocation]] = None
-
-    @model_serializer(mode="wrap")
-    def serialize_model(self, handler):
-        res = handler(self)
-        # This means these are no video frames ..
-        if self.frames is None:
-            res.pop("frames")
-        return res
 
 
 class NDTextSubclass(NDAnswer):
@@ -223,7 +207,7 @@ class NDPromptTextSubclass(NDAnswer):
 # ====== End of subclasses
 
 
-class NDText(NDAnnotation, NDTextSubclass, VideoSupported):
+class NDText(NDAnnotation, NDTextSubclass):
     @classmethod
     def from_common(
         cls,
@@ -249,7 +233,7 @@ class NDText(NDAnnotation, NDTextSubclass, VideoSupported):
         )
 
 
-class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
+class NDChecklist(NDAnnotation, NDChecklistSubclass):
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         res = handler(self)
@@ -296,7 +280,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
         )
 
 
-class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
+class NDRadio(NDAnnotation, NDRadioSubclass):
     @classmethod
     def from_common(
         cls,
