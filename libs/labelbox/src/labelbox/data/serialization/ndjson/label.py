@@ -169,77 +169,189 @@ class NDLabel(BaseModel):
     def _create_audio_annotations(
         cls, label: Label
     ) -> Generator[BaseModel, None, None]:
-        """Create audio annotations grouped by classification name in v2.py format."""
-        audio_annotations = defaultdict(list)
+        """Create audio annotations with nested classifications (v3-like),
+        while preserving v2 behavior for non-nested cases.
 
-        # Collect audio annotations by name/schema_id
+        Strategy:
+        - Group audio annotations by classification (schema_id or name)
+        - Identify root groups (not fully contained by another group's frames)
+        - For each root group, build answer items grouped by value with frames
+        - Recursively attach nested classifications by time containment
+        """
+
+        # 1) Collect all audio annotations grouped by classification key
+        #    Use feature_schema_id when present, otherwise fall back to name
+        audio_by_group: Dict[str, List[AudioClassificationAnnotation]] = defaultdict(list)
         for annot in label.annotations:
             if isinstance(annot, AudioClassificationAnnotation):
-                audio_annotations[annot.feature_schema_id or annot.name].append(annot)
+                audio_by_group[annot.feature_schema_id or annot.name].append(annot)
 
-        # Create v2.py format for each classification group
-        for classification_name, annotation_group in audio_annotations.items():
-            # Group annotations by value (like v2.py does)
-            value_groups = defaultdict(list)
-            
-            for ann in annotation_group:
-                # Extract value based on classification type for grouping
-                if hasattr(ann.value, 'answer'):
+        if not audio_by_group:
+            return
+
+        # Helper: produce a user-facing classification name for a group
+        def group_display_name(group_key: str, anns: List[AudioClassificationAnnotation]) -> str:
+            # Prefer the first non-empty annotation name
+            for a in anns:
+                if a.name:
+                    return a.name
+            # Fallback to group key (may be schema id)
+            return group_key
+
+        # Helper: compute whether group A is fully contained by any other group by time
+        def is_group_nested(group_key: str) -> bool:
+            anns = audio_by_group[group_key]
+            for ann in anns:
+                # An annotation is considered nested if there exists any container in other groups
+                contained = False
+                for other_key, other_anns in audio_by_group.items():
+                    if other_key == group_key:
+                        continue
+                    for parent in other_anns:
+                        if parent.start_frame <= ann.start_frame and (
+                            parent.end_frame is not None
+                            and ann.end_frame is not None
+                            and parent.end_frame >= ann.end_frame
+                        ):
+                            contained = True
+                            break
+                    if contained:
+                        break
+                if not contained:
+                    # If any annotation in this group is not contained, group is a root
+                    return False
+            # All annotations were contained somewhere → nested group
+            return True
+
+        # Helper: group annotations by logical value and produce answer entries
+        def group_by_value(annotations: List[AudioClassificationAnnotation]) -> List[Dict[str, Any]]:
+            value_buckets: Dict[str, List[AudioClassificationAnnotation]] = defaultdict(list)
+
+            for ann in annotations:
+                # Compute grouping key depending on classification type
+                if hasattr(ann.value, "answer"):
                     if isinstance(ann.value.answer, list):
-                        # Checklist classification - convert list to string for grouping
-                        value = str(sorted([item.name for item in ann.value.answer]))
-                    elif hasattr(ann.value.answer, 'name'):
-                        # Radio classification - ann.value.answer is ClassificationAnswer with name
-                        value = ann.value.answer.name
+                        # Checklist: stable key from selected option names
+                        key = str(sorted([opt.name for opt in ann.value.answer]))
+                    elif hasattr(ann.value.answer, "name"):
+                        # Radio: option name
+                        key = ann.value.answer.name
                     else:
-                        # Text classification
-                        value = ann.value.answer
+                        # Text: the string value
+                        key = ann.value.answer
                 else:
-                    value = str(ann.value)
-                
-                # Group by value
-                value_groups[value].append(ann)
-            
-            # Create answer items with grouped frames (like v2.py)
-            answer_items = []
-            for value, annotations_with_same_value in value_groups.items():
-                frames = []
-                for ann in annotations_with_same_value:
-                    frames.append({"start": ann.start_frame, "end": ann.end_frame})
-                
-                # Extract the actual value for the output (not the grouping key)
-                first_ann = annotations_with_same_value[0]
-                
-                # Use different field names based on classification type
-                if hasattr(first_ann.value, 'answer') and isinstance(first_ann.value.answer, list):
-                    # Checklist - use "name" field (like v2.py)
-                    answer_items.append({
-                        "name": first_ann.value.answer[0].name,  # Single item for now
-                        "frames": frames
-                    })
-                elif hasattr(first_ann.value, 'answer') and hasattr(first_ann.value.answer, 'name'):
-                    # Radio - use "name" field (like v2.py)
-                    answer_items.append({
-                        "name": first_ann.value.answer.name,
-                        "frames": frames
-                    })
+                    key = str(ann.value)
+                value_buckets[key].append(ann)
+
+            entries: List[Dict[str, Any]] = []
+            for _, anns in value_buckets.items():
+                first = anns[0]
+                frames = [{"start": a.start_frame, "end": a.end_frame} for a in anns]
+
+                if hasattr(first.value, "answer") and isinstance(first.value.answer, list):
+                    # Checklist: emit one entry per distinct option present in this bucket
+                    # Since bucket is keyed by the combination, take names from first
+                    for opt_name in sorted([o.name for o in first.value.answer]):
+                        entries.append({"name": opt_name, "frames": frames})
+                elif hasattr(first.value, "answer") and hasattr(first.value.answer, "name"):
+                    # Radio
+                    entries.append({"name": first.value.answer.name, "frames": frames})
                 else:
-                    # Text - use "value" field (like v2.py)
-                    answer_items.append({
-                        "value": first_ann.value.answer,
-                        "frames": frames
-                    })
-            
-            # Create a simple Pydantic model for the v2.py format
-            class AudioNDJSON(BaseModel):
-                name: str
-                answer: List[Dict[str, Any]]
-                dataRow: Dict[str, str]
-            
+                    # Text
+                    entries.append({"value": first.value.answer, "frames": frames})
+
+            return entries
+
+        # Helper: check if child ann is inside any of the parent frames list
+        def ann_within_frames(ann: AudioClassificationAnnotation, frames: List[Dict[str, int]]) -> bool:
+            for fr in frames:
+                if fr["start"] <= ann.start_frame and (
+                    ann.end_frame is not None and fr["end"] is not None and fr["end"] >= ann.end_frame
+                ):
+                    return True
+            return False
+
+        # Helper: recursively build nested classifications for a specific parent frames list
+        def build_nested_for_frames(parent_frames: List[Dict[str, int]], exclude_group: str) -> List[Dict[str, Any]]:
+            nested: List[Dict[str, Any]] = []
+
+            # Collect all annotations within parent frames across all groups except the excluded one
+            all_contained: List[AudioClassificationAnnotation] = []
+            for gk, ga in audio_by_group.items():
+                if gk == exclude_group:
+                    continue
+                all_contained.extend([a for a in ga if ann_within_frames(a, parent_frames)])
+
+            def strictly_contains(container: AudioClassificationAnnotation, inner: AudioClassificationAnnotation) -> bool:
+                if container is inner:
+                    return False
+                if container.end_frame is None or inner.end_frame is None:
+                    return False
+                return container.start_frame <= inner.start_frame and container.end_frame >= inner.end_frame and (
+                    container.start_frame < inner.start_frame or container.end_frame > inner.end_frame
+                )
+
+            for group_key, anns in audio_by_group.items():
+                if group_key == exclude_group:
+                    continue
+                # Do not nest groups that are roots themselves to avoid duplicating top-level groups inside others
+                if group_key in root_group_keys:
+                    continue
+
+                # Filter annotations that are contained by any parent frame
+                candidate_anns = [a for a in anns if ann_within_frames(a, parent_frames)]
+                if not candidate_anns:
+                    continue
+
+                # Keep only immediate children (those not strictly contained by another contained annotation)
+                child_anns = []
+                for a in candidate_anns:
+                    has_closer_container = any(strictly_contains(b, a) for b in all_contained)
+                    if not has_closer_container:
+                        child_anns.append(a)
+                if not child_anns:
+                    continue
+
+                # Build this child classification block
+                child_entries = group_by_value(child_anns)
+                # Recurse: for each answer entry, compute further nested
+                for entry in child_entries:
+                    entry_frames = entry.get("frames", [])
+                    child_nested = build_nested_for_frames(entry_frames, group_key)
+                    if child_nested:
+                        entry["classifications"] = child_nested
+
+                nested.append({
+                    "name": group_display_name(group_key, anns),
+                    "answer": child_entries,
+                })
+
+            return nested
+
+        # 2) Determine root groups (not fully contained by other groups)
+        root_group_keys = [k for k in audio_by_group.keys() if not is_group_nested(k)]
+
+        # 3) Emit one NDJSON object per root classification group
+        class AudioNDJSON(BaseModel):
+            name: str
+            answer: List[Dict[str, Any]]
+            dataRow: Dict[str, str]
+
+        for group_key in root_group_keys:
+            anns = audio_by_group[group_key]
+            top_entries = group_by_value(anns)
+
+            # Attach nested to each top-level answer entry
+            for entry in top_entries:
+                frames = entry.get("frames", [])
+                children = build_nested_for_frames(frames, group_key)
+                if children:
+                    entry["classifications"] = children
+
             yield AudioNDJSON(
-                name=classification_name,
-                answer=answer_items,
-                dataRow={"globalKey": label.data.global_key}
+                name=group_display_name(group_key, anns),
+                answer=top_entries,
+                dataRow={"globalKey": label.data.global_key},
             )
 
 
