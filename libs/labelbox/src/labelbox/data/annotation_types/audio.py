@@ -26,7 +26,7 @@ class AudioClassificationAnnotation(ClassificationAnnotation):
 
     start_frame: int = Field(
         validation_alias=AliasChoices("start_frame", "frame"),
-        serialization_alias="startframe",
+        serialization_alias="start_frame",
     )
     end_frame: Optional[int] = Field(
         default=None,
