@@ -1631,82 +1631,6 @@ def video_checklist_inference(prediction_id_mapping):
 
 
 @pytest.fixture
-def audio_checklist_inference(prediction_id_mapping):
-    """Audio temporal checklist inference with frame-based timing"""
-    checklists = []
-    for feature in prediction_id_mapping:
-        if "checklist" not in feature:
-            continue
-        checklist = feature["checklist"].copy()
-        checklist.update(
-            {
-                "answers": [
-                    {"name": "first_checklist_answer"},
-                    {"name": "second_checklist_answer"},
-                ],
-                "frame": 2500,  # 2.5 seconds in milliseconds
-            }
-        )
-        del checklist["tool"]
-        checklists.append(checklist)
-    return checklists
-
-
-@pytest.fixture
-def audio_text_inference(prediction_id_mapping):
-    """Audio temporal text inference with frame-based timing"""
-    texts = []
-    for feature in prediction_id_mapping:
-        if "text" not in feature:
-            continue
-        text = feature["text"].copy()
-        text.update({
-            "answer": "free form text...",
-            "frame": 5000,  # 5.0 seconds in milliseconds
-        })
-        del text["tool"]
-        texts.append(text)
-    return texts
-
-
-@pytest.fixture
-def audio_radio_inference(prediction_id_mapping):
-    """Audio temporal radio inference with frame-based timing"""
-    radios = []
-    for feature in prediction_id_mapping:
-        if "radio" not in feature:
-            continue
-        radio = feature["radio"].copy()
-        radio.update({
-            "answer": {"name": "first_radio_answer"},
-            "frame": 7500,  # 7.5 seconds in milliseconds
-        })
-        del radio["tool"]
-        radios.append(radio)
-    return radios
-
-
-@pytest.fixture
-def audio_text_entity_inference(prediction_id_mapping):
-    """Audio temporal text entity inference with frame-based timing"""
-    entities = []
-    for feature in prediction_id_mapping:
-        if "text" not in feature:
-            continue
-        entity = feature["text"].copy()
-        entity.update({
-            "frame": 3000,  # 3.0 seconds in milliseconds
-            "location": {
-                "start": 0,
-                "end": 11,
-            }
-        })
-        del entity["tool"]
-        entities.append(entity)
-    return entities
-
-
-@pytest.fixture
 def message_single_selection_inference(
     prediction_id_mapping, mmc_example_data_row_message_ids
 ):
@@ -1843,18 +1767,9 @@ def annotations_by_media_type(
     radio_inference,
     radio_inference_index_mmc,
     text_inference_index_mmc,
-    audio_checklist_inference,
-    audio_text_inference,
-    audio_radio_inference,
-    audio_text_entity_inference,
 ):
     return {
-        MediaType.Audio: [
-            audio_checklist_inference, 
-            audio_text_inference, 
-            audio_radio_inference,
-            audio_text_entity_inference
-        ],
+        MediaType.Audio: [checklist_inference, text_inference],
         MediaType.Conversational: [
             checklist_inference_index,
             text_inference_index,
@@ -2094,7 +2009,7 @@ class AnnotationImportTestHelpers:
 
 @pytest.fixture
 def annotation_import_test_helpers() -> Type[AnnotationImportTestHelpers]:
-    return AnnotationImportTestHelpers
+    return AnnotationImportTestHelpers()
 
 
 @pytest.fixture()
@@ -2176,7 +2091,6 @@ def expected_export_v2_audio():
             {
                 "name": "checklist",
                 "value": "checklist",
-                "frame": 2500,
                 "checklist_answers": [
                     {
                         "name": "first_checklist_answer",
@@ -2193,34 +2107,11 @@ def expected_export_v2_audio():
             {
                 "name": "text",
                 "value": "text",
-                "frame": 5000,
                 "text_answer": {
                     "content": "free form text...",
                     "classifications": [],
                 },
             },
-            {
-                "name": "radio",
-                "value": "radio",
-                "frame": 7500,
-                "radio_answer": {
-                    "name": "first_radio_answer",
-                    "classifications": [],
-                },
-            },
-        ],
-        "objects": [
-            {
-                "name": "text",
-                "value": "text",
-                "frame": 3000,
-                "annotation_kind": "TextEntity",
-                "classifications": [],
-                "location": {
-                    "start": 0,
-                    "end": 11,
-                },
-            }
         ],
         "segments": {},
         "timestamp": {},
