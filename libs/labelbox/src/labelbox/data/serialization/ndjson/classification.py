@@ -60,6 +60,22 @@ class NDAnswer(ConfidenceMixin, CustomMetricsMixin):
         return res
 
 
+class FrameLocation(BaseModel):
+    end: int
+    start: int
+
+
+class VideoSupported(BaseModel):
+    # Note that frames are only allowed as top level inferences for video
+    frames: Optional[List[FrameLocation]] = None
+
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
+        # This means these are no video frames ..
+        if self.frames is None:
+            res.pop("frames")
+        return res
 
 
 class NDTextSubclass(NDAnswer):
@@ -226,14 +242,13 @@ class NDText(NDAnnotation, NDTextSubclass):
             name=name,
             schema_id=feature_schema_id,
             uuid=uuid,
-            frames=extra.get("frames"),
             message_id=message_id,
             confidence=text.confidence,
             custom_metrics=text.custom_metrics,
         )
 
 
-class NDChecklist(NDAnnotation, NDChecklistSubclass):
+class NDChecklist(NDAnnotation, NDChecklistSubclass, VideoSupported):
     @model_serializer(mode="wrap")
     def serialize_model(self, handler):
         res = handler(self)
@@ -280,7 +295,7 @@ class NDChecklist(NDAnnotation, NDChecklistSubclass):
         )
 
 
-class NDRadio(NDAnnotation, NDRadioSubclass):
+class NDRadio(NDAnnotation, NDRadioSubclass, VideoSupported):
     @classmethod
     def from_common(
         cls,
@@ -410,8 +425,7 @@ class NDClassification:
     def from_common(
         cls,
         annotation: Union[
-            ClassificationAnnotation,
-            VideoClassificationAnnotation,
+            ClassificationAnnotation, VideoClassificationAnnotation
         ],
         data: GenericDataRowData,
     ) -> Union[NDTextSubclass, NDChecklistSubclass, NDRadioSubclass]:
@@ -434,8 +448,7 @@ class NDClassification:
     @staticmethod
     def lookup_classification(
         annotation: Union[
-            ClassificationAnnotation,
-            VideoClassificationAnnotation,
+            ClassificationAnnotation, VideoClassificationAnnotation
         ],
     ) -> Union[NDText, NDChecklist, NDRadio]:
         return {Text: NDText, Checklist: NDChecklist, Radio: NDRadio}.get(

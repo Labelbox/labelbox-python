@@ -688,12 +688,12 @@ def _create_label(project, data_row, ontology, wait_for_label_processing):
             predictions,
         )
         upload_task.wait_until_done(sleep_time_seconds=5)
-        assert upload_task.state == AnnotationImportState.FINISHED, (
-            "Label Import did not finish"
-        )
-        assert len(upload_task.errors) == 0, (
-            f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
-        )
+        assert (
+            upload_task.state == AnnotationImportState.FINISHED
+        ), "Label Import did not finish"
+        assert (
+            len(upload_task.errors) == 0
+        ), f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
 
     project.create_label = create_label
     project.create_label()
