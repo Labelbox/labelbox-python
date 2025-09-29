@@ -159,7 +159,7 @@ class NDLabel(BaseModel):
                     for annotation in annotation_group:
                         if (
                             annotation.keyframe
-                            and start_frame <= annotation.start_frame <= end_frame
+                            and start_frame <= annotation.frame <= end_frame
                         ):
                             segment.append(annotation)
                     segments.append(segment)
