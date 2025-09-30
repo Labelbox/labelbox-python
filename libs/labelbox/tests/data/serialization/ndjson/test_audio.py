@@ -315,15 +315,15 @@ def test_audio_nested_text_radio_checklist_structure():
     radio_nd = next(obj for obj in ndjson if obj["name"] == "radio_class")
 
     # Check first_radio_answer
-    # Note: The two annotation segments have different nested structures, so they create separate answer entries
+    # Note: Segments with the same answer value are merged (both segments have "first_radio_answer")
     first_radios = [
         a for a in radio_nd["answer"] if a["name"] == "first_radio_answer"
     ]
-    # We get only first segment (200-1500) because second segment has different nested structure
-    assert len(first_radios) >= 1
+    # We get one merged answer with both frame ranges
+    assert len(first_radios) == 1
     first_radio = first_radios[0]
-    # First segment frames
-    assert first_radio["frames"] == [{"start": 200, "end": 1500}]
+    # Merged frames from both segments: [200-1500] and [2000-2500]
+    assert first_radio["frames"] == [{"start": 200, "end": 1500}, {"start": 2000, "end": 2500}]
 
     # Check explicit nested sub_radio_question
     assert "classifications" in first_radio
@@ -363,16 +363,16 @@ def test_audio_nested_text_radio_checklist_structure():
     )
 
     # Check first_checklist_option
-    # Note: segments with different nested structures don't merge
+    # Note: segments with the same answer value are merged
     first_opts = [
         a
         for a in checklist_nd["answer"]
         if a["name"] == "first_checklist_option"
     ]
-    assert len(first_opts) >= 1
+    assert len(first_opts) == 1
     first_opt = first_opts[0]
-    # First segment frames
-    assert first_opt["frames"] == [{"start": 300, "end": 800}]
+    # Merged frames from both segments: [300-800] and [1200-1800]
+    assert first_opt["frames"] == [{"start": 300, "end": 800}, {"start": 1200, "end": 1800}]
 
     # Check explicit nested_checklist
     assert "classifications" in first_opt
@@ -382,8 +382,8 @@ def test_audio_nested_text_radio_checklist_structure():
         if c["name"] == "nested_checklist"
     )
 
-    # Check nested_checklist has nested_option_1 from first segment
-    assert len(nested_checklist["answer"]) >= 1
+    # Check nested_checklist has all 3 options (nested_option_1, 2, 3) from both segments
+    assert len(nested_checklist["answer"]) == 3
 
     # Check nested_option_1 with specific frame range
     opt1 = next(

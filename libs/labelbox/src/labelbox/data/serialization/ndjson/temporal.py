@@ -93,15 +93,15 @@ class ValueGrouper(Generic[TemporalAnnotation]):
 
         entries = []
         for _, anns in value_buckets.items():
-            first = anns[0]
             # Extract frames from each annotation (root frames)
             frames = [self.frame_extractor(a) for a in anns]
             frame_dicts = [{"start": start, "end": end} for start, end in frames]
 
-            # Get root frames for passing to nested classifications
+            # Get root frames for passing to nested classifications (use first annotation's frames)
             root_frames = frames[0] if frames else (None, None)
 
-            entry = self._create_answer_entry(first, frame_dicts, root_frames)
+            # Pass ALL annotations so we can merge their nested classifications
+            entry = self._create_answer_entry(anns, frame_dicts, root_frames)
             entries.append(entry)
 
         return entries
@@ -138,49 +138,80 @@ class ValueGrouper(Generic[TemporalAnnotation]):
             # Use explicitly specified frames
             return [{"start": obj.start_frame, "end": obj.end_frame}]
         else:
-            # Default to root frames
-            if root_frames and root_frames[0] is not None and root_frames[1] is not None:
+            # Default to parent frames first, then root frames
+            if parent_frames:
+                return parent_frames
+            elif root_frames and root_frames[0] is not None and root_frames[1] is not None:
                 return [{"start": root_frames[0], "end": root_frames[1]}]
             else:
-                # Fall back to parent frames if root not available
-                return parent_frames
+                return []
 
-    def _create_answer_entry(self, first_ann: TemporalAnnotation, frames: List[Dict[str, int]], root_frames: Tuple[int, int]) -> Dict[str, Any]:
-        """Create an answer entry from the first annotation and frames.
+    def _create_answer_entry(self, anns: List[TemporalAnnotation], frames: List[Dict[str, int]], root_frames: Tuple[int, int]) -> Dict[str, Any]:
+        """Create an answer entry from all annotations with the same value, merging their nested classifications.
 
         Args:
-            first_ann: The first annotation in the value group
+            anns: All annotations in the value group
             frames: List of frame dictionaries for this answer
             root_frames: Tuple of (start, end) from the root AudioClassificationAnnotation
         """
+        first_ann = anns[0]
+
         if hasattr(first_ann.value, "answer") and isinstance(first_ann.value.answer, list):
-            # Checklist: emit one entry per distinct option present in this bucket
+            # Checklist: emit one entry per distinct option present across ALL annotations
+            # First, collect all unique option names across all annotations
+            all_option_names = set()
+            for ann in anns:
+                if hasattr(ann.value, "answer") and isinstance(ann.value.answer, list):
+                    for opt in ann.value.answer:
+                        all_option_names.add(opt.name)
+
             entries = []
-            for opt in first_ann.value.answer:
-                # Get frames for this specific checklist option (from opt or parent)
-                opt_frames = self._get_nested_frames(opt, frames, root_frames)
-                entry = {"name": opt.name, "frames": opt_frames}
-                # Handle explicit nesting for this checklist option
-                if hasattr(opt, 'classifications') and opt.classifications:
-                    entry["classifications"] = self._serialize_explicit_classifications(opt.classifications, root_frames)
+            for opt_name in sorted(all_option_names):  # Sort for consistent ordering
+                # For each unique option, collect frames and nested classifications from all annotations
+                opt_frames = []
+                all_nested = []
+                for ann in anns:
+                    if hasattr(ann.value, "answer") and isinstance(ann.value.answer, list):
+                        for ann_opt in ann.value.answer:
+                            if ann_opt.name == opt_name:
+                                # Get this annotation's root frame range
+                                ann_start, ann_end = self.frame_extractor(ann)
+                                ann_frame_dict = [{"start": ann_start, "end": ann_end}]
+                                # Collect this option's frame range (from option or parent annotation)
+                                frames_for_this_opt = self._get_nested_frames(ann_opt, ann_frame_dict, root_frames)
+                                opt_frames.extend(frames_for_this_opt)
+                                # Collect nested classifications
+                                if hasattr(ann_opt, 'classifications') and ann_opt.classifications:
+                                    all_nested.extend(ann_opt.classifications)
+
+                entry = {"name": opt_name, "frames": opt_frames}
+                if all_nested:
+                    entry["classifications"] = self._serialize_explicit_classifications(all_nested, root_frames)
                 entries.append(entry)
             return entries[0] if len(entries) == 1 else {"options": entries, "frames": frames}
         elif hasattr(first_ann.value, "answer") and hasattr(first_ann.value.answer, "name"):
             # Radio
             opt = first_ann.value.answer
-            # Get frames for this radio answer (from answer or parent)
-            opt_frames = self._get_nested_frames(opt, frames, root_frames)
-            entry = {"name": opt.name, "frames": opt_frames}
-            # Handle explicit nesting via ClassificationAnswer.classifications
-            if hasattr(opt, 'classifications') and opt.classifications:
-                entry["classifications"] = self._serialize_explicit_classifications(opt.classifications, root_frames)
+            # Use the merged frames from all annotations (already passed in)
+            entry = {"name": opt.name, "frames": frames}
+            # Collect nested classifications from all annotations
+            all_nested = []
+            for ann in anns:
+                if hasattr(ann.value, "answer") and hasattr(ann.value.answer, "classifications") and ann.value.answer.classifications:
+                    all_nested.extend(ann.value.answer.classifications)
+            if all_nested:
+                entry["classifications"] = self._serialize_explicit_classifications(all_nested, root_frames)
             return entry
         else:
             # Text - nesting is at the annotation level, not answer level
             entry = {"value": first_ann.value.answer, "frames": frames}
-            # Handle explicit nesting via AudioClassificationAnnotation.classifications
-            if hasattr(first_ann, 'classifications') and first_ann.classifications:
-                entry["classifications"] = self._serialize_explicit_classifications(first_ann.classifications, root_frames)
+            # Collect nested classifications from all annotations
+            all_nested = []
+            for ann in anns:
+                if hasattr(ann, 'classifications') and ann.classifications:
+                    all_nested.extend(ann.classifications)
+            if all_nested:
+                entry["classifications"] = self._serialize_explicit_classifications(all_nested, root_frames)
             return entry
 
     def _serialize_explicit_classifications(self, classifications: List[Any], root_frames: Tuple[int, int]) -> List[Dict[str, Any]]:
@@ -207,10 +238,12 @@ class ValueGrouper(Generic[TemporalAnnotation]):
             display_name = cls_list[0].name if cls_list[0].name else name
 
             # Create answer entries for this nested classification
-            answers = []
+            # De-duplicate by answer value
+            seen_values = {}  # value_key -> (answer_dict, nested_classifications)
             for cls in cls_list:
                 # Get frames for this ClassificationAnnotation (from cls or root)
                 cls_frames = self._get_nested_frames(cls, [], root_frames)
+                value_key = self._get_value_key(cls)
 
                 if hasattr(cls.value, "answer"):
                     if isinstance(cls.value.answer, list):
@@ -219,27 +252,78 @@ class ValueGrouper(Generic[TemporalAnnotation]):
                             # Get frames for this checklist option (from opt or cls or root)
                             opt_frames = self._get_nested_frames(opt, cls_frames, root_frames)
                             answer = {"name": opt.name, "frames": opt_frames}
-                            # Recursively handle deeper nesting
+                            # Collect nested for recursion
+                            opt_nested = []
                             if hasattr(opt, 'classifications') and opt.classifications:
-                                answer["classifications"] = self._serialize_explicit_classifications(opt.classifications, root_frames)
-                            answers.append(answer)
+                                opt_nested = opt.classifications
+                            if opt_nested:
+                                answer["classifications"] = self._serialize_explicit_classifications(opt_nested, root_frames)
+                            # Note: Checklist options don't need de-duplication
+                            # (they're already handled at the parent level)
+                            if value_key not in seen_values:
+                                seen_values[value_key] = []
+                            seen_values[value_key].append(answer)
                     elif hasattr(cls.value.answer, "name"):
-                        # Radio
+                        # Radio - de-duplicate by name
                         opt = cls.value.answer
+                        # Check if this answer has explicit frames
+                        has_explicit_frames = (hasattr(opt, 'start_frame') and opt.start_frame is not None and
+                                             hasattr(opt, 'end_frame') and opt.end_frame is not None)
                         # Get frames for this radio answer (from opt or cls or root)
                         opt_frames = self._get_nested_frames(opt, cls_frames, root_frames)
-                        answer = {"name": opt.name, "frames": opt_frames}
-                        # Recursively handle deeper nesting
-                        if hasattr(opt, 'classifications') and opt.classifications:
-                            answer["classifications"] = self._serialize_explicit_classifications(opt.classifications, root_frames)
-                        answers.append(answer)
+
+                        # Check if we've already seen this answer name
+                        if value_key in seen_values:
+                            # Only merge frames if both have explicit frames, or neither does
+                            existing_has_explicit = seen_values[value_key].get("_has_explicit", False)
+                            if has_explicit_frames and existing_has_explicit:
+                                # Both explicit - merge
+                                seen_values[value_key]["frames"].extend(opt_frames)
+                            elif has_explicit_frames and not existing_has_explicit:
+                                # Current is explicit, existing is implicit - replace with explicit
+                                seen_values[value_key]["frames"] = opt_frames
+                                seen_values[value_key]["_has_explicit"] = True
+                            elif not has_explicit_frames and existing_has_explicit:
+                                # Current is implicit, existing is explicit - keep existing (don't merge)
+                                pass
+                            else:
+                                # Both implicit - merge
+                                seen_values[value_key]["frames"].extend(opt_frames)
+
+                            # Always merge nested classifications
+                            if hasattr(opt, 'classifications') and opt.classifications:
+                                seen_values[value_key]["_nested"].extend(opt.classifications)
+                        else:
+                            answer = {"name": opt.name, "frames": opt_frames, "_nested": [], "_has_explicit": has_explicit_frames}
+                            if hasattr(opt, 'classifications') and opt.classifications:
+                                answer["_nested"] = list(opt.classifications)
+                            seen_values[value_key] = answer
                     else:
                         # Text - check for annotation-level nesting
                         answer = {"value": cls.value.answer, "frames": cls_frames}
-                        # Recursively handle deeper nesting at ClassificationAnnotation level
+                        # Collect nested
+                        text_nested = []
                         if hasattr(cls, 'classifications') and cls.classifications:
-                            answer["classifications"] = self._serialize_explicit_classifications(cls.classifications, root_frames)
-                        answers.append(answer)
+                            text_nested = cls.classifications
+                        if text_nested:
+                            answer["classifications"] = self._serialize_explicit_classifications(text_nested, root_frames)
+                        if value_key not in seen_values:
+                            seen_values[value_key] = []
+                        seen_values[value_key].append(answer)
+
+            # Convert seen_values to answers list
+            answers = []
+            for value_key, value_data in seen_values.items():
+                if isinstance(value_data, list):
+                    answers.extend(value_data)
+                else:
+                    # Radio case - handle nested classifications
+                    if value_data.get("_nested"):
+                        value_data["classifications"] = self._serialize_explicit_classifications(value_data["_nested"], root_frames)
+                    # Clean up internal fields
+                    value_data.pop("_nested", None)
+                    value_data.pop("_has_explicit", None)
+                    answers.append(value_data)
 
             result.append({
                 "name": display_name,
