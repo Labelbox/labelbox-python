@@ -34,22 +34,27 @@ def test_audio_nested_text_radio_checklist_structure():
             classifications=[  # Explicit nesting via classifications field
                 lb_types.ClassificationAnnotation(
                     name="nested_text_class",
-                    start_frame=1600, end_frame=2000,  # Nested frame range (subset of root)
+                    start_frame=1600,
+                    end_frame=2000,  # Nested frame range (subset of root)
                     value=lb_types.Text(answer="nested_text_class value"),
                     classifications=[  # Deeper nesting
                         lb_types.ClassificationAnnotation(
                             name="nested_text_class_2",
-                            start_frame=1800, end_frame=2000,  # Even more specific nested range
-                            value=lb_types.Text(answer="nested_text_class_2 value")
+                            start_frame=1800,
+                            end_frame=2000,  # Even more specific nested range
+                            value=lb_types.Text(
+                                answer="nested_text_class_2 value"
+                            ),
                         )
-                    ]
+                    ],
                 ),
                 lb_types.ClassificationAnnotation(
                     name="nested_text_class",
-                    start_frame=2001, end_frame=2400,  # Different nested frame range
-                    value=lb_types.Text(answer="nested_text_class value2")
-                )
-            ]
+                    start_frame=2001,
+                    end_frame=2400,  # Different nested frame range
+                    value=lb_types.Text(answer="nested_text_class value2"),
+                ),
+            ],
         )
     )
 
@@ -87,31 +92,34 @@ def test_audio_nested_text_radio_checklist_structure():
                             value=lb_types.Radio(
                                 answer=lb_types.ClassificationAnswer(
                                     name="first_sub_radio_answer",
-                                    start_frame=1000, end_frame=1500,  # Nested frame range
+                                    start_frame=1000,
+                                    end_frame=1500,  # Nested frame range
                                     classifications=[  # Deeper nesting
                                         lb_types.ClassificationAnnotation(
                                             name="sub_radio_question_2",
                                             value=lb_types.Radio(
                                                 answer=lb_types.ClassificationAnswer(
                                                     name="first_sub_radio_answer_2",
-                                                    start_frame=1300, end_frame=1500  # Even more specific nested range
+                                                    start_frame=1300,
+                                                    end_frame=1500,  # Even more specific nested range
                                                 )
-                                            )
+                                            ),
                                         )
-                                    ]
+                                    ],
                                 )
-                            )
+                            ),
                         ),
                         lb_types.ClassificationAnnotation(
                             name="sub_radio_question",
                             value=lb_types.Radio(
                                 answer=lb_types.ClassificationAnswer(
                                     name="second_sub_radio_answer",
-                                    start_frame=2100, end_frame=2500  # Nested frame range for second segment
+                                    start_frame=2100,
+                                    end_frame=2500,  # Nested frame range for second segment
                                 )
-                            )
-                        )
-                    ]
+                            ),
+                        ),
+                    ],
                 )
             ),
         )
@@ -133,9 +141,9 @@ def test_audio_nested_text_radio_checklist_structure():
                                 answer=lb_types.ClassificationAnswer(
                                     name="second_sub_radio_answer"
                                 )
-                            )
+                            ),
                         )
-                    ]
+                    ],
                 )
             ),
         )
@@ -181,19 +189,23 @@ def test_audio_nested_text_radio_checklist_structure():
                                     answer=[
                                         lb_types.ClassificationAnswer(
                                             name="nested_option_1",
-                                            start_frame=400, end_frame=700,  # Nested frame range
+                                            start_frame=400,
+                                            end_frame=700,  # Nested frame range
                                             classifications=[  # Deeper nesting
                                                 lb_types.ClassificationAnnotation(
                                                     name="checklist_nested_text",
-                                                    start_frame=500, end_frame=700,  # Even more specific nested range
-                                                    value=lb_types.Text(answer="checklist_nested_text value")
+                                                    start_frame=500,
+                                                    end_frame=700,  # Even more specific nested range
+                                                    value=lb_types.Text(
+                                                        answer="checklist_nested_text value"
+                                                    ),
                                                 )
-                                            ]
+                                            ],
                                         )
                                     ]
-                                )
+                                ),
                             )
-                        ]
+                        ],
                     )
                 ]
             ),
@@ -217,16 +229,18 @@ def test_audio_nested_text_radio_checklist_structure():
                                     answer=[
                                         lb_types.ClassificationAnswer(
                                             name="nested_option_2",
-                                            start_frame=1200, end_frame=1600  # Nested frame range
+                                            start_frame=1200,
+                                            end_frame=1600,  # Nested frame range
                                         ),
                                         lb_types.ClassificationAnswer(
                                             name="nested_option_3",
-                                            start_frame=1400, end_frame=1800  # Nested frame range
-                                        )
+                                            start_frame=1400,
+                                            end_frame=1800,  # Nested frame range
+                                        ),
                                     ]
-                                )
+                                ),
                             )
-                        ]
+                        ],
                     )
                 ]
             ),
@@ -241,7 +255,9 @@ def test_audio_nested_text_radio_checklist_structure():
             name="checklist_class",
             value=lb_types.Checklist(
                 answer=[
-                    lb_types.ClassificationAnswer(name="second_checklist_option")
+                    lb_types.ClassificationAnswer(
+                        name="second_checklist_option"
+                    )
                 ]
             ),
         )
@@ -296,7 +312,9 @@ def test_audio_nested_text_radio_checklist_structure():
     assert len(nt["answer"]) == 2
     nt_ans_1 = nt["answer"][0]
     assert nt_ans_1["value"] == "nested_text_class value"
-    assert nt_ans_1["frames"] == [{"start": 1600, "end": 2000}]  # Nested frame range
+    assert nt_ans_1["frames"] == [
+        {"start": 1600, "end": 2000}
+    ]  # Nested frame range
 
     # Check nested_text_class_2 is nested under nested_text_class
     nt_nested = nt_ans_1.get("classifications", [])
@@ -304,12 +322,16 @@ def test_audio_nested_text_radio_checklist_structure():
     nt2 = nt_nested[0]
     assert nt2["name"] == "nested_text_class_2"
     assert nt2["answer"][0]["value"] == "nested_text_class_2 value"
-    assert nt2["answer"][0]["frames"] == [{"start": 1800, "end": 2000}]  # Even more specific nested range
+    assert nt2["answer"][0]["frames"] == [
+        {"start": 1800, "end": 2000}
+    ]  # Even more specific nested range
 
     # Check second nested_text_class answer
     nt_ans_2 = nt["answer"][1]
     assert nt_ans_2["value"] == "nested_text_class value2"
-    assert nt_ans_2["frames"] == [{"start": 2001, "end": 2400}]  # Different nested frame range
+    assert nt_ans_2["frames"] == [
+        {"start": 2001, "end": 2400}
+    ]  # Different nested frame range
 
     # Validate radio_class structure with explicit nesting and frame ranges
     radio_nd = next(obj for obj in ndjson if obj["name"] == "radio_class")
@@ -323,7 +345,10 @@ def test_audio_nested_text_radio_checklist_structure():
     assert len(first_radios) == 1
     first_radio = first_radios[0]
     # Merged frames from both segments: [200-1500] and [2000-2500]
-    assert first_radio["frames"] == [{"start": 200, "end": 1500}, {"start": 2000, "end": 2500}]
+    assert first_radio["frames"] == [
+        {"start": 200, "end": 1500},
+        {"start": 2000, "end": 2500},
+    ]
 
     # Check explicit nested sub_radio_question
     assert "classifications" in first_radio
@@ -338,7 +363,9 @@ def test_audio_nested_text_radio_checklist_structure():
     sr_first = next(
         a for a in sub_radio["answer"] if a["name"] == "first_sub_radio_answer"
     )
-    assert sr_first["frames"] == [{"start": 1000, "end": 1500}]  # Nested frame range
+    assert sr_first["frames"] == [
+        {"start": 1000, "end": 1500}
+    ]  # Nested frame range
 
     # Check sub_radio_question_2 is nested under first_sub_radio_answer
     assert "classifications" in sr_first
@@ -348,7 +375,9 @@ def test_audio_nested_text_radio_checklist_structure():
         if c["name"] == "sub_radio_question_2"
     )
     assert sr2["answer"][0]["name"] == "first_sub_radio_answer_2"
-    assert sr2["answer"][0]["frames"] == [{"start": 1300, "end": 1500}]  # Even more specific nested range
+    assert sr2["answer"][0]["frames"] == [
+        {"start": 1300, "end": 1500}
+    ]  # Even more specific nested range
 
     # Check second_sub_radio_answer
     sr_second = next(
@@ -372,7 +401,10 @@ def test_audio_nested_text_radio_checklist_structure():
     assert len(first_opts) == 1
     first_opt = first_opts[0]
     # Merged frames from both segments: [300-800] and [1200-1800]
-    assert first_opt["frames"] == [{"start": 300, "end": 800}, {"start": 1200, "end": 1800}]
+    assert first_opt["frames"] == [
+        {"start": 300, "end": 800},
+        {"start": 1200, "end": 1800},
+    ]
 
     # Check explicit nested_checklist
     assert "classifications" in first_opt
@@ -399,7 +431,9 @@ def test_audio_nested_text_radio_checklist_structure():
         if c["name"] == "checklist_nested_text"
     )
     assert nested_text["answer"][0]["value"] == "checklist_nested_text value"
-    assert nested_text["answer"][0]["frames"] == [{"start": 500, "end": 700}]  # Even more specific nested range
+    assert nested_text["answer"][0]["frames"] == [
+        {"start": 500, "end": 700}
+    ]  # Even more specific nested range
 
 
 def test_audio_top_level_only_basic():
@@ -408,30 +442,38 @@ def test_audio_top_level_only_basic():
             frame=200,
             end_frame=1500,
             name="radio_class",
-            value=lb_types.Radio(answer=lb_types.ClassificationAnswer(name="first_radio_answer")),
+            value=lb_types.Radio(
+                answer=lb_types.ClassificationAnswer(name="first_radio_answer")
+            ),
         ),
         lb_types.AudioClassificationAnnotation(
             frame=1550,
             end_frame=1700,
             name="radio_class",
-            value=lb_types.Radio(answer=lb_types.ClassificationAnswer(name="second_radio_answer")),
+            value=lb_types.Radio(
+                answer=lb_types.ClassificationAnswer(name="second_radio_answer")
+            ),
         ),
         lb_types.AudioClassificationAnnotation(
             frame=1200,
             end_frame=1800,
             name="checklist_class",
-            value=lb_types.Checklist(answer=[lb_types.ClassificationAnswer(name="angry")]),
+            value=lb_types.Checklist(
+                answer=[lb_types.ClassificationAnswer(name="angry")]
+            ),
         ),
     ]
 
-    label = lb_types.Label(data={"global_key": "audio_top_level_only"}, annotations=anns)
+    label = lb_types.Label(
+        data={"global_key": "audio_top_level_only"}, annotations=anns
+    )
     ndjson = list(NDJsonConverter.serialize([label]))
 
     names = {o["name"] for o in ndjson}
     assert names == {"radio_class", "checklist_class"}
 
     radio = next(o for o in ndjson if o["name"] == "radio_class")
-    r_answers = sorted(radio["answer"], key=lambda x: x["frames"][0]["start"]) 
+    r_answers = sorted(radio["answer"], key=lambda x: x["frames"][0]["start"])
     assert r_answers[0]["name"] == "first_radio_answer"
     assert r_answers[0]["frames"] == [{"start": 200, "end": 1500}]
     assert "classifications" not in r_answers[0]

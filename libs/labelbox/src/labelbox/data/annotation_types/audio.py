@@ -34,4 +34,3 @@ class AudioClassificationAnnotation(ClassificationAnnotation):
         serialization_alias="end_frame",
     )
     segment_index: Optional[int] = None
-

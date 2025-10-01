@@ -2,7 +2,7 @@ from collections import defaultdict
 import copy
 from itertools import groupby
 from operator import itemgetter
-from typing import Any, Dict, Generator, List, Tuple, Union
+from typing import Generator, List, Tuple, Union
 from uuid import uuid4
 
 from pydantic import BaseModel
@@ -85,7 +85,6 @@ class NDLabel(BaseModel):
             group = list(map(itemgetter(1), g))
             consecutive.append((group[0], group[-1]))
         return consecutive
-
 
     @classmethod
     def _get_segment_frame_ranges(
@@ -173,24 +172,22 @@ class NDLabel(BaseModel):
         """Create audio annotations with nested classifications using modular hierarchy builder."""
         # Extract audio annotations from the label
         audio_annotations = [
-            annot for annot in label.annotations 
+            annot
+            for annot in label.annotations
             if isinstance(annot, AudioClassificationAnnotation)
         ]
-        
+
         if not audio_annotations:
             return
-        
+
         # Use the modular hierarchy builder to create NDJSON annotations
         ndjson_annotations = create_audio_ndjson_annotations(
-            audio_annotations, 
-            label.data.global_key
+            audio_annotations, label.data.global_key
         )
-        
+
         # Yield each NDJSON annotation
         for annotation in ndjson_annotations:
             yield annotation
-
-
 
     @classmethod
     def _create_non_video_annotations(cls, label: Label):

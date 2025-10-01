@@ -17,10 +17,8 @@ from ...annotation_types.audio import AudioClassificationAnnotation
 
 
 def create_temporal_ndjson_annotations(
-    annotations: List[Any],
-    data_global_key: str,
-    frame_extractor: callable
-) -> List['TemporalNDJSON']:
+    annotations: List[Any], data_global_key: str, frame_extractor: callable
+) -> List["TemporalNDJSON"]:
     """
     Create NDJSON temporal annotations with hierarchical structure.
 
@@ -53,14 +51,16 @@ def create_temporal_ndjson_annotations(
             TemporalNDJSON(
                 name=display_name,
                 answer=answers,
-                dataRow={"globalKey": data_global_key}
+                dataRow={"globalKey": data_global_key},
             )
         )
 
     return results
 
 
-def _process_annotation_group(annotations: List[Any], frame_extractor: callable) -> List[Dict[str, Any]]:
+def _process_annotation_group(
+    annotations: List[Any], frame_extractor: callable
+) -> List[Dict[str, Any]]:
     """
     Process a group of annotations with the same name/schema_id.
     Groups by answer value and handles nested classifications recursively.
@@ -95,7 +95,9 @@ def _process_annotation_group(annotations: List[Any], frame_extractor: callable)
     return results
 
 
-def _process_checklist(annotations: List[Any], frame_extractor: callable) -> List[Dict[str, Any]]:
+def _process_checklist(
+    annotations: List[Any], frame_extractor: callable
+) -> List[Dict[str, Any]]:
     """Process checklist annotations - collect all unique options across all annotations."""
     # Collect all unique option names and their data
     option_data = defaultdict(lambda: {"frames": [], "nested": []})
@@ -113,20 +115,19 @@ def _process_checklist(annotations: List[Any], frame_extractor: callable) -> Lis
                 option_data[opt_name]["frames"].extend(opt_frames)
 
                 # Collect nested classifications
-                if hasattr(opt, 'classifications') and opt.classifications:
+                if hasattr(opt, "classifications") and opt.classifications:
                     option_data[opt_name]["nested"].extend(opt.classifications)
 
     # Build answer entries
     results = []
     for opt_name in sorted(option_data.keys()):
-        entry = {
-            "name": opt_name,
-            "frames": option_data[opt_name]["frames"]
-        }
+        entry = {"name": opt_name, "frames": option_data[opt_name]["frames"]}
 
         # Recursively process nested classifications
         if option_data[opt_name]["nested"]:
-            nested = _process_nested_classifications(option_data[opt_name]["nested"])
+            nested = _process_nested_classifications(
+                option_data[opt_name]["nested"]
+            )
             if nested:
                 entry["classifications"] = nested
 
@@ -135,7 +136,9 @@ def _process_checklist(annotations: List[Any], frame_extractor: callable) -> Lis
     return results
 
 
-def _process_radio(annotations: List[Any], frame_extractor: callable) -> Dict[str, Any]:
+def _process_radio(
+    annotations: List[Any], frame_extractor: callable
+) -> Dict[str, Any]:
     """Process radio annotations - merge frames and nested classifications."""
     first = annotations[0]
     opt_name = first.value.answer.name
@@ -153,7 +156,10 @@ def _process_radio(annotations: List[Any], frame_extractor: callable) -> Dict[st
         all_frames.extend(opt_frames)
 
         # Collect nested
-        if hasattr(ann.value.answer, 'classifications') and ann.value.answer.classifications:
+        if (
+            hasattr(ann.value.answer, "classifications")
+            and ann.value.answer.classifications
+        ):
             all_nested.extend(ann.value.answer.classifications)
 
     entry = {"name": opt_name, "frames": all_frames}
@@ -167,10 +173,16 @@ def _process_radio(annotations: List[Any], frame_extractor: callable) -> Dict[st
     return entry
 
 
-def _process_text(annotations: List[Any], frame_extractor: callable) -> Dict[str, Any]:
+def _process_text(
+    annotations: List[Any], frame_extractor: callable
+) -> Dict[str, Any]:
     """Process text annotations - collect frames and nested classifications."""
     first = annotations[0]
-    text_value = first.value.answer if hasattr(first.value, "answer") else str(first.value)
+    text_value = (
+        first.value.answer
+        if hasattr(first.value, "answer")
+        else str(first.value)
+    )
 
     # Collect all frames and nested
     all_frames = []
@@ -181,7 +193,7 @@ def _process_text(annotations: List[Any], frame_extractor: callable) -> Dict[str
         all_frames.append({"start": start, "end": end})
 
         # Text nesting is at annotation level
-        if hasattr(ann, 'classifications') and ann.classifications:
+        if hasattr(ann, "classifications") and ann.classifications:
             all_nested.extend(ann.classifications)
 
     entry = {"value": text_value, "frames": all_frames}
@@ -195,7 +207,9 @@ def _process_text(annotations: List[Any], frame_extractor: callable) -> Dict[str
     return entry
 
 
-def _process_nested_classifications(classifications: List[Any]) -> List[Dict[str, Any]]:
+def _process_nested_classifications(
+    classifications: List[Any],
+) -> List[Dict[str, Any]]:
     """
     Recursively process nested ClassificationAnnotation objects.
     This uses the same grouping logic as top-level annotations.
@@ -233,15 +247,14 @@ def _process_nested_classifications(classifications: List[Any]) -> List[Dict[str
                     # Text
                     answers.append(_process_nested_text(cls_group))
 
-        results.append({
-            "name": display_name,
-            "answer": answers
-        })
+        results.append({"name": display_name, "answer": answers})
 
     return results
 
 
-def _process_nested_checklist(classifications: List[Any]) -> List[Dict[str, Any]]:
+def _process_nested_checklist(
+    classifications: List[Any],
+) -> List[Dict[str, Any]]:
     """Process nested checklist classifications."""
     option_data = defaultdict(lambda: {"frames": [], "nested": []})
 
@@ -253,7 +266,7 @@ def _process_nested_checklist(classifications: List[Any]) -> List[Dict[str, Any]
                 opt_frames = _extract_frames(opt, cls_frames)
                 option_data[opt.name]["frames"].extend(opt_frames)
 
-                if hasattr(opt, 'classifications') and opt.classifications:
+                if hasattr(opt, "classifications") and opt.classifications:
                     option_data[opt.name]["nested"].extend(opt.classifications)
 
     results = []
@@ -261,7 +274,9 @@ def _process_nested_checklist(classifications: List[Any]) -> List[Dict[str, Any]
         entry = {"name": opt_name, "frames": option_data[opt_name]["frames"]}
 
         if option_data[opt_name]["nested"]:
-            nested = _process_nested_classifications(option_data[opt_name]["nested"])
+            nested = _process_nested_classifications(
+                option_data[opt_name]["nested"]
+            )
             if nested:
                 entry["classifications"] = nested
 
@@ -283,7 +298,10 @@ def _process_nested_radio(classifications: List[Any]) -> Dict[str, Any]:
         opt_frames = _extract_frames(cls.value.answer, cls_frames)
         all_frames.extend(opt_frames)
 
-        if hasattr(cls.value.answer, 'classifications') and cls.value.answer.classifications:
+        if (
+            hasattr(cls.value.answer, "classifications")
+            and cls.value.answer.classifications
+        ):
             all_nested.extend(cls.value.answer.classifications)
 
     entry = {"name": opt_name, "frames": all_frames}
@@ -299,7 +317,11 @@ def _process_nested_radio(classifications: List[Any]) -> Dict[str, Any]:
 def _process_nested_text(classifications: List[Any]) -> Dict[str, Any]:
     """Process nested text classifications."""
     first = classifications[0]
-    text_value = first.value.answer if hasattr(first.value, "answer") else str(first.value)
+    text_value = (
+        first.value.answer
+        if hasattr(first.value, "answer")
+        else str(first.value)
+    )
 
     all_frames = []
     all_nested = []
@@ -308,7 +330,7 @@ def _process_nested_text(classifications: List[Any]) -> Dict[str, Any]:
         frames = _extract_frames(cls, [])
         all_frames.extend(frames)
 
-        if hasattr(cls, 'classifications') and cls.classifications:
+        if hasattr(cls, "classifications") and cls.classifications:
             all_nested.extend(cls.classifications)
 
     entry = {"value": text_value, "frames": all_frames}
@@ -321,13 +343,19 @@ def _process_nested_text(classifications: List[Any]) -> Dict[str, Any]:
     return entry
 
 
-def _extract_frames(obj: Any, fallback_frames: List[Dict[str, int]]) -> List[Dict[str, int]]:
+def _extract_frames(
+    obj: Any, fallback_frames: List[Dict[str, int]]
+) -> List[Dict[str, int]]:
     """
     Extract frame range from an object (annotation, answer, or classification).
     Uses explicit frames if available, otherwise falls back to provided frames.
     """
-    if (hasattr(obj, 'start_frame') and obj.start_frame is not None and
-        hasattr(obj, 'end_frame') and obj.end_frame is not None):
+    if (
+        hasattr(obj, "start_frame")
+        and obj.start_frame is not None
+        and hasattr(obj, "end_frame")
+        and obj.end_frame is not None
+    ):
         return [{"start": obj.start_frame, "end": obj.end_frame}]
     elif fallback_frames:
         return fallback_frames
@@ -354,6 +382,7 @@ def _get_value_key(obj: Any) -> str:
 
 class TemporalNDJSON(BaseModel):
     """NDJSON format for temporal annotations (audio, video, etc.)."""
+
     name: str
     answer: List[Dict[str, Any]]
     dataRow: Dict[str, str]
@@ -361,8 +390,7 @@ class TemporalNDJSON(BaseModel):
 
 # Audio-specific convenience function
 def create_audio_ndjson_annotations(
-    annotations: List[AudioClassificationAnnotation],
-    data_global_key: str
+    annotations: List[AudioClassificationAnnotation], data_global_key: str
 ) -> List[TemporalNDJSON]:
     """
     Create NDJSON audio annotations with hierarchical structure.
@@ -374,7 +402,12 @@ def create_audio_ndjson_annotations(
     Returns:
         List of TemporalNDJSON objects
     """
-    def audio_frame_extractor(ann: AudioClassificationAnnotation) -> Tuple[int, int]:
+
+    def audio_frame_extractor(
+        ann: AudioClassificationAnnotation,
+    ) -> Tuple[int, int]:
         return (ann.start_frame, ann.end_frame or ann.start_frame)
 
-    return create_temporal_ndjson_annotations(annotations, data_global_key, audio_frame_extractor)
+    return create_temporal_ndjson_annotations(
+        annotations, data_global_key, audio_frame_extractor
+    )

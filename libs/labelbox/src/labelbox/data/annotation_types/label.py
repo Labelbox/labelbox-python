@@ -77,19 +77,29 @@ class Label(BaseModel):
 
     def frame_annotations(
         self,
-    ) -> Dict[int, Union[VideoObjectAnnotation, VideoClassificationAnnotation, AudioClassificationAnnotation]]:
+    ) -> Dict[
+        int,
+        Union[
+            VideoObjectAnnotation,
+            VideoClassificationAnnotation,
+            AudioClassificationAnnotation,
+        ],
+    ]:
         """Get temporal annotations organized by frame
-        
+
         Returns:
             Dict[int, List]: Dictionary mapping frame (milliseconds) to list of temporal annotations
-            
+
         Example:
             >>> label.frame_annotations()
             {2500: [VideoClassificationAnnotation(...), AudioClassificationAnnotation(...)]}
         """
         frame_dict = defaultdict(list)
         for annotation in self.annotations:
-            if isinstance(annotation, (VideoObjectAnnotation, VideoClassificationAnnotation)):
+            if isinstance(
+                annotation,
+                (VideoObjectAnnotation, VideoClassificationAnnotation),
+            ):
                 frame_dict[annotation.frame].append(annotation)
             elif isinstance(annotation, AudioClassificationAnnotation):
                 frame_dict[annotation.start_frame].append(annotation)
