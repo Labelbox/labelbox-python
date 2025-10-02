@@ -69,8 +69,9 @@ def test_create_alignerr_project_from_yaml_with_rates(client: Client):
         assert alignerr_project.project.media_type == MediaType.Image
 
         # Verify rates were set by checking project rates
-        project_rate = alignerr_project.get_project_rate()
-        assert project_rate is not None
+        project_rates = alignerr_project.get_project_rates()
+        assert isinstance(project_rates, list)
+        assert len(project_rates) >= 1
 
         alignerr_project.project.delete()
     finally:

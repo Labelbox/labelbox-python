@@ -4,8 +4,8 @@ import logging
 
 from labelbox.alignerr.schema.project_rate import BillingMode
 from labelbox.alignerr.schema.project_rate import ProjectRateInput
-from labelbox.alignerr.schema.project_rate import ProjectRateV2
 from labelbox.alignerr.schema.project_domain import ProjectDomain
+from labelbox.alignerr.schema.enchanced_resource_tags import EnhancedResourceTag, ResourceTagType
 from labelbox.schema.media_type import MediaType
 
 logger = logging.getLogger(__name__)
@@ -22,6 +22,7 @@ class AlignerrProjectBuilder:
         self._alignerr_rates: dict[str, ProjectRateInput] = {}
         self._customer_rate: ProjectRateInput = None
         self._domains: list[ProjectDomain] = []
+        self._enhanced_resource_tags: list[EnhancedResourceTag] = []
         self.role_name_to_id = self._get_role_name_to_id()
 
     def set_name(self, name: str):
@@ -110,6 +111,37 @@ class AlignerrProjectBuilder:
             self._domains.append(domain_result)
         return self
 
+    def set_tags(self, tag_texts: list[str], tag_type: ResourceTagType):
+        """Set enhanced resource tags for the project.
+        
+        Args:
+            tag_texts: List of tag text values to search for and attach
+            tag_type: Type filter for searching tags
+            
+        Returns:
+            Self for method chaining
+        """
+        for tag_text in tag_texts:
+            # Search for existing tags by text
+            existing_tags = EnhancedResourceTag.search_by_text(
+                self.client, search_text=tag_text, tag_type=tag_type
+            )
+            
+            if existing_tags:
+                # Use the first matching tag
+                self._enhanced_resource_tags.append(existing_tags[0])
+            else:
+                # Create new tag if not found
+                new_tag = EnhancedResourceTag.create(
+                    self.client,
+                    text=tag_text,
+                    color="#007bff",  # Default blue color
+                    tag_type=tag_type
+                )
+                self._enhanced_resource_tags.append(new_tag)
+        return self
+
+
     def create(self, skip_validation: bool = False):
         if not skip_validation:
             self._validate()
@@ -130,6 +162,7 @@ class AlignerrProjectBuilder:
 
         self._create_rates(alignerr_project)
         self._create_domains(alignerr_project)
+        self._create_resource_tags(alignerr_project)
 
         return alignerr_project
 
@@ -149,6 +182,25 @@ class AlignerrProjectBuilder:
                 project_id=alignerr_project.project.uid,
                 domain_ids=domain_ids,
             )
+
+    def _create_resource_tags(self, alignerr_project: "AlignerrProject"):
+        if self._enhanced_resource_tags:
+            logger.info(
+                f"Setting enhanced resource tags: {[tag.text for tag in self._enhanced_resource_tags]}"
+            )
+            # Group tags by type and set them accordingly
+            tags_by_type = {}
+            for tag in self._enhanced_resource_tags:
+                tag_type = tag.type
+                if tag_type not in tags_by_type:
+                    tags_by_type[tag_type] = []
+                tags_by_type[tag_type].append(tag.text)
+            
+            # Set tags for each type
+            for tag_type_str, tag_names in tags_by_type.items():
+                # Convert string back to enum
+                tag_type_enum = ResourceTagType(tag_type_str)
+                alignerr_project.set_tags(tag_names, tag_type_enum)
 
     def _validate_alignerr_rates(self):
         # Import here to avoid circular imports

@@ -53,7 +53,7 @@ class ProjectRateV2(DbObject, Deletable):
     effectiveUntil = Field.DateTime("effectiveUntil")
 
     @classmethod
-    def get_by_project_id(cls, client, project_id: str) -> "ProjectRateV2":
+    def get_by_project_id(cls, client, project_id: str) -> list["ProjectRateV2"]:
         query_str = """
         query GetAllProjectRatesPyApi($projectId: ID!) {
             project(where: { id: $projectId }) {
@@ -84,10 +84,10 @@ class ProjectRateV2(DbObject, Deletable):
         rates_data = result["project"]["ratesV2"]
 
         if not rates_data:
-            return None
+            return []
 
-        # Return the first rate as a ProjectRateV2 object
-        return cls(client, rates_data[0])
+        # Return all rates as ProjectRateV2 objects
+        return [cls(client, rate_data) for rate_data in rates_data]
 
     @classmethod
     def set_project_rate(

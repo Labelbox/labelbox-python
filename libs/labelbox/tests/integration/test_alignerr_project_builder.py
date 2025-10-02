@@ -107,3 +107,98 @@ def test_create_alignerr_project_using_builder_add_domains(client: Client):
             domain2.deactivate()
         except Exception:
             pass
+
+
+def test_create_alignerr_project_with_rates_domains_and_resource_tags(client: Client):
+    """Test creating an Alignerr project with rates, domains, and enhanced resource tags."""
+    from labelbox.alignerr.schema.project_domain import ProjectDomain
+    from labelbox.alignerr.schema.enchanced_resource_tags import EnhancedResourceTag, ResourceTagType
+    import uuid
+    import time
+
+    # Create test domains first
+    domain1_name = f"TestDomain1_{uuid.uuid4()}"
+    domain2_name = f"TestDomain2_{uuid.uuid4()}"
+
+    domain1 = ProjectDomain.create(client, name=domain1_name)
+    domain2 = ProjectDomain.create(client, name=domain2_name)
+
+    # Create test resource tags
+    tag1_text = f"TestTag1_{uuid.uuid4().hex[:8]}"
+    tag2_text = f"TestTag2_{uuid.uuid4().hex[:8]}"
+
+    tag1 = EnhancedResourceTag.create(
+        client, 
+        text=tag1_text, 
+        color="#FF5733", 
+        tag_type=ResourceTagType.Default
+    )
+    tag2 = EnhancedResourceTag.create(
+        client, 
+        text=tag2_text, 
+        color="#33FF57", 
+        tag_type=ResourceTagType.Billing
+    )
+
+    # Add a small delay to allow domains to be searchable
+    time.sleep(0.5)
+
+    try:
+        # Create project with rates, domains, and resource tags
+        alignerr_project = (
+            client.alignerr_workspace.project_builder()
+            .set_name("TestAlignerrProjectWithAll")
+            .set_media_type(MediaType.Image)
+            .set_alignerr_role_rate(
+                role_name=AlignerrRole.Labeler,
+                rate=12.0,
+                billing_mode=BillingMode.BY_HOUR,
+                effective_since=datetime.datetime.now().isoformat(),
+            )
+            .set_alignerr_role_rate(
+                role_name=AlignerrRole.Reviewer,
+                rate=15.0,
+                billing_mode=BillingMode.BY_HOUR,
+                effective_since=datetime.datetime.now().isoformat(),
+            )
+            .set_customer_rate(
+                rate=20.0,
+                billing_mode=BillingMode.BY_HOUR,
+                effective_since=datetime.datetime.now().isoformat(),
+            )
+            .set_domains([domain1_name, domain2_name])
+            .set_tags([tag1_text, tag2_text], ResourceTagType.Default)
+            .create()
+        )
+
+        assert alignerr_project is not None
+        assert alignerr_project.project.name == "TestAlignerrProjectWithAll"
+
+        # Verify domains were added
+        domain_count = sum(1 for _ in alignerr_project.domains())
+        assert domain_count == 2
+
+        # Verify resource tags were added
+        enhanced_tags = alignerr_project.get_tags()
+        assert len(enhanced_tags) >= 2
+        
+        # Check that our specific tags are present
+        tag_texts = [tag.text for tag in enhanced_tags]
+        assert tag1_text in tag_texts
+        assert tag2_text in tag_texts
+
+        alignerr_project.project.delete()
+    finally:
+        # Cleanup domains
+        try:
+            domain1.deactivate()
+            domain2.deactivate()
+        except Exception:
+            pass
+        
+        # Cleanup resource tags
+        try:
+            tag1.delete()
+            tag2.delete()
+        except Exception:
+            pass
