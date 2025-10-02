@@ -1,1 +1,1 @@
-from .classification import Checklist, ClassificationAnswer, Radio, Text
+from .classification import Checklist, ClassificationAnswer, Radio, Text, FrameLocation

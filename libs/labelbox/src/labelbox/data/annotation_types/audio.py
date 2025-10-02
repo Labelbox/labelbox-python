@@ -1,13 +1,14 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import Field, AliasChoices
 
 from labelbox.data.annotation_types.annotation import (
     ClassificationAnnotation,
 )
+from labelbox.data.annotation_types.classification.classification import FrameLocation
 
 
 class AudioClassificationAnnotation(ClassificationAnnotation):
-    """Audio classification for specific time range
+    """Audio classification for specific time range(s)
 
     Examples:
     - Speaker identification from 2500ms to 4100ms
@@ -18,19 +19,10 @@ class AudioClassificationAnnotation(ClassificationAnnotation):
         name (Optional[str]): Name of the classification
         feature_schema_id (Optional[Cuid]): Feature schema identifier
         value (Union[Text, Checklist, Radio]): Classification value
-        start_frame (int): The frame index in milliseconds (e.g., 2500 = 2.5 seconds)
-        end_frame (Optional[int]): End frame in milliseconds (for time ranges)
+        frames (Optional[List[FrameLocation]]): List of frame ranges (in milliseconds)
         segment_index (Optional[int]): Index of audio segment this annotation belongs to
         extra (Dict[str, Any]): Additional metadata
     """
 
-    start_frame: int = Field(
-        validation_alias=AliasChoices("start_frame", "frame"),
-        serialization_alias="start_frame",
-    )
-    end_frame: Optional[int] = Field(
-        default=None,
-        validation_alias=AliasChoices("end_frame", "endFrame"),
-        serialization_alias="end_frame",
-    )
+    frames: Optional[List[FrameLocation]] = None
     segment_index: Optional[int] = None

@@ -162,7 +162,16 @@ def _process_radio(
         ):
             all_nested.extend(ann.value.answer.classifications)
 
-    entry = {"name": opt_name, "frames": all_frames}
+    # Deduplicate frames
+    seen = set()
+    unique_frames = []
+    for frame in all_frames:
+        frame_tuple = (frame["start"], frame["end"])
+        if frame_tuple not in seen:
+            seen.add(frame_tuple)
+            unique_frames.append(frame)
+
+    entry = {"name": opt_name, "frames": unique_frames}
 
     # Recursively process nested
     if all_nested:
@@ -196,7 +205,16 @@ def _process_text(
         if hasattr(ann, "classifications") and ann.classifications:
             all_nested.extend(ann.classifications)
 
-    entry = {"value": text_value, "frames": all_frames}
+    # Deduplicate frames
+    seen = set()
+    unique_frames = []
+    for frame in all_frames:
+        frame_tuple = (frame["start"], frame["end"])
+        if frame_tuple not in seen:
+            seen.add(frame_tuple)
+            unique_frames.append(frame)
+
+    entry = {"value": text_value, "frames": unique_frames}
 
     # Recursively process nested
     if all_nested:
@@ -304,7 +322,16 @@ def _process_nested_radio(classifications: List[Any]) -> Dict[str, Any]:
         ):
             all_nested.extend(cls.value.answer.classifications)
 
-    entry = {"name": opt_name, "frames": all_frames}
+    # Deduplicate frames
+    seen = set()
+    unique_frames = []
+    for frame in all_frames:
+        frame_tuple = (frame["start"], frame["end"])
+        if frame_tuple not in seen:
+            seen.add(frame_tuple)
+            unique_frames.append(frame)
+
+    entry = {"name": opt_name, "frames": unique_frames}
 
     if all_nested:
         nested = _process_nested_classifications(all_nested)
@@ -333,7 +360,16 @@ def _process_nested_text(classifications: List[Any]) -> Dict[str, Any]:
         if hasattr(cls, "classifications") and cls.classifications:
             all_nested.extend(cls.classifications)
 
-    entry = {"value": text_value, "frames": all_frames}
+    # Deduplicate frames
+    seen = set()
+    unique_frames = []
+    for frame in all_frames:
+        frame_tuple = (frame["start"], frame["end"])
+        if frame_tuple not in seen:
+            seen.add(frame_tuple)
+            unique_frames.append(frame)
+
+    entry = {"value": text_value, "frames": unique_frames}
 
     if all_nested:
         nested = _process_nested_classifications(all_nested)
@@ -347,18 +383,30 @@ def _extract_frames(
     obj: Any, fallback_frames: List[Dict[str, int]]
 ) -> List[Dict[str, int]]:
     """
-    Extract frame range from an object (annotation, answer, or classification).
+    Extract frame ranges from an object (annotation, answer, or classification).
     Uses explicit frames if available, otherwise falls back to provided frames.
+
+    Supports both:
+    - New format: frames: List[FrameLocation]
+    - Legacy format: start_frame/end_frame (single range)
     """
-    if (
+    # New format: frames list
+    if hasattr(obj, "frames") and obj.frames is not None:
+        return [{"start": frame.start, "end": frame.end} for frame in obj.frames]
+
+    # Legacy format: single start_frame/end_frame
+    elif (
         hasattr(obj, "start_frame")
         and obj.start_frame is not None
         and hasattr(obj, "end_frame")
         and obj.end_frame is not None
     ):
         return [{"start": obj.start_frame, "end": obj.end_frame}]
+
+    # Fallback to parent frames
     elif fallback_frames:
         return fallback_frames
+
     else:
         return []
 
@@ -406,6 +454,14 @@ def create_audio_ndjson_annotations(
     def audio_frame_extractor(
         ann: AudioClassificationAnnotation,
     ) -> Tuple[int, int]:
+        """
+        Legacy frame extractor for AudioClassificationAnnotation.
+        Only used when frames list is not provided.
+        """
+        # Return first frame if frames list exists
+        if ann.frames and len(ann.frames) > 0:
+            return (ann.frames[0].start, ann.frames[0].end)
+        # Fall back to legacy start_frame/end_frame
         return (ann.start_frame, ann.end_frame or ann.start_frame)
 
     return create_temporal_ndjson_annotations(

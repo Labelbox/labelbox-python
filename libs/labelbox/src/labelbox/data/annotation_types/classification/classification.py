@@ -7,6 +7,12 @@ from pydantic import BaseModel
 from ..feature import FeatureSchema
 
 
+class FrameLocation(BaseModel):
+    """Represents a temporal frame range with start and end times (in milliseconds)."""
+    start: int
+    end: int
+
+
 class ClassificationAnswer(FeatureSchema, ConfidenceMixin, CustomMetricsMixin):
     """
     - Represents a classification option.
@@ -18,14 +24,17 @@ class ClassificationAnswer(FeatureSchema, ConfidenceMixin, CustomMetricsMixin):
         So unlike object annotations, classification annotations
           track keyframes at a classification answer level.
 
-    - For temporal classifications (audio/video), optional start_frame/end_frame can specify
-      the time range for this answer. Must be within root annotation's frame range.
-      Defaults to root frame range if not specified.
+    - For temporal classifications (audio/video), optional frames can specify
+      one or more time ranges for this answer. Must be within root annotation's frame ranges.
+      Defaults to root frame ranges if not specified.
     """
 
     extra: Dict[str, Any] = {}
     keyframe: Optional[bool] = None
     classifications: Optional[List["ClassificationAnnotation"]] = None
+    frames: Optional[List[FrameLocation]] = None
+
+    # Deprecated: use frames instead
     start_frame: Optional[int] = None
     end_frame: Optional[int] = None
 
@@ -75,12 +84,14 @@ class ClassificationAnnotation(
         classifications (Optional[List[ClassificationAnnotation]]): Optional sub classification of the annotation
         feature_schema_id (Optional[Cuid])
         value (Union[Text, Checklist, Radio])
-        start_frame (Optional[int]): Start frame for temporal classifications (audio/video). Must be within root annotation's frame range. Defaults to root start_frame if not specified.
-        end_frame (Optional[int]): End frame for temporal classifications (audio/video). Must be within root annotation's frame range. Defaults to root end_frame if not specified.
+        frames (Optional[List[FrameLocation]]): Frame ranges for temporal classifications (audio/video). Must be within root annotation's frame ranges. Defaults to root frames if not specified.
         extra (Dict[str, Any])
     """
 
     value: Union[Text, Checklist, Radio]
     message_id: Optional[str] = None
+    frames: Optional[List[FrameLocation]] = None
+
+    # Deprecated: use frames instead
     start_frame: Optional[int] = None
     end_frame: Optional[int] = None
