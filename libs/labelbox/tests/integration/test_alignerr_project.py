@@ -73,16 +73,16 @@ def test_alignerr_project_domains(client, test_alignerr_project):
     # The collection might be empty for a new project, which is expected
 
 
-def test_alignerr_project_get_project_rate_no_rates(
+def test_alignerr_project_get_project_rates_no_rates(
     client, test_alignerr_project
 ):
-    """Test get_project_rate() when no rates are set."""
-    # For a new project without rates, this should return None
-    project_rate = test_alignerr_project.get_project_rate()
-    assert project_rate is None
+    """Test get_project_rates() when no rates are set."""
+    # For a new project without rates, this should return an empty list
+    project_rates = test_alignerr_project.get_project_rates()
+    assert project_rates == []
 
 
-def test_alignerr_project_set_and_get_project_rate(
+def test_alignerr_project_set_and_get_project_rates(
     client, test_alignerr_project
 ):
     """Test setting and getting project rates."""
@@ -100,7 +100,10 @@ def test_alignerr_project_set_and_get_project_rate(
     result = test_alignerr_project.set_project_rate(project_rate_input)
     assert result is True  # Should return success status
 
-    # Get the project rate back
-    project_rate = test_alignerr_project.get_project_rate()
+    # Get the project rates back
+    project_rates = test_alignerr_project.get_project_rates()
+    # Should return a list with at least one rate
+    assert isinstance(project_rates, list)
+    assert len(project_rates) >= 1
     # Note: The actual rate retrieval might depend on the API implementation
     # This test verifies the method calls work without errors
