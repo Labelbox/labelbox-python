@@ -1,10 +1,9 @@
-from typing import Optional, List
+from typing import Optional
 from pydantic import Field, AliasChoices
 
 from labelbox.data.annotation_types.annotation import (
     ClassificationAnnotation,
 )
-from labelbox.data.annotation_types.classification.classification import FrameLocation
 
 
 class AudioClassificationAnnotation(ClassificationAnnotation):
