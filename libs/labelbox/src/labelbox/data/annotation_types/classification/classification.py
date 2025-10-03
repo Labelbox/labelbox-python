@@ -34,10 +34,6 @@ class ClassificationAnswer(FeatureSchema, ConfidenceMixin, CustomMetricsMixin):
     classifications: Optional[List["ClassificationAnnotation"]] = None
     frames: Optional[List[FrameLocation]] = None
 
-    # Deprecated: use frames instead
-    start_frame: Optional[int] = None
-    end_frame: Optional[int] = None
-
 
 class Radio(ConfidenceMixin, CustomMetricsMixin, BaseModel):
     """A classification with only one selected option allowed
@@ -92,6 +88,3 @@ class ClassificationAnnotation(
     message_id: Optional[str] = None
     frames: Optional[List[FrameLocation]] = None
 
-    # Deprecated: use frames instead
-    start_frame: Optional[int] = None
-    end_frame: Optional[int] = None
