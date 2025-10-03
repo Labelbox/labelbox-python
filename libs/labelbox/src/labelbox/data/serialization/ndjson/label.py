@@ -25,10 +25,12 @@ from ...annotation_types.video import (
     VideoObjectAnnotation,
 )
 from typing import List
-from ...annotation_types.audio import (
-    AudioClassificationAnnotation,
+from ...annotation_types.temporal import (
+    TemporalClassificationText,
+    TemporalClassificationQuestion,
+    TemporalClassificationAnswer,
 )
-from .temporal import create_audio_ndjson_annotations
+from .temporal import create_temporal_ndjson_annotations
 from labelbox.types import DocumentRectangle, DocumentEntity
 from .classification import (
     NDChecklistSubclass,
@@ -169,20 +171,20 @@ class NDLabel(BaseModel):
     def _create_audio_annotations(
         cls, label: Label
     ) -> Generator[BaseModel, None, None]:
-        """Create audio annotations with nested classifications using modular hierarchy builder."""
-        # Extract audio annotations from the label
-        audio_annotations = [
+        """Create temporal annotations with nested classifications using new temporal classes."""
+        # Extract temporal annotations from the label
+        temporal_annotations = [
             annot
             for annot in label.annotations
-            if isinstance(annot, AudioClassificationAnnotation)
+            if isinstance(annot, (TemporalClassificationText, TemporalClassificationQuestion))
         ]
 
-        if not audio_annotations:
+        if not temporal_annotations:
             return
 
-        # Use the modular hierarchy builder to create NDJSON annotations
-        ndjson_annotations = create_audio_ndjson_annotations(
-            audio_annotations, label.data.global_key
+        # Use the new temporal serializer to create NDJSON annotations
+        ndjson_annotations = create_temporal_ndjson_annotations(
+            temporal_annotations, label.data.global_key
         )
 
         # Yield each NDJSON annotation
@@ -200,7 +202,8 @@ class NDLabel(BaseModel):
                     VideoClassificationAnnotation,
                     VideoObjectAnnotation,
                     VideoMaskAnnotation,
-                    AudioClassificationAnnotation,
+                    TemporalClassificationText,
+                    TemporalClassificationQuestion,
                     RelationshipAnnotation,
                 ),
             )

@@ -19,7 +19,9 @@ from .video import MaskFrame
 from .video import MaskInstance
 from .video import VideoMaskAnnotation
 
-from .audio import AudioClassificationAnnotation
+from .temporal import TemporalClassificationText
+from .temporal import TemporalClassificationQuestion
+from .temporal import TemporalClassificationAnswer
 
 from .ner import ConversationEntity
 from .ner import DocumentEntity
@@ -30,6 +32,7 @@ from .classification import Checklist
 from .classification import ClassificationAnswer
 from .classification import Radio
 from .classification import Text
+from .classification import FrameLocation
 
 from .data import GenericDataRowData
 from .data import MaskData

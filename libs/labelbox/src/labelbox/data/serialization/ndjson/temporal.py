@@ -1,34 +1,47 @@
 """
-Simplified temporal NDJSON serialization.
+Temporal NDJSON serialization for new temporal classification structure.
 
-This module provides a streamlined approach for constructing nested hierarchical
-classifications from temporal annotations (audio, video, etc.).
-
-IMPORTANT: This module ONLY supports explicit nesting via ClassificationAnswer.classifications.
-Annotations must define their hierarchy structure explicitly in the annotation objects.
-Temporal containment-based inference is NOT supported.
+Handles TemporalClassificationText, TemporalClassificationQuestion, and TemporalClassificationAnswer
+with frame validation and recursive nesting support.
 """
 
+import logging
 from collections import defaultdict
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 from pydantic import BaseModel
 
-from ...annotation_types.audio import AudioClassificationAnnotation
+from ...annotation_types.temporal import (
+    TemporalClassificationText,
+    TemporalClassificationQuestion,
+    TemporalClassificationAnswer,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class TemporalNDJSON(BaseModel):
+    """NDJSON structure for temporal annotations"""
+
+    name: str
+    answer: List[Dict[str, Any]]
+    dataRow: Dict[str, str]
 
 
 def create_temporal_ndjson_annotations(
-    annotations: List[Any], data_global_key: str, frame_extractor: callable
-) -> List["TemporalNDJSON"]:
+    annotations: List[
+        Union[TemporalClassificationText, TemporalClassificationQuestion]
+    ],
+    data_global_key: str,
+) -> List[TemporalNDJSON]:
     """
-    Create NDJSON temporal annotations with hierarchical structure.
+    Create NDJSON temporal annotations from new temporal classification types.
 
     Args:
-        annotations: List of temporal classification annotations
+        annotations: List of TemporalClassificationText or TemporalClassificationQuestion
         data_global_key: Global key for the data row
-        frame_extractor: Function that extracts (start, end) tuple from annotation
 
     Returns:
-        List of TemporalNDJSON objects
+        List of TemporalNDJSON objects ready for serialization
     """
     if not annotations:
         return []
@@ -44,90 +57,72 @@ def create_temporal_ndjson_annotations(
         # Get display name (prefer first non-empty name)
         display_name = next((a.name for a in group_anns if a.name), group_key)
 
-        # Process this group recursively
-        answers = _process_annotation_group(group_anns, frame_extractor)
+        # Process based on annotation type
+        first_ann = group_anns[0]
 
-        results.append(
-            TemporalNDJSON(
-                name=display_name,
-                answer=answers,
-                dataRow={"globalKey": data_global_key},
-            )
-        )
-
-    return results
-
-
-def _process_annotation_group(
-    annotations: List[Any], frame_extractor: callable
-) -> List[Dict[str, Any]]:
-    """
-    Process a group of annotations with the same name/schema_id.
-    Groups by answer value and handles nested classifications recursively.
-    """
-    # Group by answer value
-    value_groups = defaultdict(list)
-    for ann in annotations:
-        value_key = _get_value_key(ann)
-        value_groups[value_key].append(ann)
-
-    results = []
-    for _, anns in value_groups.items():
-        first = anns[0]
-
-        # Handle different annotation types
-        if hasattr(first.value, "answer"):
-            answer = first.value.answer
-
-            if isinstance(answer, list):
-                # Checklist - process each option
-                results.extend(_process_checklist(anns, frame_extractor))
-            elif hasattr(answer, "name"):
-                # Radio - merge frames and nested classifications
-                results.append(_process_radio(anns, frame_extractor))
-            else:
-                # Text - simple value with potential nesting
-                results.append(_process_text(anns, frame_extractor))
+        if isinstance(first_ann, TemporalClassificationText):
+            answers = _process_text_group(group_anns, parent_frames=None)
+        elif isinstance(first_ann, TemporalClassificationQuestion):
+            answers = _process_question_group(group_anns, parent_frames=None)
         else:
-            # Fallback for unexpected structure
-            results.append(_process_text(anns, frame_extractor))
+            logger.warning(f"Unknown temporal annotation type: {type(first_ann)}")
+            continue
+
+        if answers:  # Only add if we have valid answers
+            results.append(
+                TemporalNDJSON(
+                    name=display_name,
+                    answer=answers,
+                    dataRow={"globalKey": data_global_key},
+                )
+            )
 
     return results
 
 
-def _process_checklist(
-    annotations: List[Any], frame_extractor: callable
+def _process_text_group(
+    annotations: List[TemporalClassificationText],
+    parent_frames: List[Tuple[int, int]] = None,
 ) -> List[Dict[str, Any]]:
-    """Process checklist annotations - collect all unique options across all annotations."""
-    # Collect all unique option names and their data
-    option_data = defaultdict(lambda: {"frames": [], "nested": []})
+    """
+    Process TemporalClassificationText annotations.
+
+    Each annotation can have multiple (start, end, text) tuples.
+    Groups by text value and merges frames.
+    """
+    # Collect all text values with their frames
+    text_data = defaultdict(lambda: {"frames": [], "nested": []})
 
     for ann in annotations:
-        ann_start, ann_end = frame_extractor(ann)
-        ann_frames = [{"start": ann_start, "end": ann_end}]
+        for start, end, text_value in ann.value:
+            # Validate frames against parent if provided
+            if parent_frames and not _is_frame_subset([(start, end)], parent_frames):
+                logger.warning(
+                    f"Text value frames ({start}, {end}) not subset of parent frames {parent_frames}. Discarding."
+                )
+                continue
 
-        if hasattr(ann.value, "answer") and isinstance(ann.value.answer, list):
-            for opt in ann.value.answer:
-                opt_name = opt.name
+            text_data[text_value]["frames"].append({"start": start, "end": end})
 
-                # Get frames for this option (use explicit if available, else annotation frames)
-                opt_frames = _extract_frames(opt, ann_frames)
-                option_data[opt_name]["frames"].extend(opt_frames)
+            # Collect nested classifications
+            if ann.classifications:
+                text_data[text_value]["nested"].extend(ann.classifications)
 
-                # Collect nested classifications
-                if hasattr(opt, "classifications") and opt.classifications:
-                    option_data[opt_name]["nested"].extend(opt.classifications)
-
-    # Build answer entries
+    # Build results
     results = []
-    for opt_name in sorted(option_data.keys()):
-        entry = {"name": opt_name, "frames": option_data[opt_name]["frames"]}
+    for text_value, data in text_data.items():
+        # Deduplicate frames
+        unique_frames = _deduplicate_frames(data["frames"])
 
-        # Recursively process nested classifications
-        if option_data[opt_name]["nested"]:
-            nested = _process_nested_classifications(
-                option_data[opt_name]["nested"]
-            )
+        entry = {
+            "value": text_value,
+            "frames": unique_frames,
+        }
+
+        # Process nested classifications recursively
+        if data["nested"]:
+            parent_frame_tuples = [(f["start"], f["end"]) for f in unique_frames]
+            nested = _process_nested_classifications(data["nested"], parent_frame_tuples)
             if nested:
                 entry["classifications"] = nested
 
@@ -136,334 +131,138 @@ def _process_checklist(
     return results
 
 
-def _process_radio(
-    annotations: List[Any], frame_extractor: callable
-) -> Dict[str, Any]:
-    """Process radio annotations - merge frames and nested classifications."""
-    first = annotations[0]
-    opt_name = first.value.answer.name
+def _process_question_group(
+    annotations: List[TemporalClassificationQuestion],
+    parent_frames: List[Tuple[int, int]] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Process TemporalClassificationQuestion annotations.
 
-    # Collect all frames and nested classifications
-    all_frames = []
-    all_nested = []
-
-    for ann in annotations:
-        ann_start, ann_end = frame_extractor(ann)
-        ann_frames = [{"start": ann_start, "end": ann_end}]
-
-        # Get frames for this radio answer
-        opt_frames = _extract_frames(ann.value.answer, ann_frames)
-        all_frames.extend(opt_frames)
-
-        # Collect nested
-        if (
-            hasattr(ann.value.answer, "classifications")
-            and ann.value.answer.classifications
-        ):
-            all_nested.extend(ann.value.answer.classifications)
-
-    # Deduplicate frames
-    seen = set()
-    unique_frames = []
-    for frame in all_frames:
-        frame_tuple = (frame["start"], frame["end"])
-        if frame_tuple not in seen:
-            seen.add(frame_tuple)
-            unique_frames.append(frame)
-
-    entry = {"name": opt_name, "frames": unique_frames}
-
-    # Recursively process nested
-    if all_nested:
-        nested = _process_nested_classifications(all_nested)
-        if nested:
-            entry["classifications"] = nested
-
-    return entry
-
-
-def _process_text(
-    annotations: List[Any], frame_extractor: callable
-) -> Dict[str, Any]:
-    """Process text annotations - collect frames and nested classifications."""
-    first = annotations[0]
-    text_value = (
-        first.value.answer
-        if hasattr(first.value, "answer")
-        else str(first.value)
-    )
-
-    # Collect all frames and nested
-    all_frames = []
-    all_nested = []
+    Each annotation has a list of TemporalClassificationAnswer objects.
+    Groups by answer name and merges frames.
+    """
+    # Collect all answers
+    answer_data = defaultdict(lambda: {"frames": [], "nested": []})
 
     for ann in annotations:
-        start, end = frame_extractor(ann)
-        all_frames.append({"start": start, "end": end})
+        for answer in ann.value:  # value contains list of answers
+            # Validate and collect frames
+            valid_frames = []
+            for start, end in answer.frames:
+                if parent_frames and not _is_frame_subset([(start, end)], parent_frames):
+                    logger.warning(
+                        f"Answer '{answer.name}' frames ({start}, {end}) not subset of parent frames {parent_frames}. Discarding."
+                    )
+                    continue
+                valid_frames.append({"start": start, "end": end})
 
-        # Text nesting is at annotation level
-        if hasattr(ann, "classifications") and ann.classifications:
-            all_nested.extend(ann.classifications)
+            if valid_frames:  # Only add if we have valid frames
+                answer_data[answer.name]["frames"].extend(valid_frames)
 
-    # Deduplicate frames
-    seen = set()
-    unique_frames = []
-    for frame in all_frames:
-        frame_tuple = (frame["start"], frame["end"])
-        if frame_tuple not in seen:
-            seen.add(frame_tuple)
-            unique_frames.append(frame)
+                # Collect nested classifications
+                if answer.classifications:
+                    answer_data[answer.name]["nested"].extend(answer.classifications)
 
-    entry = {"value": text_value, "frames": unique_frames}
+    # Build results
+    results = []
+    for answer_name, data in answer_data.items():
+        # Deduplicate frames
+        unique_frames = _deduplicate_frames(data["frames"])
 
-    # Recursively process nested
-    if all_nested:
-        nested = _process_nested_classifications(all_nested)
-        if nested:
-            entry["classifications"] = nested
+        if not unique_frames:  # Skip if no valid frames
+            continue
 
-    return entry
+        entry = {
+            "name": answer_name,
+            "frames": unique_frames,
+        }
+
+        # Process nested classifications recursively
+        if data["nested"]:
+            parent_frame_tuples = [(f["start"], f["end"]) for f in unique_frames]
+            nested = _process_nested_classifications(data["nested"], parent_frame_tuples)
+            if nested:
+                entry["classifications"] = nested
+
+        results.append(entry)
+
+    return results
 
 
 def _process_nested_classifications(
-    classifications: List[Any],
+    classifications: List[Union[TemporalClassificationText, TemporalClassificationQuestion]],
+    parent_frames: List[Tuple[int, int]],
 ) -> List[Dict[str, Any]]:
     """
-    Recursively process nested ClassificationAnnotation objects.
-    This uses the same grouping logic as top-level annotations.
+    Process nested classifications recursively.
+
+    Groups by name/schema_id and processes each group.
     """
-    # Group by name/schema_id
+    # Group by name
     groups = defaultdict(list)
     for cls in classifications:
         key = cls.feature_schema_id or cls.name
         groups[key].append(cls)
 
     results = []
-    for group_key, cls_list in groups.items():
-        display_name = next((c.name for c in cls_list if c.name), group_key)
+    for group_key, group_items in groups.items():
+        # Get display name
+        display_name = next((c.name for c in group_items if c.name), group_key)
 
-        # Group by value and process
-        value_groups = defaultdict(list)
-        for cls in cls_list:
-            value_key = _get_value_key(cls)
-            value_groups[value_key].append(cls)
+        # Process based on type
+        first_item = group_items[0]
 
-        answers = []
-        for _, cls_group in value_groups.items():
-            first_cls = cls_group[0]
-
-            if hasattr(first_cls.value, "answer"):
-                answer = first_cls.value.answer
-
-                if isinstance(answer, list):
-                    # Checklist
-                    answers.extend(_process_nested_checklist(cls_group))
-                elif hasattr(answer, "name"):
-                    # Radio
-                    answers.append(_process_nested_radio(cls_group))
-                else:
-                    # Text
-                    answers.append(_process_nested_text(cls_group))
-
-        results.append({"name": display_name, "answer": answers})
-
-    return results
-
-
-def _process_nested_checklist(
-    classifications: List[Any],
-) -> List[Dict[str, Any]]:
-    """Process nested checklist classifications."""
-    option_data = defaultdict(lambda: {"frames": [], "nested": []})
-
-    for cls in classifications:
-        cls_frames = _extract_frames(cls, [])
-
-        if hasattr(cls.value, "answer") and isinstance(cls.value.answer, list):
-            for opt in cls.value.answer:
-                opt_frames = _extract_frames(opt, cls_frames)
-                option_data[opt.name]["frames"].extend(opt_frames)
-
-                if hasattr(opt, "classifications") and opt.classifications:
-                    option_data[opt.name]["nested"].extend(opt.classifications)
-
-    results = []
-    for opt_name in sorted(option_data.keys()):
-        entry = {"name": opt_name, "frames": option_data[opt_name]["frames"]}
-
-        if option_data[opt_name]["nested"]:
-            nested = _process_nested_classifications(
-                option_data[opt_name]["nested"]
-            )
-            if nested:
-                entry["classifications"] = nested
-
-        results.append(entry)
-
-    return results
-
-
-def _process_nested_radio(classifications: List[Any]) -> Dict[str, Any]:
-    """Process nested radio classifications - merge frames."""
-    first = classifications[0]
-    opt_name = first.value.answer.name
-
-    all_frames = []
-    all_nested = []
-
-    for cls in classifications:
-        cls_frames = _extract_frames(cls, [])
-        opt_frames = _extract_frames(cls.value.answer, cls_frames)
-        all_frames.extend(opt_frames)
-
-        if (
-            hasattr(cls.value.answer, "classifications")
-            and cls.value.answer.classifications
-        ):
-            all_nested.extend(cls.value.answer.classifications)
-
-    # Deduplicate frames
-    seen = set()
-    unique_frames = []
-    for frame in all_frames:
-        frame_tuple = (frame["start"], frame["end"])
-        if frame_tuple not in seen:
-            seen.add(frame_tuple)
-            unique_frames.append(frame)
-
-    entry = {"name": opt_name, "frames": unique_frames}
-
-    if all_nested:
-        nested = _process_nested_classifications(all_nested)
-        if nested:
-            entry["classifications"] = nested
-
-    return entry
-
-
-def _process_nested_text(classifications: List[Any]) -> Dict[str, Any]:
-    """Process nested text classifications."""
-    first = classifications[0]
-    text_value = (
-        first.value.answer
-        if hasattr(first.value, "answer")
-        else str(first.value)
-    )
-
-    all_frames = []
-    all_nested = []
-
-    for cls in classifications:
-        frames = _extract_frames(cls, [])
-        all_frames.extend(frames)
-
-        if hasattr(cls, "classifications") and cls.classifications:
-            all_nested.extend(cls.classifications)
-
-    # Deduplicate frames
-    seen = set()
-    unique_frames = []
-    for frame in all_frames:
-        frame_tuple = (frame["start"], frame["end"])
-        if frame_tuple not in seen:
-            seen.add(frame_tuple)
-            unique_frames.append(frame)
-
-    entry = {"value": text_value, "frames": unique_frames}
-
-    if all_nested:
-        nested = _process_nested_classifications(all_nested)
-        if nested:
-            entry["classifications"] = nested
-
-    return entry
-
-
-def _extract_frames(
-    obj: Any, fallback_frames: List[Dict[str, int]]
-) -> List[Dict[str, int]]:
-    """
-    Extract frame ranges from an object (annotation, answer, or classification).
-    Uses explicit frames if available, otherwise falls back to provided frames.
-
-    Supports both:
-    - New format: frames: List[FrameLocation]
-    - Legacy format: start_frame/end_frame (single range)
-    """
-    # New format: frames list
-    if hasattr(obj, "frames") and obj.frames is not None:
-        return [{"start": frame.start, "end": frame.end} for frame in obj.frames]
-
-    # Legacy format: single start_frame/end_frame
-    elif (
-        hasattr(obj, "start_frame")
-        and obj.start_frame is not None
-        and hasattr(obj, "end_frame")
-        and obj.end_frame is not None
-    ):
-        return [{"start": obj.start_frame, "end": obj.end_frame}]
-
-    # Fallback to parent frames
-    elif fallback_frames:
-        return fallback_frames
-
-    else:
-        return []
-
-
-def _get_value_key(obj: Any) -> str:
-    """Get a stable key for grouping by answer value."""
-    if hasattr(obj.value, "answer"):
-        answer = obj.value.answer
-        if isinstance(answer, list):
-            # Checklist: stable key from selected option names
-            return str(sorted([opt.name for opt in answer]))
-        elif hasattr(answer, "name"):
-            # Radio: option name
-            return answer.name
+        if isinstance(first_item, TemporalClassificationText):
+            answers = _process_text_group(group_items, parent_frames)
+        elif isinstance(first_item, TemporalClassificationQuestion):
+            answers = _process_question_group(group_items, parent_frames)
         else:
-            # Text: the string value
-            return str(answer)
-    else:
-        return str(obj.value)
+            logger.warning(f"Unknown nested classification type: {type(first_item)}")
+            continue
+
+        if answers:  # Only add if we have valid answers
+            results.append({
+                "name": display_name,
+                "answer": answers,
+            })
+
+    return results
 
 
-class TemporalNDJSON(BaseModel):
-    """NDJSON format for temporal annotations (audio, video, etc.)."""
-
-    name: str
-    answer: List[Dict[str, Any]]
-    dataRow: Dict[str, str]
-
-
-# Audio-specific convenience function
-def create_audio_ndjson_annotations(
-    annotations: List[AudioClassificationAnnotation], data_global_key: str
-) -> List[TemporalNDJSON]:
+def _is_frame_subset(
+    child_frames: List[Tuple[int, int]],
+    parent_frames: List[Tuple[int, int]],
+) -> bool:
     """
-    Create NDJSON audio annotations with hierarchical structure.
+    Check if all child frames are subsets of at least one parent frame.
 
-    Args:
-        annotations: List of audio classification annotations
-        data_global_key: Global key for the data row
-
-    Returns:
-        List of TemporalNDJSON objects
+    A child frame (cs, ce) is a subset of parent frame (ps, pe) if:
+    ps <= cs and ce <= pe
     """
+    for child_start, child_end in child_frames:
+        is_subset = False
+        for parent_start, parent_end in parent_frames:
+            if parent_start <= child_start and child_end <= parent_end:
+                is_subset = True
+                break
 
-    def audio_frame_extractor(
-        ann: AudioClassificationAnnotation,
-    ) -> Tuple[int, int]:
-        """
-        Legacy frame extractor for AudioClassificationAnnotation.
-        Only used when frames list is not provided.
-        """
-        # Return first frame if frames list exists
-        if ann.frames and len(ann.frames) > 0:
-            return (ann.frames[0].start, ann.frames[0].end)
-        # Fall back to legacy start_frame/end_frame
-        return (ann.start_frame, ann.end_frame or ann.start_frame)
+        if not is_subset:
+            return False  # At least one child frame is not a subset
 
-    return create_temporal_ndjson_annotations(
-        annotations, data_global_key, audio_frame_extractor
-    )
+    return True
+
+
+def _deduplicate_frames(frames: List[Dict[str, int]]) -> List[Dict[str, int]]:
+    """
+    Remove duplicate frame ranges.
+    """
+    seen = set()
+    unique = []
+
+    for frame in frames:
+        frame_tuple = (frame["start"], frame["end"])
+        if frame_tuple not in seen:
+            seen.add(frame_tuple)
+            unique.append(frame)
+
+    return unique
