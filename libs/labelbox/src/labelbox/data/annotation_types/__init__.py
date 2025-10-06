@@ -32,7 +32,6 @@ from .classification import Checklist
 from .classification import ClassificationAnswer
 from .classification import Radio
 from .classification import Text
-from .classification import FrameLocation
 
 from .data import GenericDataRowData
 from .data import MaskData

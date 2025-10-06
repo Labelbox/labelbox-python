@@ -69,8 +69,8 @@ class Label(BaseModel):
     def object_annotations(self) -> List[ObjectAnnotation]:
         return self._get_annotations_by_type(ObjectAnnotation)
 
-    def classification_annotations(self) -> List[ClassificationAnnotation]:
-        return self._get_annotations_by_type(ClassificationAnnotation)
+    def classification_annotations(self) -> List[Union[ClassificationAnnotation, TemporalClassificationText, TemporalClassificationQuestion]]:
+        return self._get_annotations_by_type((ClassificationAnnotation, TemporalClassificationText, TemporalClassificationQuestion))
 
     def _get_annotations_by_type(self, annotation_type):
         return [
