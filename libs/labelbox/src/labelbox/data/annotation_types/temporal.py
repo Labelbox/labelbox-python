@@ -5,7 +5,7 @@ These classes provide a unified, recursive structure for temporal annotations wi
 frame-level precision. All temporal classifications support nested hierarchies.
 """
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 
 
@@ -21,7 +21,6 @@ class TemporalClassificationAnswer(BaseModel):
         frames (List[Tuple[int, int]]): List of (start_frame, end_frame) ranges in milliseconds
         classifications (Optional[List[Union[TemporalClassificationText, TemporalClassificationQuestion]]]):
             Nested classifications within this answer
-        extra (Dict[str, Any]): Additional metadata
 
     Example:
         >>> # Radio answer with nested classifications
@@ -50,7 +49,6 @@ class TemporalClassificationAnswer(BaseModel):
     classifications: Optional[
         List[Union["TemporalClassificationText", "TemporalClassificationQuestion"]]
     ] = None
-    extra: Dict[str, Any] = Field(default_factory=dict)
 
 
 class TemporalClassificationText(BaseModel):
@@ -65,7 +63,6 @@ class TemporalClassificationText(BaseModel):
         value (List[Tuple[int, int, str]]): List of (start_frame, end_frame, text_value) tuples
         classifications (Optional[List[Union[TemporalClassificationText, TemporalClassificationQuestion]]]):
             Nested classifications
-        extra (Dict[str, Any]): Additional metadata
 
     Example:
         >>> # Simple text with multiple temporal values
@@ -102,7 +99,6 @@ class TemporalClassificationText(BaseModel):
     classifications: Optional[
         List[Union["TemporalClassificationText", "TemporalClassificationQuestion"]]
     ] = None
-    extra: Dict[str, Any] = Field(default_factory=dict)
 
 
 class TemporalClassificationQuestion(BaseModel):
@@ -117,7 +113,6 @@ class TemporalClassificationQuestion(BaseModel):
         value (List[TemporalClassificationAnswer]): List of answer options with frame ranges
         classifications (Optional[List[Union[TemporalClassificationText, TemporalClassificationQuestion]]]):
             Nested classifications (typically not used at question level)
-        extra (Dict[str, Any]): Additional metadata
 
     Note:
         - Radio: Single answer in the value list
@@ -182,7 +177,6 @@ class TemporalClassificationQuestion(BaseModel):
     classifications: Optional[
         List[Union["TemporalClassificationText", "TemporalClassificationQuestion"]]
     ] = None
-    extra: Dict[str, Any] = Field(default_factory=dict)
 
 
 # Update forward references for recursive types
