@@ -13,7 +13,6 @@ from pydantic import BaseModel
 from ...annotation_types.temporal import (
     TemporalClassificationText,
     TemporalClassificationQuestion,
-    TemporalClassificationAnswer,
 )
 
 logger = logging.getLogger(__name__)

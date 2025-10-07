@@ -28,7 +28,6 @@ from typing import List
 from ...annotation_types.temporal import (
     TemporalClassificationText,
     TemporalClassificationQuestion,
-    TemporalClassificationAnswer,
 )
 from .temporal import create_temporal_ndjson_annotations
 from labelbox.types import DocumentRectangle, DocumentEntity
