@@ -76,7 +76,7 @@ class NDLabel(BaseModel):
             yield from cls._create_relationship_annotations(label)
             yield from cls._create_non_video_annotations(label)
             yield from cls._create_video_annotations(label)
-            yield from cls._create_audio_annotations(label)
+            yield from cls._create_temporal_annotations(label)
 
     @staticmethod
     def _get_consecutive_frames(
@@ -168,7 +168,7 @@ class NDLabel(BaseModel):
                 yield NDObject.from_common(segments, label.data)
 
     @classmethod
-    def _create_audio_annotations(
+    def _create_temporal_annotations(
         cls, label: Label
     ) -> Generator[BaseModel, None, None]:
         """Create temporal annotations with nested classifications using new temporal classes."""
