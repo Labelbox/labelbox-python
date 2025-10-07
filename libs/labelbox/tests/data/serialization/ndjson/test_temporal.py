@@ -2,7 +2,7 @@
 
 import labelbox.types as lb_types
 from labelbox.data.serialization.ndjson.temporal import (
-    create_temporal_ndjson_annotations,
+    create_temporal_ndjson_classifications,
 )
 
 
@@ -18,7 +18,7 @@ def test_temporal_text_simple():
         )
     ]
 
-    result = create_temporal_ndjson_annotations(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
 
     assert len(result) == 1
     assert result[0].name == "transcription"
@@ -49,7 +49,7 @@ def test_temporal_question_radio():
         )
     ]
 
-    result = create_temporal_ndjson_annotations(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
 
     assert len(result) == 1
     assert result[0].name == "speaker"
@@ -78,7 +78,7 @@ def test_temporal_question_checklist():
         )
     ]
 
-    result = create_temporal_ndjson_annotations(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
 
     assert len(result) == 1
     assert result[0].name == "audio_quality"
@@ -123,7 +123,7 @@ def test_temporal_text_nested():
         )
     ]
 
-    result = create_temporal_ndjson_annotations(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
 
     assert len(result) == 1
     assert result[0].name == "transcription"
@@ -185,7 +185,7 @@ def test_temporal_question_nested():
         )
     ]
 
-    result = create_temporal_ndjson_annotations(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
 
     assert len(result) == 1
     answer = result[0].answer[0]
@@ -227,7 +227,7 @@ def test_frame_validation_discard_invalid():
         )
     ]
 
-    result = create_temporal_ndjson_annotations(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
 
     # Find the nested notes classification
     answer = result[0].answer[0]
@@ -251,7 +251,7 @@ def test_frame_deduplication():
         )
     ]
 
-    result = create_temporal_ndjson_annotations(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
 
     # Should only have one entry
     assert len(result[0].answer) == 1
@@ -291,7 +291,7 @@ def test_mixed_text_and_question_nesting():
         )
     ]
 
-    result = create_temporal_ndjson_annotations(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
 
     assert len(result) == 1
     answer = result[0].answer[0]
@@ -341,7 +341,7 @@ def test_inductive_structure_text_with_shared_nested_radio():
         )
     ]
 
-    result = create_temporal_ndjson_annotations(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
 
     assert len(result) == 1
     assert result[0].name == "content_notes"
@@ -416,7 +416,7 @@ def test_inductive_structure_checklist_with_multiple_text_values():
         )
     ]
 
-    result = create_temporal_ndjson_annotations(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
 
     assert len(result) == 1
     assert result[0].name == "checklist_class"

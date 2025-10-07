@@ -8,8 +8,6 @@ frame-level precision. All temporal classifications support nested hierarchies.
 from typing import Any, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, Field
 
-from ...annotated_types import Cuid
-
 
 class TemporalClassificationAnswer(BaseModel):
     """
@@ -23,7 +21,6 @@ class TemporalClassificationAnswer(BaseModel):
         frames (List[Tuple[int, int]]): List of (start_frame, end_frame) ranges in milliseconds
         classifications (Optional[List[Union[TemporalClassificationText, TemporalClassificationQuestion]]]):
             Nested classifications within this answer
-        feature_schema_id (Optional[Cuid]): Feature schema identifier
         extra (Dict[str, Any]): Additional metadata
 
     Example:
@@ -53,7 +50,6 @@ class TemporalClassificationAnswer(BaseModel):
     classifications: Optional[
         List[Union["TemporalClassificationText", "TemporalClassificationQuestion"]]
     ] = None
-    feature_schema_id: Optional[Cuid] = None
     extra: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -69,7 +65,6 @@ class TemporalClassificationText(BaseModel):
         value (List[Tuple[int, int, str]]): List of (start_frame, end_frame, text_value) tuples
         classifications (Optional[List[Union[TemporalClassificationText, TemporalClassificationQuestion]]]):
             Nested classifications
-        feature_schema_id (Optional[Cuid]): Feature schema identifier
         extra (Dict[str, Any]): Additional metadata
 
     Example:
@@ -107,7 +102,6 @@ class TemporalClassificationText(BaseModel):
     classifications: Optional[
         List[Union["TemporalClassificationText", "TemporalClassificationQuestion"]]
     ] = None
-    feature_schema_id: Optional[Cuid] = None
     extra: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -121,7 +115,8 @@ class TemporalClassificationQuestion(BaseModel):
     Args:
         name (str): Name of the question/classification
         value (List[TemporalClassificationAnswer]): List of answer options with frame ranges
-        feature_schema_id (Optional[Cuid]): Feature schema identifier
+        classifications (Optional[List[Union[TemporalClassificationText, TemporalClassificationQuestion]]]):
+            Nested classifications (typically not used at question level)
         extra (Dict[str, Any]): Additional metadata
 
     Note:
@@ -187,7 +182,6 @@ class TemporalClassificationQuestion(BaseModel):
     classifications: Optional[
         List[Union["TemporalClassificationText", "TemporalClassificationQuestion"]]
     ] = None
-    feature_schema_id: Optional[Cuid] = None
     extra: Dict[str, Any] = Field(default_factory=dict)
 
 

@@ -82,12 +82,14 @@ class Label(BaseModel):
     def frame_annotations(
         self,
     ) -> Dict[
-        int,
-        Union[
-            VideoObjectAnnotation,
-            VideoClassificationAnnotation,
-            TemporalClassificationText,
-            TemporalClassificationQuestion,
+        Union[int, None],
+        List[
+            Union[
+                VideoObjectAnnotation,
+                VideoClassificationAnnotation,
+                TemporalClassificationText,
+                TemporalClassificationQuestion,
+            ]
         ],
     ]:
         """Get temporal annotations organized by frame

@@ -26,7 +26,7 @@ class TemporalNDJSON(BaseModel):
     dataRow: Dict[str, str]
 
 
-def create_temporal_ndjson_annotations(
+def create_temporal_ndjson_classifications(
     annotations: List[
         Union[TemporalClassificationText, TemporalClassificationQuestion]
     ],
@@ -45,11 +45,10 @@ def create_temporal_ndjson_annotations(
     if not annotations:
         return []
 
-    # Group by classification name/schema_id
+    # Group by classification name
     groups = defaultdict(list)
     for ann in annotations:
-        key = ann.feature_schema_id or ann.name
-        groups[key].append(ann)
+        groups[ann.name].append(ann)
 
     results = []
     for group_key, group_anns in groups.items():
@@ -267,13 +266,12 @@ def _process_nested_classifications(
     """
     Process nested classifications recursively.
 
-    Groups by name/schema_id and processes each group.
+    Groups by name and processes each group.
     """
     # Group by name
     groups = defaultdict(list)
     for cls in classifications:
-        key = cls.feature_schema_id or cls.name
-        groups[key].append(cls)
+        groups[cls.name].append(cls)
 
     results = []
     for group_key, group_items in groups.items():

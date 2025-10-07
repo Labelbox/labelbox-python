@@ -29,7 +29,7 @@ from ...annotation_types.temporal import (
     TemporalClassificationText,
     TemporalClassificationQuestion,
 )
-from .temporal import create_temporal_ndjson_annotations
+from .temporal import create_temporal_ndjson_classifications
 from labelbox.types import DocumentRectangle, DocumentEntity
 from .classification import (
     NDChecklistSubclass,
@@ -75,7 +75,7 @@ class NDLabel(BaseModel):
             yield from cls._create_relationship_annotations(label)
             yield from cls._create_non_video_annotations(label)
             yield from cls._create_video_annotations(label)
-            yield from cls._create_temporal_annotations(label)
+            yield from cls._create_temporal_classifications(label)
 
     @staticmethod
     def _get_consecutive_frames(
@@ -167,7 +167,7 @@ class NDLabel(BaseModel):
                 yield NDObject.from_common(segments, label.data)
 
     @classmethod
-    def _create_temporal_annotations(
+    def _create_temporal_classifications(
         cls, label: Label
     ) -> Generator[BaseModel, None, None]:
         """Create temporal annotations with nested classifications using new temporal classes."""
@@ -182,7 +182,7 @@ class NDLabel(BaseModel):
             return
 
         # Use the new temporal serializer to create NDJSON annotations
-        ndjson_annotations = create_temporal_ndjson_annotations(
+        ndjson_annotations = create_temporal_ndjson_classifications(
             temporal_annotations, label.data.global_key
         )
 
