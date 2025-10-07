@@ -266,12 +266,12 @@ def test_mixed_text_and_question_nesting():
             value=[
                 lb_types.TemporalClassificationAnswer(
                     name="quality_check",
-                    frames=[(0, 1500)],
+                    frames=[(1, 1500)],
                     classifications=[
                         lb_types.TemporalClassificationText(
                             name="notes_text",
                             value=[
-                                (0, 1500, "Audio quality is excellent"),
+                                (1, 1500, "Audio quality is excellent"),
                             ],
                             classifications=[
                                 lb_types.TemporalClassificationQuestion(
@@ -279,7 +279,7 @@ def test_mixed_text_and_question_nesting():
                                     value=[
                                         lb_types.TemporalClassificationAnswer(
                                             name="minor",
-                                            frames=[(0, 1500)],
+                                            frames=[(1, 1500)],
                                         )
                                     ],
                                 )
@@ -306,3 +306,143 @@ def test_mixed_text_and_question_nesting():
     radio_cls = text_cls["answer"][0]["classifications"][0]
     assert radio_cls["name"] == "severity_radio"
     assert radio_cls["answer"][0]["name"] == "minor"
+
+
+def test_inductive_structure_text_with_shared_nested_radio():
+    """
+    Test inductive structure where multiple text values share the same nested radio classification.
+
+    Each text value should get its own instance of the nested radio with only the radio answers
+    that overlap with that text value's frames.
+    """
+    annotations = [
+        lb_types.TemporalClassificationText(
+            name="content_notes",
+            value=[
+                (1000, 1500, "Topic is relevant"),
+                (1501, 2000, "Good pacing"),
+            ],
+            classifications=[
+                # Shared nested radio with answers for BOTH text values
+                lb_types.TemporalClassificationQuestion(
+                    name="clarity_radio",
+                    value=[
+                        lb_types.TemporalClassificationAnswer(
+                            name="very_clear",
+                            frames=[(1000, 1500)],
+                        ),
+                        lb_types.TemporalClassificationAnswer(
+                            name="slightly_clear",
+                            frames=[(1501, 2000)],
+                        ),
+                    ],
+                )
+            ],
+        )
+    ]
+
+    result = create_temporal_ndjson_annotations(annotations, "test-global-key")
+
+    assert len(result) == 1
+    assert result[0].name == "content_notes"
+    assert len(result[0].answer) == 2
+
+    # Check first text value: "Topic is relevant"
+    text1 = next(a for a in result[0].answer if a["value"] == "Topic is relevant")
+    assert text1["frames"] == [{"start": 1000, "end": 1500}]
+    assert "classifications" in text1
+    assert len(text1["classifications"]) == 1
+
+    # Should only have "very_clear" radio answer (overlaps with 1000-1500)
+    radio1 = text1["classifications"][0]
+    assert radio1["name"] == "clarity_radio"
+    assert len(radio1["answer"]) == 1
+    assert radio1["answer"][0]["name"] == "very_clear"
+    assert radio1["answer"][0]["frames"] == [{"start": 1000, "end": 1500}]
+
+    # Check second text value: "Good pacing"
+    text2 = next(a for a in result[0].answer if a["value"] == "Good pacing")
+    assert text2["frames"] == [{"start": 1501, "end": 2000}]
+    assert "classifications" in text2
+    assert len(text2["classifications"]) == 1
+
+    # Should only have "slightly_clear" radio answer (overlaps with 1501-2000)
+    radio2 = text2["classifications"][0]
+    assert radio2["name"] == "clarity_radio"
+    assert len(radio2["answer"]) == 1
+    assert radio2["answer"][0]["name"] == "slightly_clear"
+    assert radio2["answer"][0]["frames"] == [{"start": 1501, "end": 2000}]
+
+
+def test_inductive_structure_checklist_with_multiple_text_values():
+    """
+    Test inductive structure with Checklist > Text > Radio where text has multiple values
+    and nested radio has answers that map to different text values.
+    """
+    annotations = [
+        lb_types.TemporalClassificationQuestion(
+            name="checklist_class",
+            value=[
+                lb_types.TemporalClassificationAnswer(
+                    name="content_check",
+                    frames=[(1000, 2000)],
+                    classifications=[
+                        lb_types.TemporalClassificationText(
+                            name="content_notes_text",
+                            value=[
+                                (1000, 1500, "Topic is relevant"),
+                                (1501, 2000, "Good pacing"),
+                            ],
+                            classifications=[
+                                # Nested radio with multiple answers covering different text value frames
+                                lb_types.TemporalClassificationQuestion(
+                                    name="clarity_radio",
+                                    value=[
+                                        lb_types.TemporalClassificationAnswer(
+                                            name="very_clear",
+                                            frames=[(1000, 1500)],
+                                        ),
+                                        lb_types.TemporalClassificationAnswer(
+                                            name="slightly_clear",
+                                            frames=[(1501, 2000)],
+                                        ),
+                                    ],
+                                )
+                            ],
+                        )
+                    ],
+                )
+            ],
+        )
+    ]
+
+    result = create_temporal_ndjson_annotations(annotations, "test-global-key")
+
+    assert len(result) == 1
+    assert result[0].name == "checklist_class"
+
+    # Get the content_check answer
+    content_check = result[0].answer[0]
+    assert content_check["name"] == "content_check"
+    assert content_check["frames"] == [{"start": 1000, "end": 2000}]
+
+    # Get the nested text classification
+    text_cls = content_check["classifications"][0]
+    assert text_cls["name"] == "content_notes_text"
+    assert len(text_cls["answer"]) == 2
+
+    # Check first text value and its nested radio
+    text1 = next(a for a in text_cls["answer"] if a["value"] == "Topic is relevant")
+    assert text1["frames"] == [{"start": 1000, "end": 1500}]
+    radio1 = text1["classifications"][0]
+    assert radio1["name"] == "clarity_radio"
+    assert len(radio1["answer"]) == 1
+    assert radio1["answer"][0]["name"] == "very_clear"
+
+    # Check second text value and its nested radio
+    text2 = next(a for a in text_cls["answer"] if a["value"] == "Good pacing")
+    assert text2["frames"] == [{"start": 1501, "end": 2000}]
+    radio2 = text2["classifications"][0]
+    assert radio2["name"] == "clarity_radio"
+    assert len(radio2["answer"]) == 1
+    assert radio2["answer"][0]["name"] == "slightly_clear"
