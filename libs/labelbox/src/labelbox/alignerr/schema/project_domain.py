@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from labelbox.orm.db_object import Deletable, DbObject
 from labelbox.orm.model import Field
 from labelbox.pagination import PaginatedCollection
@@ -212,7 +212,10 @@ class ProjectDomain(DbObject, Deletable):
             project_id, limit, offset, include_archived
         )
 
-        params = {"projectId": project_id, "includeArchived": include_archived}
+        params: Dict[str, Any] = {
+            "projectId": project_id,
+            "includeArchived": include_archived,
+        }
 
         return PaginatedCollection(
             client=client,
@@ -268,11 +271,17 @@ class ProjectDomain(DbObject, Deletable):
             }
         }"""
 
-        params = {
+        # Build params dictionary with proper types for GraphQL
+        params: Dict[str, Any] = {
             "includeArchived": include_archived,
-            "searchByName": search_by_name,
-            "projectIds": project_ids,
         }
+
+        # Only add non-None values to avoid type issues
+        if search_by_name is not None:
+            params["searchByName"] = search_by_name
+        if project_ids is not None:
+            # Keep as list for GraphQL - it will be properly serialized
+            params["projectIds"] = project_ids
 
         return PaginatedCollection(
             client=client,
