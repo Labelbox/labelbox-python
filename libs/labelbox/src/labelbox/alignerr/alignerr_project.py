@@ -42,7 +42,7 @@ class AlignerrProject:
         self.project = project
 
     @property
-    def project(self) -> Optional["Project"]:
+    def project(self) -> "Project":
         return self._project
 
     @project.setter
@@ -124,7 +124,7 @@ class AlignerrProject:
 
         if tag.text not in current_tag_names:
             current_tag_names.append(tag.text)
-            self.set_tags(current_tag_names)
+            self.set_tags(current_tag_names, tag.type)
 
         return self
 
@@ -139,7 +139,7 @@ class AlignerrProject:
         """
         current_tags = self.get_tags()
         current_tag_names = [t.text for t in current_tags if t.uid != tag.uid]
-        self.set_tags(current_tag_names)
+        self.set_tags(current_tag_names, tag.type)
         return self
 
     def get_project_owner(self) -> Optional[ProjectBoostWorkforce]:
