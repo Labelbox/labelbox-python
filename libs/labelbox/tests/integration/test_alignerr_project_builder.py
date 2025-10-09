@@ -38,6 +38,9 @@ def test_create_alignerr_project_using_builder_validate_input(client: Client):
             effective_since=datetime.datetime.now().isoformat(),
         ).create()
 
+    # Get current user for project owner
+    current_user = client.get_user()
+    
     alignerr_project = (
         client.alignerr_workspace.project_builder()
         .set_name("TestAlignerrProject2")
@@ -59,6 +62,7 @@ def test_create_alignerr_project_using_builder_validate_input(client: Client):
             billing_mode=BillingMode.BY_HOUR,
             effective_since=datetime.datetime.now().isoformat(),
         )
+        .set_project_owner(current_user.email)
         .create()
     )
 
@@ -144,6 +148,9 @@ def test_create_alignerr_project_with_rates_domains_and_resource_tags(client: Cl
     time.sleep(0.5)
 
     try:
+        # Get current user for project owner
+        current_user = client.get_user()
+        
         # Create project with rates, domains, and resource tags
         alignerr_project = (
             client.alignerr_workspace.project_builder()
@@ -168,6 +175,7 @@ def test_create_alignerr_project_with_rates_domains_and_resource_tags(client: Cl
             )
             .set_domains([domain1_name, domain2_name])
             .set_tags([tag1_text, tag2_text], ResourceTagType.Default)
+            .set_project_owner(current_user.email)
             .create()
         )
 
@@ -202,3 +210,88 @@ def test_create_alignerr_project_with_rates_domains_and_resource_tags(client: Cl
             tag2.delete()
         except Exception:
             pass
+
+
+def test_create_alignerr_project_with_project_owner(client: Client):
+    """Test creating an Alignerr project with project owner set."""
+    # Get the current user as the project owner
+    current_user = client.get_user()
+    
+    try:
+        # Create project with project owner using email
+        alignerr_project = (
+            client.alignerr_workspace.project_builder()
+            .set_name("TestAlignerrProjectWithOwner")
+            .set_media_type(MediaType.Image)
+            .set_alignerr_role_rate(
+                role_name=AlignerrRole.Labeler,
+                rate=10.0,
+                billing_mode=BillingMode.BY_HOUR,
+                effective_since=datetime.datetime.now().isoformat(),
+            )
+            .set_alignerr_role_rate(
+                role_name=AlignerrRole.Reviewer,
+                rate=12.0,
+                billing_mode=BillingMode.BY_HOUR,
+                effective_since=datetime.datetime.now().isoformat(),
+            )
+            .set_customer_rate(
+                rate=15.0,
+                billing_mode=BillingMode.BY_HOUR,
+                effective_since=datetime.datetime.now().isoformat(),
+            )
+            .set_project_owner(current_user.email)
+            .create()
+        )
+
+        assert alignerr_project is not None
+        assert alignerr_project.project.name == "TestAlignerrProjectWithOwner"
+
+        # Verify project owner was set using the AlignerrProject method
+        project_boost_workforce = alignerr_project.get_project_owner()
+        
+        if project_boost_workforce:
+            assert project_boost_workforce.projectOwnerUserId == current_user.uid
+            assert project_boost_workforce.projectOwner.uid == current_user.uid
+
+        alignerr_project.project.delete()
+    except Exception as e:
+        # Clean up if test fails
+        try:
+            alignerr_project.project.delete()
+        except:
+            pass
+        raise e
+
+
+def test_create_alignerr_project_selective_validation_skip_multiple(client: Client):
+    """Test creating an Alignerr project with selective validation - skipping multiple validations."""
+    from labelbox.alignerr.alignerr_project_builder import ValidationType
+    
+    try:
+        # Create project skipping multiple validations
+        alignerr_project = (
+            client.alignerr_workspace.project_builder()
+            .set_name("TestAlignerrProjectSkipMultiple")
+            .set_media_type(MediaType.Image)
+            .set_alignerr_role_rate(
+                role_name=AlignerrRole.Labeler,
+                rate=10.0,
+                billing_mode=BillingMode.BY_HOUR,
+                effective_since=datetime.datetime.now().isoformat(),
+            )
+            # Note: Missing reviewer rate, customer rate, and project owner, but we skip those validations
+            .create(skip_validation=[ValidationType.ALIGNERR_RATE, ValidationType.CUSTOMER_RATE, ValidationType.PROJECT_OWNER])
+        )
+
+        assert alignerr_project is not None
+        assert alignerr_project.project.name == "TestAlignerrProjectSkipMultiple"
+
+        alignerr_project.project.delete()
+    except Exception as e:
+        # Clean up if test fails
+        try:
+            alignerr_project.project.delete()
+        except:
+            pass
+        raise e

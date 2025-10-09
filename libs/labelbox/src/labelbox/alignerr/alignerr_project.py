@@ -6,6 +6,7 @@ import logging
 from labelbox.alignerr.schema.project_rate import ProjectRateV2
 from labelbox.alignerr.schema.project_domain import ProjectDomain
 from labelbox.alignerr.schema.enchanced_resource_tags import EnhancedResourceTag, ResourceTagType
+from labelbox.alignerr.schema.project_boost_workforce import ProjectBoostWorkforce
 from labelbox.pagination import PaginatedCollection
 
 logger = logging.getLogger(__name__)
@@ -131,6 +132,17 @@ class AlignerrProject:
         current_tag_names = [t.text for t in current_tags if t.uid != tag.uid]
         self.set_tags(current_tag_names)
         return self
+
+    def get_project_owner(self) -> Optional[ProjectBoostWorkforce]:
+        """Get the ProjectBoostWorkforce for this project.
+        
+        Returns:
+            ProjectBoostWorkforce instance or None if not found
+        """
+        return ProjectBoostWorkforce.get_by_project_id(
+            client=self.client, 
+            project_id=self.project.uid
+        )
 
 
 class AlignerrWorkspace:
