@@ -19,7 +19,9 @@ class AlignerrProjectFactory:
     def __init__(self, client: "Client"):
         self.client = client
 
-    def create(self, yaml_file_path: str, skip_validation: Union[bool, List] = False):
+    def create(
+        self, yaml_file_path: str, skip_validation: Union[bool, List] = False
+    ):
         """
         Create an AlignerrProject from a YAML configuration file.
 
@@ -236,10 +238,10 @@ class AlignerrProjectFactory:
             domains_config = config["domains"]
             if not isinstance(domains_config, list):
                 raise ValueError("'domains' must be a list")
-            
+
             if not all(isinstance(domain, str) for domain in domains_config):
                 raise ValueError("All domain names must be strings")
-            
+
             builder.set_domains(domains_config)
 
         # Set enhanced resource tags if provided
@@ -247,18 +249,18 @@ class AlignerrProjectFactory:
             tags_config = config["tags"]
             if not isinstance(tags_config, list):
                 raise ValueError("'tags' must be a list")
-            
+
             for tag_config in tags_config:
                 if not isinstance(tag_config, dict):
                     raise ValueError("Each tag must be a dictionary")
-                
+
                 required_tag_fields = ["text", "type"]
                 for field in required_tag_fields:
                     if field not in tag_config:
                         raise ValueError(
                             f"Required field '{field}' is missing for tag"
                         )
-                
+
                 # Validate tag type
                 try:
                     tag_type = ResourceTagType(tag_config["type"])
@@ -266,7 +268,7 @@ class AlignerrProjectFactory:
                     raise ValueError(
                         f"Invalid tag type '{tag_config['type']}'. Must be one of: {[e.value for e in ResourceTagType]}"
                     )
-                
+
                 # Set the tag
                 builder.set_tags([tag_config["text"]], tag_type)
 
@@ -274,8 +276,10 @@ class AlignerrProjectFactory:
         if "project_owner" in config:
             project_owner_config = config["project_owner"]
             if not isinstance(project_owner_config, str):
-                raise ValueError("'project_owner' must be a string (email address)")
-            
+                raise ValueError(
+                    "'project_owner' must be a string (email address)"
+                )
+
             builder.set_project_owner(project_owner_config)
 
         # Create the project

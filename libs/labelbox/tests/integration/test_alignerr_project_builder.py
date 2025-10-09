@@ -40,7 +40,7 @@ def test_create_alignerr_project_using_builder_validate_input(client: Client):
 
     # Get current user for project owner
     current_user = client.get_user()
-    
+
     alignerr_project = (
         client.alignerr_workspace.project_builder()
         .set_name("TestAlignerrProject2")
@@ -113,10 +113,15 @@ def test_create_alignerr_project_using_builder_add_domains(client: Client):
             pass
 
 
-def test_create_alignerr_project_with_rates_domains_and_resource_tags(client: Client):
+def test_create_alignerr_project_with_rates_domains_and_resource_tags(
+    client: Client,
+):
     """Test creating an Alignerr project with rates, domains, and enhanced resource tags."""
     from labelbox.alignerr.schema.project_domain import ProjectDomain
-    from labelbox.alignerr.schema.enchanced_resource_tags import EnhancedResourceTag, ResourceTagType
+    from labelbox.alignerr.schema.enchanced_resource_tags import (
+        EnhancedResourceTag,
+        ResourceTagType,
+    )
     import uuid
     import time
 
@@ -132,16 +137,16 @@ def test_create_alignerr_project_with_rates_domains_and_resource_tags(client: Cl
     tag2_text = f"TestTag2_{uuid.uuid4().hex[:8]}"
 
     tag1 = EnhancedResourceTag.create(
-        client, 
-        text=tag1_text, 
-        color="#FF5733", 
-        tag_type=ResourceTagType.Default
+        client,
+        text=tag1_text,
+        color="#FF5733",
+        tag_type=ResourceTagType.Default,
     )
     tag2 = EnhancedResourceTag.create(
-        client, 
-        text=tag2_text, 
-        color="#33FF57", 
-        tag_type=ResourceTagType.Billing
+        client,
+        text=tag2_text,
+        color="#33FF57",
+        tag_type=ResourceTagType.Billing,
     )
 
     # Add a small delay to allow domains to be searchable
@@ -150,7 +155,7 @@ def test_create_alignerr_project_with_rates_domains_and_resource_tags(client: Cl
     try:
         # Get current user for project owner
         current_user = client.get_user()
-        
+
         # Create project with rates, domains, and resource tags
         alignerr_project = (
             client.alignerr_workspace.project_builder()
@@ -189,7 +194,7 @@ def test_create_alignerr_project_with_rates_domains_and_resource_tags(client: Cl
         # Verify resource tags were added
         enhanced_tags = alignerr_project.get_tags()
         assert len(enhanced_tags) >= 2
-        
+
         # Check that our specific tags are present
         tag_texts = [tag.text for tag in enhanced_tags]
         assert tag1_text in tag_texts
@@ -203,7 +208,7 @@ def test_create_alignerr_project_with_rates_domains_and_resource_tags(client: Cl
             domain2.deactivate()
         except Exception:
             pass
-        
+
         # Cleanup resource tags
         try:
             tag1.delete()
@@ -216,7 +221,7 @@ def test_create_alignerr_project_with_project_owner(client: Client):
     """Test creating an Alignerr project with project owner set."""
     # Get the current user as the project owner
     current_user = client.get_user()
-    
+
     try:
         # Create project with project owner using email
         alignerr_project = (
@@ -249,9 +254,11 @@ def test_create_alignerr_project_with_project_owner(client: Client):
 
         # Verify project owner was set using the AlignerrProject method
         project_boost_workforce = alignerr_project.get_project_owner()
-        
+
         if project_boost_workforce:
-            assert project_boost_workforce.projectOwnerUserId == current_user.uid
+            assert (
+                project_boost_workforce.projectOwnerUserId == current_user.uid
+            )
             assert project_boost_workforce.projectOwner.uid == current_user.uid
 
         alignerr_project.project.delete()
@@ -264,10 +271,12 @@ def test_create_alignerr_project_with_project_owner(client: Client):
         raise e
 
 
-def test_create_alignerr_project_selective_validation_skip_multiple(client: Client):
+def test_create_alignerr_project_selective_validation_skip_multiple(
+    client: Client,
+):
     """Test creating an Alignerr project with selective validation - skipping multiple validations."""
     from labelbox.alignerr.alignerr_project_builder import ValidationType
-    
+
     try:
         # Create project skipping multiple validations
         alignerr_project = (
@@ -281,11 +290,19 @@ def test_create_alignerr_project_selective_validation_skip_multiple(client: Clie
                 effective_since=datetime.datetime.now().isoformat(),
             )
             # Note: Missing reviewer rate, customer rate, and project owner, but we skip those validations
-            .create(skip_validation=[ValidationType.ALIGNERR_RATE, ValidationType.CUSTOMER_RATE, ValidationType.PROJECT_OWNER])
+            .create(
+                skip_validation=[
+                    ValidationType.ALIGNERR_RATE,
+                    ValidationType.CUSTOMER_RATE,
+                    ValidationType.PROJECT_OWNER,
+                ]
+            )
         )
 
         assert alignerr_project is not None
-        assert alignerr_project.project.name == "TestAlignerrProjectSkipMultiple"
+        assert (
+            alignerr_project.project.name == "TestAlignerrProjectSkipMultiple"
+        )
 
         alignerr_project.project.delete()
     except Exception as e:

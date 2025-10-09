@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 class ResourceTagType(Enum):
     """Enum for resource tag types."""
+
     Default = "Default"
     System = "System"
     Request = "Request"
@@ -59,7 +60,11 @@ class EnhancedResourceTag(DbObject, Updateable):
 
     @classmethod
     def create(
-        cls, client, text: str, color: str, tag_type: Optional[ResourceTagType] = None
+        cls,
+        client,
+        text: str,
+        color: str,
+        tag_type: Optional[ResourceTagType] = None,
     ) -> "EnhancedResourceTag":
         """Create a new enhanced resource tag.
 
@@ -75,26 +80,27 @@ class EnhancedResourceTag(DbObject, Updateable):
         # Use the existing organization create_resource_tag method
         # Get the organization
         org = client.get_organization()
-        
+
         # Create the tag using existing API
         tag_data = {"text": text, "color": color}
         created_tag = org.create_resource_tag(tag_data)
-        
+
         # Create EnhancedResourceTag with the same data plus defaults for missing fields
-        enhanced_tag = cls(client, {
-            "id": created_tag.uid,
-            "text": created_tag.text,
-            "color": created_tag.color,
-            "createdAt": None,
-            "updatedAt": None,
-            "organizationId": None,
-            "createdById": None,
-            "type": tag_type.value if tag_type else None
-        })
-        
+        enhanced_tag = cls(
+            client,
+            {
+                "id": created_tag.uid,
+                "text": created_tag.text,
+                "color": created_tag.color,
+                "createdAt": None,
+                "updatedAt": None,
+                "organizationId": None,
+                "createdById": None,
+                "type": tag_type.value if tag_type else None,
+            },
+        )
+
         return enhanced_tag
-
-
 
     @classmethod
     def search_by_text(
@@ -113,27 +119,30 @@ class EnhancedResourceTag(DbObject, Updateable):
         # Use the existing organization get_resource_tags method
         # Get the organization
         org = client.get_organization()
-        
+
         # Get all resource tags
         regular_tags = org.get_resource_tags()
-        
+
         # Convert to EnhancedResourceTag instances and filter by search text and type
         matching_tags = []
         for tag in regular_tags:
             if search_text.lower() in tag.text.lower():
-                enhanced_tag = cls(client, {
-                    "id": tag.uid,
-                    "text": tag.text,
-                    "color": tag.color,
-                    "createdAt": None,
-                    "updatedAt": None,
-                    "organizationId": None,
-                    "createdById": None,
-                    "type": tag_type.value
-                })
-                
+                enhanced_tag = cls(
+                    client,
+                    {
+                        "id": tag.uid,
+                        "text": tag.text,
+                        "color": tag.color,
+                        "createdAt": None,
+                        "updatedAt": None,
+                        "organizationId": None,
+                        "createdById": None,
+                        "type": tag_type.value,
+                    },
+                )
+
                 # Apply type filter
                 if enhanced_tag.type == tag_type.value:
                     matching_tags.append(enhanced_tag)
-        
+
         return matching_tags

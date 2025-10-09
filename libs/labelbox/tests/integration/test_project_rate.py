@@ -32,7 +32,9 @@ def test_project(client):
 def test_project_rate_input_validation():
     """Test ProjectRateInput validation logic."""
     # Test negative rate validation
-    with pytest.raises(ValueError, match="Rate must be greater than or equal to 0"):
+    with pytest.raises(
+        ValueError, match="Rate must be greater than or equal to 0"
+    ):
         ProjectRateInput(
             rateForId="",
             isBillRate=True,
@@ -44,7 +46,7 @@ def test_project_rate_input_validation():
     # Test isBillRate=True with non-empty rateForId
     with pytest.raises(
         ValueError,
-        match="isBillRate indicates that this is a customer bill rate. rateForId must be empty if isBillRate is true"
+        match="isBillRate indicates that this is a customer bill rate. rateForId must be empty if isBillRate is true",
     ):
         ProjectRateInput(
             rateForId="some-id",
@@ -119,7 +121,7 @@ def test_multiple_project_rates(client, test_project):
         if role.name == "REVIEWER":
             role_id = role.uid
             break
-    
+
     if role_id:
         # Set role rate
         role_rate_input = ProjectRateInput(
