@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 class ProjectBoostWorkforceStatus(Enum):
     """Enum for ProjectBoostWorkforce status."""
+
     SET_UP = "SET_UP"
     REQUESTED = "REQUESTED"
     ACCEPTED = "ACCEPTED"
@@ -18,12 +19,14 @@ class ProjectBoostWorkforceStatus(Enum):
 
 class ProjectBoostType(Enum):
     """Enum for ProjectBoost type."""
+
     SELF_SERVE = "SELF_SERVE"
     MANAGED = "MANAGED"
 
 
 class ProjectDifficulty(Enum):
     """Enum for project difficulty levels."""
+
     EASY = "easy"
     MEDIUM = "medium"
     HARD = "hard"
@@ -31,6 +34,7 @@ class ProjectDifficulty(Enum):
 
 class BillingMode(Enum):
     """Enum for billing modes."""
+
     BY_TASK = "BY_TASK"
     BY_HOUR = "BY_HOUR"
     BY_TASK_PER_TURN = "BY_TASK_PER_TURN"
@@ -38,23 +42,27 @@ class BillingMode(Enum):
 
 class UpsertProjectBoostWorkforceInput(BaseModel):
     """Input for upserting a ProjectBoostWorkforce."""
+
     projectId: str
 
 
 class UpdateProjectBoostWorkforceStatusInput(BaseModel):
     """Input for updating ProjectBoostWorkforce status."""
+
     projectId: str
     status: ProjectBoostWorkforceStatus
 
 
 class UpdateProjectBoostWorkforceCountryMultiplierInput(BaseModel):
     """Input for updating country rate multipliers."""
+
     projectId: str
     disabledCountryRateMultipliers: bool
 
 
 class UpdateProjectBoostWorkforceBillingModeInput(BaseModel):
     """Input for updating billing mode."""
+
     projectId: str
     billingMode: BillingMode
     customerBillingMode: Optional[BillingMode] = None
@@ -62,11 +70,13 @@ class UpdateProjectBoostWorkforceBillingModeInput(BaseModel):
 
 class ValidateAndRequestProjectBoostWorkforceInput(BaseModel):
     """Input for validating and requesting ProjectBoostWorkforce."""
+
     projectId: str
 
 
 class UpdateProjectBoostWorkforceInput(BaseModel):
     """Input for updating ProjectBoostWorkforce."""
+
     projectId: str
     status: Optional[ProjectBoostWorkforceStatus] = None
     calibrationDatarows: Optional[int] = None
@@ -88,16 +98,19 @@ class UpdateProjectBoostWorkforceInput(BaseModel):
 
 class FindProjectBoostWorkforceInput(BaseModel):
     """Input for finding ProjectBoostWorkforce."""
+
     projectId: str
 
 
 class ProjectBoostWorkforceResult(BaseModel):
     """Result model for ProjectBoostWorkforce operations."""
+
     success: bool
 
 
 class ProjectBoostWorkforceStatusHistoryFields(BaseModel):
     """Model for ProjectBoostWorkforce status history fields."""
+
     id: str
     projectId: str
     updatedAt: str
@@ -130,7 +143,9 @@ class ProjectBoostWorkforce(DbObject):
     projectDifficulty = Field.Enum(ProjectDifficulty, "projectDifficulty")
     projectDescription = Field.String("projectDescription")
     estimatedTimePerLabel = Field.Float("estimatedTimePerLabel")
-    disabledCountryRateMultipliers = Field.Boolean("disabledCountryRateMultipliers")
+    disabledCountryRateMultipliers = Field.Boolean(
+        "disabledCountryRateMultipliers"
+    )
     billingMode = Field.Enum(BillingMode, "billingMode")
     customerBillingMode = Field.Enum(BillingMode, "customerBillingMode")
     type = Field.Enum(ProjectBoostType, "type")
@@ -141,7 +156,9 @@ class ProjectBoostWorkforce(DbObject):
     projectOwnerUserId = Field.String("projectOwnerUserId")
 
     @classmethod
-    def get_by_project_id(cls, client, project_id: str) -> Optional["ProjectBoostWorkforce"]:
+    def get_by_project_id(
+        cls, client, project_id: str
+    ) -> Optional["ProjectBoostWorkforce"]:
         """Get ProjectBoostWorkforce by project ID.
 
         Args:
@@ -193,14 +210,16 @@ class ProjectBoostWorkforce(DbObject):
 
         result = client.execute(query_str, {"data": input_data.model_dump()})
         workforce_data = result.get("projectBoostWorkforce")
-        
+
         if not workforce_data:
             return None
 
         return cls(client, workforce_data)
 
     @classmethod
-    def update(cls, client, update_input: UpdateProjectBoostWorkforceInput) -> ProjectBoostWorkforceResult:
+    def update(
+        cls, client, update_input: UpdateProjectBoostWorkforceInput
+    ) -> ProjectBoostWorkforceResult:
         """Update ProjectBoostWorkforce with various fields.
 
         Args:
@@ -217,11 +236,17 @@ class ProjectBoostWorkforce(DbObject):
             }
         }"""
 
-        result = client.execute(mutation_str, {"data": update_input.model_dump()})
-        return ProjectBoostWorkforceResult(**result["updateProjectBoostWorkforce"])
+        result = client.execute(
+            mutation_str, {"data": update_input.model_dump()}
+        )
+        return ProjectBoostWorkforceResult(
+            **result["updateProjectBoostWorkforce"]
+        )
 
     @classmethod
-    def set_project_owner(cls, client, project_id: str, project_owner_user_id: str) -> ProjectBoostWorkforceResult:
+    def set_project_owner(
+        cls, client, project_id: str, project_owner_user_id: str
+    ) -> ProjectBoostWorkforceResult:
         """Set the project owner for ProjectBoostWorkforce.
 
         Args:
@@ -233,8 +258,7 @@ class ProjectBoostWorkforce(DbObject):
             ProjectBoostWorkforceResult indicating success
         """
         update_input = UpdateProjectBoostWorkforceInput(
-            projectId=project_id,
-            projectOwnerUserId=project_owner_user_id
+            projectId=project_id, projectOwnerUserId=project_owner_user_id
         )
 
         return cls.update(client, update_input)

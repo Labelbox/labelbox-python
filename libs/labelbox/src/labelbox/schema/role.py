@@ -35,12 +35,10 @@ class Role(DbObject):
         return roles.get(name.upper())
 
 
-
 class OrgRole(Role): ...
 
 
 class UserRole(Role): ...
-    
 
 
 @dataclass
