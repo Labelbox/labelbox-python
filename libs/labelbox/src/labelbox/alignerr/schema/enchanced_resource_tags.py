@@ -9,9 +9,6 @@ class ResourceTagType(Enum):
     """Enum for resource tag types."""
 
     Default = "Default"
-    System = "System"
-    Request = "Request"
-    Migration = "Migration"
     Billing = "Billing"
 
 
