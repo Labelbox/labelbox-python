@@ -30,7 +30,7 @@ class Role(DbObject):
     name = Field.String("name")
 
     @classmethod
-    def from_name(cls, client: "Client", name: str) -> "Role":
+    def from_name(cls, client: "Client", name: str) -> Optional["Role"]:
         roles = get_roles(client)
         return roles.get(name.upper())
 

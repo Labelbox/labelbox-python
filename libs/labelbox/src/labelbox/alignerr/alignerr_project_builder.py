@@ -35,7 +35,7 @@ class AlignerrProjectBuilder:
     def __init__(self, client: "Client"):
         self.client = client
         self._alignerr_rates: dict[str, ProjectRateInput] = {}
-        self._customer_rate: ProjectRateInput = None
+        self._customer_rate: Optional[ProjectRateInput] = None
         self._domains: list[ProjectDomain] = []
         self._enhanced_resource_tags: list[EnhancedResourceTag] = []
         self._project_owner_email: Optional[str] = None
@@ -62,7 +62,7 @@ class AlignerrProjectBuilder:
             raise ValueError(f"Role {role_name.value} not found")
 
         role_id = self.role_name_to_id[role_name.value]
-        role_name = role_name.value
+        role_name_str = role_name.value
 
         # Convert datetime objects to ISO format strings
         effective_since_str = (
@@ -76,7 +76,7 @@ class AlignerrProjectBuilder:
             else effective_until
         )
 
-        self._alignerr_rates[role_name] = ProjectRateInput(
+        self._alignerr_rates[role_name_str] = ProjectRateInput(
             rateForId=role_id,
             isBillRate=False,
             billingMode=billing_mode,
@@ -221,7 +221,7 @@ class AlignerrProjectBuilder:
                 f"Setting enhanced resource tags: {[tag.text for tag in self._enhanced_resource_tags]}"
             )
             # Group tags by type and set them accordingly
-            tags_by_type = {}
+            tags_by_type: dict[ResourceTagType, list[str]] = {}
             for tag in self._enhanced_resource_tags:
                 tag_type = tag.type
                 if tag_type not in tags_by_type:
