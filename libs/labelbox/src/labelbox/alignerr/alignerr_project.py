@@ -27,6 +27,9 @@ class AlignerrRole(Enum):
     Labeler = "LABELER"
     Reviewer = "REVIEWER"
     Admin = "ADMIN"
+    ProjectCoordinator = "PROJECT_COORDINATOR"
+    AlignerrLabeler = "ALIGNERR_LABELER"
+    EndLabellingRole = "ENDLABELLINGROLE"
 
 
 class AlignerrProject:
