@@ -2,8 +2,8 @@
 
 import datetime
 from labelbox import Client
-from labelbox.alignerr.alignerr_project import AlignerrRole
-from labelbox.alignerr.schema.project_rate import BillingMode
+from alignerr.alignerr_project import AlignerrRole
+from alignerr.schema.project_rate import BillingMode
 from labelbox.schema.media_type import MediaType
 import pytest
 
@@ -73,7 +73,7 @@ def test_create_alignerr_project_using_builder_validate_input(client: Client):
 
 
 def test_create_alignerr_project_using_builder_add_domains(client: Client):
-    from labelbox.alignerr.schema.project_domain import ProjectDomain
+    from alignerr.schema.project_domain import ProjectDomain
     import uuid
 
     # Create test domains first
@@ -117,8 +117,8 @@ def test_create_alignerr_project_with_rates_domains_and_resource_tags(
     client: Client,
 ):
     """Test creating an Alignerr project with rates, domains, and enhanced resource tags."""
-    from labelbox.alignerr.schema.project_domain import ProjectDomain
-    from labelbox.alignerr.schema.enchanced_resource_tags import (
+    from alignerr.schema.project_domain import ProjectDomain
+    from alignerr.schema.enchanced_resource_tags import (
         EnhancedResourceTag,
         ResourceTagType,
     )
@@ -275,7 +275,7 @@ def test_create_alignerr_project_selective_validation_skip_multiple(
     client: Client,
 ):
     """Test creating an Alignerr project with selective validation - skipping multiple validations."""
-    from labelbox.alignerr.alignerr_project_builder import ValidationType
+    from alignerr.alignerr_project_builder import ValidationType
 
     try:
         # Create project skipping multiple validations

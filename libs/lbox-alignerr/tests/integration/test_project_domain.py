@@ -6,7 +6,7 @@ These tests interact with the actual Labelbox API to verify ProjectDomain operat
 import pytest
 import uuid
 
-from labelbox.alignerr.schema.project_domain import ProjectDomain
+from alignerr.schema.project_domain import ProjectDomain
 from labelbox.schema.media_type import MediaType
 
 

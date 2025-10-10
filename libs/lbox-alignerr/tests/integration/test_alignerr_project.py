@@ -7,8 +7,8 @@ import datetime
 import uuid
 
 import pytest
-from labelbox.alignerr.alignerr_project import AlignerrProject
-from labelbox.alignerr.schema.project_rate import BillingMode, ProjectRateInput
+from alignerr.alignerr_project import AlignerrProject
+from alignerr.schema.project_rate import BillingMode, ProjectRateInput
 from labelbox.schema.media_type import MediaType
 
 

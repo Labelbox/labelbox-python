@@ -3,14 +3,14 @@ from enum import Enum
 from typing import TYPE_CHECKING, Optional, Union, List
 import logging
 
-from labelbox.alignerr.schema.project_rate import BillingMode
-from labelbox.alignerr.schema.project_rate import ProjectRateInput
-from labelbox.alignerr.schema.project_domain import ProjectDomain
-from labelbox.alignerr.schema.enchanced_resource_tags import (
+from alignerr.schema.project_rate import BillingMode
+from alignerr.schema.project_rate import ProjectRateInput
+from alignerr.schema.project_domain import ProjectDomain
+from alignerr.schema.enchanced_resource_tags import (
     EnhancedResourceTag,
     ResourceTagType,
 )
-from labelbox.alignerr.schema.project_boost_workforce import (
+from alignerr.schema.project_boost_workforce import (
     ProjectBoostWorkforce,
 )
 from labelbox.schema.media_type import MediaType
@@ -28,7 +28,7 @@ class ValidationType(Enum):
 
 if TYPE_CHECKING:
     from labelbox import Client
-    from labelbox.alignerr.alignerr_project import AlignerrProject, AlignerrRole
+    from alignerr.alignerr_project import AlignerrProject, AlignerrRole
 
 
 class AlignerrProjectBuilder:
@@ -185,7 +185,7 @@ class AlignerrProjectBuilder:
         labelbox_project = self.client.create_project(**project_data)
 
         # Import here to avoid circular imports
-        from labelbox.alignerr.alignerr_project import AlignerrProject
+        from alignerr.alignerr_project import AlignerrProject
 
         alignerr_project = AlignerrProject(
             self.client, labelbox_project, _internal=True
@@ -254,7 +254,7 @@ class AlignerrProjectBuilder:
 
     def _validate_alignerr_rates(self):
         # Import here to avoid circular imports
-        from labelbox.alignerr.alignerr_project import AlignerrRole
+        from alignerr.alignerr_project import AlignerrRole
 
         required_role_rates = set(
             [AlignerrRole.Labeler.value, AlignerrRole.Reviewer.value]

@@ -78,7 +78,6 @@ from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.organization import Organization
 from labelbox.schema.project import Project
-from labelbox.alignerr.schema.project_rate import ProjectRateV2 as ProjectRate
 from labelbox.schema.project_model_config import ProjectModelConfig
 from labelbox.schema.project_overview import (
     ProjectOverview,

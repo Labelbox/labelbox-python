@@ -12,7 +12,7 @@ dependencies = [
     "tqdm>=4.66.2",
     "geojson>=3.1.0",
     "lbox-clients==1.1.2",
-    "PyYAML>=6.0",
+    "PyYAML>=6.0"
 ]
 readme = "README.md"
 requires-python = ">=3.9,<3.14"
@@ -55,6 +55,9 @@ data = [
     "pygeotile>=1.0.6",
     "typing-extensions>=4.10.0",
     "opencv-python-headless>=4.9.0.80",
+]
+alignerr = [
+    "lbox-alignerr>=0.1.0",
 ]
 
 [build-system]

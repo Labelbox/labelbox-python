@@ -3,13 +3,13 @@ from typing import TYPE_CHECKING, Optional
 
 import logging
 
-from labelbox.alignerr.schema.project_rate import ProjectRateV2
-from labelbox.alignerr.schema.project_domain import ProjectDomain
-from labelbox.alignerr.schema.enchanced_resource_tags import (
+from alignerr.schema.project_rate import ProjectRateV2
+from alignerr.schema.project_domain import ProjectDomain
+from alignerr.schema.enchanced_resource_tags import (
     EnhancedResourceTag,
     ResourceTagType,
 )
-from labelbox.alignerr.schema.project_boost_workforce import (
+from alignerr.schema.project_boost_workforce import (
     ProjectBoostWorkforce,
 )
 from labelbox.pagination import PaginatedCollection
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from labelbox import Client
     from labelbox.schema.project import Project
-    from labelbox.alignerr.schema.project_domain import ProjectDomain
+    from alignerr.schema.project_domain import ProjectDomain
 
 
 class AlignerrRole(Enum):
@@ -161,15 +161,19 @@ class AlignerrWorkspace:
         self.client = client
 
     def project_builder(self):
-        from labelbox.alignerr.alignerr_project_builder import (
+        from alignerr.alignerr_project_builder import (
             AlignerrProjectBuilder,
         )
 
         return AlignerrProjectBuilder(self.client)
 
     def project_prototype(self):
-        from labelbox.alignerr.alignerr_project_factory import (
+        from alignerr.alignerr_project_factory import (
             AlignerrProjectFactory,
         )
 
         return AlignerrProjectFactory(self.client)
+
+    @classmethod
+    def from_labelbox(cls, client: "Client") -> "AlignerrWorkspace":
+        return cls(client)
