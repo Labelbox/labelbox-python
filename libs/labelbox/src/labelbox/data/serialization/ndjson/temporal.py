@@ -63,7 +63,9 @@ def create_temporal_ndjson_classifications(
         elif isinstance(first_ann, TemporalClassificationQuestion):
             answers = _process_question_group(group_anns, parent_frames=None)
         else:
-            logger.warning(f"Unknown temporal annotation type: {type(first_ann)}")
+            logger.warning(
+                f"Unknown temporal annotation type: {type(first_ann)}"
+            )
             continue
 
         if answers:  # Only add if we have valid answers
@@ -99,7 +101,9 @@ def _process_text_group(
     for ann in annotations:
         for start, end, text_value in ann.value:
             # Validate frames against parent if provided
-            if parent_frames and not _is_frame_subset([(start, end)], parent_frames):
+            if parent_frames and not _is_frame_subset(
+                [(start, end)], parent_frames
+            ):
                 logger.warning(
                     f"Text value frames ({start}, {end}) not subset of parent frames {parent_frames}. Discarding."
                 )
@@ -127,7 +131,9 @@ def _process_text_group(
 
         # Assign nested classifications based on frame overlap
         if all_nested_classifications:
-            parent_frame_tuples = [(f["start"], f["end"]) for f in unique_frames]
+            parent_frame_tuples = [
+                (f["start"], f["end"]) for f in unique_frames
+            ]
             # Filter nested classifications that overlap with this text value's frames
             relevant_nested = _filter_classifications_by_overlap(
                 all_nested_classifications, parent_frame_tuples
@@ -138,7 +144,9 @@ def _process_text_group(
                     assigned_nested.add(id(cls))
 
                 # Pass ONLY THIS text value's frames so nested answers are filtered correctly
-                nested = _process_nested_classifications(relevant_nested, parent_frame_tuples)
+                nested = _process_nested_classifications(
+                    relevant_nested, parent_frame_tuples
+                )
                 if nested:
                     entry["classifications"] = nested
 
@@ -151,7 +159,11 @@ def _process_text_group(
                 if isinstance(cls, TemporalClassificationText):
                     frames_info = cls.value[0][:2] if cls.value else "no frames"
                 elif isinstance(cls, TemporalClassificationQuestion):
-                    frames_info = cls.value[0].frames if cls.value and cls.value[0].frames else "no frames"
+                    frames_info = (
+                        cls.value[0].frames
+                        if cls.value and cls.value[0].frames
+                        else "no frames"
+                    )
                 else:
                     frames_info = "unknown"
                 logger.warning(
@@ -204,7 +216,9 @@ def _process_question_group(
 
                 # Collect nested classifications at answer level
                 if answer.classifications:
-                    all_nested_by_answer[answer.name].extend(answer.classifications)
+                    all_nested_by_answer[answer.name].extend(
+                        answer.classifications
+                    )
 
     # Track which nested classifications were assigned
     assigned_nested = set()
@@ -225,7 +239,9 @@ def _process_question_group(
 
         # Assign nested classifications based on frame overlap
         if all_nested_by_answer[answer_name]:
-            parent_frame_tuples = [(f["start"], f["end"]) for f in unique_frames]
+            parent_frame_tuples = [
+                (f["start"], f["end"]) for f in unique_frames
+            ]
             # Filter nested classifications that overlap with this answer's frames
             relevant_nested = _filter_classifications_by_overlap(
                 all_nested_by_answer[answer_name], parent_frame_tuples
@@ -235,7 +251,9 @@ def _process_question_group(
                 for cls in relevant_nested:
                     assigned_nested.add(id(cls))
 
-                nested = _process_nested_classifications(relevant_nested, parent_frame_tuples)
+                nested = _process_nested_classifications(
+                    relevant_nested, parent_frame_tuples
+                )
                 if nested:
                     entry["classifications"] = nested
 
@@ -248,7 +266,11 @@ def _process_question_group(
                 if isinstance(cls, TemporalClassificationText):
                     frames_info = cls.value[0][:2] if cls.value else "no frames"
                 elif isinstance(cls, TemporalClassificationQuestion):
-                    frames_info = cls.value[0].frames if cls.value and cls.value[0].frames else "no frames"
+                    frames_info = (
+                        cls.value[0].frames
+                        if cls.value and cls.value[0].frames
+                        else "no frames"
+                    )
                 else:
                     frames_info = "unknown"
                 logger.warning(
@@ -260,7 +282,9 @@ def _process_question_group(
 
 
 def _process_nested_classifications(
-    classifications: List[Union[TemporalClassificationText, TemporalClassificationQuestion]],
+    classifications: List[
+        Union[TemporalClassificationText, TemporalClassificationQuestion]
+    ],
     parent_frames: List[Tuple[int, int]],
 ) -> List[Dict[str, Any]]:
     """
@@ -286,20 +310,26 @@ def _process_nested_classifications(
         elif isinstance(first_item, TemporalClassificationQuestion):
             answers = _process_question_group(group_items, parent_frames)
         else:
-            logger.warning(f"Unknown nested classification type: {type(first_item)}")
+            logger.warning(
+                f"Unknown nested classification type: {type(first_item)}"
+            )
             continue
 
         if answers:  # Only add if we have valid answers
-            results.append({
-                "name": display_name,
-                "answer": answers,
-            })
+            results.append(
+                {
+                    "name": display_name,
+                    "answer": answers,
+                }
+            )
 
     return results
 
 
 def _filter_classifications_by_overlap(
-    classifications: List[Union[TemporalClassificationText, TemporalClassificationQuestion]],
+    classifications: List[
+        Union[TemporalClassificationText, TemporalClassificationQuestion]
+    ],
     parent_frames: List[Tuple[int, int]],
 ) -> List[Union[TemporalClassificationText, TemporalClassificationQuestion]]:
     """

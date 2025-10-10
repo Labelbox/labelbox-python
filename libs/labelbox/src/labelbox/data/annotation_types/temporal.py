@@ -47,7 +47,11 @@ class TemporalClassificationAnswer(BaseModel):
         description="List of (start_frame, end_frame) tuples in milliseconds",
     )
     classifications: Optional[
-        List[Union["TemporalClassificationText", "TemporalClassificationQuestion"]]
+        List[
+            Union[
+                "TemporalClassificationText", "TemporalClassificationQuestion"
+            ]
+        ]
     ] = None
 
 
@@ -97,7 +101,11 @@ class TemporalClassificationText(BaseModel):
         description="List of (start_frame, end_frame, text_value) tuples",
     )
     classifications: Optional[
-        List[Union["TemporalClassificationText", "TemporalClassificationQuestion"]]
+        List[
+            Union[
+                "TemporalClassificationText", "TemporalClassificationQuestion"
+            ]
+        ]
     ] = None
 
 
@@ -175,7 +183,11 @@ class TemporalClassificationQuestion(BaseModel):
         description="List of temporal answer options",
     )
     classifications: Optional[
-        List[Union["TemporalClassificationText", "TemporalClassificationQuestion"]]
+        List[
+            Union[
+                "TemporalClassificationText", "TemporalClassificationQuestion"
+            ]
+        ]
     ] = None
 
 

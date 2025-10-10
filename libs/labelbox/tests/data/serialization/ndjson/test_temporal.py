@@ -18,7 +18,9 @@ def test_temporal_text_simple():
         )
     ]
 
-    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(
+        annotations, "test-global-key"
+    )
 
     assert len(result) == 1
     assert result[0].name == "transcription"
@@ -49,7 +51,9 @@ def test_temporal_question_radio():
         )
     ]
 
-    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(
+        annotations, "test-global-key"
+    )
 
     assert len(result) == 1
     assert result[0].name == "speaker"
@@ -78,14 +82,18 @@ def test_temporal_question_checklist():
         )
     ]
 
-    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(
+        annotations, "test-global-key"
+    )
 
     assert len(result) == 1
     assert result[0].name == "audio_quality"
     assert len(result[0].answer) == 2
 
     # Check background_noise answer
-    bg_noise = next(a for a in result[0].answer if a["name"] == "background_noise")
+    bg_noise = next(
+        a for a in result[0].answer if a["name"] == "background_noise"
+    )
     assert bg_noise["frames"] == [
         {"start": 0, "end": 1500},
         {"start": 2000, "end": 3000},
@@ -123,7 +131,9 @@ def test_temporal_text_nested():
         )
     ]
 
-    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(
+        annotations, "test-global-key"
+    )
 
     assert len(result) == 1
     assert result[0].name == "transcription"
@@ -185,7 +195,9 @@ def test_temporal_question_nested():
         )
     ]
 
-    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(
+        annotations, "test-global-key"
+    )
 
     assert len(result) == 1
     answer = result[0].answer[0]
@@ -218,7 +230,11 @@ def test_frame_validation_discard_invalid():
                             name="notes",
                             value=[
                                 (300, 800, "Valid note"),  # Within parent range
-                                (1700, 2000, "Invalid note"),  # Outside parent range
+                                (
+                                    1700,
+                                    2000,
+                                    "Invalid note",
+                                ),  # Outside parent range
                             ],
                         )
                     ],
@@ -227,7 +243,9 @@ def test_frame_validation_discard_invalid():
         )
     ]
 
-    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(
+        annotations, "test-global-key"
+    )
 
     # Find the nested notes classification
     answer = result[0].answer[0]
@@ -251,7 +269,9 @@ def test_frame_deduplication():
         )
     ]
 
-    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(
+        annotations, "test-global-key"
+    )
 
     # Should only have one entry
     assert len(result[0].answer) == 1
@@ -291,7 +311,9 @@ def test_mixed_text_and_question_nesting():
         )
     ]
 
-    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(
+        annotations, "test-global-key"
+    )
 
     assert len(result) == 1
     answer = result[0].answer[0]
@@ -341,14 +363,18 @@ def test_inductive_structure_text_with_shared_nested_radio():
         )
     ]
 
-    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(
+        annotations, "test-global-key"
+    )
 
     assert len(result) == 1
     assert result[0].name == "content_notes"
     assert len(result[0].answer) == 2
 
     # Check first text value: "Topic is relevant"
-    text1 = next(a for a in result[0].answer if a["value"] == "Topic is relevant")
+    text1 = next(
+        a for a in result[0].answer if a["value"] == "Topic is relevant"
+    )
     assert text1["frames"] == [{"start": 1000, "end": 1500}]
     assert "classifications" in text1
     assert len(text1["classifications"]) == 1
@@ -416,7 +442,9 @@ def test_inductive_structure_checklist_with_multiple_text_values():
         )
     ]
 
-    result = create_temporal_ndjson_classifications(annotations, "test-global-key")
+    result = create_temporal_ndjson_classifications(
+        annotations, "test-global-key"
+    )
 
     assert len(result) == 1
     assert result[0].name == "checklist_class"
@@ -432,7 +460,9 @@ def test_inductive_structure_checklist_with_multiple_text_values():
     assert len(text_cls["answer"]) == 2
 
     # Check first text value and its nested radio
-    text1 = next(a for a in text_cls["answer"] if a["value"] == "Topic is relevant")
+    text1 = next(
+        a for a in text_cls["answer"] if a["value"] == "Topic is relevant"
+    )
     assert text1["frames"] == [{"start": 1000, "end": 1500}]
     radio1 = text1["classifications"][0]
     assert radio1["name"] == "clarity_radio"

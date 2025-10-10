@@ -175,7 +175,10 @@ class NDLabel(BaseModel):
         temporal_annotations = [
             annot
             for annot in label.annotations
-            if isinstance(annot, (TemporalClassificationText, TemporalClassificationQuestion))
+            if isinstance(
+                annot,
+                (TemporalClassificationText, TemporalClassificationQuestion),
+            )
         ]
 
         if not temporal_annotations:

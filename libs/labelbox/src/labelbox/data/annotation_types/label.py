@@ -69,8 +69,22 @@ class Label(BaseModel):
     def object_annotations(self) -> List[ObjectAnnotation]:
         return self._get_annotations_by_type(ObjectAnnotation)
 
-    def classification_annotations(self) -> List[Union[ClassificationAnnotation, TemporalClassificationText, TemporalClassificationQuestion]]:
-        return self._get_annotations_by_type((ClassificationAnnotation, TemporalClassificationText, TemporalClassificationQuestion))
+    def classification_annotations(
+        self,
+    ) -> List[
+        Union[
+            ClassificationAnnotation,
+            TemporalClassificationText,
+            TemporalClassificationQuestion,
+        ]
+    ]:
+        return self._get_annotations_by_type(
+            (
+                ClassificationAnnotation,
+                TemporalClassificationText,
+                TemporalClassificationQuestion,
+            )
+        )
 
     def _get_annotations_by_type(self, annotation_type):
         return [
@@ -112,13 +126,26 @@ class Label(BaseModel):
                 (VideoObjectAnnotation, VideoClassificationAnnotation),
             ):
                 frame_dict[annotation.frame].append(annotation)
-            elif isinstance(annotation, (TemporalClassificationText, TemporalClassificationQuestion)):
+            elif isinstance(
+                annotation,
+                (TemporalClassificationText, TemporalClassificationQuestion),
+            ):
                 # For temporal annotations with multiple values/answers, use first frame
-                if isinstance(annotation, TemporalClassificationText) and annotation.value:
-                    frame_dict[annotation.value[0][0]].append(annotation)  # value[0][0] is start_frame
-                elif isinstance(annotation, TemporalClassificationQuestion) and annotation.value:
+                if (
+                    isinstance(annotation, TemporalClassificationText)
+                    and annotation.value
+                ):
+                    frame_dict[annotation.value[0][0]].append(
+                        annotation
+                    )  # value[0][0] is start_frame
+                elif (
+                    isinstance(annotation, TemporalClassificationQuestion)
+                    and annotation.value
+                ):
                     if annotation.value[0].frames:
-                        frame_dict[annotation.value[0].frames[0][0]].append(annotation)  # frames[0][0] is start_frame
+                        frame_dict[annotation.value[0].frames[0][0]].append(
+                            annotation
+                        )  # frames[0][0] is start_frame
         return dict(frame_dict)
 
     def add_url_to_masks(self, signer) -> "Label":

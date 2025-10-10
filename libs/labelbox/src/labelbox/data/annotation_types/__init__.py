@@ -67,7 +67,7 @@ from .mmc import (
 __all__ = [
     # Geometry
     "Line",
-    "Point", 
+    "Point",
     "Mask",
     "Polygon",
     "Rectangle",

@@ -74,4 +74,3 @@ class ClassificationAnnotation(
 
     value: Union[Text, Checklist, Radio]
     message_id: Optional[str] = None
-
