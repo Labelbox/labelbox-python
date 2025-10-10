@@ -4,8 +4,8 @@ import yaml
 from pathlib import Path
 import logging
 
-from labelbox.alignerr.schema.project_rate import BillingMode
-from labelbox.alignerr.schema.enchanced_resource_tags import ResourceTagType
+from alignerr.schema.project_rate import BillingMode
+from alignerr.schema.enchanced_resource_tags import ResourceTagType
 from labelbox.schema.media_type import MediaType
 
 logger = logging.getLogger(__name__)
@@ -84,10 +84,10 @@ class AlignerrProjectFactory:
                 )
 
         # Import here to avoid circular imports
-        from labelbox.alignerr.alignerr_project_builder import (
+        from alignerr.alignerr_project_builder import (
             AlignerrProjectBuilder,
         )
-        from labelbox.alignerr.alignerr_project import AlignerrRole
+        from alignerr.alignerr_project import AlignerrRole
 
         # Create project builder
         builder = AlignerrProjectBuilder(self.client)

@@ -4,7 +4,7 @@ import datetime
 import uuid
 
 import pytest
-from labelbox.alignerr.schema.project_rate import (
+from alignerr.schema.project_rate import (
     BillingMode,
     ProjectRateInput,
     ProjectRateV2,

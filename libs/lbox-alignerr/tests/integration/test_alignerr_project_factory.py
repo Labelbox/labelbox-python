@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 
 from labelbox import Client
-from labelbox.alignerr.alignerr_project_factory import AlignerrProjectFactory
-from labelbox.alignerr.alignerr_project_builder import ValidationType
+from alignerr.alignerr_project_factory import AlignerrProjectFactory
+from alignerr.alignerr_project_builder import ValidationType
 from labelbox.schema.media_type import MediaType
 
 
@@ -189,7 +189,7 @@ def test_create_alignerr_project_from_yaml_with_customer_rate(client: Client):
 
 def test_create_alignerr_project_from_yaml_with_domains(client: Client):
     """Test creating an AlignerrProject from YAML with domains configuration."""
-    from labelbox.alignerr.schema.project_domain import ProjectDomain
+    from alignerr.schema.project_domain import ProjectDomain
     import uuid
     import time
 
@@ -258,7 +258,7 @@ def test_create_alignerr_project_from_yaml_with_domains(client: Client):
 
 def test_create_alignerr_project_from_yaml_with_tags(client: Client):
     """Test creating an AlignerrProject from YAML with enhanced resource tags configuration."""
-    from labelbox.alignerr.schema.enchanced_resource_tags import (
+    from alignerr.schema.enchanced_resource_tags import (
         EnhancedResourceTag,
         ResourceTagType,
     )

@@ -395,7 +395,6 @@ class Entity(metaclass=EntityMeta):
         ProjectRole: Type[labelbox.ProjectRole]
         ProjectModelConfig: Type[labelbox.ProjectModelConfig]
         Project: Type[labelbox.Project]
-        ProjectRate: Type[labelbox.ProjectRate]
         Batch: Type[labelbox.Batch]
         CatalogSlice: Type[labelbox.CatalogSlice]
         ModelSlice: Type[labelbox.ModelSlice]

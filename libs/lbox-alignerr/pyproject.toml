@@ -1,0 +1,73 @@
+[project]
+name = "lbox-alignerr"
+version = "0.1.0"
+description = "Alignerr workspace management for Labelbox"
+authors = [
+    { name = "Labelbox", email = "engineering@labelbox.com" }
+]
+dependencies = [
+    "labelbox>=0.1.0",
+    "pydantic>=2.0.0",
+    "pyyaml>=6.0",
+]
+readme = "README.md"
+requires-python = ">= 3.9"
+
+classifiers=[
+    # How mature is this project?
+    "Development Status :: 2 - Pre-Alpha",
+    # Indicate who your project is intended for
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    # Pick your license as you wish
+    "License :: OSI Approved :: Apache Software License",
+     # Specify the Python versions you support here.
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+keywords = ["ml", "ai", "labelbox", "labeling", "llm", "machinelearning", "alignerr", "lbox-alignerr"]
+
+[project.urls]
+Homepage = "https://labelbox.com/"
+Documentation = "https://labelbox-python.readthedocs.io/en/latest/"
+Repository = "https://github.com/Labelbox/labelbox-python"
+Issues = "https://github.com/Labelbox/labelbox-python/issues"
+Changelog = "https://github.com/Labelbox/labelbox-python/blob/develop/libs/labelbox/CHANGELOG.md"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "pytest>=8.1.1",
+    "pytest-cases>=3.8.4",
+    "pytest-rerunfailures>=14.0",
+    "pytest-snapshot>=0.9.0",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.5.0",
+    "faker>=25.5.0",
+    "pytest-timestamper>=0.0.10",
+    "pytest-timeout>=2.3.1",
+    "pytest-order>=1.2.1",
+    "pyjwt>=2.9.0",
+]
+
+[tool.rye.scripts]
+unit = "pytest tests/unit"
+integration = "pytest tests/integration"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/alignerr"]
+
+[tool.pytest.ini_options]
+addopts = "-rP -vvv --durations=20 --cov=alignerr --import-mode=importlib"

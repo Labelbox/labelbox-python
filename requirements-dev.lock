@@ -6,10 +6,11 @@
 #   features: []
 #   all-features: true
 #   with-sources: false
-#   generate-hashes: false
-#   universal: false
 
 -e file:libs/labelbox
+    # via lbox-alignerr
+-e file:libs/lbox-alignerr
+    # via labelbox
 -e file:libs/lbox-clients
     # via labelbox
 -e file:libs/lbox-example
@@ -187,6 +188,7 @@ pyasn1-modules==0.4.0
 pydantic==2.8.2
     # via databooks
     # via labelbox
+    # via lbox-alignerr
 pydantic-core==2.20.1
     # via pydantic
 pygeotile==1.0.6
@@ -223,6 +225,7 @@ pytz==2024.1
     # via pandas
 pyyaml==6.0.3
     # via labelbox
+    # via lbox-alignerr
 pyzmq==26.0.3
     # via jupyter-client
 referencing==0.35.1
@@ -313,6 +316,7 @@ typer==0.12.3
     # via toml-cli
 types-pillow==10.2.0.20240520
 types-python-dateutil==2.9.0.20240316
+types-pyyaml==6.0.12.20250915
 types-requests==2.32.0.20240622
 types-tqdm==4.66.0.20240417
 typing-extensions==4.12.2

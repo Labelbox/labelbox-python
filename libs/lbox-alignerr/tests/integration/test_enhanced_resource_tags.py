@@ -6,7 +6,7 @@ These tests interact with the actual Labelbox API to verify EnhancedResourceTag 
 import pytest
 import uuid
 
-from labelbox.alignerr.schema.enchanced_resource_tags import (
+from alignerr.schema.enchanced_resource_tags import (
     EnhancedResourceTag,
     ResourceTagType,
 )
