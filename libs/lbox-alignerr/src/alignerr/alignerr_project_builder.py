@@ -169,9 +169,7 @@ class AlignerrProjectBuilder:
         self._project_owner_email = project_owner_email
         return self
 
-    def create(
-        self, skip_validation: Union[bool, List[ValidationType]] = False
-    ):
+    def create(self, skip_validation: Union[bool, List[ValidationType]] = False):
         if not skip_validation:
             self._validate()
         elif isinstance(skip_validation, list):
@@ -205,9 +203,7 @@ class AlignerrProjectBuilder:
 
     def _create_domains(self, alignerr_project: "AlignerrProject"):
         if self._domains:
-            logger.info(
-                f"Setting domains: {[domain.name for domain in self._domains]}"
-            )
+            logger.info(f"Setting domains: {[domain.name for domain in self._domains]}")
             domain_ids = [domain.uid for domain in self._domains]
             ProjectDomain.connect_project_to_domains(
                 client=self.client,
@@ -263,9 +259,7 @@ class AlignerrProjectBuilder:
         for role_name in self._alignerr_rates.keys():
             required_role_rates.remove(role_name)
         if len(required_role_rates) > 0:
-            raise ValueError(
-                f"Required role rates are not set: {required_role_rates}"
-            )
+            raise ValueError(f"Required role rates are not set: {required_role_rates}")
 
     def _validate_customer_rate(self):
         if self._customer_rate is None:

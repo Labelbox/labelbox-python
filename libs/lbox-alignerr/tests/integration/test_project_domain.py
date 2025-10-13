@@ -14,9 +14,7 @@ from labelbox.schema.media_type import MediaType
 def test_project(client):
     """Create a test project for domain testing."""
     project_name = f"Test Project Domain {uuid.uuid4()}"
-    project = client.create_project(
-        name=project_name, media_type=MediaType.Image
-    )
+    project = client.create_project(name=project_name, media_type=MediaType.Image)
 
     yield project
 
@@ -120,9 +118,7 @@ def test_search_project_domains(client, test_domains):
 
     # Test 2: Search by specific name - should find exact match
     target_domain = test_domains[0]
-    search_results = ProjectDomain.search(
-        client, search_by_name=target_domain.name
-    )
+    search_results = ProjectDomain.search(client, search_by_name=target_domain.name)
     found_domains = list(search_results)
     assert len(found_domains) >= 1
     assert any(domain.name == target_domain.name for domain in found_domains)

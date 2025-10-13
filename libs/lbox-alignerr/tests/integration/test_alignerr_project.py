@@ -16,9 +16,7 @@ from labelbox.schema.media_type import MediaType
 def test_project(client):
     """Create a test project for AlignerrProject testing."""
     project_name = f"Test AlignerrProject {uuid.uuid4()}"
-    project = client.create_project(
-        name=project_name, media_type=MediaType.Image
-    )
+    project = client.create_project(name=project_name, media_type=MediaType.Image)
 
     yield project
 
@@ -73,18 +71,14 @@ def test_alignerr_project_domains(client, test_alignerr_project):
     # The collection might be empty for a new project, which is expected
 
 
-def test_alignerr_project_get_project_rates_no_rates(
-    client, test_alignerr_project
-):
+def test_alignerr_project_get_project_rates_no_rates(client, test_alignerr_project):
     """Test get_project_rates() when no rates are set."""
     # For a new project without rates, this should return an empty list
     project_rates = test_alignerr_project.get_project_rates()
     assert project_rates == []
 
 
-def test_alignerr_project_set_and_get_project_rates(
-    client, test_alignerr_project
-):
+def test_alignerr_project_set_and_get_project_rates(client, test_alignerr_project):
     """Test setting and getting project rates."""
     # Create a project rate input for a customer rate (isBillRate=True requires empty rateForId)
     project_rate_input = ProjectRateInput(

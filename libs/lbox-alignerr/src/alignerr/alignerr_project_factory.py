@@ -19,9 +19,7 @@ class AlignerrProjectFactory:
     def __init__(self, client: "Client"):
         self.client = client
 
-    def create(
-        self, yaml_file_path: str, skip_validation: Union[bool, List] = False
-    ):
+    def create(self, yaml_file_path: str, skip_validation: Union[bool, List] = False):
         """
         Create an AlignerrProject from a YAML configuration file.
 
@@ -153,10 +151,7 @@ class AlignerrProjectFactory:
                     )
 
                 effective_until = None
-                if (
-                    "effective_until" in rate_config
-                    and rate_config["effective_until"]
-                ):
+                if "effective_until" in rate_config and rate_config["effective_until"]:
                     try:
                         effective_until = datetime.datetime.fromisoformat(
                             rate_config["effective_until"]
@@ -208,7 +203,7 @@ class AlignerrProjectFactory:
                 )
             except ValueError:
                 raise ValueError(
-                    f"Invalid effective_since date format for customer_rate. Use ISO format (YYYY-MM-DDTHH:MM:SS)"
+                    "Invalid effective_since date format for customer_rate. Use ISO format (YYYY-MM-DDTHH:MM:SS)"
                 )
 
             effective_until = None
@@ -222,7 +217,7 @@ class AlignerrProjectFactory:
                     )
                 except ValueError:
                     raise ValueError(
-                        f"Invalid effective_until date format for customer_rate. Use ISO format (YYYY-MM-DDTHH:MM:SS)"
+                        "Invalid effective_until date format for customer_rate. Use ISO format (YYYY-MM-DDTHH:MM:SS)"
                     )
 
             # Set the customer rate
@@ -257,9 +252,7 @@ class AlignerrProjectFactory:
                 required_tag_fields = ["text", "type"]
                 for field in required_tag_fields:
                     if field not in tag_config:
-                        raise ValueError(
-                            f"Required field '{field}' is missing for tag"
-                        )
+                        raise ValueError(f"Required field '{field}' is missing for tag")
 
                 # Validate tag type
                 try:
@@ -276,9 +269,7 @@ class AlignerrProjectFactory:
         if "project_owner" in config:
             project_owner_config = config["project_owner"]
             if not isinstance(project_owner_config, str):
-                raise ValueError(
-                    "'project_owner' must be a string (email address)"
-                )
+                raise ValueError("'project_owner' must be a string (email address)")
 
             builder.set_project_owner(project_owner_config)
 

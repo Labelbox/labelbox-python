@@ -256,9 +256,7 @@ def test_create_alignerr_project_with_project_owner(client: Client):
         project_boost_workforce = alignerr_project.get_project_owner()
 
         if project_boost_workforce:
-            assert (
-                project_boost_workforce.projectOwnerUserId == current_user.uid
-            )
+            assert project_boost_workforce.projectOwnerUserId == current_user.uid
             assert project_boost_workforce.projectOwner.uid == current_user.uid
 
         alignerr_project.project.delete()
@@ -266,7 +264,7 @@ def test_create_alignerr_project_with_project_owner(client: Client):
         # Clean up if test fails
         try:
             alignerr_project.project.delete()
-        except:
+        except Exception:
             pass
         raise e
 
@@ -300,15 +298,13 @@ def test_create_alignerr_project_selective_validation_skip_multiple(
         )
 
         assert alignerr_project is not None
-        assert (
-            alignerr_project.project.name == "TestAlignerrProjectSkipMultiple"
-        )
+        assert alignerr_project.project.name == "TestAlignerrProjectSkipMultiple"
 
         alignerr_project.project.delete()
     except Exception as e:
         # Clean up if test fails
         try:
             alignerr_project.project.delete()
-        except:
+        except Exception:
             pass
         raise e
