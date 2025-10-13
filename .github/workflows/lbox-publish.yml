@@ -104,8 +104,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
-          # ref: ${{ inputs.tag }}
           ref: ${{ inputs.tag }}
       - uses: ./.github/actions/python-package-shared-setup
         with:
