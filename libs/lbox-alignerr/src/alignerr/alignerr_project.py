@@ -33,9 +33,7 @@ class AlignerrRole(Enum):
 
 
 class AlignerrProject:
-    def __init__(
-        self, client: "Client", project: "Project", _internal: bool = False
-    ):
+    def __init__(self, client: "Client", project: "Project", _internal: bool = False):
         if not _internal:
             raise RuntimeError(
                 "AlignerrProject cannot be initialized directly. "

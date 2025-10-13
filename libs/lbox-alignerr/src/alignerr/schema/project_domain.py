@@ -208,9 +208,7 @@ class ProjectDomain(DbObject, Deletable):
         Returns:
             PaginatedCollection of ProjectDomain instances
         """
-        query_str = cls.query_by_project_id(
-            project_id, limit, offset, include_archived
-        )
+        query_str = cls.query_by_project_id(project_id, limit, offset, include_archived)
 
         params: Dict[str, Any] = {
             "projectId": project_id,

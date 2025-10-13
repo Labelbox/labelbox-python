@@ -50,16 +50,13 @@ def rand_gen():
     def gen(field_type):
         if field_type is str:
             return "".join(
-                ascii_letters[randint(0, len(ascii_letters) - 1)]
-                for _ in range(16)
+                ascii_letters[randint(0, len(ascii_letters) - 1)] for _ in range(16)
             )
 
         if field_type is datetime:
             return datetime.now()
 
-        raise Exception(
-            "Can't random generate for field type '%r'" % field_type
-        )
+        raise Exception("Can't random generate for field type '%r'" % field_type)
 
     return gen
 
@@ -95,9 +92,7 @@ def graphql_url(environ: str) -> str:
     elif environ == Environ.STAGING:
         return "https://api.lb-stage.xyz/graphql"
     elif environ == Environ.CUSTOM:
-        graphql_api_endpoint = os.environ.get(
-            "LABELBOX_TEST_GRAPHQL_API_ENDPOINT"
-        )
+        graphql_api_endpoint = os.environ.get("LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
         if graphql_api_endpoint is None:
             raise Exception("Missing LABELBOX_TEST_GRAPHQL_API_ENDPOINT")
         return graphql_api_endpoint
@@ -139,9 +134,7 @@ def testing_api_key(environ: Environ) -> str:
 def service_api_key() -> str:
     service_api_key = os.environ["SERVICE_API_KEY"]
     if service_api_key is None:
-        raise Exception(
-            "SERVICE_API_KEY is missing and needed for admin client"
-        )
+        raise Exception("SERVICE_API_KEY is missing and needed for admin client")
     return service_api_key
 
 
@@ -160,9 +153,7 @@ class IntegrationClient(Client):
 
     def execute(self, query=None, params=None, check_naming=True, **kwargs):
         if check_naming and query is not None:
-            assert (
-                re.match(r"\s*(?:query|mutation) \w+PyApi", query) is not None
-            )
+            assert re.match(r"\s*(?:query|mutation) \w+PyApi", query) is not None
         self.queries.append((query, params))
         if not kwargs.get("timeout"):
             kwargs["timeout"] = 30.0
@@ -199,9 +190,7 @@ class AdminClient(Client):
             requests.codes.created,
             requests.codes.ok,
         ]:
-            raise Exception(
-                "Failed to create org, message: " + str(data["message"])
-            )
+            raise Exception("Failed to create org, message: " + str(data["message"]))
 
         return data["id"]
 
@@ -227,15 +216,11 @@ class AdminClient(Client):
             requests.codes.created,
             requests.codes.ok,
         ]:
-            raise Exception(
-                "Failed to create user, message: " + str(data["message"])
-            )
+            raise Exception("Failed to create user, message: " + str(data["message"]))
 
         user_identity_id = data["identityId"]
 
-        endpoint = (
-            f"{self._admin_endpoint}/organizations/{organization_id}/users/"
-        )
+        endpoint = f"{self._admin_endpoint}/organizations/{organization_id}/users/"
         response = requests.post(
             endpoint,
             headers=self.headers,
@@ -248,8 +233,7 @@ class AdminClient(Client):
             requests.codes.ok,
         ]:
             raise Exception(
-                "Failed to create link user to org, message: "
-                + str(data["message"])
+                "Failed to create link user to org, message: " + str(data["message"])
             )
 
         user_id = data["id"]
@@ -265,8 +249,7 @@ class AdminClient(Client):
             requests.codes.ok,
         ]:
             raise Exception(
-                "Failed to create ephemeral user, message: "
-                + str(data["message"])
+                "Failed to create ephemeral user, message: " + str(data["message"])
             )
 
         token = data["token"]
@@ -309,11 +292,6 @@ class EphemeralClient(Client):
 @pytest.fixture
 def ephmeral_client() -> EphemeralClient:
     return EphemeralClient
-
-
-@pytest.fixture
-def admin_client() -> AdminClient:
-    return AdminClient
 
 
 @pytest.fixture
@@ -568,9 +546,7 @@ def data_row_and_global_key(dataset, image_url, rand_gen):
 # @pytest.mark.parametrize('data_rows', [<count of data rows>], indirect=True)
 # if omitted, count defaults to 1
 @pytest.fixture
-def data_rows(
-    dataset, image_url, request, wait_for_data_row_processing, client
-):
+def data_rows(dataset, image_url, request, wait_for_data_row_processing, client):
     count = 1
     if hasattr(request, "param"):
         count = request.param
@@ -659,9 +635,7 @@ def configured_project_with_label(
         5,  # priority between 1(Highest) - 5(lowest)
     )
     ontology = _setup_ontology(project, client)
-    label = _create_label(
-        project, data_row, ontology, wait_for_label_processing
-    )
+    label = _create_label(project, data_row, ontology, wait_for_label_processing)
     yield [project, dataset, data_row, label]
 
     teardown_helpers.teardown_project_labels_ontology_feature_schemas(project)
@@ -756,9 +730,7 @@ def configured_batch_project_with_label(
     project.data_row_ids = data_rows
 
     ontology = _setup_ontology(project, client)
-    label = _create_label(
-        project, data_row, ontology, wait_for_label_processing
-    )
+    label = _create_label(project, data_row, ontology, wait_for_label_processing)
 
     yield [project, dataset, data_row, label]
 
@@ -940,9 +912,7 @@ class ExportV2Helpers:
     ):
         task = None
         params = (
-            params
-            if params
-            else {"performance_details": False, "label_details": True}
+            params if params else {"performance_details": False, "label_details": True}
         )
         while num_retries > 0:
             task = dataset.export_v2(
@@ -965,9 +935,7 @@ class ExportV2Helpers:
     ):
         task = None
         params = (
-            params
-            if params
-            else {"performance_details": False, "label_details": True}
+            params if params else {"performance_details": False, "label_details": True}
         )
         catalog = client.get_catalog()
         while num_retries > 0:
@@ -1051,9 +1019,7 @@ def project_with_one_feature_ontology(project, client: Client):
         Tool(tool=Tool.Type.BBOX, name="test-bbox-class").asdict(),
     ]
     empty_ontology = {"tools": tools, "classifications": []}
-    ontology = client.create_ontology(
-        "empty ontology", empty_ontology, MediaType.Image
-    )
+    ontology = client.create_ontology("empty ontology", empty_ontology, MediaType.Image)
     project.connect_ontology(ontology)
     yield project
 
@@ -1092,9 +1058,7 @@ def configured_project_with_complex_ontology(
     ]
 
     classifications = [
-        Classification(
-            class_type=Classification.Type.TEXT, name="test-text-class"
-        ),
+        Classification(class_type=Classification.Type.TEXT, name="test-text-class"),
         Classification(
             class_type=Classification.Type.RADIO,
             name="test-radio-class",
@@ -1179,13 +1143,10 @@ class TearDownHelpers:
             for feature in ontology.normalized["classifications"]
         ]
         tool_feature_schema_ids = [
-            feature["featureSchemaId"]
-            for feature in ontology.normalized["tools"]
+            feature["featureSchemaId"] for feature in ontology.normalized["tools"]
         ]
 
-        feature_schema_ids = (
-            classification_feature_schema_ids + tool_feature_schema_ids
-        )
+        feature_schema_ids = classification_feature_schema_ids + tool_feature_schema_ids
         labels = list(project.labels())
         for label in labels:
             label.delete()
@@ -1196,9 +1157,7 @@ class TearDownHelpers:
             try:
                 project.client.delete_unused_feature_schema(feature_schema_id)
             except LabelboxError as e:
-                print(
-                    f"Failed to delete feature schema {feature_schema_id}: {e}"
-                )
+                print(f"Failed to delete feature schema {feature_schema_id}: {e}")
 
     @staticmethod
     def teardown_ontology_feature_schemas(ontology: Ontology):
@@ -1219,10 +1178,7 @@ class TearDownHelpers:
         ]
 
         tool_feature_schema_ids = (
-            [
-                feature["featureSchemaId"]
-                for feature in ontology.normalized["tools"]
-            ]
+            [feature["featureSchemaId"] for feature in ontology.normalized["tools"]]
             + [
                 classification["featureSchemaId"]
                 for tool in ontology.normalized["tools"]
@@ -1236,18 +1192,14 @@ class TearDownHelpers:
             ]
         )
 
-        feature_schema_ids = (
-            classification_feature_schema_ids + tool_feature_schema_ids
-        )
+        feature_schema_ids = classification_feature_schema_ids + tool_feature_schema_ids
 
         client.delete_unused_ontology(ontology_id)
         for feature_schema_id in feature_schema_ids:
             try:
                 project.client.delete_unused_feature_schema(feature_schema_id)
             except LabelboxError as e:
-                print(
-                    f"Failed to delete feature schema {feature_schema_id}: {e}"
-                )
+                print(f"Failed to delete feature schema {feature_schema_id}: {e}")
 
 
 class ModuleTearDownHelpers(TearDownHelpers): ...

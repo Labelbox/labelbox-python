@@ -18,9 +18,7 @@ def test_resource_tags(client):
     tags = []
 
     # Create multiple test tags with different types
-    for i, tag_type in enumerate(
-        [ResourceTagType.Default, ResourceTagType.Billing]
-    ):
+    for i, tag_type in enumerate([ResourceTagType.Default, ResourceTagType.Billing]):
         tag_text = f"Test_Tag_{i + 1}_{uuid.uuid4().hex[:8]}"
         tag_color = f"#{i:06x}"  # Generate different colors
         tag = EnhancedResourceTag.create(

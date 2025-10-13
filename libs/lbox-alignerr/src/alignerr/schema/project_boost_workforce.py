@@ -143,9 +143,7 @@ class ProjectBoostWorkforce(DbObject):
     projectDifficulty = Field.Enum(ProjectDifficulty, "projectDifficulty")
     projectDescription = Field.String("projectDescription")
     estimatedTimePerLabel = Field.Float("estimatedTimePerLabel")
-    disabledCountryRateMultipliers = Field.Boolean(
-        "disabledCountryRateMultipliers"
-    )
+    disabledCountryRateMultipliers = Field.Boolean("disabledCountryRateMultipliers")
     billingMode = Field.Enum(BillingMode, "billingMode")
     customerBillingMode = Field.Enum(BillingMode, "customerBillingMode")
     type = Field.Enum(ProjectBoostType, "type")
@@ -236,12 +234,8 @@ class ProjectBoostWorkforce(DbObject):
             }
         }"""
 
-        result = client.execute(
-            mutation_str, {"data": update_input.model_dump()}
-        )
-        return ProjectBoostWorkforceResult(
-            **result["updateProjectBoostWorkforce"]
-        )
+        result = client.execute(mutation_str, {"data": update_input.model_dump()})
+        return ProjectBoostWorkforceResult(**result["updateProjectBoostWorkforce"])
 
     @classmethod
     def set_project_owner(

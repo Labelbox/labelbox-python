@@ -17,9 +17,7 @@ def test_create_alignerr_project_from_yaml_basic(client: Client):
     """Test creating an AlignerrProject from a basic YAML configuration."""
     config = {"name": "TestFactoryProject", "media_type": "IMAGE"}
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config, f)
         yaml_file_path = f.name
 
@@ -56,9 +54,7 @@ def test_create_alignerr_project_from_yaml_with_rates(client: Client):
         },
     }
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config, f)
         yaml_file_path = f.name
 
@@ -87,18 +83,14 @@ def test_create_alignerr_project_from_yaml_validation_error(client: Client):
         # Missing media_type
     }
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config, f)
         yaml_file_path = f.name
 
     try:
         factory = AlignerrProjectFactory(client)
 
-        with pytest.raises(
-            ValueError, match="Required field 'media_type' is missing"
-        ):
+        with pytest.raises(ValueError, match="Required field 'media_type' is missing"):
             factory.create(yaml_file_path)
     finally:
         os.unlink(yaml_file_path)
@@ -108,9 +100,7 @@ def test_create_alignerr_project_from_yaml_invalid_media_type(client: Client):
     """Test that invalid media types raise appropriate errors."""
     config = {"name": "TestProject", "media_type": "INVALID_MEDIA_TYPE"}
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config, f)
         yaml_file_path = f.name
 
@@ -156,9 +146,7 @@ def test_create_alignerr_project_from_yaml_with_customer_rate(client: Client):
         },
     }
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config, f)
         yaml_file_path = f.name
 
@@ -169,18 +157,13 @@ def test_create_alignerr_project_from_yaml_with_customer_rate(client: Client):
         )
 
         assert alignerr_project is not None
-        assert (
-            alignerr_project.project.name
-            == "TestFactoryProjectWithCustomerRate"
-        )
+        assert alignerr_project.project.name == "TestFactoryProjectWithCustomerRate"
         assert alignerr_project.project.media_type == MediaType.Image
 
         # Verify rates were set
         project_rates = alignerr_project.get_project_rates()
         assert isinstance(project_rates, list)
-        assert (
-            len(project_rates) >= 2
-        )  # Should have both labeler and reviewer rates
+        assert len(project_rates) >= 2  # Should have both labeler and reviewer rates
 
         alignerr_project.project.delete()
     finally:
@@ -226,9 +209,7 @@ def test_create_alignerr_project_from_yaml_with_domains(client: Client):
         "domains": [domain1_name, domain2_name],
     }
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config, f)
         yaml_file_path = f.name
 
@@ -307,9 +288,7 @@ def test_create_alignerr_project_from_yaml_with_tags(client: Client):
         ],
     }
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config, f)
         yaml_file_path = f.name
 
@@ -325,11 +304,6 @@ def test_create_alignerr_project_from_yaml_with_tags(client: Client):
         # Verify resource tags were added
         enhanced_tags = alignerr_project.get_tags()
         assert len(enhanced_tags) >= 1  # At least one tag should be present
-
-        # Check that our specific tags are present (if any)
-        tag_texts = [tag.text for tag in enhanced_tags]
-        # Note: The tag matching might not work perfectly due to how the builder processes tags
-        # So we just verify that tags were processed
 
         alignerr_project.project.delete()
     finally:
@@ -370,9 +344,7 @@ def test_create_alignerr_project_from_yaml_with_project_owner(client: Client):
         "project_owner": current_user.email,
     }
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config, f)
         yaml_file_path = f.name
 
@@ -386,9 +358,7 @@ def test_create_alignerr_project_from_yaml_with_project_owner(client: Client):
         # Verify project owner was set
         project_boost_workforce = alignerr_project.get_project_owner()
         if project_boost_workforce:
-            assert (
-                project_boost_workforce.projectOwnerUserId == current_user.uid
-            )
+            assert project_boost_workforce.projectOwnerUserId == current_user.uid
             assert project_boost_workforce.projectOwner.uid == current_user.uid
 
         alignerr_project.project.delete()
@@ -403,9 +373,7 @@ def test_create_alignerr_project_from_yaml_comprehensive(client: Client):
 
     # Path to the comprehensive test YAML file
     yaml_file_path = (
-        Path(__file__).parent.parent
-        / "assets"
-        / "test_project_comprehensive.yaml"
+        Path(__file__).parent.parent / "assets" / "test_project_comprehensive.yaml"
     )
 
     # Read and modify the YAML to use current user's email and remove domains/tags that require existing resources
@@ -422,9 +390,7 @@ def test_create_alignerr_project_from_yaml_comprehensive(client: Client):
         del config["tags"]
 
     # Create temporary YAML file with updated config
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config, f)
         temp_yaml_path = f.name
 
@@ -444,9 +410,7 @@ def test_create_alignerr_project_from_yaml_comprehensive(client: Client):
         # Verify project owner was set
         project_boost_workforce = alignerr_project.get_project_owner()
         if project_boost_workforce:
-            assert (
-                project_boost_workforce.projectOwnerUserId == current_user.uid
-            )
+            assert project_boost_workforce.projectOwnerUserId == current_user.uid
 
         alignerr_project.project.delete()
     finally:
@@ -478,9 +442,7 @@ def test_create_alignerr_project_from_yaml_selective_validation(client: Client):
         # Note: No project owner set, but we skip that validation
     }
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config, f)
         yaml_file_path = f.name
 
@@ -492,10 +454,7 @@ def test_create_alignerr_project_from_yaml_selective_validation(client: Client):
         )
 
         assert alignerr_project is not None
-        assert (
-            alignerr_project.project.name
-            == "TestFactoryProjectSelectiveValidation"
-        )
+        assert alignerr_project.project.name == "TestFactoryProjectSelectiveValidation"
 
         alignerr_project.project.delete()
     finally:
@@ -515,9 +474,7 @@ def test_create_alignerr_project_from_yaml_invalid_customer_rate(
         },
     }
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config, f)
         yaml_file_path = f.name
 
@@ -543,9 +500,7 @@ def test_create_alignerr_project_from_yaml_invalid_tags(client: Client):
         ],
     }
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(config, f)
         yaml_file_path = f.name
 

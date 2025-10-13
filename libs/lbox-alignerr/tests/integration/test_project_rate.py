@@ -16,9 +16,7 @@ from labelbox.schema.media_type import MediaType
 def test_project(client):
     """Create a test project for ProjectRateV2 testing."""
     project_name = f"Test ProjectRateV2 {uuid.uuid4()}"
-    project = client.create_project(
-        name=project_name, media_type=MediaType.Image
-    )
+    project = client.create_project(name=project_name, media_type=MediaType.Image)
 
     yield project
 
@@ -32,9 +30,7 @@ def test_project(client):
 def test_project_rate_input_validation():
     """Test ProjectRateInput validation logic."""
     # Test negative rate validation
-    with pytest.raises(
-        ValueError, match="Rate must be greater than or equal to 0"
-    ):
+    with pytest.raises(ValueError, match="Rate must be greater than or equal to 0"):
         ProjectRateInput(
             rateForId="",
             isBillRate=True,
@@ -75,9 +71,7 @@ def test_set_and_get_project_rate_customer(client, test_project):
     )
 
     # Set the project rate
-    result = ProjectRateV2.set_project_rate(
-        client, test_project.uid, rate_input
-    )
+    result = ProjectRateV2.set_project_rate(client, test_project.uid, rate_input)
     assert result is True
 
     # Get the project rates back
