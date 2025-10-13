@@ -7,7 +7,7 @@ import datetime
 import uuid
 
 import pytest
-from alignerr.alignerr_project import AlignerrProject
+from alignerr.alignerr_project import AlignerrProject, AlignerrWorkspace
 from alignerr.schema.project_rate import BillingMode, ProjectRateInput
 from labelbox.schema.media_type import MediaType
 
@@ -31,7 +31,8 @@ def test_project(client):
 def test_alignerr_project(client, test_project):
     """Create a test AlignerrProject instance using the builder pattern."""
     return (
-        client.alignerr_workspace.project_builder()
+        AlignerrWorkspace.from_labelbox(client)
+        .project_builder()
         .set_name(test_project.name)
         .set_media_type(test_project.media_type)
         .create(skip_validation=True)

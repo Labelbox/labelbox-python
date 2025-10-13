@@ -2,7 +2,7 @@
 
 import datetime
 from labelbox import Client
-from alignerr.alignerr_project import AlignerrRole
+from alignerr.alignerr_project import AlignerrRole, AlignerrWorkspace
 from alignerr.schema.project_rate import BillingMode
 from labelbox.schema.media_type import MediaType
 import pytest
@@ -10,7 +10,8 @@ import pytest
 
 def test_skip_validation(client: Client):
     alignerr_project = (
-        client.alignerr_workspace.project_builder()
+        AlignerrWorkspace.from_labelbox(client)
+        .project_builder()
         .set_name("TestAlignerrProject")
         .set_media_type(MediaType.Image)
         .set_alignerr_role_rate(
@@ -29,7 +30,7 @@ def test_skip_validation(client: Client):
 
 def test_create_alignerr_project_using_builder_validate_input(client: Client):
     with pytest.raises(ValueError):
-        client.alignerr_workspace.project_builder().set_name(
+        AlignerrWorkspace.from_labelbox(client).project_builder().set_name(
             "TestAlignerrProject"
         ).set_media_type(MediaType.Image).set_alignerr_role_rate(
             role_name=AlignerrRole.Labeler,
@@ -42,7 +43,8 @@ def test_create_alignerr_project_using_builder_validate_input(client: Client):
     current_user = client.get_user()
 
     alignerr_project = (
-        client.alignerr_workspace.project_builder()
+        AlignerrWorkspace.from_labelbox(client)
+        .project_builder()
         .set_name("TestAlignerrProject2")
         .set_media_type(MediaType.Image)
         .set_alignerr_role_rate(
@@ -91,7 +93,8 @@ def test_create_alignerr_project_using_builder_add_domains(client: Client):
     try:
         # Add domains using set_domains method
         alignerr_project = (
-            client.alignerr_workspace.project_builder()
+            AlignerrWorkspace.from_labelbox(client)
+            .project_builder()
             .set_name("TestAlignerrProject3")
             .set_media_type(MediaType.Image)
             .set_domains([domain1_name, domain2_name])
@@ -158,7 +161,8 @@ def test_create_alignerr_project_with_rates_domains_and_resource_tags(
 
         # Create project with rates, domains, and resource tags
         alignerr_project = (
-            client.alignerr_workspace.project_builder()
+            AlignerrWorkspace.from_labelbox(client)
+            .project_builder()
             .set_name("TestAlignerrProjectWithAll")
             .set_media_type(MediaType.Image)
             .set_alignerr_role_rate(
@@ -225,7 +229,8 @@ def test_create_alignerr_project_with_project_owner(client: Client):
     try:
         # Create project with project owner using email
         alignerr_project = (
-            client.alignerr_workspace.project_builder()
+            AlignerrWorkspace.from_labelbox(client)
+            .project_builder()
             .set_name("TestAlignerrProjectWithOwner")
             .set_media_type(MediaType.Image)
             .set_alignerr_role_rate(
@@ -278,7 +283,8 @@ def test_create_alignerr_project_selective_validation_skip_multiple(
     try:
         # Create project skipping multiple validations
         alignerr_project = (
-            client.alignerr_workspace.project_builder()
+            AlignerrWorkspace.from_labelbox(client)
+            .project_builder()
             .set_name("TestAlignerrProjectSkipMultiple")
             .set_media_type(MediaType.Image)
             .set_alignerr_role_rate(
