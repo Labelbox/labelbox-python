@@ -13,6 +13,10 @@ from .geometry import Mask
 from .metrics import ScalarMetric, ConfusionMatrixMetric
 from .video import VideoClassificationAnnotation
 from .video import VideoObjectAnnotation, VideoMaskAnnotation
+from .temporal import (
+    TemporalClassificationText,
+    TemporalClassificationQuestion,
+)
 from .mmc import MessageEvaluationTaskAnnotation
 from pydantic import BaseModel, field_validator
 
@@ -44,6 +48,8 @@ class Label(BaseModel):
             ClassificationAnnotation,
             ObjectAnnotation,
             VideoMaskAnnotation,
+            TemporalClassificationText,
+            TemporalClassificationQuestion,
             ScalarMetric,
             ConfusionMatrixMetric,
             RelationshipAnnotation,
@@ -63,8 +69,22 @@ class Label(BaseModel):
     def object_annotations(self) -> List[ObjectAnnotation]:
         return self._get_annotations_by_type(ObjectAnnotation)
 
-    def classification_annotations(self) -> List[ClassificationAnnotation]:
-        return self._get_annotations_by_type(ClassificationAnnotation)
+    def classification_annotations(
+        self,
+    ) -> List[
+        Union[
+            ClassificationAnnotation,
+            TemporalClassificationText,
+            TemporalClassificationQuestion,
+        ]
+    ]:
+        return self._get_annotations_by_type(
+            (
+                ClassificationAnnotation,
+                TemporalClassificationText,
+                TemporalClassificationQuestion,
+            )
+        )
 
     def _get_annotations_by_type(self, annotation_type):
         return [
@@ -75,7 +95,30 @@ class Label(BaseModel):
 
     def frame_annotations(
         self,
-    ) -> Dict[str, Union[VideoObjectAnnotation, VideoClassificationAnnotation]]:
+    ) -> Dict[
+        Union[int, None],
+        List[
+            Union[
+                VideoObjectAnnotation,
+                VideoClassificationAnnotation,
+                TemporalClassificationText,
+                TemporalClassificationQuestion,
+            ]
+        ],
+    ]:
+        """Get temporal annotations organized by frame
+
+        Returns:
+            Dict[int, List]: Dictionary mapping frame (milliseconds) to list of temporal annotations
+
+        Example:
+            >>> label.frame_annotations()
+            {2500: [VideoClassificationAnnotation(...), TemporalClassificationText(...)]}
+
+        Note:
+            For TemporalClassificationText/Question, returns dictionary mapping to start of first frame range.
+            These annotations may have multiple discontinuous frame ranges.
+        """
         frame_dict = defaultdict(list)
         for annotation in self.annotations:
             if isinstance(
@@ -83,7 +126,27 @@ class Label(BaseModel):
                 (VideoObjectAnnotation, VideoClassificationAnnotation),
             ):
                 frame_dict[annotation.frame].append(annotation)
-        return frame_dict
+            elif isinstance(
+                annotation,
+                (TemporalClassificationText, TemporalClassificationQuestion),
+            ):
+                # For temporal annotations with multiple values/answers, use first frame
+                if (
+                    isinstance(annotation, TemporalClassificationText)
+                    and annotation.value
+                ):
+                    frame_dict[annotation.value[0][0]].append(
+                        annotation
+                    )  # value[0][0] is start_frame
+                elif (
+                    isinstance(annotation, TemporalClassificationQuestion)
+                    and annotation.value
+                ):
+                    if annotation.value[0].frames:
+                        frame_dict[annotation.value[0].frames[0][0]].append(
+                            annotation
+                        )  # frames[0][0] is start_frame
+        return dict(frame_dict)
 
     def add_url_to_masks(self, signer) -> "Label":
         """

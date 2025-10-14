@@ -24,6 +24,12 @@ from ...annotation_types.video import (
     VideoMaskAnnotation,
     VideoObjectAnnotation,
 )
+from typing import List
+from ...annotation_types.temporal import (
+    TemporalClassificationText,
+    TemporalClassificationQuestion,
+)
+from .temporal import create_temporal_ndjson_classifications
 from labelbox.types import DocumentRectangle, DocumentEntity
 from .classification import (
     NDChecklistSubclass,
@@ -69,6 +75,7 @@ class NDLabel(BaseModel):
             yield from cls._create_relationship_annotations(label)
             yield from cls._create_non_video_annotations(label)
             yield from cls._create_video_annotations(label)
+            yield from cls._create_temporal_classifications(label)
 
     @staticmethod
     def _get_consecutive_frames(
@@ -160,6 +167,33 @@ class NDLabel(BaseModel):
                 yield NDObject.from_common(segments, label.data)
 
     @classmethod
+    def _create_temporal_classifications(
+        cls, label: Label
+    ) -> Generator[BaseModel, None, None]:
+        """Create temporal annotations with nested classifications using new temporal classes."""
+        # Extract temporal annotations from the label
+        temporal_annotations = [
+            annot
+            for annot in label.annotations
+            if isinstance(
+                annot,
+                (TemporalClassificationText, TemporalClassificationQuestion),
+            )
+        ]
+
+        if not temporal_annotations:
+            return
+
+        # Use the new temporal serializer to create NDJSON annotations
+        ndjson_annotations = create_temporal_ndjson_classifications(
+            temporal_annotations, label.data.global_key
+        )
+
+        # Yield each NDJSON annotation
+        for annotation in ndjson_annotations:
+            yield annotation
+
+    @classmethod
     def _create_non_video_annotations(cls, label: Label):
         non_video_annotations = [
             annot
@@ -170,6 +204,8 @@ class NDLabel(BaseModel):
                     VideoClassificationAnnotation,
                     VideoObjectAnnotation,
                     VideoMaskAnnotation,
+                    TemporalClassificationText,
+                    TemporalClassificationQuestion,
                     RelationshipAnnotation,
                 ),
             )
@@ -187,7 +223,7 @@ class NDLabel(BaseModel):
                 yield NDMessageTask.from_common(annotation, label.data)
             else:
                 raise TypeError(
-                    f"Unable to convert object to MAL format. `{type(getattr(annotation, 'value',annotation))}`"
+                    f"Unable to convert object to MAL format. `{type(getattr(annotation, 'value', annotation))}`"
                 )
 
     @classmethod
