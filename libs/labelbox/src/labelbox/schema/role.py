@@ -23,6 +23,7 @@ def get_roles(client: "Client") -> Dict[str, "Role"]:
 
 
 def format_role(name: str):
+    # Convert to uppercase and replace spaces with underscores
     return name.upper().replace(" ", "_")
 
 
