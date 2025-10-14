@@ -33,9 +33,9 @@ def test_overlapping_objects(tool_examples):
             if len(getattr(example, expected_attr_name)) == 0:
                 assert len(metrics) == 0
             else:
-                assert metrics == getattr(
-                    example, expected_attr_name
-                ), f"{example.predictions},{example.ground_truths}"
+                assert metrics == getattr(example, expected_attr_name), (
+                    f"{example.predictions},{example.ground_truths}"
+                )
 
 
 @parametrize(
@@ -52,6 +52,6 @@ def test_overlapping_classifications(tool_examples):
         if len(example.expected) == 0:
             assert len(metrics) == 0
         else:
-            assert (
-                metrics == example.expected
-            ), f"{example.predictions},{example.ground_truths}"
+            assert metrics == example.expected, (
+                f"{example.predictions},{example.ground_truths}"
+            )

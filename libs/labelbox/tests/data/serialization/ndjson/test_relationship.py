@@ -403,7 +403,9 @@ def test_source_ontology_name_relationship():
                 type=Relationship.Type.UNIDIRECTIONAL,
             ),
         )
-        assert False, "Expected ValueError for providing both source and source_ontology_name"
+        assert False, (
+            "Expected ValueError for providing both source and source_ontology_name"
+        )
     except Exception as e:
         assert (
             "Value error, Only one of 'source' or 'source_ontology_name' may be provided"
@@ -419,7 +421,9 @@ def test_source_ontology_name_relationship():
                 type=Relationship.Type.UNIDIRECTIONAL,
             ),
         )
-        assert False, "Expected ValueError for providing neither source nor source_ontology_name"
+        assert False, (
+            "Expected ValueError for providing neither source nor source_ontology_name"
+        )
     except Exception as e:
         assert (
             "Value error, Either source or source_ontology_name must be provided"

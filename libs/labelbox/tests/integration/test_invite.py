@@ -172,9 +172,9 @@ def test_project_invite_after_project_deletion(client, dummy_email):
     assert found_invite is not None, f"Invite for {dummy_email} not found"
 
     # Verify only one project role remains
-    assert (
-        len(found_invite.project_roles) == 1
-    ), "Expected only one project role"
+    assert len(found_invite.project_roles) == 1, (
+        "Expected only one project role"
+    )
     assert found_invite.project_roles[0].project.uid == project2.uid
 
     # Cleanup

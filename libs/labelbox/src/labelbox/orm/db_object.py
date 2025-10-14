@@ -76,8 +76,7 @@ class DbObject(Entity):
                     value = value.replace(tzinfo=timezone.utc)
                 except ValueError:
                     logger.warning(
-                        "Failed to convert value '%s' to datetime for "
-                        "field %s",
+                        "Failed to convert value '%s' to datetime for field %s",
                         value,
                         field,
                     )

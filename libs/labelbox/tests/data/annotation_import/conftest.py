@@ -1929,12 +1929,12 @@ def model_run_with_data_rows(
         model_run_predictions,
     )
     upload_task.wait_until_done()
-    assert (
-        upload_task.state == AnnotationImportState.FINISHED
-    ), "Label Import did not finish"
-    assert (
-        len(upload_task.errors) == 0
-    ), f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
+    assert upload_task.state == AnnotationImportState.FINISHED, (
+        "Label Import did not finish"
+    )
+    assert len(upload_task.errors) == 0, (
+        f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
+    )
     labels = wait_for_label_processing(configured_project)
     label_ids = [label.uid for label in labels]
     model_run.upsert_labels(label_ids)
@@ -1963,12 +1963,12 @@ def model_run_with_all_project_labels(
         model_run_predictions,
     )
     upload_task.wait_until_done()
-    assert (
-        upload_task.state == AnnotationImportState.FINISHED
-    ), "Label Import did not finish"
-    assert (
-        len(upload_task.errors) == 0
-    ), f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
+    assert upload_task.state == AnnotationImportState.FINISHED, (
+        "Label Import did not finish"
+    )
+    assert len(upload_task.errors) == 0, (
+        f"Label Import {upload_task.name} failed with errors {upload_task.errors}"
+    )
     labels = wait_for_label_processing(configured_project)
     label_ids = [label.uid for label in labels]
     model_run.upsert_labels(label_ids)

@@ -402,5 +402,5 @@ class WorkflowSerializer:
             if isinstance(node, LogicNode):
                 logger.info(f"Filters for node {node.id} ({node.name}):")
                 for i, f in enumerate(node.get_parsed_filters()):
-                    logger.info(f"  Filter {i+1}:")
+                    logger.info(f"  Filter {i + 1}:")
                     logger.info(f"  {json.dumps(f, indent=2)}")

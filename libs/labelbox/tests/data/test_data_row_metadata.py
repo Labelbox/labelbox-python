@@ -165,9 +165,9 @@ def test_large_bulk_upsert_datarow_metadata(big_dataset, mdo):
         for metadata in mdo.bulk_export(data_row_ids)
     }
     for data_row_id in data_row_ids:
-        assert len(
-            [f for f in metadata_lookup.get(data_row_id).fields]
-        ), metadata_lookup.get(data_row_id).fields
+        assert len([f for f in metadata_lookup.get(data_row_id).fields]), (
+            metadata_lookup.get(data_row_id).fields
+        )
 
 
 def test_upsert_datarow_metadata_by_name(data_row, mdo):
@@ -179,9 +179,9 @@ def test_upsert_datarow_metadata_by_name(data_row, mdo):
         metadata.data_row_id: metadata
         for metadata in mdo.bulk_export([data_row.uid])
     }
-    assert len(
-        [f for f in metadata_lookup.get(data_row.uid).fields]
-    ), metadata_lookup.get(data_row.uid).fields
+    assert len([f for f in metadata_lookup.get(data_row.uid).fields]), (
+        metadata_lookup.get(data_row.uid).fields
+    )
 
 
 def test_upsert_datarow_metadata_option_by_name(data_row, mdo):

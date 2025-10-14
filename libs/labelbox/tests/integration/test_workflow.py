@@ -84,9 +84,9 @@ def test_workflow_creation(client, test_projects):
     nodes = updated_workflow.get_nodes()
     edges = updated_workflow.get_edges()
 
-    assert (
-        len(nodes) == 4
-    ), "Should have 4 nodes (2 initial + 1 review + 1 done)"
+    assert len(nodes) == 4, (
+        "Should have 4 nodes (2 initial + 1 review + 1 done)"
+    )
     assert len(edges) == 3, "Should have 3 edges"
 
     node_types = [node.definition_id for node in nodes]
@@ -140,28 +140,28 @@ def test_workflow_creation_simple(client):
         edges = updated_workflow.get_edges()
 
         # Verify node count
-        assert (
-            len(nodes) == 5
-        ), "Should have 5 nodes (2 initial + 1 review + 1 done + 1 rework)"
+        assert len(nodes) == 5, (
+            "Should have 5 nodes (2 initial + 1 review + 1 done + 1 rework)"
+        )
 
         # Verify edge count
         assert len(edges) == 4, "Should have 4 edges"
 
         # Verify node types exist
         node_types = [node.definition_id for node in nodes]
-        assert (
-            WorkflowDefinitionId.InitialLabelingTask in node_types
-        ), "Should have InitialLabelingTask"
-        assert (
-            WorkflowDefinitionId.InitialReworkTask in node_types
-        ), "Should have InitialReworkTask"
-        assert (
-            WorkflowDefinitionId.ReviewTask in node_types
-        ), "Should have ReviewTask"
+        assert WorkflowDefinitionId.InitialLabelingTask in node_types, (
+            "Should have InitialLabelingTask"
+        )
+        assert WorkflowDefinitionId.InitialReworkTask in node_types, (
+            "Should have InitialReworkTask"
+        )
+        assert WorkflowDefinitionId.ReviewTask in node_types, (
+            "Should have ReviewTask"
+        )
         assert WorkflowDefinitionId.Done in node_types, "Should have Done node"
-        assert (
-            WorkflowDefinitionId.SendToRework in node_types
-        ), "Should have SendToRework node"
+        assert WorkflowDefinitionId.SendToRework in node_types, (
+            "Should have SendToRework node"
+        )
 
         # Verify review node has correct name
         review_nodes = [
@@ -170,9 +170,9 @@ def test_workflow_creation_simple(client):
             if node.definition_id == WorkflowDefinitionId.ReviewTask
         ]
         assert len(review_nodes) == 1, "Should have exactly 1 review node"
-        assert (
-            review_nodes[0].name == "Test review task"
-        ), "Review node should have correct name"
+        assert review_nodes[0].name == "Test review task", (
+            "Review node should have correct name"
+        )
 
         # Verify initial labeling node has correct instructions
         initial_labeling_nodes = [
@@ -180,9 +180,9 @@ def test_workflow_creation_simple(client):
             for node in nodes
             if node.definition_id == WorkflowDefinitionId.InitialLabelingTask
         ]
-        assert (
-            len(initial_labeling_nodes) == 1
-        ), "Should have exactly 1 initial labeling node"
+        assert len(initial_labeling_nodes) == 1, (
+            "Should have exactly 1 initial labeling node"
+        )
         assert (
             initial_labeling_nodes[0].instructions == "This is the entry point"
         ), "Initial labeling node should have correct instructions"
@@ -303,9 +303,9 @@ def test_workflow_update_without_reset(client, test_projects):
     final_workflow = source_project.get_workflow()
     final_nodes = final_workflow.get_nodes()
 
-    assert (
-        len(final_nodes) == 6
-    ), "Should have 6 nodes after adding logic and done nodes"
+    assert len(final_nodes) == 6, (
+        "Should have 6 nodes after adding logic and done nodes"
+    )
 
     # Verify property updates
     initial_labeling_nodes = [
@@ -491,9 +491,9 @@ def test_production_logic_node_with_comprehensive_filters(
     production_logic = logic_nodes[0]
     filters = production_logic.get_parsed_filters()
 
-    assert (
-        len(filters) >= 10
-    ), f"Should have at least 10 filters, got {len(filters)}"
+    assert len(filters) >= 10, (
+        f"Should have at least 10 filters, got {len(filters)}"
+    )
 
     # Verify filter logic is properly set
     assert production_logic.filter_logic in [
@@ -554,9 +554,9 @@ def test_filter_operations_with_persistence(client, test_projects):
 
     initial_filters = logic_node.get_parsed_filters()
     initial_count = len(initial_filters)
-    assert (
-        initial_count == 3
-    ), f"Should start with 3 filters, got {initial_count}"
+    assert initial_count == 3, (
+        f"Should start with 3 filters, got {initial_count}"
+    )
 
     # Test removing filters with persistence
     logic_node.remove_filter(FilterField.LabeledBy)
@@ -573,17 +573,17 @@ def test_filter_operations_with_persistence(client, test_projects):
     ][0]
 
     filters_after_removal = logic_after_removal.get_parsed_filters()
-    assert (
-        len(filters_after_removal) == 1
-    ), "Should have 1 filter after removing 2"
+    assert len(filters_after_removal) == 1, (
+        "Should have 1 filter after removing 2"
+    )
 
     remaining_fields = [f["field"] for f in filters_after_removal]
-    assert (
-        "LabelingTime" in remaining_fields
-    ), "LabelingTime filter should remain"
-    assert (
-        "CreatedBy" not in remaining_fields
-    ), "LabeledBy filter should be removed"
+    assert "LabelingTime" in remaining_fields, (
+        "LabelingTime filter should remain"
+    )
+    assert "CreatedBy" not in remaining_fields, (
+        "LabeledBy filter should be removed"
+    )
 
     # Test adding filters with persistence
     logic_after_removal.add_filter(dataset.is_one_of(["new-dataset"]))
@@ -678,9 +678,9 @@ def test_node_removal_with_validation(client, test_projects):
     # Verify nodes were removed and connections rerouted
     final_workflow = source_project.get_workflow()
     final_nodes = final_workflow.get_nodes()
-    assert (
-        len(final_nodes) == 8
-    ), "Should have 8 nodes after removal and new node addition"
+    assert len(final_nodes) == 8, (
+        "Should have 8 nodes after removal and new node addition"
+    )
 
     # Verify removed nodes are gone
     final_node_names = [n.name for n in final_nodes]
@@ -689,15 +689,15 @@ def test_node_removal_with_validation(client, test_projects):
 
     # Verify key nodes still exist
     assert "High Quality" in final_node_names, "High Quality node should exist"
-    assert (
-        "Secondary Review" in final_node_names
-    ), "Secondary Review node should exist"
-    assert (
-        "Review Approved" in final_node_names
-    ), "Review Approved node should exist"
-    assert (
-        "Secondary Rework" in final_node_names
-    ), "Secondary Rework node should exist"
+    assert "Secondary Review" in final_node_names, (
+        "Secondary Review node should exist"
+    )
+    assert "Review Approved" in final_node_names, (
+        "Review Approved node should exist"
+    )
+    assert "Secondary Rework" in final_node_names, (
+        "Secondary Rework node should exist"
+    )
 
 
 def test_metadata_multiple_conditions():
@@ -767,9 +767,9 @@ def test_model_prediction_conditions(client, test_projects):
     for node in logic_nodes:
         filters = node.get_parsed_filters()
         assert len(filters) == 1, "Each node should have exactly 1 filter"
-        assert (
-            filters[0]["field"] == "ModelPrediction"
-        ), "Should have ModelPrediction filter"
+        assert filters[0]["field"] == "ModelPrediction", (
+            "Should have ModelPrediction filter"
+        )
 
 
 def test_reset_to_initial_nodes_preserves_existing_ids(client):
@@ -956,12 +956,12 @@ def test_edge_id_format_is_correct(client):
             f"xy-edge__{initial_nodes.rework.id}if-{done_node.id}in"
         )
 
-        assert (
-            edge1.id == expected_edge1_id
-        ), f"Edge ID format incorrect. Expected: {expected_edge1_id}, Got: {edge1.id}"
-        assert (
-            edge2.id == expected_edge2_id
-        ), f"Edge ID format incorrect. Expected: {expected_edge2_id}, Got: {edge2.id}"
+        assert edge1.id == expected_edge1_id, (
+            f"Edge ID format incorrect. Expected: {expected_edge1_id}, Got: {edge1.id}"
+        )
+        assert edge2.id == expected_edge2_id, (
+            f"Edge ID format incorrect. Expected: {expected_edge2_id}, Got: {edge2.id}"
+        )
 
         # Verify edge properties are correct
         assert edge1.source == initial_nodes.labeling.id
@@ -982,12 +982,12 @@ def test_edge_id_format_is_correct(client):
         reloaded_edges = reloaded_workflow.get_edges()
 
         edge_ids = [edge.id for edge in reloaded_edges]
-        assert (
-            expected_edge1_id in edge_ids
-        ), f"Edge ID {expected_edge1_id} not found after reload"
-        assert (
-            expected_edge2_id in edge_ids
-        ), f"Edge ID {expected_edge2_id} not found after reload"
+        assert expected_edge1_id in edge_ids, (
+            f"Edge ID {expected_edge1_id} not found after reload"
+        )
+        assert expected_edge2_id in edge_ids, (
+            f"Edge ID {expected_edge2_id} not found after reload"
+        )
 
     finally:
         project.delete()
@@ -1029,12 +1029,12 @@ def test_edge_id_format_with_different_handles(client):
             f"xy-edge__{review_node.id}else-{rework_node.id}in"
         )
 
-        assert (
-            approved_edge.id == expected_approved_id
-        ), f"Approved edge ID format incorrect. Expected: {expected_approved_id}, Got: {approved_edge.id}"
-        assert (
-            rejected_edge.id == expected_rejected_id
-        ), f"Rejected edge ID format incorrect. Expected: {expected_rejected_id}, Got: {rejected_edge.id}"
+        assert approved_edge.id == expected_approved_id, (
+            f"Approved edge ID format incorrect. Expected: {expected_approved_id}, Got: {approved_edge.id}"
+        )
+        assert rejected_edge.id == expected_rejected_id, (
+            f"Rejected edge ID format incorrect. Expected: {expected_rejected_id}, Got: {rejected_edge.id}"
+        )
 
         # Verify handle values - NodeOutput.Approved maps to "if", NodeOutput.Rejected maps to "else"
         assert approved_edge.sourceHandle == "if"

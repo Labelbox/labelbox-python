@@ -1,5 +1,7 @@
 import time
 
+import pytest
+
 from labelbox import DataRow, ExportTask, StreamType, Task, TaskStatus
 
 
@@ -136,6 +138,9 @@ class TestExportDataRow:
         cancelled_task = client.get_task_by_id(export_task.uid)
         assert cancelled_task.status in ["CANCELING", "CANCELED"]
 
+    @pytest.mark.skip(
+        reason="Test times out in environments with high task volume - querying all org tasks is too slow"
+    )
     def test_task_filter(self, client, data_row, wait_for_data_row_processing):
         organization = client.get_organization()
         user = client.get_user()

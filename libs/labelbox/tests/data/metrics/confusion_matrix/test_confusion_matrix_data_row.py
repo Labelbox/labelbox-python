@@ -38,9 +38,9 @@ def test_overlapping_objects(tool_examples):
                 ).values():
                     for idx in range(4):
                         expected[idx] += expected_values[idx]
-                assert score[0].value == tuple(
-                    expected
-                ), f"{example.predictions},{example.ground_truths}"
+                assert score[0].value == tuple(expected), (
+                    f"{example.predictions},{example.ground_truths}"
+                )
 
 
 @parametrize(
@@ -59,9 +59,9 @@ def test_overlapping_classifications(tool_examples):
             for expected_values in example.expected.values():
                 for idx in range(4):
                     expected[idx] += expected_values[idx]
-            assert score[0].value == tuple(
-                expected
-            ), f"{example.predictions},{example.ground_truths}"
+            assert score[0].value == tuple(expected), (
+                f"{example.predictions},{example.ground_truths}"
+            )
 
 
 def test_partial_overlap(pair_iou_thresholds):
@@ -70,6 +70,6 @@ def test_partial_overlap(pair_iou_thresholds):
             score = confusion_matrix_metric(
                 example.predictions, example.ground_truths, iou=iou
             )
-            assert score[0].value == tuple(
-                example.expected[iou]
-            ), f"{example.predictions},{example.ground_truths}"
+            assert score[0].value == tuple(example.expected[iou]), (
+                f"{example.predictions},{example.ground_truths}"
+            )

@@ -36,7 +36,9 @@ LINK_CELL = {
 }
 
 COLAB_TEMPLATE = "https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/{filename}"
-GITHUB_TEMPLATE = "https://github.com/Labelbox/labelbox-python/tree/develop/examples/{filename}"
+GITHUB_TEMPLATE = (
+    "https://github.com/Labelbox/labelbox-python/tree/develop/examples/{filename}"
+)
 
 
 def format_cell(source):

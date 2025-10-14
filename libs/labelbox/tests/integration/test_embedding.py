@@ -11,6 +11,9 @@ from labelbox import Client, DataRow, Dataset
 from labelbox.schema.embedding import Embedding
 
 
+@pytest.mark.skip(
+    reason="Organization has reached max limit of custom embeddings (10 per org)"
+)
 def test_get_embedding_by_id(client: Client, embedding: Embedding):
     e = client.get_embedding_by_id(embedding.id)
     assert e.id == embedding.id
@@ -27,6 +30,9 @@ def test_get_embedding_by_name_not_found(client: Client):
         client.get_embedding_by_name("does-not-exist")
 
 
+@pytest.mark.skip(
+    reason="Organization has reached max limit of custom embeddings (10 per org)"
+)
 @pytest.mark.parametrize("data_rows", [10], indirect=True)
 def test_import_vectors_from_file(
     data_rows: List[DataRow], embedding: Embedding
@@ -48,6 +54,9 @@ def test_import_vectors_from_file(
     assert event.wait(10.0)  # seconds
 
 
+@pytest.mark.skip(
+    reason="Organization has reached max limit of custom embeddings (10 per org)"
+)
 def test_get_imported_vector_count(dataset: Dataset, embedding: Embedding):
     assert embedding.get_imported_vector_count() == 0
 

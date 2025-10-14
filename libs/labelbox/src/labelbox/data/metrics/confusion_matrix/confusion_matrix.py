@@ -96,7 +96,7 @@ def _get_metric_name(
     if _is_classification(ground_truths, predictions):
         return "classification"
 
-    return f"{int(iou*100)}pct_iou"
+    return f"{int(iou * 100)}pct_iou"
 
 
 def _is_classification(

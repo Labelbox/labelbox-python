@@ -84,27 +84,27 @@ def build_metadata_items(
     """
     if item_type == "user":
         return [
-            {key_field: item_id, "email": f"user{i+1}@example.com"}
+            {key_field: item_id, "email": f"user{i + 1}@example.com"}
             for i, item_id in enumerate(ids)
         ]
     elif item_type == "dataset":
         return [
-            {key_field: item_id, "name": f"Dataset {i+1}"}
+            {key_field: item_id, "name": f"Dataset {i + 1}"}
             for i, item_id in enumerate(ids)
         ]
     elif item_type == "annotation":
         return [
-            {"name": f"Annotation {i+1}", "schemaNodeId": item_id}
+            {"name": f"Annotation {i + 1}", "schemaNodeId": item_id}
             for i, item_id in enumerate(ids)
         ]
     elif item_type == "issue":
         return [
-            {key_field: item_id, "name": f"Issue Category {i+1}"}
+            {key_field: item_id, "name": f"Issue Category {i + 1}"}
             for i, item_id in enumerate(ids)
         ]
     else:
         return [
-            {key_field: item_id, "name": f"{item_type.title()} {i+1}"}
+            {key_field: item_id, "name": f"{item_type.title()} {i + 1}"}
             for i, item_id in enumerate(ids)
         ]
 

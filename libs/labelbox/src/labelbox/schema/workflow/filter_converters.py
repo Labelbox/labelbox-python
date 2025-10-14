@@ -358,7 +358,7 @@ class ConsensusFilterConverter(FilterConverter):
             if isinstance(annotations[0], str):
                 # Simple ID list - convert to full format (placeholder names)
                 annotation_objects = [
-                    {"name": f"Feature {i+1}", "schemaNodeId": ann_id}
+                    {"name": f"Feature {i + 1}", "schemaNodeId": ann_id}
                     for i, ann_id in enumerate(annotations)
                 ]
             else:

@@ -57,6 +57,9 @@ def test_mmc(mmc_data_row):
     }
 
 
+@pytest.mark.skip(
+    reason="Organization has reached max limit of custom embeddings (10 per org)"
+)
 def test_mmc_all(mmc_data_row_all, embedding, constants):
     data_row, global_key = mmc_data_row_all
     assert json.loads(data_row.row_data) == {

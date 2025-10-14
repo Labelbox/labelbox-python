@@ -15,15 +15,15 @@ def test_create_api_key_success(client):
     key_name = f"Test Key {uuid.uuid4()}"
     user_email = client.get_user().email
 
-    assert (
-        client.get_user().org_role().name == "Admin"
-    ), "User must be an admin to create API keys"
+    assert client.get_user().org_role().name == "Admin", (
+        "User must be an admin to create API keys"
+    )
 
     # Get available roles and use the first one
     available_roles = ApiKey._get_available_api_key_roles(client)
-    assert (
-        len(available_roles) > 0
-    ), "No available roles found for API key creation"
+    assert len(available_roles) > 0, (
+        "No available roles found for API key creation"
+    )
 
     # Create the API key with a short validity period
     api_key_result = client.create_api_key(
@@ -35,13 +35,13 @@ def test_create_api_key_success(client):
     )
 
     # Verify the response format
-    assert isinstance(
-        api_key_result, dict
-    ), "API key result should be a dictionary"
+    assert isinstance(api_key_result, dict), (
+        "API key result should be a dictionary"
+    )
     assert "id" in api_key_result, "API key result should contain an 'id' field"
-    assert (
-        "jwt" in api_key_result
-    ), "API key result should contain a 'jwt' field"
+    assert "jwt" in api_key_result, (
+        "API key result should contain a 'jwt' field"
+    )
 
     # Verify the JWT token format (should be a JWT string)
     jwt = api_key_result["jwt"]

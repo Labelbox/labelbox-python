@@ -33,7 +33,9 @@ title: Python tutorials
 """
 
 COLAB_TEMPLATE = "https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/{filename}"
-GITHUB_TEMPLATE = "https://github.com/Labelbox/labelbox-python/tree/develop/examples/{filename}"
+GITHUB_TEMPLATE = (
+    "https://github.com/Labelbox/labelbox-python/tree/develop/examples/{filename}"
+)
 
 
 def create_header(link: str) -> str:
@@ -150,7 +152,7 @@ def make_table(base: str) -> str:
                 )
             )
         df = pandas.DataFrame(pandas_dict)
-        generated_markdown += f"{df.to_html(col_space={'Notebook':400}, index=False, escape=False, justify='left')}\n\n"
+        generated_markdown += f"{df.to_html(col_space={'Notebook': 400}, index=False, escape=False, justify='left')}\n\n"
     return f"{generated_markdown.rstrip()}\n"
 
 

@@ -33,9 +33,9 @@ def org_invite(client, organization, environ, queries):
     invite_limit = organization.invite_limit()
 
     if environ.value == "prod":
-        assert (
-            invite_limit.remaining > 0
-        ), "No invites available for the account associated with this key."
+        assert invite_limit.remaining > 0, (
+            "No invites available for the account associated with this key."
+        )
     elif environ.value != "staging":
         # Cannot run against local
         return
@@ -102,9 +102,9 @@ def test_org_invite(client, organization, environ, queries, org_invite):
 
     assert found_invite is not None, "Invite not found"
     org_role = found_invite.organization_role_name.lower()
-    assert (
-        org_role == role.name.lower()
-    ), "Role should be labeler. Found {org_role} "
+    assert org_role == role.name.lower(), (
+        "Role should be labeler. Found {org_role} "
+    )
 
 
 def test_cancel_invite(
