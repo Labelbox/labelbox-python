@@ -33,9 +33,7 @@ title: Python tutorials
 """
 
 COLAB_TEMPLATE = "https://colab.research.google.com/github/Labelbox/labelbox-python/blob/develop/examples/{filename}"
-GITHUB_TEMPLATE = (
-    "https://github.com/Labelbox/labelbox-python/tree/develop/examples/{filename}"
-)
+GITHUB_TEMPLATE = "https://github.com/Labelbox/labelbox-python/tree/develop/examples/{filename}"
 
 
 def create_header(link: str) -> str:
