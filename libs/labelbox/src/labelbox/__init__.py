@@ -98,7 +98,6 @@ from labelbox.schema.tool_building.classification import (
     ResponseOption,
     PromptResponseClassification,
 )
-from lbox.exceptions import *
 from labelbox.schema.taskstatus import TaskStatus
 from labelbox.schema.api_key import ApiKey
 from labelbox.schema.timeunit import TimeUnit
