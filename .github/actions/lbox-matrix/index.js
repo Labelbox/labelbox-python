@@ -26833,7 +26833,7 @@ try {
     },
     {
       "python-version": "3.13",
-      "api-key": "STAGING_LABELBOX_API_KEY_2",
+      "api-key": "TEST_STAGING_LABELBOX_API_KEY",
       "da-test-key": "DA_GCP_LABELBOX_API_KEY"
     },    
   ];
