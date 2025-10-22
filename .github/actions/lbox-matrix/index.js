@@ -26813,12 +26813,12 @@ try {
   const startingMatrix = [
     {
       "python-version": "3.9",
-      "api-key": "STAGING_LABELBOX_API_KEY_3",
+      "api-key": "TEST_STAGING_LABELBOX_API_KEY",
       "da-test-key": "DA_GCP_LABELBOX_API_KEY"
     },
     {
       "python-version": "3.10",
-      "api-key": "STAGING_LABELBOX_API_KEY_4",
+      "api-key": "TEST_STAGING_LABELBOX_API_KEY",
       "da-test-key": "DA_GCP_LABELBOX_API_KEY"
     },
     {
