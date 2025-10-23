@@ -1,5 +1,5 @@
 # https://github.com/ucyo/python-package-template/blob/master/Dockerfile
-FROM python:3.9-slim as rye
+FROM python:3.10-slim as rye
 
 ENV LANG="C.UTF-8" \
     LC_ALL="C.UTF-8" \
@@ -20,7 +20,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     ffmpeg \
     libfontconfig1 \
     libxrender1 \
-    libgl1-mesa-glx \
+    libgl1 \
+    libglx-mesa0 \
     libgeos-dev \
     gcc \
     && rm -rf /var/lib/apt/lists/*
@@ -38,7 +39,7 @@ WORKDIR /home/python/labelbox-python
 
 RUN rye config --set-bool behavior.global-python=true && \
     rye config --set-bool behavior.use-uv=true && \
-    rye pin 3.9 && \
+    rye pin 3.10 && \
     rye sync
 
 CMD rye run unit && rye integration
