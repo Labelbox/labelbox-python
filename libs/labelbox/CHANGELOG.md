@@ -1,5 +1,5 @@
 # Changelog
-# Version 7.3.0 (2025-11-27)
+# Version 7.3.0 (2025-10-27)
 ## Added
 * Add support for Audio Temporal Annotations ([#2013](https://github.com/Labelbox/labelbox-python/pull/2013))
 
