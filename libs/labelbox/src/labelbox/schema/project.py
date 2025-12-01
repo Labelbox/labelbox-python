@@ -399,6 +399,7 @@ class Project(DbObject, Updateable, Deletable):
         
         This performs a soft delete (sets deleted=true in the database).
         The labels will no longer appear in queries but remain in the database.
+        Labels are deleted in chunks of 500 to avoid overwhelming the API.
 
         Args:
             user_id (str): The ID of the user whose labels to delete.
@@ -416,8 +417,15 @@ class Project(DbObject, Updateable, Deletable):
         if not labels_to_delete:
             return 0
         
-        Entity.Label.bulk_delete(labels_to_delete)
-        return len(labels_to_delete)
+        chunk_size = 500
+        total_deleted = 0
+        
+        for i in range(0, len(labels_to_delete), chunk_size):
+            chunk = labels_to_delete[i:i + chunk_size]
+            Entity.Label.bulk_delete(chunk)
+            total_deleted += len(chunk)
+        
+        return total_deleted
 
     def export(
         self,
