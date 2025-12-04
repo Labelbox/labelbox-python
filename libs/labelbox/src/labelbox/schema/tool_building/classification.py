@@ -53,6 +53,7 @@ class Classification:
         TEXT = "text"
         CHECKLIST = "checklist"
         RADIO = "radio"
+        GROUP = "group"
 
     class Scope(Enum):
         GLOBAL = "global"
@@ -168,7 +169,6 @@ class Classification:
         if option.position is None:
             option.position = len(self.options)
         self.options.append(option)
-
 
 @dataclass
 class Option:
