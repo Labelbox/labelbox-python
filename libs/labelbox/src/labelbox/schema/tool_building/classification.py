@@ -170,6 +170,7 @@ class Classification:
             option.position = len(self.options)
         self.options.append(option)
 
+
 @dataclass
 class Option:
     """
