@@ -507,16 +507,16 @@ class Client:
         self, project_id: str, user_ids: list[str]
     ) -> dict:
         """Deletes project memberships for one or more users.
-        
+
         Args:
             project_id (str): ID of the project
             user_ids (list[str]): List of user IDs to remove from the project
-            
+
         Returns:
             dict: Result containing:
                 - success (bool): True if operation succeeded
                 - errorMessage (str or None): Error message if operation failed
-            
+
         Example:
             >>> result = client.delete_project_memberships(
             >>>     project_id="project123",
@@ -539,12 +539,12 @@ class Client:
                 errorMessage
             }
         }"""
-        
+
         params = {
             "projectId": project_id,
             "userIds": user_ids,
         }
-        
+
         result = self.execute(mutation, params)
         return result["deleteProjectMemberships"]
 
