@@ -317,7 +317,9 @@ class Project(DbObject, Updateable, Deletable):
 
         return [ResourceTag(self.client, tag) for tag in results]
 
-    def labels(self, datasets=None, order_by=None, created_by=None) -> PaginatedCollection:
+    def labels(
+        self, datasets=None, order_by=None, created_by=None
+    ) -> PaginatedCollection:
         """Custom relationship expansion method to support limited filtering.
 
         Args:
@@ -334,7 +336,7 @@ class Project(DbObject, Updateable, Deletable):
         Example:
             >>> # Get all labels
             >>> all_labels = project.labels()
-            >>> 
+            >>>
             >>> # Get labels by specific user
             >>> user_labels = project.labels(created_by=user_id)
             >>> # or
@@ -351,16 +353,22 @@ class Project(DbObject, Updateable, Deletable):
 
         # Build where clause
         where_clauses = []
-        
+
         if datasets is not None:
-            dataset_ids = ", ".join('"%s"' % dataset.uid for dataset in datasets)
-            where_clauses.append(f"dataRow: {{dataset: {{id_in: [{dataset_ids}]}}}}")
-        
+            dataset_ids = ", ".join(
+                '"%s"' % dataset.uid for dataset in datasets
+            )
+            where_clauses.append(
+                f"dataRow: {{dataset: {{id_in: [{dataset_ids}]}}}}"
+            )
+
         if created_by is not None:
             # Handle both User object and user_id string
-            user_id = created_by.uid if hasattr(created_by, 'uid') else created_by
+            user_id = (
+                created_by.uid if hasattr(created_by, "uid") else created_by
+            )
             where_clauses.append(f'createdBy: {{id: "{user_id}"}}')
-        
+
         if where_clauses:
             where = " where:{" + ", ".join(where_clauses) + "}"
         else:
@@ -396,7 +404,7 @@ class Project(DbObject, Updateable, Deletable):
 
     def delete_labels_by_user(self, user_id: str) -> int:
         """Soft deletes all labels created by a specific user in this project.
-        
+
         This performs a soft delete (sets deleted=true in the database).
         The labels will no longer appear in queries but remain in the database.
         Labels are deleted in chunks of 500 to avoid overwhelming the API.
@@ -413,18 +421,18 @@ class Project(DbObject, Updateable, Deletable):
             >>> print(f"Deleted {deleted_count} labels")
         """
         labels_to_delete = list(self.labels(created_by=user_id))
-        
+
         if not labels_to_delete:
             return 0
-        
+
         chunk_size = 500
         total_deleted = 0
-        
+
         for i in range(0, len(labels_to_delete), chunk_size):
-            chunk = labels_to_delete[i:i + chunk_size]
+            chunk = labels_to_delete[i : i + chunk_size]
             Entity.Label.bulk_delete(chunk)
             total_deleted += len(chunk)
-        
+
         return total_deleted
 
     def export(

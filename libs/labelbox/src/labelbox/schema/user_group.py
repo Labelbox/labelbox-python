@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
+import uuid
 from typing import Any, Dict, Iterator, List, Optional, Set
 
 from lbox.exceptions import (
@@ -414,6 +415,14 @@ class UserGroup(BaseModel):
         """
         if not self.id:
             raise ValueError("Group id is required")
+
+        # The API expects a UUID-formatted identifier and may respond with an
+        # internal server error if the value cannot be parsed. Validate client-side
+        # so callers get a consistent exception.
+        try:
+            uuid.UUID(str(self.id))
+        except Exception as e:
+            raise MalformedQueryException("Invalid user group id") from e
 
         query = """
         mutation DeleteUserGroupPyApi($id: ID!) {

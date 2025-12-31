@@ -258,7 +258,9 @@ class ApiKey(DbObject):
             if role["name"] in ["None", "Tenant Admin"]:
                 continue
             if all(perm in current_permissions for perm in role["permissions"]):
-                available_roles.append(format_role(role["name"]))
+                # Preserve server-provided role names (case-sensitive) so callers can
+                # pass them through without normalization.
+                available_roles.append(role["name"])
         client._cached_available_api_key_roles = available_roles
         return available_roles
 
@@ -332,9 +334,25 @@ class ApiKey(DbObject):
             raise ValueError("role must be a Role object or a valid role name")
 
         allowed_roles = ApiKey._get_available_api_key_roles(client)
-        # Format the input role name consistently with available roles
-        formatted_role_name = format_role(role_name)
-        if formatted_role_name not in allowed_roles:
+        # Determine the exact server role name to pass through.
+        #
+        # - If caller provides a string, require exact match (case-sensitive).
+        # - If caller provides a Role object (which may be normalized by the SDK),
+        #   map it back to the server role name.
+        server_role_name: Optional[str] = None
+        if hasattr(role, "name"):
+            # Role objects in the SDK are often normalized (e.g. "TENANT_ADMIN").
+            # Map normalized name back to the server-provided role display name.
+            normalized_to_server = {format_role(r): r for r in allowed_roles}
+            server_role_name = (
+                role_name
+                if role_name in allowed_roles
+                else normalized_to_server.get(format_role(role_name))
+            )
+        else:
+            server_role_name = role_name if role_name in allowed_roles else None
+
+        if server_role_name is None:
             raise ValueError(
                 f"Invalid role specified. Allowed roles are: {allowed_roles}"
             )
@@ -371,7 +389,7 @@ class ApiKey(DbObject):
         params = {
             "name": name,
             "userEmail": user_email,
-            "role": role_name,
+            "role": server_role_name,
             "validitySeconds": validity_seconds,
         }
 
