@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Set, Optional, Union
 
 from lbox.exceptions import LabelboxError
 
@@ -22,6 +22,7 @@ if TYPE_CHECKING:
         ProjectRole,
         Role,
         User,
+        UserGroupRole,
     )
 
 
@@ -65,6 +66,7 @@ class Organization(DbObject):
         email: str,
         role: "Role",
         project_roles: Optional[List["ProjectRole"]] = None,
+        user_group_roles: Optional[List["UserGroupRole"]] = None,
     ) -> "Invite":
         """
         Invite a new member to the org. This will send the user an email invite
@@ -88,6 +90,40 @@ class Organization(DbObject):
                 f"Project roles cannot be set for a user with organization level permissions. Found role name `{role.name}`, expected `NONE`"
             )
 
+        if user_group_roles and role.name != "NONE":
+            raise ValueError(
+                f"User Group roles cannot be set for a user with organization level permissions. Found role name `{role.name}`, expected `NONE`"
+            )
+
+        if user_group_roles:
+            # The backend can 500 if the same groupId appears more than once.
+            # We dedupe exact duplicates (same groupId+roleId), but reject
+            # conflicting assignments (same groupId with different roleId).
+
+            deduped_user_group_roles: Dict[str, "UserGroupRole"] = {}
+            conflicting_user_group_ids: Set[str] = set()
+
+            for user_group_role in user_group_roles:
+                user_group_id = user_group_role.user_group.id
+                role_id = user_group_role.role.uid
+
+                existing = deduped_user_group_roles.get(user_group_id)
+                if existing is None:
+                    deduped_user_group_roles[user_group_id] = user_group_role
+                else:
+                    if existing.role.uid != role_id:
+                        conflicting_user_group_ids.add(user_group_id)
+
+            if conflicting_user_group_ids:
+                conflicts_str = ", ".join(sorted(conflicting_user_group_ids))
+                raise ValueError(
+                    "user_group_roles contains conflicting role assignments for "
+                    "the same UserGroup. Each UserGroup may only appear once. "
+                    f"Conflicting user_group.id values: {conflicts_str}"
+                )
+
+            user_group_roles = list(deduped_user_group_roles.values())
+
         data_param = "data"
         query_str = """mutation createInvitesPyApi($%s: [CreateInviteInput!]){
                     createInvites(data: $%s){  invite { id createdAt organizationRoleName inviteeEmail inviter { %s } }}}""" % (
@@ -104,6 +140,19 @@ class Organization(DbObject):
             for project_role in project_roles or []
         ]
 
+        user_group_ids = [
+            user_group_role.user_group.id
+            for user_group_role in user_group_roles or []
+        ]
+
+        user_group_with_role_ids = [
+            {
+                "groupId": user_group_role.user_group.id,
+                "roleId": user_group_role.role.uid,
+            }
+            for user_group_role in user_group_roles or []
+        ]
+
         res = self.client.execute(
             query_str,
             {
@@ -114,6 +163,8 @@ class Organization(DbObject):
                         "organizationId": self.uid,
                         "organizationRoleId": role.uid,
                         "projects": projects,
+                        "userGroupIds": user_group_ids,
+                        "userGroupWithRoleIds": user_group_with_role_ids,
                     }
                 ]
             },
