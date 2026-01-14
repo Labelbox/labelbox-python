@@ -96,6 +96,40 @@ def test_workflow_creation(client, test_projects):
     assert WorkflowDefinitionId.Done in node_types
 
 
+def test_workflow_allows_multiple_incoming_from_non_initial_nodes(
+    client, test_projects
+):
+    """
+    Nodes may have multiple incoming connections from any nodes (not only initial nodes).
+
+    This used to fail validation when a node had >1 predecessor and at least one
+    predecessor was not an initial node.
+    """
+    source_project, _ = test_projects
+
+    workflow = source_project.get_workflow()
+    initial_nodes = workflow.reset_to_initial_nodes(
+        labeling_config=LabelingConfig(instructions="Start labeling here")
+    )
+
+    logic = workflow.add_node(
+        type=NodeType.Logic,
+        name="Gate",
+        filters=ProjectWorkflowFilter([labeled_by.is_one_of(["test-user"])]),
+    )
+    review = workflow.add_node(type=NodeType.Review, name="Review Task")
+    done = workflow.add_node(type=NodeType.Done, name="Done")
+
+    # Multiple incoming connections to review, including from a non-initial node (logic)
+    workflow.add_edge(initial_nodes.labeling, logic)
+    workflow.add_edge(logic, review, NodeOutput.If)
+    workflow.add_edge(initial_nodes.rework, review)
+    workflow.add_edge(review, done, NodeOutput.Approved)
+
+    # Should validate and update successfully
+    workflow.update_config(reposition=False)
+
+
 def test_workflow_creation_simple(client):
     """Test creating a simple workflow with the working pattern."""
     # Create a new project for this test

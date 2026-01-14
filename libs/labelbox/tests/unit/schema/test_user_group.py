@@ -341,7 +341,7 @@ class TestUserGroup:
             "deleteUserGroup": {"success": True}
         }
         group = self.group
-        group.id = "group_id"
+        group.id = "11111111-2222-3333-4444-555555555555"
         result = group.delete()
         assert result is True
 
@@ -350,7 +350,7 @@ class TestUserGroup:
             message="Not found"
         )
         group = self.group
-        group.id = "group_id"
+        group.id = "11111111-2222-3333-4444-555555555555"
         with pytest.raises(ResourceNotFoundError):
             group.delete()
 
