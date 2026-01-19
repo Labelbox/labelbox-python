@@ -1183,7 +1183,9 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {"projectId": self.uid})
         return res["project"]["labelCount"]
 
-    def add_model_config(self, model_config_id: str, response_count: Optional[int] = None) -> str:
+      def add_model_config(
+        self, model_config_id: str, response_count: Optional[int] = None
+      ) -> str:
         """Adds a model config to this project.
 
         Args:
