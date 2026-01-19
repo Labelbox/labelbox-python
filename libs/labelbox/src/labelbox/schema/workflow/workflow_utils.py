@@ -117,31 +117,6 @@ class WorkflowValidator:
                             "node_type": node_type,
                         }
                     )
-                elif len(predecessors) > 1:
-                    # Check if all predecessors are initial nodes
-                    node_map = {n.id: n for n in nodes}
-                    predecessor_nodes = [
-                        node_map.get(pred_id) for pred_id in predecessors
-                    ]
-                    all_initial = all(
-                        pred_node
-                        and pred_node.definition_id in initial_node_types
-                        for pred_node in predecessor_nodes
-                        if pred_node is not None
-                    )
-
-                    if not all_initial:
-                        preds_info = ", ".join(
-                            [p[:8] + "..." for p in predecessors]
-                        )
-                        errors.append(
-                            {
-                                "reason": f"has multiple incoming connections ({len(predecessors)}) but not all are from initial nodes",
-                                "node_id": node.id,
-                                "node_type": node_type,
-                                "details": f"Connected from: {preds_info}",
-                            }
-                        )
 
             # Check outgoing connections (except terminal nodes)
             if node.definition_id not in terminal_node_types:

@@ -503,6 +503,51 @@ class Client:
             raise ResourceNotFoundError(Entity.ModelConfig, params)
         return result["deleteModelConfig"]["success"]
 
+    def delete_project_memberships(
+        self, project_id: str, user_ids: list[str]
+    ) -> dict:
+        """Deletes project memberships for one or more users.
+
+        Args:
+            project_id (str): ID of the project
+            user_ids (list[str]): List of user IDs to remove from the project
+
+        Returns:
+            dict: Result containing:
+                - success (bool): True if operation succeeded
+                - errorMessage (str or None): Error message if operation failed
+
+        Example:
+            >>> result = client.delete_project_memberships(
+            >>>     project_id="project123",
+            >>>     user_ids=["user1", "user2"]
+            >>> )
+            >>> if result["success"]:
+            >>>     print("Users removed successfully")
+            >>> else:
+            >>>     print(f"Error: {result['errorMessage']}")
+        """
+        mutation = """mutation DeleteProjectMembershipsPyApi(
+            $projectId: ID!
+            $userIds: [ID!]!
+        ) {
+            deleteProjectMemberships(where: {
+                projectId: $projectId
+                userIds: $userIds
+            }) {
+                success
+                errorMessage
+            }
+        }"""
+
+        params = {
+            "projectId": project_id,
+            "userIds": user_ids,
+        }
+
+        result = self.execute(mutation, params)
+        return result["deleteProjectMemberships"]
+
     def create_dataset(
         self, iam_integration=IAMIntegration._DEFAULT, **kwargs
     ) -> Dataset:

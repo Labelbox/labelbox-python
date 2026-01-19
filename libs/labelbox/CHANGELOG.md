@@ -1,4 +1,8 @@
 # Changelog
+# Version 7.3.0 (2025-10-27)
+## Added
+* Add support for Audio Temporal Annotations ([#2013](https://github.com/Labelbox/labelbox-python/pull/2013))
+
 # Version 7.2.0 (2025-08-28)
 ## Updated
 * DataRowMetadata: Remove enforcement of character limit ([#2010](https://github.com/Labelbox/labelbox-python/pull/2010))

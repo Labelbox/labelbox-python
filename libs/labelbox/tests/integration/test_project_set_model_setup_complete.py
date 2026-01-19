@@ -36,7 +36,7 @@ def test_live_chat_evaluation_project_delete_cofig(
 
     with pytest.raises(
         expected_exception=LabelboxError,
-        match="Cannot create model config for project because model setup is complete",
+        match="Cannot (create model config for project because model setup is complete|perform this action because model setup is complete)",
     ):
         project_model_config.delete()
 

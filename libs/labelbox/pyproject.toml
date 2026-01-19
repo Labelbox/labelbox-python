@@ -1,6 +1,6 @@
 [project]
 name = "labelbox"
-version = "7.2.0"
+version = "7.3.0"
 description = "Labelbox Python API"
 authors = [{ name = "Labelbox", email = "engineering@labelbox.com" }]
 dependencies = [
@@ -12,6 +12,7 @@ dependencies = [
     "tqdm>=4.66.2",
     "geojson>=3.1.0",
     "lbox-clients==1.1.2",
+    "PyYAML>=6.0"
 ]
 readme = "README.md"
 requires-python = ">=3.9,<3.14"
@@ -55,6 +56,9 @@ data = [
     "typing-extensions>=4.10.0",
     "opencv-python-headless>=4.9.0.80",
 ]
+alignerr = [
+    "lbox-alignerr>=0.1.0",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -68,6 +72,7 @@ dev-dependencies = [
     "types-python-dateutil>=2.9.0.20240316",
     "types-requests>=2.31.0.20240311",
     "types-tqdm>=4.66.0.20240106",
+    "types-PyYAML>=6.0.12.20240311",
 ]
 
 [tool.ruff]

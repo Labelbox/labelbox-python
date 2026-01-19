@@ -55,7 +55,7 @@ def test_create_api_key_failed(client):
         client.create_api_key(
             name=f"Test Key {uuid.uuid4()}",
             user=client.get_user().email,
-            role="LABELER",  # This string should fail since role strings are case sensitive
+            role="LABELER",  # This string should fail because role strings are case sensitive
             validity=5,
             time_unit=TimeUnit.MINUTE,
         )

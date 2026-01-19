@@ -49,7 +49,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ACTIONS_ACCESS_TOKEN  }}
           ref: ${{ github.head_ref }}
       - uses: ./.github/actions/python-package-shared-setup
         with:
@@ -105,6 +104,7 @@ jobs:
         with:
           packages-dir: dist/
           repository-url: https://test.pypi.org/legacy/
+          verbose: true
   test-container:
     runs-on: ubuntu-latest
     needs: ['build', 'path-filter']

@@ -53,6 +53,7 @@ class Classification:
         TEXT = "text"
         CHECKLIST = "checklist"
         RADIO = "radio"
+        GROUP = "group"
 
     class Scope(Enum):
         GLOBAL = "global"

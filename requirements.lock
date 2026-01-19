@@ -8,6 +8,9 @@
 #   with-sources: false
 
 -e file:libs/labelbox
+    # via lbox-alignerr
+-e file:libs/lbox-alignerr
+    # via labelbox
 -e file:libs/lbox-clients
     # via labelbox
 -e file:libs/lbox-example
@@ -73,6 +76,7 @@ pyasn1-modules==0.4.0
     # via google-auth
 pydantic==2.8.2
     # via labelbox
+    # via lbox-alignerr
 pydantic-core==2.20.1
     # via pydantic
 pygeotile==1.0.6
@@ -83,6 +87,9 @@ pyproj==3.6.1
     # via labelbox
 python-dateutil==2.9.0.post0
     # via labelbox
+pyyaml==6.0.3
+    # via labelbox
+    # via lbox-alignerr
 requests==2.32.3
     # via google-api-core
     # via labelbox

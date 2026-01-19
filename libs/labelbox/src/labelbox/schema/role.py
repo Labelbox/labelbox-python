@@ -6,6 +6,7 @@ from labelbox.orm.db_object import DbObject
 
 if TYPE_CHECKING:
     from labelbox import Client, Project
+    from labelbox.schema.user_group import UserGroup
 
 _ROLES: Optional[Dict[str, "Role"]] = None
 
@@ -29,6 +30,11 @@ def format_role(name: str):
 class Role(DbObject):
     name = Field.String("name")
 
+    @classmethod
+    def from_name(cls, client: "Client", name: str) -> Optional["Role"]:
+        roles = get_roles(client)
+        return roles.get(name.upper())
+
 
 class OrgRole(Role): ...
 
@@ -39,4 +45,10 @@ class UserRole(Role): ...
 @dataclass
 class ProjectRole:
     project: "Project"
+    role: Role
+
+
+@dataclass
+class UserGroupRole:
+    user_group: "UserGroup"
     role: Role
