@@ -1,4 +1,13 @@
 # Changelog
+# Version 7.4.0 (2026-01-22)
+## Added
+* Add support of groups to invite_user() ([#2035](https://github.com/Labelbox/labelbox-python/pull/2035))
+* Add group classification type ([2030](https://github.com/Labelbox/labelbox-python/pull/2030))
+* Add model config response count support ([#2014](https://github.com/Labelbox/labelbox-python/pull/2014))
+
+## Fixed
+* Workflow Management allow multiple inputs ([#2031](https://github.com/Labelbox/labelbox-python/pull/2031)) 
+
 # Version 7.3.0 (2025-10-27)
 ## Added
 * Add support for Audio Temporal Annotations ([#2013](https://github.com/Labelbox/labelbox-python/pull/2013))
