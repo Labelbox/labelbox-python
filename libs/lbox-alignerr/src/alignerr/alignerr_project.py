@@ -156,13 +156,13 @@ class AlignerrProject:
 
     def _get_user_labels(self, user_id: str):
         """Get all labels created by a user in this project.
-        
+
         Args:
             user_id: ID of the user
-            
+
         Returns:
             List of Label objects
-            
+
         Raises:
             Exception: If labels cannot be retrieved
         """
@@ -171,20 +171,20 @@ class AlignerrProject:
             "Found %d labels created by user %s in project %s",
             len(labels),
             user_id,
-            self.project.uid
+            self.project.uid,
         )
         return labels
 
     def _create_trust_safety_case(self, user_id: str, event_metadata: dict) -> bool:
         """Create a Trust & Safety case for a user.
-        
+
         Args:
             user_id: ID of the user being reported
             event_metadata: JSON metadata about the event
-            
+
         Returns:
             True if case was created successfully
-            
+
         Raises:
             Exception: If T&S case creation fails
         """
@@ -203,32 +203,30 @@ class AlignerrProject:
                 success
             }
         }"""
-        
+
         params = {
             "subjectUserId": user_id,
             "eventType": "manual",
             "severity": "high",
             "eventMetadata": event_metadata,
         }
-        
+
         result = self.client.execute(mutation, params)
         success = result["createTrustAndSafetyCase"]["success"]
-        
+
         if success:
             logger.info(
-                "Created T&S case for user %s in project %s",
-                user_id,
-                self.project.uid
+                "Created T&S case for user %s in project %s", user_id, self.project.uid
             )
-        
+
         return success
 
     def _remove_user_from_project(self, user_id: str) -> None:
         """Remove a user from this project.
-        
+
         Args:
             user_id: ID of the user to remove
-            
+
         Raises:
             ValueError: If user not found in project
             Exception: If removal fails
@@ -239,56 +237,46 @@ class AlignerrProject:
             if member.user().uid == user_id:
                 user_found = True
                 break
-        
+
         if not user_found:
-            logger.warning("User %s not found in project %s members", user_id, self.project.uid)
+            logger.warning(
+                "User %s not found in project %s members", user_id, self.project.uid
+            )
             raise ValueError(f"User {user_id} not found in project members")
-        
+
         # Remove user using deleteProjectMemberships mutation
         result = self.client.delete_project_memberships(
-            project_id=self.project.uid,
-            user_ids=[user_id]
+            project_id=self.project.uid, user_ids=[user_id]
         )
-        
+
         if not result.get("success"):
             error_message = result.get("errorMessage", "Unknown error")
             logger.error("Failed to remove user: %s", error_message)
             raise Exception(f"Failed to remove user: {error_message}")
-        
-        logger.info(
-            "Removed user %s from project %s",
-            user_id,
-            self.project.uid
-        )
+
+        logger.info("Removed user %s from project %s", user_id, self.project.uid)
 
     def _delete_user_labels(self, labels) -> int:
         """Delete a list of labels.
-        
+
         Args:
             labels: List of Label objects to delete
-            
+
         Returns:
             Number of labels deleted
-            
+
         Raises:
             Exception: If deletion fails
         """
         if not labels:
             return 0
-        
+
         Entity.Label.bulk_delete(labels)
-        logger.info(
-            "Deleted %d labels in project %s",
-            len(labels),
-            self.project.uid
-        )
+        logger.info("Deleted %d labels in project %s", len(labels), self.project.uid)
         return len(labels)
 
     def report_fraud(
-        self,
-        user_id: str,
-        reason: str,
-        custom_metadata: dict = None
+        self, user_id: str, reason: str, custom_metadata: dict = None
     ) -> dict:
         """Report potential fraud by a user in this project.
 
@@ -297,13 +285,13 @@ class AlignerrProject:
         2. Creates a Trust & Safety case for the user (MANUAL event type, HIGH severity)
         3. Removes the user from the project (prevents creating more labels)
         4. Deletes all the user's labels
-        
+
         Args:
             user_id (str): The ID of the user to report for fraud.
             reason (str): Reason for reporting fraud (e.g., "Spam labels", "Low quality work").
             custom_metadata (dict, optional): Additional metadata to include in the T&S case.
                 Will be merged with automatic metadata (project_id, reason, label_count, label_ids).
-            
+
         Returns:
             dict: A dictionary containing:
                 - ts_case_id: Status of T&S case creation ("created" if successful)
@@ -311,19 +299,19 @@ class AlignerrProject:
                 - user_removed: Whether the user was successfully removed
                 - labels_deleted: Number of labels deleted
                 - error: Any error message if any step failed
-                
+
         Example:
             >>> from alignerr import AlignerrWorkspace
             >>> from labelbox import Client
-            >>> 
+            >>>
             >>> client = Client(api_key="YOUR_API_KEY")
             >>> workspace = AlignerrWorkspace.from_labelbox(client)
             >>> project = workspace.project_builder().from_existing(project_id)
-            >>> 
+            >>>
             >>> # Report fraud with reason
             >>> result = project.report_fraud(user_id, reason="Spam labels detected")
             >>> print(f"Removed user: {result['user_removed']}, Deleted {result['labels_deleted']} labels")
-            >>> 
+            >>>
             >>> # With additional custom metadata
             >>> result = project.report_fraud(
             >>>     user_id,
@@ -338,7 +326,7 @@ class AlignerrProject:
             "labels_deleted": 0,
             "error": None,
         }
-        
+
         # Step 1: Get all labels cteated by this user in this project
         try:
             labels_to_delete = self._get_user_labels(user_id)
@@ -347,7 +335,7 @@ class AlignerrProject:
             logger.error("Failed to get labels: %s", str(e))
             result["error"] = f"Failed to get labels: {str(e)}"
             return result
-        
+
         # Step 2: Create T&S case with label information
         try:
             event_metadata = {
@@ -358,7 +346,7 @@ class AlignerrProject:
             }
             if custom_metadata:
                 event_metadata.update(custom_metadata)
-            
+
             ts_case_created = self._create_trust_safety_case(user_id, event_metadata)
             if ts_case_created:
                 result["ts_case_id"] = "created"
@@ -366,7 +354,7 @@ class AlignerrProject:
             logger.error("Failed to create T&S case: %s", str(e))
             result["error"] = f"Failed to create T&S case: {str(e)}"
             return result
-        
+
         # Step 3: Remove user from project (prevent creating more labels)
         try:
             self._remove_user_from_project(user_id)
@@ -375,7 +363,7 @@ class AlignerrProject:
             logger.error("Failed to remove user from project: %s", str(e))
             result["error"] = f"Failed to remove user: {str(e)}"
             return result
-        
+
         # Step 4: Delete all labels by this user
         try:
             result["labels_deleted"] = self._delete_user_labels(labels_to_delete)
@@ -383,7 +371,7 @@ class AlignerrProject:
             logger.error("Failed to delete labels: %s", str(e))
             result["error"] = f"Failed to delete labels: {str(e)}"
             return result
-        
+
         return result
 
 
