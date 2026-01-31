@@ -1,8 +1,12 @@
 # Changelog
+# Version 7.5.0 (2026-01-30)
+## Added
+* Add support for text subclasses under global text subclasses ([#2040](https://github.com/Labelbox/labelbox-python/pull/2040))
+
 # Version 7.4.0 (2026-01-22)
 ## Added
 * Add support of groups to invite_user() ([#2035](https://github.com/Labelbox/labelbox-python/pull/2035))
-* Add group classification type ([2030](https://github.com/Labelbox/labelbox-python/pull/2030))
+* Add group classification type ([#2030](https://github.com/Labelbox/labelbox-python/pull/2030))
 * Add model config response count support ([#2014](https://github.com/Labelbox/labelbox-python/pull/2014))
 
 ## Fixed
