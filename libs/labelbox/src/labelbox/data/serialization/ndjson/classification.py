@@ -86,6 +86,12 @@ class NDTextSubclass(NDAnswer):
             answer=self.answer,
             confidence=self.confidence,
             custom_metrics=self.custom_metrics,
+            classifications=[
+                NDSubclassification.to_common(annot)
+                for annot in self.classifications
+            ]
+            if self.classifications
+            else None,
         )
 
     @classmethod
@@ -98,6 +104,12 @@ class NDTextSubclass(NDAnswer):
             schema_id=feature_schema_id,
             confidence=text.confidence,
             custom_metrics=text.custom_metrics,
+            classifications=[
+                NDSubclassification.from_common(annot)
+                for annot in text.classifications
+            ]
+            if text.classifications
+            else None,
         )
 
 
@@ -245,6 +257,12 @@ class NDText(NDAnnotation, NDTextSubclass):
             message_id=message_id,
             confidence=text.confidence,
             custom_metrics=text.custom_metrics,
+            classifications=[
+                NDSubclassification.from_common(annot)
+                for annot in text.classifications
+            ]
+            if text.classifications
+            else None,
         )
 
 
