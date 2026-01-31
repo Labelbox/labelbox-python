@@ -52,6 +52,7 @@ class Text(ConfidenceMixin, CustomMetricsMixin, BaseModel):
     """
 
     answer: str
+    classifications: Optional[List["ClassificationAnnotation"]] = None
 
 
 class ClassificationAnnotation(
