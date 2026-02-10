@@ -37,6 +37,11 @@ from labelbox.schema.export_filters import (
     ProjectExportFilters,
     build_filters,
 )
+from labelbox.schema.project_sync import (
+    ProjectSyncEntry,
+    ProjectSyncResult,
+    _to_gql_input,
+)
 from labelbox.schema.export_params import ProjectExportParams
 from labelbox.schema.export_task import ExportTask
 from labelbox.schema.identifiable import DataRowIdentifier
@@ -1000,6 +1005,39 @@ class Project(DbObject, Updateable, Deletable):
         task_ids = [task["taskId"] for task in tasks]
 
         return CreateBatchesTask(self.client, self.uid, batch_ids, task_ids)
+
+    def sync_external_project(
+        self,
+        entries: List[ProjectSyncEntry],
+    ) -> ProjectSyncResult:
+        """Syncs external project data — labels, metrics, and workflow state.
+
+        Processing is asynchronous. The returned submission ID can be used
+        to track the progress of the sync operation.
+
+        Args:
+            entries: A list of ProjectSyncEntry objects.
+
+        Returns:
+            A ProjectSyncResult containing the submission ID.
+        """
+        mutation_str = """mutation syncExternalProjectPyApi($input: SyncExternalProjectInput!) {
+            syncExternalProject(input: $input) {
+                submissionId
+            }
+        }"""
+
+        params = {
+            "input": {
+                "projectId": self.uid,
+                "entries": [_to_gql_input(e) for e in entries],
+            }
+        }
+
+        response = self.client.execute(mutation_str, params)
+        payload = response["syncExternalProject"]
+
+        return ProjectSyncResult(submission_id=payload["submissionId"])
 
     def create_batches_from_dataset(
         self,
