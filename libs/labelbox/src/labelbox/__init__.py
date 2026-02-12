@@ -32,6 +32,16 @@ from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.identifiable import GlobalKey, UniqueId
 from labelbox.schema.identifiables import DataRowIds, GlobalKeys, UniqueIds
 from labelbox.schema.invite import Invite, InviteLimit
+from labelbox.schema.issue import Comment, Issue, IssueStatus
+from labelbox.schema.issue_category import IssueCategory
+from labelbox.schema.issue_position import (
+    ImageIssuePosition,
+    IssuePosition,
+    PdfIssuePosition,
+    TextIssuePosition,
+    VideoFrameRange,
+    VideoIssuePosition,
+)
 from labelbox.schema.label import Label
 from labelbox.schema.label_score import LabelScore
 from labelbox.schema.labeling_frontend import (

@@ -24,6 +24,9 @@ Labelbox Python SDK Documentation
     foundry-model
     identifiable
     identifiables
+    issue
+    issue-category
+    issue-position
     label
     label-score
     labeling-frontend

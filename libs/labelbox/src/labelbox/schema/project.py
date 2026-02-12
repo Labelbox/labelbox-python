@@ -59,6 +59,18 @@ from labelbox.schema.project_overview import (
     ProjectOverview,
     ProjectOverviewDetailed,
 )
+from labelbox.schema.issue import (
+    Issue,
+    IssueStatus,
+    _ISSUE_FIELDS,
+    _parse_issue,
+)
+from labelbox.schema.issue_category import IssueCategory
+from labelbox.schema.issue_position import (
+    MEDIA_TYPE_POSITION_MAP,
+    IssuePosition,
+)
+from labelbox.schema.label import Label
 from labelbox.schema.workflow import ProjectWorkflow
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.schema.task import Task
@@ -1818,6 +1830,302 @@ class Project(DbObject, Updateable, Deletable):
             target_client=self.client,
             target_project_id=self.uid,
         )
+
+    # ------------------------------------------------------------------
+    # Issue management
+    # ------------------------------------------------------------------
+
+    def create_issue(
+        self,
+        content: str,
+        data_row_id: Union[str, "DataRow"],
+        label_id: Optional[Union[str, "Label"]] = None,
+        category_id: Optional[Union[str, "IssueCategory"]] = None,
+        position: Optional[IssuePosition] = None,
+    ) -> Issue:
+        """Create a new issue in this project.
+
+        Args:
+            content: Issue body text.
+            data_row_id: The data row to attach the issue to.  Accepts a
+                string ID or a :class:`~labelbox.schema.data_row.DataRow`
+                instance.
+            label_id: Optional label to associate.  Accepts a string ID or
+                a :class:`~labelbox.schema.label.Label` instance.  Strongly
+                recommended: the backend only returns issues that have a
+                ``label_id`` from :meth:`get_issues`, so issues created
+                without one will not appear in paginated queries.
+            category_id: Optional issue category.  Accepts a string ID or
+                an :class:`~labelbox.schema.issue_category.IssueCategory`
+                instance.
+            position: Optional typed position (e.g.
+                :class:`~labelbox.schema.issue_position.ImageIssuePosition`).
+                Must match the project's media type.
+
+        Returns:
+            The newly created :class:`Issue`.
+
+        Raises:
+            TypeError: If *position* does not match the project's media
+                type.
+        """
+        # Resolve DbObject instances to string IDs
+        resolved_data_row_id = (
+            data_row_id.uid if hasattr(data_row_id, "uid") else str(data_row_id)
+        )
+        resolved_label_id: Optional[str] = None
+        if label_id is not None:
+            resolved_label_id = (
+                label_id.uid if hasattr(label_id, "uid") else str(label_id)
+            )
+        resolved_category_id: Optional[str] = None
+        if category_id is not None:
+            resolved_category_id = (
+                category_id.uid
+                if hasattr(category_id, "uid")
+                else str(category_id)
+            )
+
+        # Validate position type against project media type
+        if position is not None and self.media_type is not None:
+            expected_cls = MEDIA_TYPE_POSITION_MAP.get(self.media_type)
+            if expected_cls is not None and not isinstance(
+                position, expected_cls
+            ):
+                raise TypeError(
+                    f"Position type {type(position).__name__} is not valid "
+                    f"for media type {self.media_type.name}. "
+                    f"Expected {expected_cls.__name__}."
+                )
+
+        mutation_data: Dict[str, Any] = {
+            "content": content,
+            "projectId": self.uid,
+            "dataRowId": resolved_data_row_id,
+            "type": "Issue",
+        }
+        if resolved_label_id is not None:
+            mutation_data["labelId"] = resolved_label_id
+        if resolved_category_id is not None:
+            mutation_data["categoryId"] = resolved_category_id
+        if position is not None:
+            mutation_data["position"] = position.to_dict()
+
+        query_str = (
+            """mutation CreateIssuePyApi($data: CreateIssueInput!) {
+            createIssue(data: $data) { %s }
+        }"""
+            % _ISSUE_FIELDS
+        )
+
+        result = self.client.execute(
+            query_str, {"data": mutation_data}, experimental=True
+        )
+        issue = _parse_issue(
+            self.client, result["createIssue"], project_id=self.uid
+        )
+
+        # The createIssue mutation may not return dataRowId / labelId /
+        # categoryId in its response.  Since we know the values from the
+        # input, patch them onto the returned object so callers don't
+        # have to re-fetch.
+        if issue.data_row_id is None and resolved_data_row_id is not None:
+            issue.data_row_id = resolved_data_row_id
+        if issue.label_id is None and resolved_label_id is not None:
+            issue.label_id = resolved_label_id
+        if issue.category_id is None and resolved_category_id is not None:
+            issue.category_id = resolved_category_id
+
+        return issue
+
+    def get_issues(
+        self,
+        status: Optional[IssueStatus] = None,
+        data_row_id: Optional[str] = None,
+        category_id: Optional[str] = None,
+        created_by_ids: Optional[List[str]] = None,
+        content: Optional[str] = None,
+    ) -> PaginatedCollection:
+        """Fetch issues for this project with optional filters.
+
+        Uses cursor-based pagination (``after`` / ``first``) as defined
+        by the ``IssueConnection`` return type.  Returns a lazy
+        :class:`~labelbox.pagination.PaginatedCollection` that pages
+        transparently during iteration.
+
+        .. note::
+            The backend only returns issues that have a ``label_id``.
+            Issues created without a label will not appear in the
+            results.  Use :meth:`get_issue` (by ID) or
+            :meth:`export_issues` to retrieve them.
+
+        Args:
+            status: Filter by issue status.
+            data_row_id: Filter by data-row ID.
+            category_id: Filter by category ID.
+            created_by_ids: Filter by creator user IDs.
+            content: Full-text search on issue content.
+
+        Returns:
+            A :class:`PaginatedCollection` of :class:`Issue` instances.
+        """
+        # Build the where filter to match the backend ProjectIssueInput
+        where: Dict[str, Any] = {"type": "Issue"}
+        if status is not None:
+            where["status"] = status.value  # "Open" or "Resolved"
+        if data_row_id is not None:
+            where["dataRow"] = {"id": data_row_id}
+        if category_id is not None:
+            where["categoryId"] = category_id
+        if created_by_ids is not None:
+            where["createdByIds"] = created_by_ids
+        if content is not None:
+            where["content"] = content
+
+        query_str = (
+            """query GetProjectIssuesPyApi(
+            $projectId: ID!, $where: ProjectIssueInput,
+            $from: ID, $first: PageSize
+        ) {
+            project(where: {id: $projectId}) {
+                issues(where: $where, after: $from, first: $first) {
+                    nodes { %s }
+                    nextCursor
+                }
+            }
+        }"""
+            % _ISSUE_FIELDS
+        )
+
+        project_id = self.uid
+        params: Dict[str, Any] = {
+            "projectId": self.uid,
+            "where": where,
+        }
+
+        return PaginatedCollection(
+            client=self.client,
+            query=query_str,
+            params=params,  # type: ignore[arg-type]
+            dereferencing=["project", "issues", "nodes"],
+            obj_class=lambda client, data: _parse_issue(
+                client, data, project_id=project_id
+            ),
+            cursor_path=["project", "issues", "nextCursor"],
+            experimental=True,
+        )
+
+    def get_issue(self, issue_id: str) -> Issue:
+        """Fetch a single issue by ID.
+
+        Args:
+            issue_id: The issue's unique identifier.
+
+        Returns:
+            An :class:`Issue` instance.
+        """
+        query_str = (
+            """query GetIssuePyApi($where: WhereUniqueIdInput!) {
+            issue(where: $where) { %s }
+        }"""
+            % _ISSUE_FIELDS
+        )
+
+        result = self.client.execute(
+            query_str, {"where": {"id": issue_id}}, experimental=True
+        )
+        return _parse_issue(self.client, result["issue"], project_id=self.uid)
+
+    def delete_issues(self, issue_ids: List[str]) -> bool:
+        """Delete one or more issues in bulk.
+
+        The backend enforces creator-only authorization: the call will
+        fail if any of the listed issues belong to a different user.
+        Non-existent IDs are silently ignored.
+
+        Args:
+            issue_ids: List of issue IDs to delete.
+
+        Returns:
+            ``True`` when the mutation succeeds.
+        """
+        query_str = """mutation DeleteIssuePyApi($data: DeleteIssueInput!) {
+            deleteIssue(data: $data)
+        }"""
+
+        self.client.execute(
+            query_str,
+            {"data": {"issueIds": issue_ids}},
+            experimental=True,
+        )
+        return True
+
+    # ------------------------------------------------------------------
+    # Issue category management
+    # ------------------------------------------------------------------
+
+    def create_issue_category(
+        self, name: str, description: str
+    ) -> IssueCategory:
+        """Create a new issue category in this project.
+
+        Args:
+            name: Category display name.
+            description: Human-readable description.
+
+        Returns:
+            The newly created :class:`IssueCategory`.
+        """
+        query_str = """mutation CreateIssueCategoryPyApi(
+            $data: CreateIssueCategoryInput!
+        ) {
+            createIssueCategory(data: $data) { id name description }
+        }"""
+
+        result = self.client.execute(
+            query_str,
+            {
+                "data": {
+                    "projectId": self.uid,
+                    "name": name,
+                    "description": description,
+                }
+            },
+            experimental=True,
+        )
+        data = result["createIssueCategory"]
+        cat = IssueCategory(
+            id=data["id"],
+            name=data["name"],
+            description=data["description"],
+        )
+        cat._client = self.client
+        return cat
+
+    def get_issue_categories(self) -> List[IssueCategory]:
+        """Fetch all issue categories for this project.
+
+        Returns:
+            List of :class:`IssueCategory` instances.
+        """
+        query_str = """query GetIssueCategoriesPyApi($projectId: ID!) {
+            project(where: {id: $projectId}) {
+                issueCategories { id name description }
+            }
+        }"""
+
+        result = self.client.execute(query_str, {"projectId": self.uid})
+        raw_list = result.get("project", {}).get("issueCategories", [])
+        categories = []
+        for c in raw_list:
+            cat = IssueCategory(
+                id=c["id"],
+                name=c["name"],
+                description=c["description"],
+            )
+            cat._client = self.client
+            categories.append(cat)
+        return categories
 
 
 class ProjectMember(DbObject):
