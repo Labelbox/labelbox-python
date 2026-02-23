@@ -31,6 +31,7 @@ from ...annotation_types.temporal import (
 )
 from .temporal import create_temporal_ndjson_classifications
 from labelbox.types import DocumentRectangle, DocumentEntity
+from ...annotation_types.classification.classification import Text
 from .classification import (
     NDChecklistSubclass,
     NDClassification,
@@ -39,6 +40,7 @@ from .classification import (
     NDPromptClassificationType,
     NDPromptText,
     NDRadioSubclass,
+    NDVideoText,
 )
 from .metric import NDConfusionMatrixMetric, NDMetricAnnotation, NDScalarMetric
 from .mmc import NDMessageTask
@@ -61,6 +63,7 @@ AnnotationType = Union[
     NDRelationship,
     NDPromptText,
     NDMessageTask,
+    NDVideoText,
 ]
 
 
@@ -142,11 +145,33 @@ class NDLabel(BaseModel):
                 yield NDObject.from_common(annotation=annot, data=label.data)
 
         for annotation_group in video_annotations.values():
-            segment_frame_ranges = cls._get_segment_frame_ranges(
-                annotation_group
-            )
             if isinstance(annotation_group[0], VideoClassificationAnnotation):
                 annotation = annotation_group[0]
+
+                if isinstance(annotation.value, Text):
+                    by_text = defaultdict(list)
+                    for ann in annotation_group:
+                        by_text[ann.value.answer].append(ann)
+
+                    frame_ranges_by_text = {}
+                    for text_val, anns in sorted(
+                        by_text.items(),
+                        key=lambda x: min(a.frame for a in x[1]),
+                    ):
+                        ranges = [
+                            {"start": s, "end": e}
+                            for s, e in cls._get_segment_frame_ranges(anns)
+                        ]
+                        frame_ranges_by_text[text_val] = ranges
+
+                    yield NDVideoText.from_video_text_group(
+                        annotation_group, frame_ranges_by_text, label.data
+                    )
+                    continue
+
+                segment_frame_ranges = cls._get_segment_frame_ranges(
+                    annotation_group
+                )
                 frames_data = []
                 for frames in segment_frame_ranges:
                     frames_data.append({"start": frames[0], "end": frames[-1]})
@@ -154,6 +179,9 @@ class NDLabel(BaseModel):
                 yield NDClassification.from_common(annotation, label.data)
 
             elif isinstance(annotation_group[0], VideoObjectAnnotation):
+                segment_frame_ranges = cls._get_segment_frame_ranges(
+                    annotation_group
+                )
                 segments = []
                 for start_frame, end_frame in segment_frame_ranges:
                     segment = []

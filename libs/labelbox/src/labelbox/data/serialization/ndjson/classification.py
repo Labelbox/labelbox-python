@@ -209,6 +209,47 @@ class NDRadioSubclass(NDAnswer):
         )
 
 
+class NDVideoTextAnswer(BaseModel):
+    value: str
+    frames: List[Dict[str, int]]
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class NDVideoText(BaseModel):
+    """Video text classification with per-segment text values and frame ranges.
+
+    Produces NDJSON like:
+      {"name": "...", "answer": [{"value": "text", "frames": [{"start": 1, "end": 5}]}], ...}
+    """
+
+    name: str
+    answer: List[NDVideoTextAnswer]
+    dataRow: Dict[str, str]
+
+    @classmethod
+    def from_video_text_group(
+        cls,
+        annotation_group: List["VideoClassificationAnnotation"],
+        frame_ranges_by_text: Dict[str, List[Dict[str, int]]],
+        data: "GenericDataRowData",
+    ) -> "NDVideoText":
+        first = annotation_group[0]
+        data_row = {}
+        if data.global_key:
+            data_row["globalKey"] = data.global_key
+        elif data.uid:
+            data_row["id"] = data.uid
+        return cls(
+            name=first.name,
+            dataRow=data_row,
+            answer=[
+                NDVideoTextAnswer(value=text_val, frames=ranges)
+                for text_val, ranges in frame_ranges_by_text.items()
+            ],
+        )
+
+
 class NDPromptTextSubclass(NDAnswer):
     answer: str
 
@@ -517,6 +558,7 @@ NDChecklist.model_rebuild()
 NDRadioSubclass.model_rebuild()
 NDRadio.model_rebuild()
 NDText.model_rebuild()
+NDVideoText.model_rebuild()
 NDPromptText.model_rebuild()
 NDTextSubclass.model_rebuild()
 
