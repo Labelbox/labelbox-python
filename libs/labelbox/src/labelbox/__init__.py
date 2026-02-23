@@ -22,6 +22,18 @@ from labelbox.schema.data_row_metadata import (
 )
 from labelbox.schema.dataset import Dataset
 from labelbox.schema.enums import AnnotationImportState
+from labelbox.schema.project_sync import (
+    AutoQA,
+    AutoQaStatus,
+    CustomScore,
+    GranularRating,
+    ProjectSyncEntry,
+    ProjectSyncLabel,
+    ProjectSyncResult,
+    ProjectSyncReview,
+    ReviewedBy,
+    SubmittedBy,
+)
 from labelbox.schema.export_task import (
     BufferedJsonConverterOutput,
     ExportTask,
