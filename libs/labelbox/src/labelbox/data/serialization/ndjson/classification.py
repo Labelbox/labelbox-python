@@ -223,9 +223,20 @@ class NDVideoText(BaseModel):
       {"name": "...", "answer": [{"value": "text", "frames": [{"start": 1, "end": 5}]}], ...}
     """
 
-    name: str
+    name: Optional[str] = None
+    schema_id: Optional[Cuid] = Field(
+        default=None, serialization_alias="schemaId"
+    )
     answer: List[NDVideoTextAnswer]
-    dataRow: Dict[str, str]
+    data_row: DataRow = Field(serialization_alias="dataRow")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @model_validator(mode="after")
+    def must_set_one(self):
+        if self.schema_id is None and self.name is None:
+            raise ValueError("Schema id or name are not set. Set either one.")
+        return self
 
     @classmethod
     def from_video_text_group(
@@ -235,14 +246,10 @@ class NDVideoText(BaseModel):
         data: "GenericDataRowData",
     ) -> "NDVideoText":
         first = annotation_group[0]
-        data_row = {}
-        if data.global_key:
-            data_row["globalKey"] = data.global_key
-        elif data.uid:
-            data_row["id"] = data.uid
         return cls(
             name=first.name,
-            dataRow=data_row,
+            schema_id=first.feature_schema_id,
+            data_row=DataRow(id=data.uid, global_key=data.global_key),
             answer=[
                 NDVideoTextAnswer(value=text_val, frames=ranges)
                 for text_val, ranges in frame_ranges_by_text.items()

@@ -1,4 +1,5 @@
 import json
+import pytest
 from labelbox.data.annotation_types.classification.classification import (
     Checklist,
     ClassificationAnnotation,
@@ -720,6 +721,59 @@ def test_video_classification_text_single_text_across_frames():
     assert len(answer) == 1
     assert answer[0]["value"] == "sample text"
     assert answer[0]["frames"] == [{"start": 9, "end": 15}]
+
+
+def test_video_classification_text_with_external_id_raises():
+    label = Label(
+        data=GenericDataRowData(external_id="sample-video-external-id"),
+        annotations=[
+            VideoClassificationAnnotation(
+                name="free_text",
+                frame=9,
+                segment_index=0,
+                value=Text(answer="sample text"),
+            )
+        ],
+    )
+
+    with pytest.raises(ValueError, match="Must set either id or global_key"):
+        list(NDJsonConverter.serialize([label]))
+
+
+def test_video_classification_text_with_feature_schema_id_only():
+    label = Label(
+        data=GenericDataRowData(global_key="sample-video-schema-id-only"),
+        annotations=[
+            VideoClassificationAnnotation(
+                feature_schema_id="ckrb1sfjx099a0y914hl319ie",
+                frame=9,
+                segment_index=0,
+                value=Text(answer="sample text"),
+            ),
+            VideoClassificationAnnotation(
+                feature_schema_id="ckrb1sfjx099a0y914hl319ie",
+                frame=15,
+                segment_index=0,
+                value=Text(answer="sample text"),
+            ),
+        ],
+    )
+
+    serialized = list(NDJsonConverter.serialize([label]))
+    free_text_rows = [
+        r
+        for r in serialized
+        if r.get("schemaId") == "ckrb1sfjx099a0y914hl319ie"
+    ]
+    assert len(free_text_rows) == 1
+
+    row = free_text_rows[0]
+    assert row["schemaId"] == "ckrb1sfjx099a0y914hl319ie"
+    assert "name" not in row
+    assert row["dataRow"] == {"globalKey": "sample-video-schema-id-only"}
+    assert row["answer"] == [
+        {"value": "sample text", "frames": [{"start": 9, "end": 15}]}
+    ]
 
 
 def test_video_classification_nesting_bbox():
