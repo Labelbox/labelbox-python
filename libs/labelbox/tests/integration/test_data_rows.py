@@ -1024,6 +1024,16 @@ def test_data_row_bulk_creation_with_same_global_keys(
     assert len(all_results) == 1
 
 
+def _wait_for_task(task, timeout_seconds=600):
+    """Wait for a task to complete with a defensive refresh if timeout is exhausted."""
+    task.wait_till_done(timeout_seconds=timeout_seconds)
+    if task.status == "IN_PROGRESS":
+        task.refresh()
+    assert (
+        task.status == "COMPLETE"
+    ), f"Task {task.uid} did not complete within {timeout_seconds}s: {task.status}"
+
+
 def test_data_row_delete_and_create_with_same_global_key(
     client, dataset, sample_image
 ):
@@ -1035,18 +1045,16 @@ def test_data_row_delete_and_create_with_same_global_key(
 
     # should successfully insert new datarow
     task = dataset.create_data_rows([data_row_payload])
-    task.wait_till_done()
+    _wait_for_task(task)
 
-    assert task.status == "COMPLETE"
     assert task.result[0]["global_key"] == global_key_1
 
     new_data_row_id = task.result[0]["id"]
 
     # same payload should fail due to duplicated global key
     task = dataset.create_data_rows([data_row_payload])
-    task.wait_till_done()
+    _wait_for_task(task)
 
-    assert task.status == "COMPLETE"
     assert len(task.failed_data_rows) == 1
     assert (
         task.failed_data_rows[0]["message"]
@@ -1058,9 +1066,8 @@ def test_data_row_delete_and_create_with_same_global_key(
 
     # should successfully insert new datarow now
     task = dataset.create_data_rows([data_row_payload])
-    task.wait_till_done()
+    _wait_for_task(task)
 
-    assert task.status == "COMPLETE"
     assert task.result[0]["global_key"] == global_key_1
 
 

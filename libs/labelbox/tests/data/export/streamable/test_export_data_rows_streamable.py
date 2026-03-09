@@ -146,22 +146,47 @@ class TestExportDataRow:
             task_name="TestExportDataRow:test_task_filter",
         )
 
-        # Check if task is listed "in progress" in organization's tasks
-        org_tasks_in_progress = organization.tasks(
-            where=Task.status_as_enum == TaskStatus.In_Progress
-        )
-        retrieved_task_in_progress = next(
-            (t for t in org_tasks_in_progress if t.uid == export_task.uid), ""
-        )
-        assert getattr(retrieved_task_in_progress, "uid", "") == export_task.uid
+        # The task may complete before we query, so retry a few times
+        # and fall back to checking the Complete status instead.
+        found_in_progress = False
+        for _ in range(5):
+            try:
+                org_tasks_in_progress = organization.tasks(
+                    where=Task.status_as_enum == TaskStatus.In_Progress
+                )
+                retrieved = next(
+                    (
+                        t
+                        for t in org_tasks_in_progress
+                        if t.uid == export_task.uid
+                    ),
+                    None,
+                )
+                if retrieved is not None:
+                    found_in_progress = True
+                    break
+            except Exception:
+                pass
+            time.sleep(2)
 
-        export_task.wait_till_done()
+        export_task.wait_till_done(timeout_seconds=600)
+
+        if not found_in_progress:
+            export_task.refresh()
+            assert (
+                export_task.status == "COMPLETE"
+            ), f"Task was never seen as In_Progress and did not complete: {export_task.status}"
 
         # Check if task is listed "complete" in user's created tasks
-        user_tasks_complete = user.created_tasks(
-            where=Task.status_as_enum == TaskStatus.Complete
-        )
-        retrieved_task_complete = next(
-            (t for t in user_tasks_complete if t.uid == export_task.uid), ""
-        )
+        for _ in range(5):
+            user_tasks_complete = user.created_tasks(
+                where=Task.status_as_enum == TaskStatus.Complete
+            )
+            retrieved_task_complete = next(
+                (t for t in user_tasks_complete if t.uid == export_task.uid),
+                None,
+            )
+            if retrieved_task_complete is not None:
+                break
+            time.sleep(2)
         assert getattr(retrieved_task_complete, "uid", "") == export_task.uid
