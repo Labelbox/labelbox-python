@@ -746,15 +746,25 @@ def live_chat_evaluation_project(client, rand_gen):
 def live_chat_evaluation_project_with_batch(
     client,
     rand_gen,
-    live_chat_evaluation_project,
     offline_conversational_data_row,
 ):
     project_name = f"test-model-evaluation-project-{rand_gen(str)}"
-    project = client.create_model_evaluation_project(name=project_name)
+
+    # Retry to handle transient ER_LOCK_DEADLOCK from the backend when
+    # multiple parallel workers create model-evaluation projects.
+    project = None
+    for attempt in range(3):
+        try:
+            project = client.create_model_evaluation_project(name=project_name)
+            break
+        except Exception:
+            if attempt == 2:
+                raise
+            time.sleep(2 * (attempt + 1))
 
     project.create_batch(
         rand_gen(str),
-        [offline_conversational_data_row.uid],  # sample of data row objects
+        [offline_conversational_data_row.uid],
     )
 
     yield project
