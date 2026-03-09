@@ -7,6 +7,7 @@ from itertools import islice
 from typing import Type
 
 import pytest
+from lbox.exceptions import UnprocessableEntityError
 
 from labelbox import (
     Classification,
@@ -757,8 +758,8 @@ def live_chat_evaluation_project_with_batch(
         try:
             project = client.create_model_evaluation_project(name=project_name)
             break
-        except Exception:
-            if attempt == 2:
+        except UnprocessableEntityError as exc:
+            if "ER_LOCK_DEADLOCK" not in str(exc) or attempt == 2:
                 raise
             time.sleep(2 * (attempt + 1))
 
