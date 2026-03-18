@@ -1,4 +1,9 @@
 # Changelog
+# Version 7.6.0 (2026-03-18)
+## Added
+* Add `Project.sync_external_project()` method for syncing external labels, metrics, and workflow state ([#2042](https://github.com/Labelbox/labelbox-python/pull/2042))
+* Add `ProjectSyncEntry`, `ProjectSyncResult`, `ProjectSyncLabel`, `ProjectSyncReview`, `AutoQA`, `AutoQaStatus`, `CustomScore`, `GranularRating`, `SubmittedBy`, `ReviewedBy` classes ([#2042](https://github.com/Labelbox/labelbox-python/pull/2042))
+
 # Version 7.5.0 (2026-01-30)
 ## Added
 * Add support for text subclasses under global text subclasses ([#2040](https://github.com/Labelbox/labelbox-python/pull/2040))
