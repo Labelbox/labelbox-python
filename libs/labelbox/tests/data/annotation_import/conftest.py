@@ -1417,7 +1417,7 @@ def checklist_inference_index_mmc(
     checklists = []
     for feature in prediction_id_mapping:
         if "checklist_index" not in feature:
-            return None
+            continue
         checklist = feature["checklist_index"].copy()
         checklist.update(
             {
