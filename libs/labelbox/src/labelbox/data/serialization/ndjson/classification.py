@@ -209,6 +209,61 @@ class NDRadioSubclass(NDAnswer):
         )
 
 
+class NDVideoTextAnswer(BaseModel):
+    value: str
+    frames: List[Dict[str, int]]
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class NDVideoText(BaseModel):
+    """Video text classification with per-segment text values and frame ranges.
+
+    Produces NDJSON like:
+      {"name": "...", "answer": [{"value": "text", "frames": [{"start": 1, "end": 5}]}], ...}
+    """
+
+    name: Optional[str] = None
+    schema_id: Optional[str] = Field(default=None, alias="schemaId")
+    answer: List[NDVideoTextAnswer]
+    data_row: DataRow = Field(alias="dataRow")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    @model_validator(mode="after")
+    def must_set_one(self):
+        if not self.name and not self.schema_id:
+            raise ValueError("Schema id or name are not set. Set either one.")
+        return self
+
+    @model_serializer(mode="wrap")
+    def serialize_model(self, handler):
+        res = handler(self)
+        if "name" in res and res["name"] is None:
+            res.pop("name")
+        if "schemaId" in res and res["schemaId"] is None:
+            res.pop("schemaId")
+        return res
+
+    @classmethod
+    def from_video_text_group(
+        cls,
+        annotation_group: List["VideoClassificationAnnotation"],
+        frame_ranges_by_text: Dict[str, List[Dict[str, int]]],
+        data: "GenericDataRowData",
+    ) -> "NDVideoText":
+        first = annotation_group[0]
+        return cls(
+            name=first.name,
+            schema_id=first.feature_schema_id,
+            data_row=DataRow(id=data.uid, global_key=data.global_key),
+            answer=[
+                NDVideoTextAnswer(value=text_val, frames=ranges)
+                for text_val, ranges in frame_ranges_by_text.items()
+            ],
+        )
+
+
 class NDPromptTextSubclass(NDAnswer):
     answer: str
 
@@ -517,6 +572,7 @@ NDChecklist.model_rebuild()
 NDRadioSubclass.model_rebuild()
 NDRadio.model_rebuild()
 NDText.model_rebuild()
+NDVideoText.model_rebuild()
 NDPromptText.model_rebuild()
 NDTextSubclass.model_rebuild()
 

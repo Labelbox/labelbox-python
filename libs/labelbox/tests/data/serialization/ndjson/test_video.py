@@ -635,6 +635,93 @@ def test_video_classification_global_subclassifications():
     assert res == [expected_first_annotation, expected_second_annotation]
 
 
+def test_video_classification_text_produces_ndjson_with_frames():
+    """VideoClassificationAnnotation + Text serializes with answer as a list of {value, frames}."""
+    label = Label(
+        data=GenericDataRowData(global_key="sample-video-text"),
+        annotations=[
+            VideoClassificationAnnotation(
+                name="free_text",
+                frame=9,
+                segment_index=0,
+                value=Text(answer="Looks like a hungry big cat"),
+            ),
+            VideoClassificationAnnotation(
+                name="free_text",
+                frame=15,
+                segment_index=0,
+                value=Text(answer="Looks like a hungry big cat"),
+            ),
+            VideoClassificationAnnotation(
+                name="free_text",
+                frame=40,
+                segment_index=1,
+                value=Text(answer="It's getting closer!"),
+            ),
+            VideoClassificationAnnotation(
+                name="free_text",
+                frame=50,
+                segment_index=1,
+                value=Text(answer="It's getting closer!"),
+            ),
+        ],
+    )
+    serialized = list(NDJsonConverter.serialize([label]))
+    free_text_rows = [r for r in serialized if r.get("name") == "free_text"]
+    assert len(free_text_rows) == 1
+
+    row = free_text_rows[0]
+    assert row["dataRow"] == {"globalKey": "sample-video-text"}
+    assert "answer" in row
+    answer = row["answer"]
+    assert isinstance(answer, list)
+    assert len(answer) == 2
+
+    by_value = {a["value"]: a for a in answer}
+    assert "Looks like a hungry big cat" in by_value
+    assert "It's getting closer!" in by_value
+    assert by_value["Looks like a hungry big cat"]["frames"] == [
+        {"start": 9, "end": 15}
+    ]
+    assert by_value["It's getting closer!"]["frames"] == [
+        {"start": 40, "end": 50}
+    ]
+
+
+def test_video_classification_text_single_text_across_frames():
+    """VideoClassificationAnnotation + Text with same text across all frames."""
+    label = Label(
+        data=GenericDataRowData(global_key="sample-video-single-text"),
+        annotations=[
+            VideoClassificationAnnotation(
+                name="free_text_per_frame",
+                frame=9,
+                segment_index=0,
+                value=Text(answer="sample text"),
+            ),
+            VideoClassificationAnnotation(
+                name="free_text_per_frame",
+                frame=15,
+                segment_index=0,
+                value=Text(answer="sample text"),
+            ),
+        ],
+    )
+    serialized = list(NDJsonConverter.serialize([label]))
+    free_text_rows = [
+        r for r in serialized if r.get("name") == "free_text_per_frame"
+    ]
+    assert len(free_text_rows) == 1
+
+    row = free_text_rows[0]
+    assert row["dataRow"] == {"globalKey": "sample-video-single-text"}
+    answer = row["answer"]
+    assert isinstance(answer, list)
+    assert len(answer) == 1
+    assert answer[0]["value"] == "sample text"
+    assert answer[0]["frames"] == [{"start": 9, "end": 15}]
+
+
 def test_video_classification_nesting_bbox():
     bbox_annotation = [
         VideoObjectAnnotation(
