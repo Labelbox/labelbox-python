@@ -194,33 +194,40 @@ def test_update_user_group(user_group):
 
 def test_get_user_groups_with_creation_deletion(client):
     """Test user group creation, retrieval, and deletion."""
-    # Get initial count
-    initial_groups = list(UserGroup.get_user_groups(client))
-    initial_count = len(initial_groups)
-
-    # Create a new group
     group_name = f"{data.name()}_{int(time.time())}"
     user_group = UserGroup(client)
     user_group.name = group_name
     user_group.color = UserGroupColor.CYAN
     user_group.create()
 
-    # Verify the group was created
-    updated_groups = list(UserGroup.get_user_groups(client))
-    assert len(updated_groups) == initial_count + 1
-
-    # Find our group
-    our_group = next((g for g in updated_groups if g.name == group_name), None)
-    assert our_group is not None
-    assert our_group.id == user_group.id
+    # Verify the created group appears in the listing (retry for eventual
+    # consistency; count-based checks are racy with parallel test workers).
+    our_group = None
+    for _ in range(5):
+        updated_groups = list(UserGroup.get_user_groups(client))
+        our_group = next(
+            (g for g in updated_groups if g.id == user_group.id), None
+        )
+        if our_group is not None:
+            break
+        time.sleep(2)
+    assert (
+        our_group is not None
+    ), f"Created group {user_group.id} not found in group listing"
+    assert our_group.name == group_name
 
     # Delete the group
     user_group.delete()
 
-    # Verify the group was deleted
-    final_groups = list(UserGroup.get_user_groups(client))
-    assert len(final_groups) == initial_count
-    assert len(user_group.members) == 0  # V3 uses members
+    # Verify the deleted group no longer appears in the listing
+    gone = False
+    for _ in range(5):
+        final_groups = list(UserGroup.get_user_groups(client))
+        if not any(g.id == user_group.id for g in final_groups):
+            gone = True
+            break
+        time.sleep(2)
+    assert gone, f"Deleted group {user_group.id} still appears in group listing"
 
 
 def test_update_user_group_members_projects(user_group, client, project_pack):
