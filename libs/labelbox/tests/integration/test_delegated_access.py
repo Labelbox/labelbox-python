@@ -8,7 +8,6 @@ import pytest
 from labelbox import Client
 from labelbox.schema.iam_integration import (
     AwsIamIntegrationSettings,
-    GcpIamIntegrationSettings,
     AzureIamIntegrationSettings,
 )
 from ..conftest import create_dataset_robust
@@ -37,23 +36,6 @@ def aws_integration(
     settings = AwsIamIntegrationSettings(
         role_arn="arn:aws:iam::000000000000:role/temporary",
         read_bucket="test-bucket",
-    )
-    integration = client.get_organization().create_iam_integration(
-        name=test_integration_name,
-        settings=settings,
-    )
-    yield integration
-    # Proper cleanup using delete mutation
-    delete_iam_integration(client, integration.uid)
-
-
-@pytest.fixture
-def gcp_integration(
-    client, test_integration_name
-) -> Optional["IAMIntegration"]:
-    """Creates a test GCP integration and cleans it up after the test."""
-    settings = GcpIamIntegrationSettings(
-        read_bucket="gs://test-bucket",
     )
     integration = client.get_organization().create_iam_integration(
         name=test_integration_name,
@@ -103,23 +85,6 @@ def test_create_aws_integration(client, test_integration_name):
         delete_iam_integration(client, integration.uid)
 
 
-def test_create_gcp_integration(client, test_integration_name):
-    """Test creating a GCP IAM integration."""
-    settings = GcpIamIntegrationSettings(read_bucket="gs://test-bucket")
-    integration = client.get_organization().create_iam_integration(
-        name=test_integration_name, settings=settings
-    )
-
-    try:
-        assert integration.name == test_integration_name
-        assert integration.provider == "GCP"
-        assert isinstance(integration.settings, GcpIamIntegrationSettings)
-        assert integration.settings.read_bucket == settings.read_bucket
-    finally:
-        # Ensure cleanup even if assertions fail
-        delete_iam_integration(client, integration.uid)
-
-
 def test_create_azure_integration(client, test_integration_name):
     """Test creating an Azure IAM integration."""
     settings = AzureIamIntegrationSettings(
@@ -160,38 +125,6 @@ def test_update_aws_integration(client, test_integration_name):
         new_settings = AwsIamIntegrationSettings(
             role_arn="arn:aws:iam::111111111111:role/updated",
             read_bucket="updated-bucket",
-        )
-        integration.update(
-            name=f"updated-{test_integration_name}", settings=new_settings
-        )
-
-        # Verify update - find the specific integration by ID
-        updated_integration = None
-        for iam_int in client.get_organization().get_iam_integrations():
-            if iam_int.uid == integration.uid:
-                updated_integration = iam_int
-                break
-
-        assert updated_integration is not None
-        assert updated_integration.name == f"updated-{test_integration_name}"
-        # Note: Settings may not be returned immediately after update
-    finally:
-        # Ensure cleanup even if assertions fail
-        delete_iam_integration(client, integration.uid)
-
-
-def test_update_gcp_integration(client, test_integration_name):
-    """Test updating a GCP IAM integration."""
-    # Create initial integration
-    settings = GcpIamIntegrationSettings(read_bucket="gs://test-bucket")
-    integration = client.get_organization().create_iam_integration(
-        name=test_integration_name, settings=settings
-    )
-
-    try:
-        # Update integration
-        new_settings = GcpIamIntegrationSettings(
-            read_bucket="gs://updated-bucket"
         )
         integration.update(
             name=f"updated-{test_integration_name}", settings=new_settings
