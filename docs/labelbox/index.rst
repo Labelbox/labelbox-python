@@ -43,6 +43,7 @@ Labelbox Python SDK Documentation
     pagination
     project
     project-model-config
+    project-sync
     prompt-issue-tool
     quality-mode
     request-client
