@@ -26,7 +26,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ github.head_ref }}
       - uses: ./.github/actions/python-package-shared-setup
@@ -42,7 +42,7 @@ jobs:
       group: labelbox-python-${{ inputs.test-env }}-${{ inputs.python-version }}-integration
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.sdk-version || github.head_ref }}
       - uses: ./.github/actions/python-package-shared-setup
@@ -62,7 +62,7 @@ jobs:
       group: labelbox-python-${{ inputs.test-env }}-${{ inputs.python-version }}-unit-data
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.sdk-version || github.head_ref }}
       - uses: ./.github/actions/python-package-shared-setup

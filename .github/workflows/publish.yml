@@ -43,11 +43,11 @@ jobs:
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.tag }}
       - name: Install the latest version of rye
-        uses: eifinger/setup-rye@v2
+        uses: eifinger/setup-rye@787604a465b1696ad17eedf2f8101df9fc555c94 # v2
         with:
           version: ${{ vars.RYE_VERSION }}
           enable-cache: true
@@ -63,7 +63,7 @@ jobs:
         id: hash
         run: |
           cd dist && echo "hashes=$(sha256sum * | base64 -w0)" >> $GITHUB_OUTPUT
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: build
           path: ./dist
@@ -73,7 +73,7 @@ jobs:
       actions: read
       contents: write
       id-token: write # Needed to access the workflow's OIDC identity.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@5a775b367a56d5bd118a224a811bba288150a563 # v2.0.0
     with:
       base64-subjects: "${{ needs.build.outputs.hashes }}"
       upload-assets: true
@@ -102,11 +102,11 @@ jobs:
             prod-key: PROD_LABELBOX_API_KEY_2
             da-test-key: DA_GCP_LABELBOX_API_KEY            
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.tag }}
       - name: Install the latest version of rye
-        uses: eifinger/setup-rye@v2
+        uses: eifinger/setup-rye@787604a465b1696ad17eedf2f8101df9fc555c94 # v2
         with:
           version: ${{ vars.RYE_VERSION }}
           enable-cache: true
@@ -115,7 +115,7 @@ jobs:
            rye config --set-bool behavior.use-uv=true
       - name: Python setup
         run: rye pin ${{ matrix.python-version }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: build
           path: ./dist
@@ -151,10 +151,10 @@ jobs:
     permissions:
       contents: write    
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.tag }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: build
           path: ./artifact
@@ -176,12 +176,12 @@ jobs:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: build
           path: ./artifact
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
         with:
           packages-dir: artifact/
   container-publish:
@@ -198,7 +198,7 @@ jobs:
     env:
       CONTAINER_IMAGE: "ghcr.io/${{ github.repository }}"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.tag }}
 
@@ -207,17 +207,17 @@ jobs:
           echo "CONTAINER_IMAGE=${CONTAINER_IMAGE,,}" >> ${GITHUB_ENV}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
   
       - name: Log in to the Container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
   
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
         id: build_container
         with:
           context: .
@@ -246,7 +246,7 @@ jobs:
       actions: read # for detecting the Github Actions environment.
       id-token: write # for creating OIDC tokens for signing.
       packages: write # for uploading attestations.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.0.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@5a775b367a56d5bd118a224a811bba288150a563 # v2.0.0
     with:
       image: ${{ needs. container-publish.outputs.image }}
       digest: ${{ needs. container-publish.outputs.digest }}
