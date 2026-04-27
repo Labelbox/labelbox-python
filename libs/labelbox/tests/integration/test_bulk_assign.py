@@ -1,4 +1,3 @@
-from labelbox import Project
 from labelbox.schema.task_assignment_status import TaskAssignmentStatus
 
 
