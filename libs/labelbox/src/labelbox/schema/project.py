@@ -48,6 +48,7 @@ from labelbox.schema.identifiable import DataRowIdentifier
 from labelbox.schema.identifiables import (
     DataRowIdentifiers,
 )
+from labelbox.schema.task_assignment_status import TaskAssignmentStatus
 from labelbox.schema.labeling_service import (
     LabelingService,
     LabelingServiceStatus,
@@ -1465,6 +1466,51 @@ class Project(DbObject, Updateable, Deletable):
         )
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["extendReservations"]
+
+    def bulk_assign_data_rows(
+        self,
+        user_id: str,
+        data_row_ids: List[str],
+        allowed_statuses: Optional[List[TaskAssignmentStatus]] = None,
+    ) -> bool:
+        """Assigns multiple data rows to a user in bulk.
+
+        Reserves the specified data rows in the project's initial labeling
+        queue for the given user. Only data rows whose current assignment
+        status matches ``allowed_statuses`` will be assigned.
+
+        Args:
+            user_id: The ID of the user to assign the data rows to.
+            data_row_ids: List of data row IDs to assign.
+            allowed_statuses: Optional list of statuses that a data row must
+                currently have in order to be assigned. Defaults to ``[FREE]``
+                on the server (i.e. only unassigned rows). Pass
+                ``[TaskAssignmentStatus.FREE, TaskAssignmentStatus.RESERVED]``
+                to allow reassignment of already-reserved rows.
+        Returns:
+            True if the bulk assignment succeeded.
+        Raises:
+            LabelboxError: If the GraphQL mutation fails.
+        """
+        if not data_row_ids:
+            return True
+
+        query_str = """mutation BulkAssignDataRowsPyApi($input: BulkAssignDataRowsInput!) {
+            bulkAssignDataRows(input: $input) {
+                success
+            }
+        }"""
+
+        input_dict: Dict[str, Any] = {
+            "projectId": self.uid,
+            "userId": user_id,
+            "dataRowIds": data_row_ids,
+        }
+        if allowed_statuses is not None:
+            input_dict["allowedStatuses"] = [s.value for s in allowed_statuses]
+
+        result = self.client.execute(query_str, {"input": input_dict})
+        return result["bulkAssignDataRows"]["success"]
 
     def enable_model_assisted_labeling(self, toggle: bool = True) -> bool:
         """Turns model assisted labeling either on or off based on input
