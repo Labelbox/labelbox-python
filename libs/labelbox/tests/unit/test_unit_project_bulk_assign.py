@@ -37,9 +37,7 @@ def project(mock_client):
 
 
 def test_bulk_assign_sends_correct_mutation_and_variables(project, mock_client):
-    mock_client.execute.return_value = {
-        "bulkAssignDataRows": {"success": True}
-    }
+    mock_client.execute.return_value = {"bulkAssignDataRows": {"success": True}}
     data_row_ids = ["dr_1", "dr_2", "dr_3"]
 
     result = project.bulk_assign_data_rows("user_123", data_row_ids)
@@ -61,9 +59,7 @@ def test_bulk_assign_sends_correct_mutation_and_variables(project, mock_client):
 
 
 def test_bulk_assign_omits_allowed_statuses_when_none(project, mock_client):
-    mock_client.execute.return_value = {
-        "bulkAssignDataRows": {"success": True}
-    }
+    mock_client.execute.return_value = {"bulkAssignDataRows": {"success": True}}
 
     project.bulk_assign_data_rows("user_123", ["dr_1"])
 
@@ -72,9 +68,7 @@ def test_bulk_assign_omits_allowed_statuses_when_none(project, mock_client):
 
 
 def test_bulk_assign_serializes_allowed_statuses(project, mock_client):
-    mock_client.execute.return_value = {
-        "bulkAssignDataRows": {"success": True}
-    }
+    mock_client.execute.return_value = {"bulkAssignDataRows": {"success": True}}
 
     project.bulk_assign_data_rows(
         "user_123",
@@ -90,9 +84,7 @@ def test_bulk_assign_serializes_allowed_statuses(project, mock_client):
 
 
 def test_bulk_assign_single_status(project, mock_client):
-    mock_client.execute.return_value = {
-        "bulkAssignDataRows": {"success": True}
-    }
+    mock_client.execute.return_value = {"bulkAssignDataRows": {"success": True}}
 
     project.bulk_assign_data_rows(
         "user_123",
