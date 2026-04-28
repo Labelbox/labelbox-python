@@ -151,8 +151,12 @@ def test_create_api_key_invalid_email_formats(client):
 
 
 def test_create_api_key_invalid_validity_values(client):
-    """Test that providing invalid validity values causes failure."""
-    user_email = client.get_user().email
+    """Test that providing invalid validity values causes failure.
+
+    Validity checks are pure input validation and run before any API calls,
+    so a dummy email is sufficient here.
+    """
+    user_email = "placeholder@labelbox.com"
 
     # Test with negative validity
     with pytest.raises(ValueError) as excinfo:
@@ -200,8 +204,12 @@ def test_create_api_key_invalid_validity_values(client):
 
 
 def test_create_api_key_invalid_time_unit(client):
-    """Test that providing invalid time unit causes failure."""
-    user_email = client.get_user().email
+    """Test that providing invalid time unit causes failure.
+
+    time_unit checks are pure input validation and run before any API calls,
+    so a dummy email is sufficient here.
+    """
+    user_email = "placeholder@labelbox.com"
 
     # Test with None time unit
     with pytest.raises(ValueError) as excinfo:

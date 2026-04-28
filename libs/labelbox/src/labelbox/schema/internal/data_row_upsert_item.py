@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 
 from labelbox.schema.identifiable import UniqueId, GlobalKey
 from labelbox.schema.data_row import DataRow
@@ -34,7 +34,8 @@ class DataRowItemBase(ABC, BaseModel):
             if not key:
                 key = {"type": "AUTO", "value": ""}
             elif isinstance(key, key_types):  # type: ignore
-                key = {"type": key.id_type.value, "value": key.key}
+                typed_key: Union[UniqueId, GlobalKey] = key  # type: ignore[assignment]
+                key = {"type": typed_key.id_type.value, "value": typed_key.key}
             else:
                 if not key_types:
                     raise ValueError(
