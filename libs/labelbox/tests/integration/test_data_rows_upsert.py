@@ -29,7 +29,7 @@ class TestDataRowUpsert:
                 {
                     "type": "PDF_URL",
                     "name": "att3",
-                    "value": "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf",
+                    "value": "https://storage.googleapis.com/lb-test-data/cataflow/media/test-pdf.pdf",
                 },
             ],
         )
@@ -63,7 +63,7 @@ class TestDataRowUpsert:
                         {
                             "type": AttachmentType.PDF_URL,
                             "name": "att3",
-                            "value": "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf",
+                            "value": "https://storage.googleapis.com/lb-test-data/cataflow/media/test-pdf.pdf",
                         },
                     ],
                     "metadata": [
@@ -99,7 +99,7 @@ class TestDataRowUpsert:
         assert attachments[2].attachment_type == AttachmentType.PDF_URL
         assert (
             attachments[2].attachment_value
-            == "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
+            == "https://storage.googleapis.com/lb-test-data/cataflow/media/test-pdf.pdf"
         )
 
         assert len(dr.metadata_fields) == 2

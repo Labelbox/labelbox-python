@@ -34,7 +34,6 @@ from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import QualityMode
 
 IMG_URL = "https://picsum.photos/200/300.jpg"
-MASKABLE_IMG_URL = "https://storage.googleapis.com/labelbox-datasets/image_sample_data/2560px-Kitano_Street_Kobe01s5s4110.jpeg"
 SMALL_DATASET_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 3
@@ -72,7 +71,7 @@ class Environ(Enum):
 
 @pytest.fixture
 def image_url() -> str:
-    return MASKABLE_IMG_URL
+    return IMG_URL
 
 
 @pytest.fixture
@@ -852,8 +851,8 @@ def video_data(client, rand_gen, video_data_row, wait_for_data_row_processing):
 
 def create_video_data_row(rand_gen):
     return {
-        "row_data": "https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4",
-        "global_key": f"https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4-{rand_gen(str)}",
+        "row_data": "https://storage.googleapis.com/lb-test-data/cataflow/media/test_video_500kb.mp4",
+        "global_key": f"https://storage.googleapis.com/lb-test-data/cataflow/media/test_video_500kb.mp4-{rand_gen(str)}",
         "media_type": "VIDEO",
     }
 

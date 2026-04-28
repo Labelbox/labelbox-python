@@ -689,8 +689,8 @@ def test_data_row_update(
     assert data_row.row_data == image_url
 
     # tileLayer becomes a media attribute
-    pdf_url = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf"
-    tileLayerUrl = "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483-lb-textlayer.json"
+    pdf_url = "https://storage.googleapis.com/lb-test-data/cataflow/media/test-pdf.pdf"
+    tileLayerUrl = "https://storage.googleapis.com/lb-test-data/cataflow/media/sample-pdf-textlayer.json"
     data_row.update(row_data={"pdfUrl": pdf_url, "tileLayerUrl": tileLayerUrl})
 
     def custom_check(data_row):
