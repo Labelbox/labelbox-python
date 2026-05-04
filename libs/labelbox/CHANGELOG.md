@@ -1,4 +1,12 @@
 # Changelog
+# Version 7.7.0 (2026-04-29)
+## Added
+* Add `Project.bulk_assign_data_rows()` method for bulk assigning data rows to a user ([#2054](https://github.com/Labelbox/labelbox-python/pull/2054))
+* Add `TaskAssignmentStatus` enum for filtering assignable data row statuses ([#2054](https://github.com/Labelbox/labelbox-python/pull/2054))
+## Fixed
+* Reorder `create_api_key` validation to check input params before making API calls ([#2054](https://github.com/Labelbox/labelbox-python/pull/2054))
+* Fix mypy type error in `DataRowUpsertItem.build` ([#2054](https://github.com/Labelbox/labelbox-python/pull/2054))
+
 # Version 7.6.0 (2026-03-18)
 ## Added
 * Add `Project.sync_external_project()` method for syncing external labels, metrics, and workflow state ([#2042](https://github.com/Labelbox/labelbox-python/pull/2042))

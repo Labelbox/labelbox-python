@@ -26814,27 +26814,27 @@ try {
     // To be updated with the new API keys
     {
       "python-version": "3.9",
-      "api-key": "STAGING_LABELBOX_API_KEY_ORG_CMH2FKAOZ032H0735C32V1U63",
+      "api-key": "STAGING_API_KEY_ORG_CMOI3PQ7801GM070D4TPG7FMH",
       "da-test-key": "DA_GCP_LABELBOX_API_KEY"
     },
     {
       "python-version": "3.10",
-      "api-key": "STAGING_LABELBOX_API_KEY_ORG_CMH2G1557037K0726H50N3JQK",
+      "api-key": "STAGING_API_KEY_ORG_CMOI3PQ7801GM070D4TPG7FMH",
       "da-test-key": "DA_GCP_LABELBOX_API_KEY"
     },
     {
       "python-version": "3.11",
-      "api-key": "STAGING_LABELBOX_API_KEY_ORG_CMH2G7STM04WC071F73LG8RSD",
+      "api-key": "STAGING_API_KEY_ORG_CMOI3PQ7801GM070D4TPG7FMH",
       "da-test-key": "DA_GCP_LABELBOX_API_KEY"
     },
     {
       "python-version": "3.12",
-      "api-key": "STAGING_LABELBOX_API_KEY_ORG_CMH2GEJW9033B07299RKLAOFM",
+      "api-key": "STAGING_API_KEY_ORG_CMOI3PQ7801GM070D4TPG7FMH",
       "da-test-key": "DA_GCP_LABELBOX_API_KEY"
     },
     {
       "python-version": "3.13",
-      "api-key": "STAGING_LABELBOX_API_KEY_ORG_CMH2GGV3X04QK071X1EJCH8W0",
+      "api-key": "STAGING_API_KEY_ORG_CMOI3PQ7801GM070D4TPG7FMH",
       "da-test-key": "DA_GCP_LABELBOX_API_KEY"
     },    
   ];

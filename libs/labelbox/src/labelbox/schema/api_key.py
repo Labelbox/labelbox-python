@@ -322,6 +322,27 @@ class ApiKey(DbObject):
         if not user_email or not isinstance(user_email, str):
             raise ValueError("user must be a User object or a valid email")
 
+        role_name = role.name if hasattr(role, "name") else role
+        if not role_name or not isinstance(role_name, str):
+            raise ValueError("role must be a Role object or a valid role name")
+
+        if not isinstance(time_unit, TimeUnit):
+            raise ValueError("time_unit must be a valid TimeUnit enum value")
+
+        if validity < 0:
+            raise ValueError("validity must be a positive integer")
+
+        validity_seconds = validity * time_unit.value
+
+        if validity_seconds < TimeUnit.MINUTE.value:
+            raise ValueError("Minimum validity period is 1 minute")
+
+        max_seconds = 25 * TimeUnit.WEEK.value
+        if validity_seconds > max_seconds:
+            raise ValueError(
+                "Maximum validity period is 6 months (or 25 weeks)"
+            )
+
         # Check if the user exists in the organization
         user_id = ApiKey._get_user(client, user_email)
         if not user_id:
@@ -329,20 +350,9 @@ class ApiKey(DbObject):
                 f"User with email '{user_email}' does not exist in the organization"
             )
 
-        role_name = role.name if hasattr(role, "name") else role
-        if not role_name or not isinstance(role_name, str):
-            raise ValueError("role must be a Role object or a valid role name")
-
         allowed_roles = ApiKey._get_available_api_key_roles(client)
-        # Determine the exact server role name to pass through.
-        #
-        # - If caller provides a string, require exact match (case-sensitive).
-        # - If caller provides a Role object (which may be normalized by the SDK),
-        #   map it back to the server role name.
         server_role_name: Optional[str] = None
         if hasattr(role, "name"):
-            # Role objects in the SDK are often normalized (e.g. "TENANT_ADMIN").
-            # Map normalized name back to the server-provided role display name.
             normalized_to_server = {format_role(r): r for r in allowed_roles}
             server_role_name = (
                 role_name
@@ -355,24 +365,6 @@ class ApiKey(DbObject):
         if server_role_name is None:
             raise ValueError(
                 f"Invalid role specified. Allowed roles are: {allowed_roles}"
-            )
-
-        validity_seconds = 0
-        if validity < 0:
-            raise ValueError("validity must be a positive integer")
-
-        if not isinstance(time_unit, TimeUnit):
-            raise ValueError("time_unit must be a valid TimeUnit enum value")
-
-        validity_seconds = validity * time_unit.value
-
-        if validity_seconds < TimeUnit.MINUTE.value:
-            raise ValueError("Minimum validity period is 1 minute")
-
-        max_seconds = 25 * TimeUnit.WEEK.value
-        if validity_seconds > max_seconds:
-            raise ValueError(
-                "Maximum validity period is 6 months (or 25 weeks)"
             )
 
         query_str = """

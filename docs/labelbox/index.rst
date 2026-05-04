@@ -54,6 +54,7 @@ Labelbox Python SDK Documentation
     slice
     step-reasoning-tool
     task
+    task-assignment-status
     task-queue
     user
     user-group-v2
