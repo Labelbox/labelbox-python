@@ -16,6 +16,8 @@ from typing import (
     Union,
 )
 
+from lbox.exceptions import LabelboxError
+
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm.query import results_query_part
@@ -64,6 +66,52 @@ class ModelRun(DbObject):
         TRAINING_MODEL = "TRAINING_MODEL"
         COMPLETE = "COMPLETE"
         FAILED = "FAILED"
+
+    def _get_cost_and_usage(self) -> Dict[str, Any]:
+        """Lazily fetches and caches cost and data row count for this Model Run.
+
+        The data is rehydrated in real time from Model Foundry (which in turn
+        sources it from the model service); nothing is persisted on the Model
+        Run itself. Returns an empty dict for Model Runs that were not produced
+        by a Foundry app (i.e. that have no associated model job).
+        """
+        if getattr(self, "_cost_and_usage", None) is None:
+            query_str = """
+                query GetModelRunCostInfoPyApi($modelRunId: ID!) {
+                    modelFoundryModelRunInfo(where: {modelRunId: $modelRunId}) {
+                        cost
+                        status
+                        totalDataRows
+                    }
+                }
+            """
+            try:
+                res = self.client.execute(query_str, {"modelRunId": self.uid})
+                self._cost_and_usage = res["modelFoundryModelRunInfo"] or {}
+            except LabelboxError:
+                # Model Runs not backed by a Foundry model job have no
+                # cost/usage info to report.
+                self._cost_and_usage = {}
+        return self._cost_and_usage
+
+    @property
+    def total_cost(self) -> Optional[float]:
+        """Total cost (USD) of this Model Run, fetched in real time from Model
+        Foundry. ``None`` if the run is not Foundry-backed or cost is not yet
+        available.
+        """
+        return self._get_cost_and_usage().get("cost")
+
+    @property
+    def total_data_rows(self) -> Optional[int]:
+        """Number of data rows processed by this Model Run, fetched in real time
+        from Model Foundry. ``None`` if the run is not Foundry-backed.
+        """
+        return self._get_cost_and_usage().get("totalDataRows")
+
+    def refresh_cost_and_usage(self) -> None:
+        """Clears the cached cost/usage so the next access re-fetches live data."""
+        self._cost_and_usage = None
 
     def upsert_labels(
         self,
