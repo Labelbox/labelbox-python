@@ -16,7 +16,7 @@ from typing import (
     Union,
 )
 
-from lbox.exceptions import LabelboxError
+from lbox.exceptions import InternalServerError, ResourceNotFoundError
 
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm.model import Entity, Field, Relationship
@@ -88,9 +88,11 @@ class ModelRun(DbObject):
             try:
                 res = self.client.execute(query_str, {"modelRunId": self.uid})
                 self._cost_and_usage = res["modelFoundryModelRunInfo"] or {}
-            except LabelboxError:
+            except (ResourceNotFoundError, InternalServerError):
                 # Model Runs not backed by a Foundry model job have no
-                # cost/usage info to report.
+                # cost/usage info to report; cache the empty result. Transient
+                # errors (network, timeout, rate limit) are intentionally not
+                # caught so they propagate and the next access can retry.
                 self._cost_and_usage = {}
         return self._cost_and_usage
 

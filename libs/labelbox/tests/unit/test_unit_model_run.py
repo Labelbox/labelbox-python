@@ -1,6 +1,11 @@
 from unittest.mock import MagicMock
 
-from lbox.exceptions import LabelboxError
+import pytest
+from lbox.exceptions import (
+    InternalServerError,
+    NetworkError,
+    ResourceNotFoundError,
+)
 
 from labelbox.schema.model_run import ModelRun
 
@@ -58,10 +63,38 @@ def test_refresh_cost_and_usage_refetches():
     assert client.execute.call_count == 2
 
 
-def test_cost_and_usage_none_for_non_foundry_run():
+@pytest.mark.parametrize(
+    "error",
+    [
+        ResourceNotFoundError(message="model run not found"),
+        InternalServerError("no model job for run"),
+    ],
+)
+def test_cost_and_usage_none_for_non_foundry_run(error):
     client = MagicMock()
-    client.execute.side_effect = LabelboxError("model job not found")
+    client.execute.side_effect = error
     model_run = _make_model_run(client)
 
     assert model_run.total_cost is None
     assert model_run.total_data_rows is None
+
+
+def test_transient_errors_propagate_and_are_not_cached():
+    client = MagicMock()
+    client.execute.side_effect = NetworkError(Exception("boom"))
+    model_run = _make_model_run(client)
+
+    with pytest.raises(NetworkError):
+        _ = model_run.total_cost
+
+    # The failure is not cached, so a later successful access recovers.
+    client.execute.side_effect = None
+    client.execute.return_value = {
+        "modelFoundryModelRunInfo": {
+            "cost": 2.0,
+            "status": "finished",
+            "totalDataRows": 5,
+        }
+    }
+    assert model_run.total_cost == 2.0
+    assert model_run.total_data_rows == 5
