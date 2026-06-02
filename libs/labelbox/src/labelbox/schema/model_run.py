@@ -87,13 +87,18 @@ class ModelRun(DbObject):
             """
             try:
                 res = self.client.execute(query_str, {"modelRunId": self.uid})
-                self._cost_and_usage = res["modelFoundryModelRunInfo"] or {}
             except (ResourceNotFoundError, InternalServerError):
                 # Model Runs not backed by a Foundry model job have no
                 # cost/usage info to report; cache the empty result. Transient
                 # errors (network, timeout, rate limit) are intentionally not
                 # caught so they propagate and the next access can retry.
-                self._cost_and_usage = {}
+                res = None
+            # execute() returns None for a RESOURCE_NOT_FOUND response (it does
+            # not raise unless raise_return_resource_not_found=True), so guard
+            # against a missing payload before indexing into it.
+            self._cost_and_usage = (res or {}).get(
+                "modelFoundryModelRunInfo"
+            ) or {}
         return self._cost_and_usage
 
     @property

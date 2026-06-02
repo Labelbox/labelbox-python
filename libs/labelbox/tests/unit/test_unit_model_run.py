@@ -79,6 +79,22 @@ def test_cost_and_usage_none_for_non_foundry_run(error):
     assert model_run.total_data_rows is None
 
 
+@pytest.mark.parametrize(
+    "execute_result",
+    [
+        None,  # RESOURCE_NOT_FOUND -> execute() returns None, does not raise
+        {"modelFoundryModelRunInfo": None},
+    ],
+)
+def test_cost_and_usage_none_when_payload_missing(execute_result):
+    client = MagicMock()
+    client.execute.return_value = execute_result
+    model_run = _make_model_run(client)
+
+    assert model_run.total_cost is None
+    assert model_run.total_data_rows is None
+
+
 def test_transient_errors_propagate_and_are_not_cached():
     client = MagicMock()
     client.execute.side_effect = NetworkError(Exception("boom"))
