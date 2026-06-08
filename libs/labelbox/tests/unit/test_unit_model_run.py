@@ -42,7 +42,7 @@ def test_total_cost_and_data_rows_are_fetched_and_cached():
 
     # Cost/usage is rehydrated once and cached across property reads.
     assert client.execute.call_count == 1
-    # The model run id is passed to the Foundry query.
+    # The model run id is passed to the query.
     assert client.execute.call_args[0][1] == {"modelRunId": "model-run-1"}
 
 
@@ -82,7 +82,7 @@ def test_cost_and_usage_none_for_non_foundry_run(error):
 @pytest.mark.parametrize(
     "execute_result",
     [
-        None,  # RESOURCE_NOT_FOUND -> execute() returns None, does not raise
+        None,  # execute() can return None instead of a payload
         {"modelFoundryModelRunInfo": None},
     ],
 )

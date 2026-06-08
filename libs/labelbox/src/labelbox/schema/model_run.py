@@ -70,10 +70,7 @@ class ModelRun(DbObject):
     def _get_cost_and_usage(self) -> Dict[str, Any]:
         """Lazily fetches and caches cost and data row count for this Model Run.
 
-        The data is rehydrated in real time from Model Foundry (which in turn
-        sources it from the model service); nothing is persisted on the Model
-        Run itself. Returns an empty dict for Model Runs that were not produced
-        by a Foundry app (i.e. that have no associated model job).
+        Returns an empty dict when no cost/usage information is available.
         """
         if getattr(self, "_cost_and_usage", None) is None:
             query_str = """
@@ -88,14 +85,10 @@ class ModelRun(DbObject):
             try:
                 res = self.client.execute(query_str, {"modelRunId": self.uid})
             except (ResourceNotFoundError, InternalServerError):
-                # Model Runs not backed by a Foundry model job have no
-                # cost/usage info to report; cache the empty result. Transient
-                # errors (network, timeout, rate limit) are intentionally not
+                # No cost/usage info available; cache the empty result.
+                # Transient errors (network, timeout, rate limit) are not
                 # caught so they propagate and the next access can retry.
                 res = None
-            # execute() returns None for a RESOURCE_NOT_FOUND response (it does
-            # not raise unless raise_return_resource_not_found=True), so guard
-            # against a missing payload before indexing into it.
             self._cost_and_usage = (res or {}).get(
                 "modelFoundryModelRunInfo"
             ) or {}
@@ -103,16 +96,17 @@ class ModelRun(DbObject):
 
     @property
     def total_cost(self) -> Optional[float]:
-        """Total cost (USD) of this Model Run, fetched in real time from Model
-        Foundry. ``None`` if the run is not Foundry-backed or cost is not yet
-        available.
+        """Total cost (USD) of this Model Run.
+
+        ``None`` if cost is not available for this run.
         """
         return self._get_cost_and_usage().get("cost")
 
     @property
     def total_data_rows(self) -> Optional[int]:
-        """Number of data rows processed by this Model Run, fetched in real time
-        from Model Foundry. ``None`` if the run is not Foundry-backed.
+        """Number of data rows processed by this Model Run.
+
+        ``None`` if not available for this run.
         """
         return self._get_cost_and_usage().get("totalDataRows")
 
