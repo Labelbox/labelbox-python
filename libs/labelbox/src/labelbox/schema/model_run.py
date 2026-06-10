@@ -16,6 +16,8 @@ from typing import (
     Union,
 )
 
+from lbox.exceptions import InternalServerError, ResourceNotFoundError
+
 from labelbox.orm.db_object import DbObject, experimental
 from labelbox.orm.model import Entity, Field, Relationship
 from labelbox.orm.query import results_query_part
@@ -64,6 +66,53 @@ class ModelRun(DbObject):
         TRAINING_MODEL = "TRAINING_MODEL"
         COMPLETE = "COMPLETE"
         FAILED = "FAILED"
+
+    def _get_cost_and_usage(self) -> Dict[str, Any]:
+        """Lazily fetches and caches cost and data row count for this Model Run.
+
+        Returns an empty dict when no cost/usage information is available.
+        """
+        if getattr(self, "_cost_and_usage", None) is None:
+            query_str = """
+                query GetModelRunCostInfoPyApi($modelRunId: ID!) {
+                    modelFoundryModelRunInfo(where: {modelRunId: $modelRunId}) {
+                        cost
+                        status
+                        totalDataRows
+                    }
+                }
+            """
+            try:
+                res = self.client.execute(query_str, {"modelRunId": self.uid})
+            except (ResourceNotFoundError, InternalServerError):
+                # No cost/usage info available; cache the empty result.
+                # Transient errors (network, timeout, rate limit) are not
+                # caught so they propagate and the next access can retry.
+                res = None
+            self._cost_and_usage = (res or {}).get(
+                "modelFoundryModelRunInfo"
+            ) or {}
+        return self._cost_and_usage
+
+    @property
+    def total_cost(self) -> Optional[float]:
+        """Total cost (USD) of this Model Run.
+
+        ``None`` if cost is not available for this run.
+        """
+        return self._get_cost_and_usage().get("cost")
+
+    @property
+    def total_data_rows(self) -> Optional[int]:
+        """Number of data rows processed by this Model Run.
+
+        ``None`` if not available for this run.
+        """
+        return self._get_cost_and_usage().get("totalDataRows")
+
+    def refresh_cost_and_usage(self) -> None:
+        """Clears the cached cost/usage so the next access re-fetches live data."""
+        self._cost_and_usage = None
 
     def upsert_labels(
         self,
