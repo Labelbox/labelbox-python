@@ -11,10 +11,8 @@ dependencies = [
 readme = "README.md"
 requires-python = ">= 3.9"
 
-[tool.rye]
-managed = true
-virtual = true
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest>=8.1.1",
     "pytest-cases>=3.8.4",
     "pytest-rerunfailures>=14.0",
@@ -33,6 +31,15 @@ dev-dependencies = [
 
 [tool.rye.workspace]
 members = ["libs/*", "examples"]
+
+[tool.uv.workspace]
+members = ["libs/*", "examples"]
+
+[tool.uv.sources]
+labelbox = { workspace = true }
+lbox-clients = { workspace = true }
+lbox-alignerr = { workspace = true }
+lbox-example = { workspace = true }
 
 [tool.pytest.ini_options]
 # https://github.com/pytest-dev/pytest-rerunfailures/issues/99

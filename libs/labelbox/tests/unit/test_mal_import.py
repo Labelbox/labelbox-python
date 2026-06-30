@@ -66,3 +66,32 @@ def test_invalid_labels_format():
             MALPredictionImport.create_from_objects(
                 client=MagicMock(), project_id=id, name=id, predictions=label
             )
+
+
+def test_external_id_import_raises_value_error():
+    import labelbox.data.annotation_types as lb_types
+    from labelbox import MALPredictionImport
+
+    id = str(uuid.uuid4())
+    bbox_annotation = lb_types.ObjectAnnotation(
+        name="something",
+        value=lb_types.Rectangle(
+            start=lb_types.Point(x=100, y=100),
+            end=lb_types.Point(x=200, y=200)
+        )
+    )
+    labels = [
+        lb_types.Label(
+            data={"external_id": "name.jpg"},
+            annotations=[bbox_annotation]
+        )
+    ]
+    with pytest.raises(ValueError) as excinfo:
+        MALPredictionImport.create_from_objects(
+            client=MagicMock(),
+            project_id=id,
+            name=id,
+            predictions=labels
+        )
+    assert "NDJSON serialization/import does not support referencing data rows by external_id" in str(excinfo.value)
+

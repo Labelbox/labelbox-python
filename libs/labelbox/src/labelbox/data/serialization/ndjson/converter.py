@@ -29,6 +29,14 @@ class NDJsonConverter:
         """
 
         for label in labels:
+            if hasattr(label, "data") and label.data is not None:
+                uid = getattr(label.data, "uid", None)
+                global_key = getattr(label.data, "global_key", None)
+                if uid is None and global_key is None:
+                    raise ValueError(
+                        "NDJSON serialization/import does not support referencing data rows by external_id. "
+                        "Please use global_key or resolve external_id to a data_row_id."
+                    )
             for example in NDLabel.from_common([label]):
                 annotation_uuid = getattr(example, "uuid", None)
                 res = example.model_dump(
