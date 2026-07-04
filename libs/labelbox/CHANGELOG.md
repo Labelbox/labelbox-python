@@ -1,4 +1,9 @@
 # Changelog
+# Version 7.8.0 (2026-06-11)
+## Added
+* Add `ModelRun.total_cost` and `ModelRun.total_data_rows` properties to retrieve inference cost and data row count for a model run ([#2057](https://github.com/Labelbox/labelbox-python/pull/2057))
+* Add `ModelRun.refresh_cost_and_usage()` to re-fetch live cost and usage data ([#2057](https://github.com/Labelbox/labelbox-python/pull/2057))
+
 # Version 7.7.0 (2026-04-29)
 ## Added
 * Add `Project.bulk_assign_data_rows()` method for bulk assigning data rows to a user ([#2054](https://github.com/Labelbox/labelbox-python/pull/2054))
