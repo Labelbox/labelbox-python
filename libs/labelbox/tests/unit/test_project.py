@@ -93,7 +93,7 @@ def test_get_overview_batch_scoped(project_entity):
     "batch_ids,expected_message",
     [
         ([], "batch_ids filter expects a non-empty list."),
-        (["batch-1"] * 2001, "batch_ids filter only supports a max of 2000 items."),
+        (["batch-1"] * 1001, "batch_ids filter only supports a max of 1000 items."),
     ],
 )
 def test_validate_batch_ids_rejects_invalid(batch_ids, expected_message):

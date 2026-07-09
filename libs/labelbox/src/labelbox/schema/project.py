@@ -86,7 +86,7 @@ if TYPE_CHECKING:
     pass
 
 
-_MAX_BATCH_IDS = 2000
+_MAX_BATCH_IDS = 1000
 
 
 def _validate_batch_ids(batch_ids: List[str]) -> None:
