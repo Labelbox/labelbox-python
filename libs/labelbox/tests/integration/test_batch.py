@@ -2,6 +2,7 @@ from typing import List
 from uuid import uuid4
 
 import pytest
+import time
 from lbox.exceptions import (
     LabelboxError,
     MalformedQueryException,
@@ -137,6 +138,43 @@ def test_create_batch_with_data_row_class(
     batch = project.create_batch("test-batch-data-rows", data_rows, 3)
     assert batch.name == "test-batch-data-rows"
     assert batch.size == len(data_rows)
+
+
+def test_get_overview_batch_scoped(project: Project, small_dataset: Dataset):
+    export_task = small_dataset.export()
+    export_task.wait_till_done()
+    stream = export_task.get_buffered_stream()
+    data_rows = [dr.json["data_row"]["id"] for dr in stream]
+
+    batch_a = project.create_batch("batch-a-overview", [data_rows[0]])
+    batch_b = project.create_batch("batch-b-overview", [data_rows[1]])
+
+    timeout_seconds = 60
+    sleep_time = 2
+    overview_a = None
+    overview_b = None
+    while timeout_seconds > 0:
+        overview_a = project.get_overview(batch_ids=[batch_a.uid])
+        overview_b = project.get_overview(batch_ids=[batch_b.uid])
+        if (
+            overview_a.total_data_rows == 1
+            and overview_b.total_data_rows == 1
+        ):
+            break
+        timeout_seconds -= sleep_time
+        time.sleep(sleep_time)
+    else:
+        raise AssertionError(
+            "Timed out waiting for batch-scoped overview counts"
+        )
+
+    assert overview_a.issues is None
+    assert overview_b.issues is None
+    assert overview_a.total_data_rows == 1
+    assert overview_b.total_data_rows == 1
+
+    combined = project.get_overview(batch_ids=[batch_a.uid, batch_b.uid])
+    assert combined.total_data_rows == 2
 
 
 def test_archive_batch(project: Project, small_dataset: Dataset):

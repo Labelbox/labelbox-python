@@ -86,6 +86,20 @@ if TYPE_CHECKING:
     pass
 
 
+_MAX_BATCH_IDS = 1000
+
+
+def _validate_batch_ids(batch_ids: List[str]) -> None:
+    if not isinstance(batch_ids, list):
+        raise ValueError("batch_ids filter expects a list.")
+    if len(batch_ids) == 0:
+        raise ValueError("batch_ids filter expects a non-empty list.")
+    if len(batch_ids) > _MAX_BATCH_IDS:
+        raise ValueError(
+            f"batch_ids filter only supports a max of {_MAX_BATCH_IDS} items."
+        )
+
+
 DataRowPriority = int
 LabelingParameterOverrideInput = Tuple[DataRowIdentifier, DataRowPriority]
 
@@ -1737,7 +1751,9 @@ class Project(DbObject, Updateable, Deletable):
         ]
 
     def get_overview(
-        self, details=False
+        self,
+        details: bool = False,
+        batch_ids: Optional[List[str]] = None,
     ) -> Union[ProjectOverview, ProjectOverviewDetailed]:
         """Return the overview of a project.
 
@@ -1745,30 +1761,45 @@ class Project(DbObject, Updateable, Deletable):
         which is equivalent to the Overview tab of a project.
 
         Args:
-            details (bool, optional): Whether to include detailed queue information for review and rework queues.
-                Defaults to False.
+            details (bool, optional): Whether to include detailed queue information for
+                review and rework queues. Defaults to False.
+            batch_ids (Optional[List[str]], optional): When provided, limits counts to data
+                rows in the given batch(es). Multiple batch IDs return combined counts, not
+                per-batch breakdowns. Unknown or foreign batch IDs return zero counts.
+                Defaults to None (project-wide counts).
 
         Returns:
-            Union[ProjectOverview, ProjectOverviewDetailed]: An object representing the project overview.
-                If `details` is False, returns a `ProjectOverview` object.
-                If `details` is True, returns a `ProjectOverviewDetailed` object.
+            Union[ProjectOverview, ProjectOverviewDetailed]: An object representing the
+            project overview. If `details` is False, returns a `ProjectOverview` object.
+            If `details` is True, returns a `ProjectOverviewDetailed` object. When
+            `batch_ids` is set, `issues` is None because issue counts are not
+            batch-scoped.
 
         Raises:
+            ValueError: If `batch_ids` is an empty list or exceeds the maximum allowed size.
             Exception: If there is an error executing the query.
 
         """
-        query = """query ProjectGetOverviewPyApi($projectId: ID!) {
-            project(where: { id: $projectId }) {      
-            workstreamStateCounts {
+        if batch_ids is not None:
+            _validate_batch_ids(batch_ids)
+
+        query = """query ProjectGetOverviewPyApi(
+            $projectId: ID!,
+            $batchIds: [String!],
+            $countInput: DataRowCountQueryInput,
+            $includeIssues: Boolean!
+        ) {
+            project(where: { id: $projectId }) {
+            workstreamStateCounts(batchIds: $batchIds) {
                 state
                 count
             }
             taskQueues {
                 queueType
                 name
-                dataRowCount
+                dataRowCount(input: $countInput)
             }
-            issues {
+            issues @include(if: $includeIssues) {
                 totalCount
             }
             completedDataRowCount
@@ -1776,9 +1807,26 @@ class Project(DbObject, Updateable, Deletable):
         }
         """
 
+        variables: Dict[str, Any] = {
+            "projectId": self.uid,
+            "batchIds": batch_ids,
+            "includeIssues": batch_ids is None,
+        }
+        if batch_ids is not None:
+            variables["countInput"] = {
+                "searchQuery": {
+                    "scope": {"projectId": self.uid},
+                    "query": [
+                        {"ids": batch_ids, "operator": "is", "type": "batch"}
+                    ],
+                }
+            }
+        else:
+            variables["countInput"] = None
+
         # Must use experimental to access "issues"
         result = self.client.execute(
-            query, {"projectId": self.uid}, experimental=True
+            query, variables, experimental=True
         )["project"]
 
         # Reformat category names
@@ -1788,7 +1836,10 @@ class Project(DbObject, Updateable, Deletable):
             if st["state"] != "NotInTaskQueue"
         }
 
-        overview["issues"] = result.get("issues", {}).get("totalCount")
+        if batch_ids is None:
+            overview["issues"] = result.get("issues", {}).get("totalCount")
+        else:
+            overview["issues"] = None
 
         # Rename categories
         overview["to_label"] = overview.pop("unlabeled")
