@@ -26,8 +26,8 @@ DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 7
 def video_data_row_factory():
     def video_data_row(global_key):
         return {
-            "row_data": "https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4",
-            "global_key": f"https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4-{global_key}",
+            "row_data": "https://storage.googleapis.com/lb-test-data/cataflow/media/test_video_500kb.mp4",
+            "global_key": f"https://storage.googleapis.com/lb-test-data/cataflow/media/test_video_500kb.mp4-{global_key}",
             "media_type": "VIDEO",
         }
 
@@ -38,8 +38,8 @@ def video_data_row_factory():
 def audio_data_row_factory():
     def audio_data_row(global_key):
         return {
-            "row_data": "https://storage.googleapis.com/labelbox-datasets/audio-sample-data/sample-audio-1.mp3",
-            "global_key": f"https://storage.googleapis.com/labelbox-datasets/audio-sample-data/sample-audio-1.mp3-{global_key}",
+            "row_data": "https://storage.googleapis.com/lb-test-data/cataflow/media/tomorrow-114848.mp3",
+            "global_key": f"https://storage.googleapis.com/lb-test-data/cataflow/media/tomorrow-114848.mp3-{global_key}",
             "media_type": "AUDIO",
         }
 
@@ -82,8 +82,8 @@ def geospatial_data_row_factory():
 def html_data_row_factory():
     def html_data_row(global_key):
         return {
-            "row_data": "https://storage.googleapis.com/labelbox-datasets/html_sample_data/sample_html_1.html",
-            "global_key": f"https://storage.googleapis.com/labelbox-datasets/html_sample_data/sample_html_1.html-{global_key}",
+            "row_data": "https://storage.googleapis.com/lb-test-data/cataflow/media/about.html",
+            "global_key": f"https://storage.googleapis.com/lb-test-data/cataflow/media/about.html-{global_key}",
         }
 
     return html_data_row
@@ -106,10 +106,10 @@ def document_data_row_factory():
     def document_data_row(global_key):
         return {
             "row_data": {
-                "pdf_url": "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf",
-                "text_layer_url": "https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483-lb-textlayer.json",
+                "pdf_url": "https://storage.googleapis.com/lb-test-data/cataflow/media/test-pdf.pdf",
+                "text_layer_url": "https://storage.googleapis.com/lb-test-data/cataflow/media/sample-pdf-textlayer.json",
             },
-            "global_key": f"https://storage.googleapis.com/labelbox-datasets/arxiv-pdf/data/99-word-token-pdfs/0801.3483.pdf-{global_key}",
+            "global_key": f"https://storage.googleapis.com/lb-test-data/cataflow/media/test-pdf.pdf-{global_key}",
             "media_type": "PDF",
         }
 
@@ -120,28 +120,17 @@ def document_data_row_factory():
 def text_data_row_factory():
     def text_data_row(global_key):
         return {
-            "row_data": "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-2.txt",
-            "global_key": f"https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/sample-text-2.txt-{global_key}",
+            "row_data": "https://storage.googleapis.com/lb-test-data/cataflow/media/sample-text.txt",
+            "global_key": f"https://storage.googleapis.com/lb-test-data/cataflow/media/sample-text.txt-{global_key}",
             "media_type": "TEXT",
         }
 
     return text_data_row
 
 
-@pytest.fixture(scope="module", autouse=True)
-def llm_human_preference_data_row_factory():
-    def llm_human_preference_data_row(global_key):
-        return {
-            "row_data": "https://storage.googleapis.com/labelbox-datasets/sdk_test/llm_prompt_response_conv.json",
-            "global_key": global_key,
-        }
-
-    return llm_human_preference_data_row
-
-
 @pytest.fixture(scope="module")
 def mmc_data_row_url():
-    return "https://storage.googleapis.com/labelbox-datasets/conversational_model_evaluation_sample/offline-model-chat-evaluation.json"
+    return "https://storage.googleapis.com/lb-test-data/cataflow/media/sample-conversational-v2-4.json"
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -700,7 +689,7 @@ def llm_prompt_response_creation_dataset_with_data_row(
     global_key = str(uuid.uuid4())
 
     convo_data = {
-        "row_data": "https://storage.googleapis.com/labelbox-datasets/conversational-sample-data/pairwise_shopping_2.json",
+        "row_data": "https://storage.googleapis.com/lb-test-data/cataflow/media/sample-conversational-v2-4.json",
         "global_key": global_key,
     }
 
@@ -1321,7 +1310,7 @@ def segmentation_inference(prediction_id_mapping):
         segmentation.update(
             {
                 "mask": {
-                    "instanceURI": "https://storage.googleapis.com/labelbox-datasets/image_sample_data/raster_seg.png",
+                    "instanceURI": "https://storage.googleapis.com/lb-test-data/cataflow/media/dog.png",
                     "colorRGB": (255, 255, 255),
                 }
             }

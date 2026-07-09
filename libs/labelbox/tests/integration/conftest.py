@@ -245,8 +245,8 @@ def video_data(client, rand_gen, video_data_row, wait_for_data_row_processing):
 
 def create_video_data_row(rand_gen):
     return {
-        "row_data": "https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4",
-        "global_key": f"https://storage.googleapis.com/labelbox-datasets/video-sample-data/sample-video-1.mp4-{rand_gen(str)}",
+        "row_data": "https://storage.googleapis.com/lb-test-data/cataflow/media/test_video_500kb.mp4",
+        "global_key": f"https://storage.googleapis.com/lb-test-data/cataflow/media/test_video_500kb.mp4-{rand_gen(str)}",
         "media_type": "VIDEO",
     }
 
