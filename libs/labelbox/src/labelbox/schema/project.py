@@ -1825,9 +1825,9 @@ class Project(DbObject, Updateable, Deletable):
             variables["countInput"] = None
 
         # Must use experimental to access "issues"
-        result = self.client.execute(
-            query, variables, experimental=True
-        )["project"]
+        result = self.client.execute(query, variables, experimental=True)[
+            "project"
+        ]
 
         # Reformat category names
         overview = {
