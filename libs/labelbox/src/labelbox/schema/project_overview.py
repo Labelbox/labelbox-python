@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 from typing_extensions import TypedDict
@@ -16,6 +16,7 @@ class ProjectOverview(BaseModel):
     The `skipped` attribute represents the number of data rows that have been skipped (Skipped).
     The `done` attribute represents the number of data rows that have been marked as Done (Done).
     The `issues` attribute represents the number of data rows with associated issues (Issues).
+    When the overview is scoped to one or more batches, `issues` is `None`.
 
     The following don't appear in the UI
     The `labeled` attribute represents the number of data rows that have been labeled.
@@ -27,7 +28,7 @@ class ProjectOverview(BaseModel):
     in_rework: int
     skipped: int
     done: int
-    issues: int
+    issues: Optional[int] = None
     labeled: int
     total_data_rows: int
 
@@ -60,6 +61,7 @@ class ProjectOverviewDetailed(BaseModel):
     The `skipped` attribute represents the number of data rows that have been skipped (Skipped).
     The `done` attribute represents the number of data rows that have been marked as Done (Done).
     The `issues` attribute represents the number of data rows with associated issues (Issues).
+    When the overview is scoped to one or more batches, `issues` is `None`.
 
     The following don't appear in the UI
     The `labeled` attribute represents the number of data rows that have been labeled.
@@ -71,6 +73,6 @@ class ProjectOverviewDetailed(BaseModel):
     in_rework: _QueueDetail
     skipped: int
     done: int
-    issues: int
+    issues: Optional[int] = None
     labeled: int
     total_data_rows: int
