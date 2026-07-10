@@ -46,7 +46,10 @@ build-backend = "hatchling.build"
 [tool.rye]
 managed = true
 dev-dependencies = [
-    "pytest>=8.1.1",
+    # Cap <9: pytest 9 changed the internal IdMaker signature, which pytest-cases
+    # (<=3.10.1) still calls the old way at import time, breaking test collection.
+    # Remove the cap once pytest-cases supports pytest 9.
+    "pytest>=8.1.1,<9",
     "pytest-cases>=3.8.4",
     "pytest-rerunfailures>=14.0",
     "pytest-snapshot>=0.9.0",

@@ -33,7 +33,9 @@ from labelbox.schema.ontology import Ontology
 from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import QualityMode
 
-IMG_URL = "https://picsum.photos/200/300.jpg"
+# Use a stable, GCS-hosted JPEG rather than a random third-party image service
+# so data-row creation does not depend on picsum.photos availability.
+IMG_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 SMALL_DATASET_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 3

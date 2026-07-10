@@ -156,10 +156,7 @@ def test_get_overview_batch_scoped(project: Project, small_dataset: Dataset):
     while timeout_seconds > 0:
         overview_a = project.get_overview(batch_ids=[batch_a.uid])
         overview_b = project.get_overview(batch_ids=[batch_b.uid])
-        if (
-            overview_a.total_data_rows == 1
-            and overview_b.total_data_rows == 1
-        ):
+        if overview_a.total_data_rows == 1 and overview_b.total_data_rows == 1:
             break
         timeout_seconds -= sleep_time
         time.sleep(sleep_time)

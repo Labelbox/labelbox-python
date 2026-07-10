@@ -1280,16 +1280,17 @@ def entity_inference_document(prediction_id_mapping):
             "textSelections": [
                 {
                     "tokenIds": [
-                        "3f984bf3-1d61-44f5-b59a-9658a2e3440f",
-                        "3bf00b56-ff12-4e52-8cc1-08dbddb3c3b8",
-                        "6e1c3420-d4b7-4c5a-8fd6-ead43bf73d80",
-                        "87a43d32-af76-4a1d-b262-5c5f4d5ace3a",
-                        "e8606e8a-dfd9-4c49-a635-ad5c879c75d0",
-                        "67c7c19e-4654-425d-bf17-2adb8cf02c30",
-                        "149c5e80-3e07-49a7-ab2d-29ddfe6a38fa",
-                        "b0e94071-2187-461e-8e76-96c58738a52c",
+                        "543ea587-6817-4d2b-a9c1-6d8dd797e8d7",
+                        "f4c15744-c9fe-48f2-89dc-8f52fafda028",
+                        "43867d16-0236-47cd-b348-5190143a3ccb",
+                        "521f705e-b276-4ac7-8e5b-2e38e037f80f",
+                        "4c1475f9-3576-4171-91a9-7cfb369c73d8",
+                        "a75658b1-dd91-4f9f-b7d8-572eee7fd707",
+                        "480a3484-28d9-4690-a466-0b8e24a24c3a",
+                        "d8fcd3cb-4bf7-461c-a91f-f9142b6bc3c3",
+                        "4ec0bac5-e5d7-4eda-802b-3962ad2db82c",
                     ],
-                    "groupId": "2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
+                    "groupId": "ed53dd86-ef39-4634-9505-ee0eebedef44",
                     "page": 1,
                 }
             ]
@@ -2155,7 +2156,7 @@ def expected_export_v2_text():
                 "location": {
                     "start": 112,
                     "end": 128,
-                    "token": "research suggests",
+                    "token": " sollicitudin nis",
                 },
             }
         ],
@@ -2350,19 +2351,20 @@ def expected_export_v2_document():
                 "location": {
                     "groups": [
                         {
-                            "id": "2f4336f4-a07e-4e0a-a9e1-5629b03b719b",
+                            "id": "ed53dd86-ef39-4634-9505-ee0eebedef44",
                             "page_number": 1,
                             "tokens": [
-                                "3f984bf3-1d61-44f5-b59a-9658a2e3440f",
-                                "3bf00b56-ff12-4e52-8cc1-08dbddb3c3b8",
-                                "6e1c3420-d4b7-4c5a-8fd6-ead43bf73d80",
-                                "87a43d32-af76-4a1d-b262-5c5f4d5ace3a",
-                                "e8606e8a-dfd9-4c49-a635-ad5c879c75d0",
-                                "67c7c19e-4654-425d-bf17-2adb8cf02c30",
-                                "149c5e80-3e07-49a7-ab2d-29ddfe6a38fa",
-                                "b0e94071-2187-461e-8e76-96c58738a52c",
+                                "543ea587-6817-4d2b-a9c1-6d8dd797e8d7",
+                                "f4c15744-c9fe-48f2-89dc-8f52fafda028",
+                                "43867d16-0236-47cd-b348-5190143a3ccb",
+                                "521f705e-b276-4ac7-8e5b-2e38e037f80f",
+                                "4c1475f9-3576-4171-91a9-7cfb369c73d8",
+                                "a75658b1-dd91-4f9f-b7d8-572eee7fd707",
+                                "480a3484-28d9-4690-a466-0b8e24a24c3a",
+                                "d8fcd3cb-4bf7-461c-a91f-f9142b6bc3c3",
+                                "4ec0bac5-e5d7-4eda-802b-3962ad2db82c",
                             ],
-                            "text": "Metal-insulator (MI) transitions have been one of the",
+                            "text": "Mott transition and superconductivity in the strongly correlated organic",
                         }
                     ]
                 },
@@ -2382,7 +2384,7 @@ def expected_export_v2_document():
                 },
                 "page_dimensions": {
                     "height": 792.0,
-                    "width": 612.0,
+                    "width": 594.0,
                     "unit": "points",
                 },
             },

@@ -50,7 +50,9 @@ def _workstream_state_counts_response():
 
 def test_get_overview_project_wide(project_entity):
     client = project_entity.client
-    client.execute.return_value = {"project": _workstream_state_counts_response()}
+    client.execute.return_value = {
+        "project": _workstream_state_counts_response()
+    }
 
     overview = project_entity.get_overview()
 
@@ -71,7 +73,9 @@ def test_get_overview_project_wide(project_entity):
 
 def test_get_overview_batch_scoped(project_entity):
     client = project_entity.client
-    client.execute.return_value = {"project": _workstream_state_counts_response()}
+    client.execute.return_value = {
+        "project": _workstream_state_counts_response()
+    }
 
     overview = project_entity.get_overview(batch_ids=["batch-1"])
 
@@ -93,7 +97,10 @@ def test_get_overview_batch_scoped(project_entity):
     "batch_ids,expected_message",
     [
         ([], "batch_ids filter expects a non-empty list."),
-        (["batch-1"] * 1001, "batch_ids filter only supports a max of 1000 items."),
+        (
+            ["batch-1"] * 1001,
+            "batch_ids filter only supports a max of 1000 items.",
+        ),
     ],
 )
 def test_validate_batch_ids_rejects_invalid(batch_ids, expected_message):
@@ -102,7 +109,9 @@ def test_validate_batch_ids_rejects_invalid(batch_ids, expected_message):
 
 
 def test_get_overview_rejects_empty_batch_ids(project_entity):
-    with pytest.raises(ValueError, match="batch_ids filter expects a non-empty list."):
+    with pytest.raises(
+        ValueError, match="batch_ids filter expects a non-empty list."
+    ):
         project_entity.get_overview(batch_ids=[])
 
 

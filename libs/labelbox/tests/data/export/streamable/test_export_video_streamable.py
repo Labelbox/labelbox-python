@@ -76,11 +76,11 @@ class TestExportVideo:
         assert data_row_export["row_data"] == video_data_row["row_data"]
         assert export_data["media_attributes"]["mime_type"] == "video/mp4"
         assert (
-            export_data["media_attributes"]["frame_rate"] == 10
-        )  # as per the video_data fixture
+            export_data["media_attributes"]["frame_rate"] == 25
+        )  # intrinsic to test_video_500kb.mp4
         assert (
-            export_data["media_attributes"]["frame_count"] == 100
-        )  # as per the video_data fixture
+            export_data["media_attributes"]["frame_count"] == 627
+        )  # intrinsic to test_video_500kb.mp4 (25 fps x 25.08s)
         expected_export_label = {
             "label_kind": "Video",
             "version": "1.0.0",

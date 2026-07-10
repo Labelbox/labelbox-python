@@ -33,7 +33,10 @@ from labelbox.schema.ontology import Ontology
 from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import QualityMode
 
-IMG_URL = "https://picsum.photos/200/300.jpg"
+# Must be a stable, deterministic JPEG: several tests assert byte-equality
+# between the source and the server-rehosted copy, so a random image service
+# (e.g. picsum.photos) or a format the server may transcode (e.g. PNG) breaks them.
+IMG_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 SMALL_DATASET_URL = "https://storage.googleapis.com/lb-artifacts-testing-public/sdk_integration_test/potato.jpeg"
 DATA_ROW_PROCESSING_WAIT_TIMEOUT_SECONDS = 30
 DATA_ROW_PROCESSING_WAIT_SLEEP_INTERNAL_SECONDS = 3
