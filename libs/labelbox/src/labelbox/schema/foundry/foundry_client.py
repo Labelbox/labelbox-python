@@ -55,6 +55,13 @@ class FoundryClient:
             response = self.client.execute(query_str, params)
         except exceptions.InvalidQueryError:
             raise exceptions.ResourceNotFoundError(App, params)
+        except exceptions.LabelboxError as e:
+            # A missing app used to surface as InvalidQueryError; the API now
+            # returns a generic "not found" LabelboxError instead. Map it back
+            # to ResourceNotFoundError to preserve this method's contract.
+            if "not found" in str(e).lower():
+                raise exceptions.ResourceNotFoundError(App, params)
+            raise exceptions.LabelboxError(f"Unable to get app with id {id}", e)
         except Exception as e:
             raise exceptions.LabelboxError(f"Unable to get app with id {id}", e)
         return App(**response["findModelFoundryApp"])
