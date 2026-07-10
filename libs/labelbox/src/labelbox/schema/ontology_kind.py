@@ -10,7 +10,6 @@ class OntologyKind(Enum):
     """
 
     ModelEvaluation = "MODEL_EVALUATION"
-    ResponseCreation = "RESPONSE_CREATION"
     Missing = None
 
     @classmethod
@@ -34,10 +33,6 @@ class OntologyKind(Enum):
                 MediaType.Conversational,
                 "For chat evaluation, media_type must be Conversational.",
             ),
-            OntologyKind.ResponseCreation: (
-                MediaType.Text,
-                "For response creation, media_type must be Text.",
-            ),
         }
 
         if ontology_kind in ontology_to_media:
@@ -55,7 +50,6 @@ class OntologyKind(Enum):
 
 class EditorTaskType(str, Enum):
     ModelChatEvaluation = "MODEL_CHAT_EVALUATION"
-    ResponseCreation = "RESPONSE_CREATION"
     OfflineModelChatEvaluation = "OFFLINE_MODEL_CHAT_EVALUATION"
     Missing = None
 
@@ -107,11 +101,6 @@ class EditorTaskTypeMapper:
             and media_type == MediaType.Conversational
         ):
             return EditorTaskType.ModelChatEvaluation
-        elif (
-            onotology_kind == OntologyKind.ResponseCreation
-            and media_type == MediaType.Text
-        ):
-            return EditorTaskType.ResponseCreation
         else:
             return EditorTaskType.Missing
 

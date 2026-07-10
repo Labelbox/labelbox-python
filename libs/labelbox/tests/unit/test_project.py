@@ -120,7 +120,6 @@ def test_get_overview_rejects_empty_batch_ids(project_entity):
     [
         (None, EditorTaskType.Missing),
         ("MODEL_CHAT_EVALUATION", EditorTaskType.ModelChatEvaluation),
-        ("RESPONSE_CREATION", EditorTaskType.ResponseCreation),
         (
             "OFFLINE_MODEL_CHAT_EVALUATION",
             EditorTaskType.OfflineModelChatEvaluation,
