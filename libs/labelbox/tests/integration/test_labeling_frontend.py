@@ -11,6 +11,11 @@ def test_get_labeling_frontends(client):
     assert len(filtered_frontends)
 
 
+@pytest.mark.skip(
+    reason="Manual connect of the legacy 'Editor' labeling frontend is no longer "
+    "supported: the backend's getEditorType only accepts modern Pictor editors and "
+    "projects auto-attach the correct frontend (intelligence #30098)."
+)
 def test_labeling_frontend_connecting_to_project(project):
     client = project.client
     default_labeling_frontend = next(
