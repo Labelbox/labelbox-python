@@ -524,27 +524,6 @@ def normalized_ontology_by_media_type():
                 free_form_text_index,
             ],
         },
-        MediaType.LLMPromptResponseCreation: {
-            "tools": [],
-            "classifications": [
-                prompt_text,
-                response_text,
-                response_radio,
-                response_checklist,
-            ],
-        },
-        MediaType.LLMPromptCreation: {
-            "tools": [],
-            "classifications": [prompt_text],
-        },
-        OntologyKind.ResponseCreation: {
-            "tools": [],
-            "classifications": [
-                response_text,
-                response_radio,
-                response_checklist,
-            ],
-        },
         OntologyKind.ModelEvaluation: {
             "tools": [
                 message_single_selection_task,
@@ -632,111 +611,6 @@ def hardcoded_global_key():
 
 
 ##### Integration test strategies #####
-
-
-def _create_response_creation_project(
-    client: Client,
-    rand_gen,
-    data_row_json_by_media_type,
-    ontology_kind,
-    normalized_ontology_by_media_type,
-) -> Tuple[Project, Ontology, Dataset]:
-    "For response creation projects"
-
-    dataset = create_dataset_robust(client, name=rand_gen(str))
-
-    project = client.create_response_creation_project(
-        name=f"{ontology_kind}-{rand_gen(str)}"
-    )
-
-    ontology = client.create_ontology(
-        name=f"{ontology_kind}-{rand_gen(str)}",
-        normalized=normalized_ontology_by_media_type[ontology_kind],
-        media_type=MediaType.Text,
-        ontology_kind=ontology_kind,
-    )
-
-    project.connect_ontology(ontology)
-
-    data_row_data = []
-
-    for _ in range(DATA_ROW_COUNT):
-        data_row_data.append(
-            data_row_json_by_media_type[MediaType.Text](rand_gen(str))
-        )
-
-    task = dataset.create_data_rows(data_row_data)
-    task.wait_till_done()
-    global_keys = [row["global_key"] for row in task.result]
-    data_row_ids = [row["id"] for row in task.result]
-
-    project.create_batch(
-        rand_gen(str),
-        data_row_ids,  # sample of data row objects
-        5,  # priority between 1(Highest) - 5(lowest)
-    )
-    project.data_row_ids = data_row_ids
-    project.global_keys = global_keys
-
-    return project, ontology, dataset
-
-
-@pytest.fixture
-def llm_prompt_response_creation_dataset_with_data_row(
-    client: Client, rand_gen
-):
-    dataset = create_dataset_robust(client, name=rand_gen(str))
-    global_key = str(uuid.uuid4())
-
-    convo_data = {
-        "row_data": "https://storage.googleapis.com/lb-test-data/cataflow/media/sample-conversational-v2-4.json",
-        "global_key": global_key,
-    }
-
-    task = dataset.create_data_rows([convo_data])
-    task.wait_till_done()
-    assert task.status == "COMPLETE"
-    yield dataset
-
-    dataset.delete()
-
-
-def _create_prompt_response_project(
-    client: Client,
-    rand_gen,
-    media_type,
-    normalized_ontology_by_media_type,
-    export_v2_test_helpers,
-    llm_prompt_response_creation_dataset_with_data_row,
-) -> Tuple[Project, Ontology]:
-    """For prompt response data row auto gen projects"""
-    dataset = llm_prompt_response_creation_dataset_with_data_row
-    prompt_response_project = client.create_prompt_response_generation_project(
-        name=f"{media_type.value}-{rand_gen(str)}",
-        dataset_id=dataset.uid,
-        media_type=media_type,
-    )
-
-    ontology = client.create_ontology(
-        name=f"{media_type}-{rand_gen(str)}",
-        normalized=normalized_ontology_by_media_type[media_type],
-        media_type=media_type,
-    )
-
-    prompt_response_project.connect_ontology(ontology)
-
-    # We have to export to get data row ids
-    result = export_v2_test_helpers.run_project_export_v2_task(
-        prompt_response_project
-    )
-
-    data_row_ids = [dr["data_row"]["id"] for dr in result]
-    global_keys = [dr["data_row"]["global_key"] for dr in result]
-
-    prompt_response_project.data_row_ids = data_row_ids
-    prompt_response_project.global_keys = global_keys
-
-    return prompt_response_project, ontology
 
 
 def _create_offline_mmc_project(
@@ -831,7 +705,6 @@ def configured_project(
     request: FixtureRequest,
     normalized_ontology_by_media_type,
     export_v2_test_helpers,
-    llm_prompt_response_creation_dataset_with_data_row,
     teardown_helpers,
 ):
     """Configure project for test. Request.param will contain the media type if not present will use Image MediaType. The project will have 10 data rows."""
@@ -842,27 +715,7 @@ def configured_project(
 
     dataset = None
 
-    if (
-        media_type == MediaType.LLMPromptCreation
-        or media_type == MediaType.LLMPromptResponseCreation
-    ):
-        project, ontology = _create_prompt_response_project(
-            client,
-            rand_gen,
-            media_type,
-            normalized_ontology_by_media_type,
-            export_v2_test_helpers,
-            llm_prompt_response_creation_dataset_with_data_row,
-        )
-    elif media_type == OntologyKind.ResponseCreation:
-        project, ontology, dataset = _create_response_creation_project(
-            client,
-            rand_gen,
-            data_row_json_by_media_type,
-            media_type,
-            normalized_ontology_by_media_type,
-        )
-    elif media_type == OntologyKind.ModelEvaluation:
+    if media_type == OntologyKind.ModelEvaluation:
         project, ontology, dataset = _create_offline_mmc_project(
             client,
             rand_gen,
@@ -901,26 +754,7 @@ def configured_project_by_global_key(
     media_type = getattr(request, "param", MediaType.Image)
     dataset = None
 
-    if (
-        media_type == MediaType.LLMPromptCreation
-        or media_type == MediaType.LLMPromptResponseCreation
-    ):
-        project, ontology = _create_prompt_response_project(
-            client,
-            rand_gen,
-            media_type,
-            normalized_ontology_by_media_type,
-            export_v2_test_helpers,
-        )
-    elif media_type == OntologyKind.ResponseCreation:
-        project, ontology, dataset = _create_response_creation_project(
-            client,
-            rand_gen,
-            data_row_json_by_media_type,
-            media_type,
-            normalized_ontology_by_media_type,
-        )
-    elif media_type == OntologyKind.ModelEvaluation:
+    if media_type == OntologyKind.ModelEvaluation:
         project, ontology, dataset = _create_offline_mmc_project(
             client,
             rand_gen,
@@ -959,29 +793,13 @@ def module_project(
     media_type = getattr(request, "param", MediaType.Image)
     dataset = None
 
-    if (
-        media_type == MediaType.LLMPromptCreation
-        or media_type == MediaType.LLMPromptResponseCreation
-    ):
-        project, ontology = _create_prompt_response_project(
-            client, rand_gen, media_type, normalized_ontology_by_media_type
-        )
-    elif media_type == OntologyKind.ResponseCreation:
-        project, ontology, dataset = _create_response_creation_project(
-            client,
-            rand_gen,
-            data_row_json_by_media_type,
-            media_type,
-            normalized_ontology_by_media_type,
-        )
-    else:
-        project, ontology, dataset = _create_project(
-            client,
-            rand_gen,
-            data_row_json_by_media_type,
-            media_type,
-            normalized_ontology_by_media_type,
-        )
+    project, ontology, dataset = _create_project(
+        client,
+        rand_gen,
+        data_row_json_by_media_type,
+        media_type,
+        normalized_ontology_by_media_type,
+    )
 
     yield project
 
@@ -1781,18 +1599,6 @@ def annotations_by_media_type(
         ],
         MediaType.Text: [checklist_inference, text_inference, entity_inference],
         MediaType.Video: [video_checklist_inference],
-        MediaType.LLMPromptResponseCreation: [
-            prompt_text_inference,
-            text_response_inference,
-            checklist_response_inference,
-            radio_response_inference,
-        ],
-        MediaType.LLMPromptCreation: [prompt_text_inference],
-        OntologyKind.ResponseCreation: [
-            text_response_inference,
-            checklist_response_inference,
-            radio_response_inference,
-        ],
         OntologyKind.ModelEvaluation: [
             message_single_selection_inference,
             message_multi_selection_inference,
@@ -2420,121 +2226,6 @@ def expected_export_v2_document():
     return expected_annotations
 
 
-@pytest.fixture()
-def expected_export_v2_llm_prompt_response_creation():
-    expected_annotations = {
-        "objects": [],
-        "classifications": [
-            {
-                "name": "prompt-text",
-                "value": "prompt-text",
-                "text_answer": {
-                    "content": "free form text...",
-                    "classifications": [],
-                },
-            },
-            {
-                "name": "response-text",
-                "text_answer": {
-                    "content": "free form text...",
-                    "classifications": [],
-                },
-                "value": "response-text",
-            },
-            {
-                "checklist_answers": [
-                    {
-                        "classifications": [],
-                        "name": "first_checklist_answer",
-                        "value": "first_checklist_answer",
-                    },
-                    {
-                        "classifications": [],
-                        "name": "second_checklist_answer",
-                        "value": "second_checklist_answer",
-                    },
-                ],
-                "name": "checklist-response",
-                "value": "checklist-response",
-            },
-            {
-                "name": "radio-response",
-                "radio_answer": {
-                    "classifications": [],
-                    "name": "first_radio_answer",
-                    "value": "first_radio_answer",
-                },
-                "value": "radio-response",
-            },
-        ],
-        "relationships": [],
-    }
-    return expected_annotations
-
-
-@pytest.fixture()
-def expected_export_v2_llm_prompt_creation():
-    expected_annotations = {
-        "objects": [],
-        "classifications": [
-            {
-                "name": "prompt-text",
-                "value": "prompt-text",
-                "text_answer": {
-                    "content": "free form text...",
-                    "classifications": [],
-                },
-            },
-        ],
-        "relationships": [],
-    }
-    return expected_annotations
-
-
-@pytest.fixture()
-def expected_export_v2_llm_response_creation():
-    expected_annotations = {
-        "objects": [],
-        "relationships": [],
-        "classifications": [
-            {
-                "name": "response-text",
-                "text_answer": {
-                    "content": "free form text...",
-                    "classifications": [],
-                },
-                "value": "response-text",
-            },
-            {
-                "checklist_answers": [
-                    {
-                        "classifications": [],
-                        "name": "first_checklist_answer",
-                        "value": "first_checklist_answer",
-                    },
-                    {
-                        "classifications": [],
-                        "name": "second_checklist_answer",
-                        "value": "second_checklist_answer",
-                    },
-                ],
-                "name": "checklist-response",
-                "value": "checklist-response",
-            },
-            {
-                "name": "radio-response",
-                "radio_answer": {
-                    "classifications": [],
-                    "name": "first_radio_answer",
-                    "value": "first_radio_answer",
-                },
-                "value": "radio-response",
-            },
-        ],
-    }
-    return expected_annotations
-
-
 @pytest.fixture
 def expected_exports_v2_mmc(mmc_example_data_row_message_ids):
     some_parent_id, some_child_ids = next(
@@ -2669,9 +2360,6 @@ def exports_v2_by_media_type(
     expected_export_v2_video,
     expected_export_v2_conversation,
     expected_export_v2_document,
-    expected_export_v2_llm_prompt_response_creation,
-    expected_export_v2_llm_prompt_creation,
-    expected_export_v2_llm_response_creation,
     expected_exports_v2_mmc,
 ):
     return {
@@ -2682,9 +2370,6 @@ def exports_v2_by_media_type(
         MediaType.Video: expected_export_v2_video,
         MediaType.Conversational: expected_export_v2_conversation,
         MediaType.Document: expected_export_v2_document,
-        MediaType.LLMPromptResponseCreation: expected_export_v2_llm_prompt_response_creation,
-        MediaType.LLMPromptCreation: expected_export_v2_llm_prompt_creation,
-        OntologyKind.ResponseCreation: expected_export_v2_llm_response_creation,
         OntologyKind.ModelEvaluation: expected_exports_v2_mmc,
     }
 
@@ -2728,12 +2413,6 @@ class Helpers:
         media_type = to_pascal_case(data_type_string)
         if media_type == "Conversational":
             media_type = "Conversational"
-        elif media_type == "Llmpromptcreation":
-            media_type = "LLMPromptCreation"
-        elif media_type == "Llmpromptresponsecreation":
-            media_type = "LLMPromptResponseCreation"
-        elif media_type == "Llmresponsecreation":
-            media_type = "Text"
         elif media_type == "Genericdatarow":
             media_type = "Image"
         project.update(media_type=MediaType[media_type])

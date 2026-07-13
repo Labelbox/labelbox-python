@@ -111,18 +111,6 @@ class LabelingServiceDashboard(_CamelCaseMixin):
         ):
             return "Live chat evaluation"
 
-        if (
-            self.editor_task_type == EditorTaskType.ResponseCreation
-            and self.media_type == MediaType.Text
-        ):
-            return "Response creation"
-
-        if (
-            self.media_type == MediaType.LLMPromptCreation
-            or self.media_type == MediaType.LLMPromptResponseCreation
-        ):
-            return "Prompt response creation"
-
         return sentence_case(self.media_type.value)
 
     @classmethod

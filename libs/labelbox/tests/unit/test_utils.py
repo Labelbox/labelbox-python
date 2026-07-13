@@ -27,7 +27,7 @@ def test_datetime_parsing(datetime_str, expected_datetime_str):
     "str, expected_str",
     [
         ("AUDIO", "Audio"),
-        ("LLM_PROMPT_RESPONSE_CREATION", "Llm prompt response creation"),
+        ("MODEL_CHAT_EVALUATION", "Model chat evaluation"),
     ],
 )
 def test_sentence_case(str, expected_str):

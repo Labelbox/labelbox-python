@@ -202,17 +202,6 @@ class Project(DbObject, Updateable, Deletable):
             and self.editor_task_type == EditorTaskType.ModelChatEvaluation
         )
 
-    def is_prompt_response(self) -> bool:
-        """
-        Returns:
-            True if this project is a prompt response project, False otherwise
-        """
-        return (
-            self.media_type == MediaType.LLMPromptResponseCreation
-            or self.media_type == MediaType.LLMPromptCreation
-            or self.editor_task_type == EditorTaskType.ResponseCreation
-        )
-
     def is_auto_data_generation(self) -> bool:
         return self.upload_type == UploadType.Auto  # type: ignore
 
