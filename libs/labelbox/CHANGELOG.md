@@ -1,7 +1,7 @@
 # Changelog
-# Version 7.9.0 (Unreleased)
+# Version 7.9.0 (2026-07-09)
 ## Added
-* Add optional `batch_ids` parameter to `Project.get_overview()` to return workflow state counts scoped to one or more batches ([#TBD](https://github.com/Labelbox/labelbox-python/pull/TBD))
+* Add optional `batch_ids` parameter to `Project.get_overview()` to return workflow state counts scoped to one or more batches ([#2060](https://github.com/Labelbox/labelbox-python/pull/2060))
 
 # Version 7.8.0 (2026-06-11)
 ## Added
