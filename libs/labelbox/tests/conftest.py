@@ -32,6 +32,10 @@ from labelbox.schema.invite import Invite
 from labelbox.schema.ontology import Ontology
 from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import QualityMode
+from tests.embedding_cleanup import (
+    build_embedding_name,
+    create_embedding_with_heal,
+)
 
 # Must be a stable, deterministic JPEG: several tests assert byte-equality
 # between the source and the server-rehosted copy, so a random image service
@@ -1128,9 +1132,14 @@ def configured_project_with_complex_ontology(
 
 @pytest.fixture
 def embedding(client: Client, environ):
-    uuid_str = uuid.uuid4().hex
     time.sleep(randint(1, 5))
-    embedding = client.create_embedding(f"sdk-int-{uuid_str}", 8)
+    embedding = create_embedding_with_heal(
+        create_embedding=lambda: client.create_embedding(
+            build_embedding_name(time.time()), 8
+        ),
+        list_embeddings=client.get_embeddings,
+        delete_embedding=lambda stale_embedding: stale_embedding.delete(),
+    )
     yield embedding
 
     embedding.delete()
