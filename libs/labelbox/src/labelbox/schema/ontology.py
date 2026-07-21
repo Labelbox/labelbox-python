@@ -94,6 +94,7 @@ class Tool:
         MESSAGE_SINGLE_SELECTION = "message-single-selection"
         MESSAGE_MULTI_SELECTION = "message-multi-selection"
         MESSAGE_RANKING = "message-ranking"
+        MARKER = "marker"
 
     tool: Type
     name: str

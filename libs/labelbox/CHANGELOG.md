@@ -1,4 +1,8 @@
 # Changelog
+# Version 7.10.0 (2026-07-20)
+## Added
+* Add support for reading and creating marker ontology tools. Marker ontologies require Labelbox SDK 7.10.0 or later.
+
 # Version 7.9.0 (2026-07-09)
 ## Added
 * Add optional `batch_ids` parameter to `Project.get_overview()` to return workflow state counts scoped to one or more batches ([#2060](https://github.com/Labelbox/labelbox-python/pull/2060))
