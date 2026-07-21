@@ -1,6 +1,8 @@
 import json
 import os
+import pathlib
 import re
+import sys
 import time
 import uuid
 from datetime import datetime
@@ -32,7 +34,15 @@ from labelbox.schema.invite import Invite
 from labelbox.schema.ontology import Ontology
 from labelbox.schema.project import Project
 from labelbox.schema.quality_mode import QualityMode
-from tests.embedding_cleanup import (
+
+# CI invokes pytest as a console script, which (unlike `python -m pytest`)
+# never puts the project directory on sys.path, so `tests.*` is not
+# importable when this conftest loads. Insert it deterministically.
+_PROJECT_DIR = str(pathlib.Path(__file__).resolve().parent.parent)
+if _PROJECT_DIR not in sys.path:
+    sys.path.insert(0, _PROJECT_DIR)
+
+from tests.embedding_cleanup import (  # noqa: E402  (needs the sys.path insert above)
     build_embedding_name,
     create_embedding_with_heal,
 )
