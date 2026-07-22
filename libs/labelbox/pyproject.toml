@@ -1,6 +1,6 @@
 [project]
 name = "labelbox"
-version = "7.9.0"
+version = "7.10.0"
 description = "Labelbox Python API"
 authors = [{ name = "Labelbox", email = "engineering@labelbox.com" }]
 dependencies = [
