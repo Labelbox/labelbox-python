@@ -164,6 +164,24 @@ def test_create_tool(tool_type) -> None:
     assert t.tool == tool_type
 
 
+def test_marker_tool_from_dict_asdict_round_trip() -> None:
+    marker = {
+        "schemaNodeId": "marker-schema-node",
+        "featureSchemaId": "marker-feature-schema",
+        "required": False,
+        "name": "Scene boundary",
+        "color": "#FF0000",
+        "tool": "marker",
+        "classifications": [],
+        "attributes": None,
+    }
+
+    tool = Tool.from_dict(marker)
+
+    assert tool.tool is Tool.Type.MARKER
+    assert tool.asdict() == marker
+
+
 @pytest.mark.parametrize("class_type", list(Classification.Type))
 def test_create_classification(class_type) -> None:
     c = Classification(class_type=class_type, name="classification")
