@@ -1,4 +1,12 @@
 # Changelog
+# Version 7.10.0 (2026-07-22)
+## Added
+* Add `Tool.Type.MARKER` for video marker tool ontologies — fetching an ontology containing a marker tool no longer raises `ValueError` ([#2067](https://github.com/Labelbox/labelbox-python/pull/2067))
+## Removed
+* Remove LLM prompt/response and response-creation project support: `Client.create_prompt_response_generation_project()`, `Client.create_response_creation_project()`, `MediaType.LLMPromptCreation`, `MediaType.LLMPromptResponseCreation`, `OntologyKind.ResponseCreation`, `EditorTaskType.ResponseCreation`, and `Project.is_prompt_response()` ([#2063](https://github.com/Labelbox/labelbox-python/pull/2063))
+## Fixed
+* Fix Foundry app lookups to raise `ResourceNotFoundError` for apps that do not exist, instead of a generic `LabelboxError` ([#2065](https://github.com/Labelbox/labelbox-python/pull/2065))
+
 # Version 7.9.0 (2026-07-09)
 ## Added
 * Add optional `batch_ids` parameter to `Project.get_overview()` to return workflow state counts scoped to one or more batches ([#2060](https://github.com/Labelbox/labelbox-python/pull/2060))
