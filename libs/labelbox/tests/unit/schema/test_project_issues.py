@@ -31,6 +31,7 @@ _USER_RAW = {
     "isExternalUser": False,
     "createdAt": _NOW,
     "updatedAt": _NOW,
+    "lastLoginAt": _NOW,
 }
 
 _ISSUE_RAW = {
