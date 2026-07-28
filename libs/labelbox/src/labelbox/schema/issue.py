@@ -37,7 +37,8 @@ class IssueStatus(str, Enum):
 # ---------------------------------------------------------------------------
 
 _USER_FIELDS = (
-    "id email nickname name picture isViewer isExternalUser createdAt updatedAt"
+    "id email nickname name picture isViewer isExternalUser "
+    "createdAt updatedAt lastLoginAt"
 )
 
 _COMMENT_FIELDS = (

@@ -1,4 +1,8 @@
 # Changelog
+# Version 7.11.0 (Unreleased)
+## Added
+* Add `User.last_login_at` to expose GraphQL `lastLoginAt` (nullable datetime of last session in the organization) ([#TBD](https://github.com/Labelbox/labelbox-python/pull/TBD))
+
 # Version 7.10.0 (2026-07-22)
 ## Added
 * Add `Tool.Type.MARKER` for video marker tool ontologies — fetching an ontology containing a marker tool no longer raises `ValueError` ([#2067](https://github.com/Labelbox/labelbox-python/pull/2067))

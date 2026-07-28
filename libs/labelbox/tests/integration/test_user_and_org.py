@@ -5,6 +5,9 @@ def test_user(client):
     user = client.get_user()
     assert user.uid is not None
     assert user.organization() == client.get_organization()
+    assert hasattr(user, "last_login_at")
+    # Nullable: None until the user has logged in after tracking was enabled.
+    assert user.last_login_at is None or hasattr(user.last_login_at, "year")
 
 
 def test_organization(client):

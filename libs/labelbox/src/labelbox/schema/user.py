@@ -14,6 +14,9 @@ class User(DbObject):
     Attributes:
         updated_at (datetime)
         created_at (datetime)
+        last_login_at (datetime or None): When this user last established a
+            session (login or workspace switch) in this organization. ``None``
+            until the user logs in after last-login tracking was enabled.
         email (str)
         name (str)
         nickname (str)
@@ -28,6 +31,7 @@ class User(DbObject):
 
     updated_at = Field.DateTime("updated_at")
     created_at = Field.DateTime("created_at")
+    last_login_at = Field.DateTime("last_login_at")
     email = Field.String("email")
     name = Field.String("nickname")
     nickname = Field.String("name")
