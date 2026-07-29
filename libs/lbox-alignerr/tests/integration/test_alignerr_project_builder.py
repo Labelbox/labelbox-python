@@ -55,14 +55,10 @@ def test_builder_rate_methods_removed(client: Client):
         .set_media_type(MediaType.Image)
     )
 
-    with pytest.raises(
-        NotImplementedError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)
-    ):
+    with pytest.raises(NotImplementedError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)):
         builder.set_alignerr_role_rate()
 
-    with pytest.raises(
-        NotImplementedError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)
-    ):
+    with pytest.raises(NotImplementedError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)):
         builder.set_customer_rate()
 
 

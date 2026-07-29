@@ -77,12 +77,8 @@ def test_alignerr_project_domains(client, test_alignerr_project):
 
 def test_alignerr_project_rate_methods_removed(client, test_alignerr_project):
     """Pay By Role rate helpers raise and direct callers to the Rates UI."""
-    with pytest.raises(
-        NotImplementedError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)
-    ):
+    with pytest.raises(NotImplementedError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)):
         test_alignerr_project.get_project_rates()
 
-    with pytest.raises(
-        NotImplementedError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)
-    ):
+    with pytest.raises(NotImplementedError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)):
         test_alignerr_project.set_project_rate(None)
