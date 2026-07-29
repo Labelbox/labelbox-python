@@ -1,25 +1,6 @@
 name: "TestComprehensiveProject"
 media_type: "Image"
 
-# Alignerr role rates
-rates:
-  LABELER:
-    rate: 15.0
-    billing_mode: "BY_HOUR"
-    effective_since: "2024-01-01T00:00:00"
-    effective_until: "2024-12-31T23:59:59"
-  REVIEWER:
-    rate: 20.0
-    billing_mode: "BY_HOUR"
-    effective_since: "2024-01-01T00:00:00"
-
-# Customer billing rate
-customer_rate:
-  rate: 25.0
-  billing_mode: "BY_HOUR"
-  effective_since: "2024-01-01T00:00:00"
-  effective_until: "2024-12-31T23:59:59"
-
 # Project domains (will be created if they don't exist)
 domains:
   - "TestDomain1"

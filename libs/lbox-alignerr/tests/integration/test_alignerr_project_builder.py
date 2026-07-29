@@ -1,9 +1,9 @@
-"""Integration tests for ProjectRateV2 functionality."""
+"""Integration tests for AlignerrProjectBuilder functionality."""
 
-import datetime
+import re
+
 from labelbox import Client
-from alignerr.alignerr_project import AlignerrRole, AlignerrWorkspace
-from alignerr.schema.project_rate import BillingMode
+from alignerr.alignerr_project import AlignerrWorkspace, PAY_BY_ROLE_REMOVED_MSG
 from labelbox.schema.media_type import MediaType
 import pytest
 
@@ -14,12 +14,6 @@ def test_skip_validation(client: Client):
         .project_builder()
         .set_name("TestAlignerrProject")
         .set_media_type(MediaType.Image)
-        .set_alignerr_role_rate(
-            role_name=AlignerrRole.Labeler,
-            rate=10.0,
-            billing_mode=BillingMode.BY_HOUR,
-            effective_since=datetime.datetime.now().isoformat(),
-        )
         .create(skip_validation=True)
     )
     assert alignerr_project is not None
@@ -29,15 +23,10 @@ def test_skip_validation(client: Client):
 
 
 def test_create_alignerr_project_using_builder_validate_input(client: Client):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Project owner is not set"):
         AlignerrWorkspace.from_labelbox(client).project_builder().set_name(
             "TestAlignerrProject"
-        ).set_media_type(MediaType.Image).set_alignerr_role_rate(
-            role_name=AlignerrRole.Labeler,
-            rate=10.0,
-            billing_mode=BillingMode.BY_HOUR,
-            effective_since=datetime.datetime.now().isoformat(),
-        ).create()
+        ).set_media_type(MediaType.Image).create()
 
     # Get current user for project owner
     current_user = client.get_user()
@@ -47,23 +36,6 @@ def test_create_alignerr_project_using_builder_validate_input(client: Client):
         .project_builder()
         .set_name("TestAlignerrProject2")
         .set_media_type(MediaType.Image)
-        .set_alignerr_role_rate(
-            role_name=AlignerrRole.Labeler,
-            rate=10.0,
-            billing_mode=BillingMode.BY_HOUR,
-            effective_since=datetime.datetime.now().isoformat(),
-        )
-        .set_alignerr_role_rate(
-            role_name=AlignerrRole.Reviewer,
-            rate=10.0,
-            billing_mode=BillingMode.BY_HOUR,
-            effective_since=datetime.datetime.now().isoformat(),
-        )
-        .set_customer_rate(
-            rate=15.0,
-            billing_mode=BillingMode.BY_HOUR,
-            effective_since=datetime.datetime.now().isoformat(),
-        )
         .set_project_owner(current_user.email)
         .create()
     )
@@ -72,6 +44,22 @@ def test_create_alignerr_project_using_builder_validate_input(client: Client):
     assert alignerr_project.project.name == "TestAlignerrProject2"
 
     alignerr_project.project.delete()
+
+
+def test_builder_rate_methods_removed(client: Client):
+    """Pay By Role builder rate helpers raise and direct callers to the Rates UI."""
+    builder = (
+        AlignerrWorkspace.from_labelbox(client)
+        .project_builder()
+        .set_name("TestAlignerrProjectRatesRemoved")
+        .set_media_type(MediaType.Image)
+    )
+
+    with pytest.raises(NotImplementedError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)):
+        builder.set_alignerr_role_rate()
+
+    with pytest.raises(NotImplementedError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)):
+        builder.set_customer_rate()
 
 
 def test_create_alignerr_project_using_builder_add_domains(client: Client):
@@ -116,10 +104,10 @@ def test_create_alignerr_project_using_builder_add_domains(client: Client):
             pass
 
 
-def test_create_alignerr_project_with_rates_domains_and_resource_tags(
+def test_create_alignerr_project_with_domains_and_resource_tags(
     client: Client,
 ):
-    """Test creating an Alignerr project with rates, domains, and enhanced resource tags."""
+    """Test creating an Alignerr project with domains and enhanced resource tags."""
     from alignerr.schema.project_domain import ProjectDomain
     from alignerr.schema.enchanced_resource_tags import (
         EnhancedResourceTag,
@@ -159,29 +147,12 @@ def test_create_alignerr_project_with_rates_domains_and_resource_tags(
         # Get current user for project owner
         current_user = client.get_user()
 
-        # Create project with rates, domains, and resource tags
+        # Create project with domains and resource tags
         alignerr_project = (
             AlignerrWorkspace.from_labelbox(client)
             .project_builder()
             .set_name("TestAlignerrProjectWithAll")
             .set_media_type(MediaType.Image)
-            .set_alignerr_role_rate(
-                role_name=AlignerrRole.Labeler,
-                rate=12.0,
-                billing_mode=BillingMode.BY_HOUR,
-                effective_since=datetime.datetime.now().isoformat(),
-            )
-            .set_alignerr_role_rate(
-                role_name=AlignerrRole.Reviewer,
-                rate=15.0,
-                billing_mode=BillingMode.BY_HOUR,
-                effective_since=datetime.datetime.now().isoformat(),
-            )
-            .set_customer_rate(
-                rate=20.0,
-                billing_mode=BillingMode.BY_HOUR,
-                effective_since=datetime.datetime.now().isoformat(),
-            )
             .set_domains([domain1_name, domain2_name])
             .set_tags([tag1_text, tag2_text], ResourceTagType.Default)
             .set_project_owner(current_user.email)
@@ -233,23 +204,6 @@ def test_create_alignerr_project_with_project_owner(client: Client):
             .project_builder()
             .set_name("TestAlignerrProjectWithOwner")
             .set_media_type(MediaType.Image)
-            .set_alignerr_role_rate(
-                role_name=AlignerrRole.Labeler,
-                rate=10.0,
-                billing_mode=BillingMode.BY_HOUR,
-                effective_since=datetime.datetime.now().isoformat(),
-            )
-            .set_alignerr_role_rate(
-                role_name=AlignerrRole.Reviewer,
-                rate=12.0,
-                billing_mode=BillingMode.BY_HOUR,
-                effective_since=datetime.datetime.now().isoformat(),
-            )
-            .set_customer_rate(
-                rate=15.0,
-                billing_mode=BillingMode.BY_HOUR,
-                effective_since=datetime.datetime.now().isoformat(),
-            )
             .set_project_owner(current_user.email)
             .create()
         )
@@ -287,13 +241,7 @@ def test_create_alignerr_project_selective_validation_skip_multiple(
             .project_builder()
             .set_name("TestAlignerrProjectSkipMultiple")
             .set_media_type(MediaType.Image)
-            .set_alignerr_role_rate(
-                role_name=AlignerrRole.Labeler,
-                rate=10.0,
-                billing_mode=BillingMode.BY_HOUR,
-                effective_since=datetime.datetime.now().isoformat(),
-            )
-            # Note: Missing reviewer rate, customer rate, and project owner, but we skip those validations
+            # Note: Missing project owner, but we skip that validation
             .create(
                 skip_validation=[
                     ValidationType.ALIGNERR_RATE,

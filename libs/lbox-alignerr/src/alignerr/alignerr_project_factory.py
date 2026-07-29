@@ -1,10 +1,9 @@
-import datetime
 from typing import TYPE_CHECKING, Union, List
 import yaml
 from pathlib import Path
 import logging
 
-from alignerr.schema.project_rate import BillingMode
+from alignerr.alignerr_project import PAY_BY_ROLE_REMOVED_MSG
 from alignerr.schema.enchanced_resource_tags import ResourceTagType
 from labelbox.schema.media_type import MediaType
 
@@ -35,27 +34,21 @@ class AlignerrProjectFactory:
         Raises:
             FileNotFoundError: If the YAML file doesn't exist
             yaml.YAMLError: If the YAML file is invalid
-            ValueError: If required fields are missing or invalid
+            ValueError: If required fields are missing or invalid, or if legacy
+                rates / customer_rate keys are present
 
         YAML Configuration Structure:
             name: str (required) - Project name
             media_type: str (required) - Media type (e.g., "Image", "Video", "Text")
-            rates: dict (optional) - Alignerr role rates
-                role_name:
-                    rate: float
-                    billing_mode: str
-                    effective_since: str (ISO datetime)
-                    effective_until: str (optional, ISO datetime)
-            customer_rate: dict (optional) - Customer billing rate
-                rate: float
-                billing_mode: str
-                effective_since: str (ISO datetime)
-                effective_until: str (optional, ISO datetime)
             domains: list[str] (optional) - Project domain names
             tags: list[dict] (optional) - Enhanced resource tags
                 - text: str
                   type: str (ResourceTagType enum value)
             project_owner: str (optional) - Project owner email address
+
+        Note:
+            Legacy `rates` and `customer_rate` YAML keys are no longer supported.
+            Configure rates in the Labelbox Rates UI (Pay By Activity).
         """
         logger.info(f"Creating project from YAML file: {yaml_file_path}")
 
@@ -81,11 +74,13 @@ class AlignerrProjectFactory:
                     f"Required field '{field}' is missing from YAML configuration"
                 )
 
+        if "rates" in config or "customer_rate" in config:
+            raise ValueError(PAY_BY_ROLE_REMOVED_MSG)
+
         # Import here to avoid circular imports
         from alignerr.alignerr_project_builder import (
             AlignerrProjectBuilder,
         )
-        from alignerr.alignerr_project import AlignerrRole
 
         # Create project builder
         builder = AlignerrProjectBuilder(self.client)
@@ -105,128 +100,6 @@ class AlignerrProjectFactory:
             )
 
         builder.set_media_type(media_type)
-
-        # Set project rates if provided
-        if "rates" in config:
-            rates_config = config["rates"]
-            if not isinstance(rates_config, dict):
-                raise ValueError("'rates' must be a dictionary")
-
-            for role_name, rate_config in rates_config.items():
-                try:
-                    alignerr_role = AlignerrRole(role_name.upper())
-                except ValueError:
-                    raise ValueError(
-                        f"Invalid role '{role_name}'. Must be one of: {[r.value for r in AlignerrRole]}"
-                    )
-
-                # Validate rate configuration
-                required_rate_fields = [
-                    "rate",
-                    "billing_mode",
-                    "effective_since",
-                ]
-                for field in required_rate_fields:
-                    if field not in rate_config:
-                        raise ValueError(
-                            f"Required field '{field}' is missing for role '{role_name}'"
-                        )
-
-                # Parse billing mode
-                try:
-                    billing_mode = BillingMode(rate_config["billing_mode"])
-                except ValueError:
-                    raise ValueError(
-                        f"Invalid billing_mode '{rate_config['billing_mode']}' for role '{role_name}'. Must be one of: {[e.value for e in BillingMode]}"
-                    )
-
-                # Parse effective dates
-                try:
-                    effective_since = datetime.datetime.fromisoformat(
-                        rate_config["effective_since"]
-                    )
-                except ValueError:
-                    raise ValueError(
-                        f"Invalid effective_since date format for role '{role_name}'. Use ISO format (YYYY-MM-DDTHH:MM:SS)"
-                    )
-
-                effective_until = None
-                if "effective_until" in rate_config and rate_config["effective_until"]:
-                    try:
-                        effective_until = datetime.datetime.fromisoformat(
-                            rate_config["effective_until"]
-                        )
-                    except ValueError:
-                        raise ValueError(
-                            f"Invalid effective_until date format for role '{role_name}'. Use ISO format (YYYY-MM-DDTHH:MM:SS)"
-                        )
-
-                # Set the rate
-                builder.set_alignerr_role_rate(
-                    role_name=alignerr_role,
-                    rate=float(rate_config["rate"]),
-                    billing_mode=billing_mode,
-                    effective_since=effective_since,
-                    effective_until=effective_until,
-                )
-
-        # Set customer rate if provided
-        if "customer_rate" in config:
-            customer_rate_config = config["customer_rate"]
-            if not isinstance(customer_rate_config, dict):
-                raise ValueError("'customer_rate' must be a dictionary")
-
-            # Validate customer rate configuration
-            required_customer_rate_fields = [
-                "rate",
-                "billing_mode",
-                "effective_since",
-            ]
-            for field in required_customer_rate_fields:
-                if field not in customer_rate_config:
-                    raise ValueError(
-                        f"Required field '{field}' is missing for customer_rate"
-                    )
-
-            # Parse billing mode
-            try:
-                billing_mode = BillingMode(customer_rate_config["billing_mode"])
-            except ValueError:
-                raise ValueError(
-                    f"Invalid billing_mode '{customer_rate_config['billing_mode']}' for customer_rate. Must be one of: {[e.value for e in BillingMode]}"
-                )
-
-            # Parse effective dates
-            try:
-                effective_since = datetime.datetime.fromisoformat(
-                    customer_rate_config["effective_since"]
-                )
-            except ValueError:
-                raise ValueError(
-                    "Invalid effective_since date format for customer_rate. Use ISO format (YYYY-MM-DDTHH:MM:SS)"
-                )
-
-            effective_until = None
-            if (
-                "effective_until" in customer_rate_config
-                and customer_rate_config["effective_until"]
-            ):
-                try:
-                    effective_until = datetime.datetime.fromisoformat(
-                        customer_rate_config["effective_until"]
-                    )
-                except ValueError:
-                    raise ValueError(
-                        "Invalid effective_until date format for customer_rate. Use ISO format (YYYY-MM-DDTHH:MM:SS)"
-                    )
-
-            # Set the customer rate
-            builder.set_customer_rate(
-                rate=float(customer_rate_config["rate"]),
-                billing_mode=billing_mode,
-                effective_since=effective_since,
-                effective_until=effective_until,
-            )
 
         # Set domains if provided
         if "domains" in config:
