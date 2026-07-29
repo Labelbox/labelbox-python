@@ -2,12 +2,14 @@
 
 import tempfile
 import os
+import re
 import yaml
 from pathlib import Path
 
 import pytest
 
 from labelbox import Client
+from alignerr.alignerr_project import PAY_BY_ROLE_REMOVED_MSG
 from alignerr.alignerr_project_factory import AlignerrProjectFactory
 from alignerr.alignerr_project_builder import ValidationType
 from labelbox.schema.media_type import MediaType
@@ -34,8 +36,8 @@ def test_create_alignerr_project_from_yaml_basic(client: Client):
         os.unlink(yaml_file_path)
 
 
-def test_create_alignerr_project_from_yaml_with_rates(client: Client):
-    """Test creating an AlignerrProject from YAML with rate configurations."""
+def test_create_alignerr_project_from_yaml_with_rates_raises(client: Client):
+    """Legacy rates YAML keys raise and direct callers to the Rates UI."""
     config = {
         "name": "TestFactoryProjectWithRates",
         "media_type": "IMAGE",
@@ -43,12 +45,6 @@ def test_create_alignerr_project_from_yaml_with_rates(client: Client):
             "labeler": {
                 "rate": 0.50,
                 "billing_mode": "BY_TASK",
-                "effective_since": "2024-01-01T00:00:00",
-                "effective_until": "2024-12-31T23:59:59",
-            },
-            "reviewer": {
-                "rate": 0.75,
-                "billing_mode": "BY_HOUR",
                 "effective_since": "2024-01-01T00:00:00",
             },
         },
@@ -60,18 +56,34 @@ def test_create_alignerr_project_from_yaml_with_rates(client: Client):
 
     try:
         factory = AlignerrProjectFactory(client)
-        alignerr_project = factory.create(yaml_file_path, skip_validation=True)
+        with pytest.raises(ValueError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)):
+            factory.create(yaml_file_path, skip_validation=True)
+    finally:
+        os.unlink(yaml_file_path)
 
-        assert alignerr_project is not None
-        assert alignerr_project.project.name == "TestFactoryProjectWithRates"
-        assert alignerr_project.project.media_type == MediaType.Image
 
-        # Verify rates were set by checking project rates
-        project_rates = alignerr_project.get_project_rates()
-        assert isinstance(project_rates, list)
-        assert len(project_rates) >= 1
+def test_create_alignerr_project_from_yaml_with_customer_rate_raises(
+    client: Client,
+):
+    """Legacy customer_rate YAML key raises and directs callers to the Rates UI."""
+    config = {
+        "name": "TestFactoryProjectWithCustomerRate",
+        "media_type": "IMAGE",
+        "customer_rate": {
+            "rate": 25.0,
+            "billing_mode": "BY_HOUR",
+            "effective_since": "2024-01-01T00:00:00",
+        },
+    }
 
-        alignerr_project.project.delete()
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        yaml.dump(config, f)
+        yaml_file_path = f.name
+
+    try:
+        factory = AlignerrProjectFactory(client)
+        with pytest.raises(ValueError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)):
+            factory.create(yaml_file_path, skip_validation=True)
     finally:
         os.unlink(yaml_file_path)
 
@@ -121,55 +133,6 @@ def test_create_alignerr_project_from_yaml_file_not_found(client: Client):
         factory.create("nonexistent_file.yaml")
 
 
-def test_create_alignerr_project_from_yaml_with_customer_rate(client: Client):
-    """Test creating an AlignerrProject from YAML with customer rate configuration."""
-    config = {
-        "name": "TestFactoryProjectWithCustomerRate",
-        "media_type": "IMAGE",
-        "rates": {
-            "LABELER": {
-                "rate": 15.0,
-                "billing_mode": "BY_HOUR",
-                "effective_since": "2024-01-01T00:00:00",
-            },
-            "REVIEWER": {
-                "rate": 20.0,
-                "billing_mode": "BY_HOUR",
-                "effective_since": "2024-01-01T00:00:00",
-            },
-        },
-        "customer_rate": {
-            "rate": 25.0,
-            "billing_mode": "BY_HOUR",
-            "effective_since": "2024-01-01T00:00:00",
-            "effective_until": "2024-12-31T23:59:59",
-        },
-    }
-
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        yaml.dump(config, f)
-        yaml_file_path = f.name
-
-    try:
-        factory = AlignerrProjectFactory(client)
-        alignerr_project = factory.create(
-            yaml_file_path, skip_validation=[ValidationType.PROJECT_OWNER]
-        )
-
-        assert alignerr_project is not None
-        assert alignerr_project.project.name == "TestFactoryProjectWithCustomerRate"
-        assert alignerr_project.project.media_type == MediaType.Image
-
-        # Verify rates were set
-        project_rates = alignerr_project.get_project_rates()
-        assert isinstance(project_rates, list)
-        assert len(project_rates) >= 2  # Should have both labeler and reviewer rates
-
-        alignerr_project.project.delete()
-    finally:
-        os.unlink(yaml_file_path)
-
-
 def test_create_alignerr_project_from_yaml_with_domains(client: Client):
     """Test creating an AlignerrProject from YAML with domains configuration."""
     from alignerr.schema.project_domain import ProjectDomain
@@ -189,23 +152,6 @@ def test_create_alignerr_project_from_yaml_with_domains(client: Client):
     config = {
         "name": "TestFactoryProjectWithDomains",
         "media_type": "IMAGE",
-        "rates": {
-            "LABELER": {
-                "rate": 15.0,
-                "billing_mode": "BY_HOUR",
-                "effective_since": "2024-01-01T00:00:00",
-            },
-            "REVIEWER": {
-                "rate": 20.0,
-                "billing_mode": "BY_HOUR",
-                "effective_since": "2024-01-01T00:00:00",
-            },
-        },
-        "customer_rate": {
-            "rate": 25.0,
-            "billing_mode": "BY_HOUR",
-            "effective_since": "2024-01-01T00:00:00",
-        },
         "domains": [domain1_name, domain2_name],
     }
 
@@ -265,23 +211,6 @@ def test_create_alignerr_project_from_yaml_with_tags(client: Client):
     config = {
         "name": "TestFactoryProjectWithTags",
         "media_type": "IMAGE",
-        "rates": {
-            "LABELER": {
-                "rate": 15.0,
-                "billing_mode": "BY_HOUR",
-                "effective_since": "2024-01-01T00:00:00",
-            },
-            "REVIEWER": {
-                "rate": 20.0,
-                "billing_mode": "BY_HOUR",
-                "effective_since": "2024-01-01T00:00:00",
-            },
-        },
-        "customer_rate": {
-            "rate": 25.0,
-            "billing_mode": "BY_HOUR",
-            "effective_since": "2024-01-01T00:00:00",
-        },
         "tags": [
             {"text": tag1_text, "type": "Default"},
             {"text": tag2_text, "type": "Billing"},
@@ -324,23 +253,6 @@ def test_create_alignerr_project_from_yaml_with_project_owner(client: Client):
     config = {
         "name": "TestFactoryProjectWithOwner",
         "media_type": "IMAGE",
-        "rates": {
-            "LABELER": {
-                "rate": 15.0,
-                "billing_mode": "BY_HOUR",
-                "effective_since": "2024-01-01T00:00:00",
-            },
-            "REVIEWER": {
-                "rate": 20.0,
-                "billing_mode": "BY_HOUR",
-                "effective_since": "2024-01-01T00:00:00",
-            },
-        },
-        "customer_rate": {
-            "rate": 25.0,
-            "billing_mode": "BY_HOUR",
-            "effective_since": "2024-01-01T00:00:00",
-        },
         "project_owner": current_user.email,
     }
 
@@ -402,11 +314,6 @@ def test_create_alignerr_project_from_yaml_comprehensive(client: Client):
         assert alignerr_project.project.name == "TestComprehensiveProject"
         assert alignerr_project.project.media_type == MediaType.Image
 
-        # Verify rates were set
-        project_rates = alignerr_project.get_project_rates()
-        assert isinstance(project_rates, list)
-        assert len(project_rates) >= 2
-
         # Verify project owner was set
         project_boost_workforce = alignerr_project.get_project_owner()
         if project_boost_workforce:
@@ -422,23 +329,6 @@ def test_create_alignerr_project_from_yaml_selective_validation(client: Client):
     config = {
         "name": "TestFactoryProjectSelectiveValidation",
         "media_type": "IMAGE",
-        "rates": {
-            "LABELER": {
-                "rate": 15.0,
-                "billing_mode": "BY_HOUR",
-                "effective_since": "2024-01-01T00:00:00",
-            },
-            "REVIEWER": {
-                "rate": 20.0,
-                "billing_mode": "BY_HOUR",
-                "effective_since": "2024-01-01T00:00:00",
-            },
-        },
-        "customer_rate": {
-            "rate": 25.0,
-            "billing_mode": "BY_HOUR",
-            "effective_since": "2024-01-01T00:00:00",
-        },
         # Note: No project owner set, but we skip that validation
     }
 
@@ -457,35 +347,6 @@ def test_create_alignerr_project_from_yaml_selective_validation(client: Client):
         assert alignerr_project.project.name == "TestFactoryProjectSelectiveValidation"
 
         alignerr_project.project.delete()
-    finally:
-        os.unlink(yaml_file_path)
-
-
-def test_create_alignerr_project_from_yaml_invalid_customer_rate(
-    client: Client,
-):
-    """Test that invalid customer rate configurations raise appropriate errors."""
-    config = {
-        "name": "TestProject",
-        "media_type": "IMAGE",
-        "customer_rate": {
-            "rate": 25.0,
-            # Missing billing_mode and effective_since
-        },
-    }
-
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        yaml.dump(config, f)
-        yaml_file_path = f.name
-
-    try:
-        factory = AlignerrProjectFactory(client)
-
-        with pytest.raises(
-            ValueError,
-            match="Required field 'billing_mode' is missing for customer_rate",
-        ):
-            factory.create(yaml_file_path, skip_validation=True)
     finally:
         os.unlink(yaml_file_path)
 

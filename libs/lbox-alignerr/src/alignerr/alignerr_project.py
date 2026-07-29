@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Optional
 
 import logging
 
-from alignerr.schema.project_rate import ProjectRateV2
 from alignerr.schema.project_domain import ProjectDomain
 from alignerr.schema.enchanced_resource_tags import (
     EnhancedResourceTag,
@@ -16,6 +15,11 @@ from labelbox.pagination import PaginatedCollection
 from labelbox.orm.model import Entity
 
 logger = logging.getLogger(__name__)
+
+PAY_BY_ROLE_REMOVED_MSG = (
+    "Pay By Role rates were removed. "
+    "Configure project rates in the Labelbox Rates UI (Pay By Activity)."
+)
 
 
 if TYPE_CHECKING:
@@ -63,17 +67,11 @@ class AlignerrProject:
             domain_ids=[project_domain.uid],
         )
 
-    def get_project_rates(self) -> list["ProjectRateV2"]:
-        return ProjectRateV2.get_by_project_id(
-            client=self.client, project_id=self.project.uid
-        )
+    def get_project_rates(self, *args, **kwargs):
+        raise NotImplementedError(PAY_BY_ROLE_REMOVED_MSG)
 
-    def set_project_rate(self, project_rate_input):
-        return ProjectRateV2.set_project_rate(
-            client=self.client,
-            project_id=self.project.uid,
-            project_rate_input=project_rate_input,
-        )
+    def set_project_rate(self, *args, **kwargs):
+        raise NotImplementedError(PAY_BY_ROLE_REMOVED_MSG)
 
     def set_tags(self, tag_names: list[str], tag_type: ResourceTagType):
         # Convert tag names to tag IDs

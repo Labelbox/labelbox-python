@@ -3,12 +3,15 @@
 These tests interact with the actual Labelbox API to verify AlignerrProject operations.
 """
 
-import datetime
+import re
 import uuid
 
 import pytest
-from alignerr.alignerr_project import AlignerrProject, AlignerrWorkspace
-from alignerr.schema.project_rate import BillingMode, ProjectRateInput
+from alignerr.alignerr_project import (
+    AlignerrProject,
+    AlignerrWorkspace,
+    PAY_BY_ROLE_REMOVED_MSG,
+)
 from labelbox.schema.media_type import MediaType
 
 
@@ -72,33 +75,14 @@ def test_alignerr_project_domains(client, test_alignerr_project):
     # The collection might be empty for a new project, which is expected
 
 
-def test_alignerr_project_get_project_rates_no_rates(client, test_alignerr_project):
-    """Test get_project_rates() when no rates are set."""
-    # For a new project without rates, this should return an empty list
-    project_rates = test_alignerr_project.get_project_rates()
-    assert project_rates == []
+def test_alignerr_project_rate_methods_removed(client, test_alignerr_project):
+    """Pay By Role rate helpers raise and direct callers to the Rates UI."""
+    with pytest.raises(
+        NotImplementedError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)
+    ):
+        test_alignerr_project.get_project_rates()
 
-
-def test_alignerr_project_set_and_get_project_rates(client, test_alignerr_project):
-    """Test setting and getting project rates."""
-    # Create a project rate input for a customer rate (isBillRate=True requires empty rateForId)
-    project_rate_input = ProjectRateInput(
-        rateForId="",  # Empty string for customer rate
-        isBillRate=True,
-        billingMode=BillingMode.BY_HOUR,
-        rate=25.0,
-        effectiveSince=datetime.datetime.now().isoformat(),
-        effectiveUntil=None,
-    )
-
-    # Set the project rate
-    result = test_alignerr_project.set_project_rate(project_rate_input)
-    assert result is True  # Should return success status
-
-    # Get the project rates back
-    project_rates = test_alignerr_project.get_project_rates()
-    # Should return a list with at least one rate
-    assert isinstance(project_rates, list)
-    assert len(project_rates) >= 1
-    # Note: The actual rate retrieval might depend on the API implementation
-    # This test verifies the method calls work without errors
+    with pytest.raises(
+        NotImplementedError, match=re.escape(PAY_BY_ROLE_REMOVED_MSG)
+    ):
+        test_alignerr_project.set_project_rate(None)
