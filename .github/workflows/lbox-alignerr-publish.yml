@@ -1,0 +1,132 @@
+name: LBox Alignerr Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. lbox-alignerr-v0.3.0)'
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Validate tag and package version
+        id: version
+        working-directory: libs/lbox-alignerr
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag }}"
+          if [[ ! "$TAG" =~ ^lbox-alignerr-v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "Tag must match lbox-alignerr-vX.Y.Z, got: $TAG"
+            exit 1
+          fi
+          EXPECTED_VERSION="${BASH_REMATCH[1]}"
+          PACKAGE_VERSION="$(sed -n 's/^version = "\([^"]*\)"/\1/p' pyproject.toml | head -n1)"
+          if [[ -z "$PACKAGE_VERSION" ]]; then
+            echo "Could not read version from libs/lbox-alignerr/pyproject.toml"
+            exit 1
+          fi
+          if [[ "$PACKAGE_VERSION" != "$EXPECTED_VERSION" ]]; then
+            echo "Tag version $EXPECTED_VERSION does not match pyproject.toml version $PACKAGE_VERSION"
+            exit 1
+          fi
+          echo "version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Publishing lbox-alignerr@$PACKAGE_VERSION from tag $TAG" >> "$GITHUB_STEP_SUMMARY"
+
+  test:
+    needs: ['validate-tag']
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+    concurrency:
+      # Share with LBox Develop / LBox Publish so staging org tests do not overlap.
+      group: lbox-staging-${{ matrix.python-version }}-lbox-alignerr
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: ./.github/actions/python-package-shared-setup
+        with:
+          rye-version: ${{ vars.RYE_VERSION }}
+          python-version: ${{ matrix.python-version }}
+      - name: Format
+        run: rye format --check -v -p lbox-alignerr
+      - name: Linting
+        run: rye lint -v -p lbox-alignerr
+      - name: Unit
+        working-directory: libs/lbox-alignerr
+        run: rye run unit
+      - name: Integration
+        working-directory: libs/lbox-alignerr
+        env:
+          LABELBOX_TEST_API_KEY: ${{ secrets.STAGING_API_KEY_ORG_CMOI3PQ7801GM070D4TPG7FMH }}
+          DA_GCP_LABELBOX_API_KEY: ${{ secrets.DA_GCP_LABELBOX_API_KEY }}
+          LABELBOX_TEST_ENVIRON: 'staging'
+        run: rye run integration
+
+  build:
+    needs: ['validate-tag', 'test']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Install the latest version of rye
+        uses: eifinger/setup-rye@787604a465b1696ad17eedf2f8101df9fc555c94 # v2
+        with:
+          version: ${{ vars.RYE_VERSION }}
+          enable-cache: true
+      - name: Rye Setup
+        run: rye config --set-bool behavior.use-uv=true
+      - name: Create build
+        working-directory: libs/lbox-alignerr
+        run: |
+          rye sync
+          rye build
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: build-lbox-alignerr
+          # rye build in this workspace writes to repo-root dist/
+          path: ./dist
+
+  pypi-publish:
+    needs: ['validate-tag', 'build', 'test']
+    runs-on: ubuntu-latest
+    environment:
+      name: publish-lbox-alignerr
+      url: 'https://pypi.org/project/lbox-alignerr/'
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: build-lbox-alignerr
+          path: ./artifact
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
+        with:
+          packages-dir: artifact/
+          verbose: true
+      - name: Summary
+        run: |
+          echo "Published lbox-alignerr@${{ needs.validate-tag.outputs.version }} to PyPI" >> "$GITHUB_STEP_SUMMARY"
+          echo "https://pypi.org/project/lbox-alignerr/${{ needs.validate-tag.outputs.version }}/" >> "$GITHUB_STEP_SUMMARY"
