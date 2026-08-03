@@ -56,7 +56,8 @@ jobs:
       matrix:
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     concurrency:
-      group: lbox-alignerr-publish-${{ matrix.python-version }}
+      # Share with LBox Develop / LBox Publish so staging org tests do not overlap.
+      group: lbox-staging-${{ matrix.python-version }}-lbox-alignerr
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
