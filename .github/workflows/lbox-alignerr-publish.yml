@@ -103,7 +103,8 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: build-lbox-alignerr
-          path: libs/lbox-alignerr/dist
+          # rye build in this workspace writes to repo-root dist/
+          path: ./dist
 
   pypi-publish:
     needs: ['validate-tag', 'build', 'test']
