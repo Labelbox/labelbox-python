@@ -1,7 +1,7 @@
 import io
 import json
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -16,19 +16,6 @@ class AdvClient:
         self.endpoint = endpoint
         self.api_key = api_key
         self.session = self._create_session()
-
-    def create_embedding(self, name: str, dims: int) -> Dict[str, Any]:
-        data = {"name": name, "dims": dims}
-        return self._request("POST", "/adv/v1/embeddings", data)
-
-    def delete_embedding(self, id: str):
-        return self._request("DELETE", f"/adv/v1/embeddings/{id}")
-
-    def get_embedding(self, id: str) -> Dict[str, Any]:
-        return self._request("GET", f"/adv/v1/embeddings/{id}")
-
-    def get_embeddings(self) -> List[Dict[str, Any]]:
-        return self._request("GET", "/adv/v1/embeddings").get("results", [])
 
     def import_vectors_from_file(self, id: str, file_path: str, callback=None):
         self._send_ndjson(

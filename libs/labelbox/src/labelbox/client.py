@@ -2150,8 +2150,21 @@ class Client:
         Returns:
             A new Embedding object.
         """
-        data = self._adv_client.create_embedding(name, dims)
-        return Embedding(self._adv_client, **data)
+        mutation = """
+        mutation CreateEmbeddingPyApi($data: CreateEmbeddingInput!) {
+            createEmbedding(data: $data) {
+                id
+                name
+                dims
+                custom
+            }
+        }
+        """
+        data = self.execute(
+            mutation,
+            {"data": {"name": name, "dims": dims}},
+        )["createEmbedding"]
+        return Embedding(self, **data)
 
     def get_embeddings(self) -> List[Embedding]:
         """
@@ -2160,8 +2173,18 @@ class Client:
         Returns:
             A list of embedding objects.
         """
-        results = self._adv_client.get_embeddings()
-        return [Embedding(self._adv_client, **data) for data in results]
+        query = """
+        query GetEmbeddingsPyApi {
+            embeddings {
+                id
+                name
+                dims
+                custom
+            }
+        }
+        """
+        results = self.execute(query)["embeddings"]
+        return [Embedding(self, **data) for data in results]
 
     def get_embedding_by_id(self, id: str) -> Embedding:
         """
@@ -2173,8 +2196,34 @@ class Client:
         Returns:
             The embedding object.
         """
-        data = self._adv_client.get_embedding(id)
-        return Embedding(self._adv_client, **data)
+        for embedding in self.get_embeddings():
+            if embedding.id == id:
+                return embedding
+        raise ResourceNotFoundError(Embedding, dict(id=id))
+
+    def delete_embedding(self, id: str):
+        """
+        Delete a custom embedding through the GraphQL API.
+
+        Args:
+            id: The embedding ID.
+        """
+        mutation = """
+        mutation DeleteEmbeddingPyApi($data: DeleteEmbeddingInput!) {
+            deleteEmbedding(data: $data)
+        }
+        """
+        return self.execute(mutation, {"data": {"id": id}})["deleteEmbedding"]
+
+    def import_vectors_from_file(self, id: str, file_path: str, callback=None):
+        """Upload embedding vectors directly to ADV."""
+        return self._adv_client.import_vectors_from_file(
+            id, file_path, callback
+        )
+
+    def get_imported_vector_count(self, id: str) -> int:
+        """Return an embedding's imported vector count directly from ADV."""
+        return self._adv_client.get_imported_vector_count(id)
 
     def get_embedding_by_name(self, name: str) -> Embedding:
         """

@@ -1,7 +1,19 @@
-from typing import Optional, Callable, Dict, Any, List
+from typing import Any, Callable, Dict, List, Optional, Protocol
 
-from labelbox.adv_client import AdvClient
 from pydantic import BaseModel, PrivateAttr
+
+
+class EmbeddingClient(Protocol):
+    def delete_embedding(self, id: str): ...
+
+    def import_vectors_from_file(
+        self,
+        id: str,
+        file_path: str,
+        callback: Optional[Callable[[Dict[str, Any]], None]] = None,
+    ): ...
+
+    def get_imported_vector_count(self, id: str) -> int: ...
 
 
 class EmbeddingVector(BaseModel):
@@ -43,9 +55,9 @@ class Embedding(BaseModel):
     name: str
     custom: bool
     dims: int
-    _client: AdvClient = PrivateAttr()
+    _client: EmbeddingClient = PrivateAttr()
 
-    def __init__(self, client: AdvClient, **data):
+    def __init__(self, client: EmbeddingClient, **data):
         super().__init__(**data)
         self._client = client
 
