@@ -1,4 +1,8 @@
 # Changelog
+# Version 7.12.0 (2026-08-25)
+## Fixed
+* Route embedding metadata operations (`Client.create_embedding()`, `Client.get_embeddings()`, `Client.get_embedding_by_id()`, `Embedding.delete()`) through GraphQL so they work with opaque `lbx_` API keys instead of raising `JSONDecodeError` ([#2074](https://github.com/Labelbox/labelbox-python/pull/2074))
+
 # Version 7.11.0 (2026-07-28)
 ## Added
 * Add `User.last_login_at` to expose GraphQL `lastLoginAt` (nullable datetime of last session in the organization) ([#2070](https://github.com/Labelbox/labelbox-python/pull/2070))
