@@ -9,30 +9,34 @@
 [![Open Issues](https://img.shields.io/github/issues-raw/labelbox/labelbox-python)](https://github.com/labelbox/labelbox-python/issues)
 [![Changelog](https://img.shields.io/badge/Changelog-Recent%20Updates-blue.svg)](https://docs.labelbox.com/changelog)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Twitter Follow](https://img.shields.io/twitter/follow/labelbox.svg?style=social&label=Follow)](https://twitter.com/labelbox)
+[![X Follow](https://img.shields.io/twitter/follow/labelbox.svg?style=social&label=Follow)](https://x.com/labelbox)
 [![LinkedIn Follow](https://img.shields.io/badge/Follow-LinkedIn-blue.svg?style=flat&logo=linkedin)](https://www.linkedin.com/company/labelbox/)
 [![Supported Python Versions](https://img.shields.io/pypi/pyversions/labelbox)](https://img.shields.io/pypi/pyversions/labelbox)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
 # Labelbox
+
 With Labelbox, enterprises can easily curate and annotate data, generate high-quality human feedback data for computer vision and language models, evaluate and improve model performance, and automate tasks by seamlessly combining AI and human-centric workflows. The academic and research community also relies on Labelbox for cutting-edge AI research and experimentation.
 
 Visit [Labelbox](http://labelbox.com/) for more information.
 
 ## Table of Contents
+
 - [Quick Start](#quick-start)
 - [Contribution Guidelines](#contribution-guidelines)
-- [Develop with AI Assistance](#develop-with-ai-assistance)
 - [Documentation](#documentation)
 - [Jupyter Notebooks](#jupyter-notebooks)
+- [Provenance](#provenance)
 
 ## Quick Start
    
 ### Sign Up
+
 If you haven't already, create a free account at [Labelbox](http://app.labelbox.com/).
 
 ### Generate an API key
-Log into Labelbox and navigate to [Account > API Keys](https://docs.labelbox.com/docs/create-an-api-key) to generate an API key. 
+
+Log into Labelbox and navigate to [Account > API Keys](https://docs.labelbox.com/reference/create-api-key) to generate an API key. 
 
 ### Install
 
@@ -64,12 +68,14 @@ task = dataset.create_data_rows(data_rows)
 task.wait_till_done()
 ```
 
-You should be set! Running the snippet above should create a dataset called `Test Dataset` with its content being `My First Data Row`. You can log into [Labelbox](http://labelbox.com/) to verify this. If you have any issues please file a Github Issue or contact [Labelbox Support](https://docs.labelbox.com/docs/contacting-customer-support) directly. For more advanced examples and information on the SDK, see [Documentation](#documentation) below.
+You should be set! Running the snippet above should create a dataset called `Test Dataset` with its content being `My First Data Row`. You can log into [Labelbox](http://labelbox.com/) to verify this. If you have any issues please file a GitHub Issue or contact [Labelbox Support](https://docs.labelbox.com/docs/contacting-customer-support) directly. For more advanced examples and information on the SDK, see [Documentation](#documentation) below.
 
 ## Contribution Guidelines
+
 We encourage anyone to contribute to this repository to help improve it. Please refer to [Contributing Guide](CONTRIBUTING.md) for detailed information on how to contribute. This guide also includes instructions for how to build and run the SDK locally.
 
 ## Documentation
+
 The SDK is well-documented to help developers get started quickly and use the SDK effectively. Here are links to that documentation:
 
 - [Labelbox Official Documentation](https://docs.labelbox.com/docs/overview)
@@ -77,13 +83,15 @@ The SDK is well-documented to help developers get started quickly and use the SD
 - [Python SDK Reference](https://labelbox-python.readthedocs.io/en/latest/)
 
 ## Jupyter Notebooks
+
 We have samples in the `examples` directory to help you get started with the SDK.
 
 Make sure your notebook will use your source code:
+
 1. `ipython profile create`
 2. `ipython locate` - will show where the config file is. This is the config file used by the Jupyter server, since it runs via ipython
 3. Open the file (this should be ipython_config.py and it is usually located in ~/.ipython/profile_default) and add the following line of code: 
-```
+```python
 c.InteractiveShellApp.exec_lines = [
   'import sys; sys.path.insert(0, "<labelbox-python root folder>")'
 ]
@@ -99,7 +107,7 @@ By using the [SLSA framework's official verifier](https://github.com/slsa-framew
 
 Example of usage for the v.3.72.2 release wheel:
 
-```
+```bash
 export VERSION=3.72.2 # sdk release version 
 export TAG=v.3.72.2 # github tag
 pip download --no-deps labelbox==${VERSION}
