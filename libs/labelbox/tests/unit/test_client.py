@@ -1,10 +1,13 @@
-from unittest.mock import Mock
+from ipaddress import ip_address, ip_network
+from unittest.mock import Mock, patch
 
 import pytest
 from lbox.exceptions import ResourceNotFoundError
 
 from labelbox.client import Client
+from labelbox.schema.api_key import ApiKey
 from labelbox.schema.embedding import Embedding
+from labelbox.schema.timeunit import TimeUnit
 
 
 # @patch.dict(os.environ, {'LABELBOX_API_KEY': 'bar'})
@@ -121,3 +124,37 @@ def test_embedding_vector_operations_remain_on_adv():
         "embedding-id", "vectors.ndjson", callback
     )
     assert embedding.get_imported_vector_count() == 12
+
+
+def test_create_api_key_forwards_ip_allowlist():
+    client = Client(api_key="api_key")
+    allowed_ip_cidrs = [
+        ip_address("203.0.113.10"),
+        ip_network("198.51.100.0/24"),
+    ]
+    with patch.object(
+        ApiKey,
+        "create_api_key",
+        return_value={"id": "key-1", "jwt": "secret"},
+    ) as create_api_key:
+        with pytest.warns(UserWarning, match="currently in alpha"):
+            result = client.create_api_key(
+                name="Restricted key",
+                user="person@example.com",
+                role="Admin",
+                validity=5,
+                time_unit=TimeUnit.MINUTE,
+                allowed_ip_cidrs=allowed_ip_cidrs,
+            )
+
+        create_api_key.assert_called_once_with(
+            client,
+            "Restricted key",
+            "person@example.com",
+            "Admin",
+            5,
+            TimeUnit.MINUTE,
+            allowed_ip_cidrs,
+        )
+
+    assert result == {"id": "key-1", "jwt": "secret"}
