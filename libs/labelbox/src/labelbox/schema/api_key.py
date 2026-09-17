@@ -1,19 +1,33 @@
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 import logging
+from collections.abc import Sequence
+from datetime import datetime, timezone
+from ipaddress import (
+    IPv4Address,
+    IPv4Network,
+    IPv6Address,
+    IPv6Network,
+    ip_address,
+    ip_network,
+)
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+
+from lbox.exceptions import LabelboxError
 
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
-from labelbox.schema.timeunit import TimeUnit
-from lbox.exceptions import LabelboxError
-
-from labelbox.schema.user import User
 from labelbox.schema.role import Role, format_role
+from labelbox.schema.timeunit import TimeUnit
+from labelbox.schema.user import User
 
 if TYPE_CHECKING:
     from labelbox import Client
 
 logger = logging.getLogger(__name__)
+
+MAX_API_KEY_ALLOWED_IP_CIDRS = 50
+IpAddressOrNetwork = Union[
+    str, IPv4Address, IPv6Address, IPv4Network, IPv6Network
+]
 
 
 class ApiKey(DbObject):
@@ -30,6 +44,8 @@ class ApiKey(DbObject):
         expires_at_epoch (int): Expiration time as Unix timestamp
         created_by_user (str): ID of the user who created this API key
         user (str): ID of the user this API key belongs to
+        allowed_ip_cidrs (List[str]): IP addresses and CIDR ranges allowed to
+            use this API key
     """
 
     name = Field.String("name")
@@ -39,6 +55,9 @@ class ApiKey(DbObject):
     expires_at_epoch = Field.Int("expires_at_epoch")
     created_by_user_id = Field.String("created_by_user_id")
     user_id = Field.String("user_id")
+    allowed_ip_cidrs = Field.List(
+        str, graphql_type="String", name="allowed_ip_cidrs"
+    )
 
     @property
     def created_by(self) -> Optional["User"]:
@@ -153,6 +172,58 @@ class ApiKey(DbObject):
         return perms
 
     @staticmethod
+    def _validate_allowed_ip_cidrs(
+        allowed_ip_cidrs: Optional[Sequence[IpAddressOrNetwork]],
+    ) -> Optional[List[str]]:
+        """Validate and normalize an API key IP allowlist."""
+        if allowed_ip_cidrs is None:
+            return None
+        if isinstance(allowed_ip_cidrs, (str, bytes)) or not isinstance(
+            allowed_ip_cidrs, Sequence
+        ):
+            raise ValueError(
+                "allowed_ip_cidrs must be a sequence of IP addresses or "
+                "CIDR ranges"
+            )
+        normalized: List[str] = []
+        for value in allowed_ip_cidrs:
+            if isinstance(value, (IPv4Address, IPv6Address)):
+                entry = str(value)
+            elif isinstance(value, (IPv4Network, IPv6Network)):
+                entry = str(value)
+            elif isinstance(value, str):
+                entry = value.strip()
+                if not entry:
+                    raise ValueError(
+                        "allowed_ip_cidrs entries must not be empty"
+                    )
+                try:
+                    entry = str(ip_address(entry))
+                except ValueError:
+                    try:
+                        entry = str(ip_network(entry, strict=True))
+                    except ValueError as error:
+                        raise ValueError(
+                            f"Invalid IP address or CIDR range: {value!r}"
+                        ) from error
+            else:
+                raise ValueError(
+                    "allowed_ip_cidrs entries must be strings or ipaddress "
+                    "address/network objects"
+                )
+
+            if entry not in normalized:
+                normalized.append(entry)
+
+        if len(normalized) > MAX_API_KEY_ALLOWED_IP_CIDRS:
+            raise ValueError(
+                "allowed_ip_cidrs cannot contain more than "
+                f"{MAX_API_KEY_ALLOWED_IP_CIDRS} unique entries"
+            )
+
+        return normalized
+
+    @staticmethod
     def get_api_keys(
         client: "Client", include_expired: bool = False
     ) -> List["ApiKey"]:
@@ -180,6 +251,7 @@ class ApiKey(DbObject):
                     userId
                     userEmail
                     createdByUserId
+                    allowedIpCidrs
                 }
                 apiKeysOtherUsers {
                     id
@@ -191,6 +263,7 @@ class ApiKey(DbObject):
                     expiresAtEpoch
                     createdByUserId
                     userEmail
+                    allowedIpCidrs
                 }
             }
         }
@@ -205,13 +278,25 @@ class ApiKey(DbObject):
         current_time = datetime.now(timezone.utc)
 
         for key_data in response["user"].get("apiKeys", []):
-            api_key = ApiKey(client, key_data)
+            api_key = ApiKey(
+                client,
+                {
+                    **key_data,
+                    "allowedIpCidrs": key_data.get("allowedIpCidrs") or [],
+                },
+            )
             # Only add if we want to include expired keys OR if the key has not expired.
             if include_expired or api_key.expired_at > current_time:
                 all_keys.append(api_key)
 
         for key_data in response["user"].get("apiKeysOtherUsers", []):
-            api_key = ApiKey(client, key_data)
+            api_key = ApiKey(
+                client,
+                {
+                    **key_data,
+                    "allowedIpCidrs": key_data.get("allowedIpCidrs") or [],
+                },
+            )
             if include_expired or api_key.expired_at > current_time:
                 all_keys.append(api_key)
 
@@ -297,6 +382,7 @@ class ApiKey(DbObject):
         role: Union["Role", str],
         validity: int = 0,
         time_unit: TimeUnit = TimeUnit.SECOND,
+        allowed_ip_cidrs: Optional[Sequence[IpAddressOrNetwork]] = None,
     ) -> Dict[str, str]:
         """Creates a new API key using the provided client.
 
@@ -307,6 +393,10 @@ class ApiKey(DbObject):
             role (Union[Role, str]): Permission role for the API key (Role enum or string)
             validity (int, optional): Validity period value (must be positive). Defaults to 0.
             time_unit (TimeUnit, optional): Time unit for validity period. Defaults to TimeUnit.SECOND.
+            allowed_ip_cidrs: Optional sequence of IP addresses or CIDR ranges
+                allowed to use the key. Entries may be strings or standard
+                :mod:`ipaddress` address/network objects. A maximum of 50
+                unique entries is supported.
 
         Returns:
             Dict[str, str]: Dictionary containing the created API key details including id and jwt
@@ -317,6 +407,10 @@ class ApiKey(DbObject):
         """
         if not name or not isinstance(name, str):
             raise ValueError("name must be a non-empty string")
+
+        normalized_allowed_ip_cidrs = ApiKey._validate_allowed_ip_cidrs(
+            allowed_ip_cidrs
+        )
 
         user_email = user.email if hasattr(user, "email") else user
         if not user_email or not isinstance(user_email, str):
@@ -368,9 +462,9 @@ class ApiKey(DbObject):
             )
 
         query_str = """
-         mutation CreateUserApiKeyPyApi($name: String!, $userEmail: String!, $role: String, $validitySeconds: Int) {
+         mutation CreateUserApiKeyPyApi($name: String!, $userEmail: String!, $role: String, $validitySeconds: Int, $allowedIpCidrs: [String!]) {
              createApiKey(
-                 data: { name: $name, targetUserEmailId: $userEmail, role: $role, validitySeconds: $validitySeconds }
+                 data: { name: $name, targetUserEmailId: $userEmail, role: $role, validitySeconds: $validitySeconds, allowedIpCidrs: $allowedIpCidrs }
              ) {
                  id  
                  jwt
@@ -383,6 +477,7 @@ class ApiKey(DbObject):
             "userEmail": user_email,
             "role": server_role_name,
             "validitySeconds": validity_seconds,
+            "allowedIpCidrs": normalized_allowed_ip_cidrs,
         }
 
         try:

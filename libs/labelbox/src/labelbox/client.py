@@ -8,6 +8,7 @@ import time
 import urllib.parse
 import warnings
 from collections import defaultdict
+from collections.abc import Sequence
 from types import MappingProxyType
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 
@@ -31,6 +32,7 @@ from labelbox.orm.model import Entity, Field
 from labelbox.pagination import PaginatedCollection
 from labelbox.project_validation import _CoreProjectInput
 from labelbox.schema import role
+from labelbox.schema.api_key import ApiKey, IpAddressOrNetwork
 from labelbox.schema.catalog import Catalog
 from labelbox.schema.data_row import DataRow
 from labelbox.schema.data_row_metadata import DataRowMetadataOntology
@@ -78,10 +80,9 @@ from labelbox.schema.send_to_annotate_params import (
 )
 from labelbox.schema.slice import CatalogSlice, ModelSlice
 from labelbox.schema.task import DataUpsertTask, Task
-from labelbox.schema.user import User
 from labelbox.schema.taskstatus import TaskStatus
-from labelbox.schema.api_key import ApiKey
 from labelbox.schema.timeunit import TimeUnit
+from labelbox.schema.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -2446,6 +2447,7 @@ class Client:
         validity: int = 0,
         time_unit: TimeUnit = TimeUnit.SECOND,
         refresh_cache: bool = False,
+        allowed_ip_cidrs: Optional[Sequence[IpAddressOrNetwork]] = None,
     ) -> Dict[str, str]:
         """Creates a new API key.
 
@@ -2456,6 +2458,9 @@ class Client:
             validity (int, optional): The validity period of the API key. Defaults to 0 (no expiration).
             time_unit (TimeUnit, optional): The time unit for the validity period. Defaults to TimeUnit.SECOND.
             refresh_cache (bool, optional): Whether to refresh cached permissions and roles. Defaults to False.
+            allowed_ip_cidrs: Optional sequence of IP addresses or CIDR ranges
+                allowed to use the key. Entries may be strings or standard
+                :mod:`ipaddress` address/network objects.
 
         Returns:
             Dict[str, str]: A dictionary containing the created API key information.
@@ -2471,7 +2476,13 @@ class Client:
                 delattr(self, "_cached_available_api_key_roles")
 
         return ApiKey.create_api_key(
-            self, name, user, role, validity, time_unit
+            self,
+            name,
+            user,
+            role,
+            validity,
+            time_unit,
+            allowed_ip_cidrs,
         )
 
     def get_api_keys(self, include_expired: bool = False) -> List[ApiKey]:
