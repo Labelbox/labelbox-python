@@ -48,7 +48,7 @@ rye run unit
 ```bash
 LABELBOX_TEST_API_KEY="YOUR_API_TEST_KEY" LABELBOX_TEST_ENVIRON="prod" rye run integration
 ```
-For more info on how to get a `LABELBOX_TEST_API_KEY` [Labelbox API key docs](https://labelbox.helpdocs.io/docs/api/getting-started). 
+For more info on how to get a `LABELBOX_TEST_API_KEY` [Labelbox API key docs](https://docs.labelbox.com/reference/create-api-key). 
 
 **Integration tests by default will run against your account that you provide an API Key from and modify its data. If you want to run integration tests, without it impacting your existing account, create an additional account using a secondary e-mail on [Labelbox](https://labelbox.com). Free accounts are sufficent for integration testing purposes.**
 
