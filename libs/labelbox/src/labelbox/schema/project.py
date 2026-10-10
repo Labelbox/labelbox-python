@@ -53,6 +53,7 @@ from labelbox.schema.labeling_service import (
     LabelingService,
     LabelingServiceStatus,
 )
+from labelbox.schema import performance as _performance
 from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.model_config import ModelConfig
@@ -1851,6 +1852,273 @@ class Project(DbObject, Updateable, Deletable):
                 }
 
             return ProjectOverviewDetailed(**overview)
+
+    def get_performance_metric(
+        self,
+        metric: str,
+        start_date: _performance.DateLike,
+        end_date: _performance.DateLike,
+        interval: Union[
+            _performance.PerformanceInterval, str
+        ] = _performance.PerformanceInterval.DAY,
+        user_ids: Optional[List[str]] = None,
+        user_group_ids: Optional[List[str]] = None,
+        batch_ids: Optional[List[str]] = None,
+        deleted_labels: Union[
+            _performance.PerformanceDeletedLabels, str
+        ] = _performance.PerformanceDeletedLabels.INCLUDE,
+    ) -> _performance.PerformanceMetricSeries:
+        """Returns one of this project's performance metrics over a period.
+
+        The values are the ones the chart on the project's Performance page
+        shows for the same dates and filters.
+
+        Args:
+            metric (str): A metric name from
+                :meth:`labelbox.Client.get_performance_metrics`, for example
+                ``"labels_created"``.
+            start_date (date, datetime or str): First day of the period, in
+                UTC. A string is a day such as ``"2026-01-31"``.
+            end_date (date, datetime or str): Last day of the period. A
+                request can cover at most 366 days.
+            interval (PerformanceInterval or str): The width of each bucket:
+                day (the default), week, month, quarter or year.
+            user_ids (Optional[List[str]]): Count only work by these users.
+            user_group_ids (Optional[List[str]]): Count only work by the
+                current members of these user groups. With ``user_ids`` too,
+                only users in both are counted.
+            batch_ids (Optional[List[str]]): Count only these batches.
+            deleted_labels (PerformanceDeletedLabels or str): Whether labels
+                deleted since are counted. Included by default.
+
+        Returns:
+            PerformanceMetricSeries: The metric as a value per interval, or
+            per score range for the two distribution metrics.
+
+        Raises:
+            lbox.exceptions.ResourceNotFoundError: The metric does not exist,
+                or you cannot view this project's performance.
+            lbox.exceptions.InvalidQueryError: A parameter is not valid.
+            ValueError: A filter was given as an empty list. Pass ``None``
+                to leave a filter off; an empty list is not read as one.
+
+        Example:
+            >>> series = project.get_performance_metric(
+            >>>     "labels_created", "2026-01-01", "2026-01-31")
+            >>> for bucket in series.buckets:
+            >>>     print(bucket.start.date(), bucket.value)
+        """
+        return _performance.get_project_metric(
+            self.client,
+            self.uid,
+            metric,
+            start_date,
+            end_date,
+            interval,
+            user_ids,
+            user_group_ids,
+            batch_ids,
+            deleted_labels,
+        )
+
+    def get_labeler_performance(
+        self,
+        start_date: _performance.DateLike,
+        end_date: _performance.DateLike,
+        user_ids: Optional[List[str]] = None,
+        user_group_ids: Optional[List[str]] = None,
+        batch_ids: Optional[List[str]] = None,
+        deleted_labels: Union[
+            _performance.PerformanceDeletedLabels, str
+        ] = _performance.PerformanceDeletedLabels.INCLUDE,
+        sort_by: Optional[str] = None,
+        descending: bool = False,
+        page_size: int = 50,
+        use_cache: bool = True,
+    ) -> _performance.PerformanceRows[_performance.ProjectLabelerPerformance]:
+        """Returns per-labeler totals for this project over a period.
+
+        This is the labeler table on the project's Performance page. It is
+        not the same report as :meth:`labeler_performance`, which has no
+        period and fewer figures.
+
+        Args:
+            start_date (date, datetime or str): First day of the period, in
+                UTC. A string is a day such as ``"2026-01-31"``.
+            end_date (date, datetime or str): Last day of the period. A
+                request can cover at most 366 days.
+            user_ids (Optional[List[str]]): Return only these users.
+            user_group_ids (Optional[List[str]]): Return only the current
+                members of these user groups.
+            batch_ids (Optional[List[str]]): Count only these batches.
+            deleted_labels (PerformanceDeletedLabels or str): Whether labels
+                deleted since are counted. Included by default.
+            sort_by (Optional[str]): A figure of
+                :class:`ProjectLabelerPerformance` to sort on, for example
+                ``"labels_created"``. Sorting by email is not offered.
+            descending (bool): Sort from high to low. Only used with
+                ``sort_by``.
+            page_size (int): Rows fetched per request while iterating, up to
+                200.
+            use_cache (bool): Pass False to recompute instead of using a
+                result cached within the last few minutes.
+
+        Returns:
+            PerformanceRows[ProjectLabelerPerformance]: The rows, fetched a
+            page at a time as you iterate. Emails are masked for labelers you
+            may not identify.
+
+        Raises:
+            lbox.exceptions.ResourceNotFoundError: You cannot view this
+                project's performance.
+            lbox.exceptions.InvalidQueryError: A parameter is not valid.
+            ValueError: A filter was given as an empty list. Pass ``None``
+                to leave a filter off; an empty list is not read as one.
+
+        Example:
+            >>> labelers = project.get_labeler_performance(
+            >>>     "2026-01-01", "2026-01-31",
+            >>>     sort_by="labels_created", descending=True)
+            >>> print(labelers.total)
+            >>> for labeler in labelers:
+            >>>     print(labeler.email, labeler.labels_created)
+        """
+        return _performance.get_project_labelers(
+            self.client,
+            self.uid,
+            start_date,
+            end_date,
+            user_ids=user_ids,
+            user_group_ids=user_group_ids,
+            batch_ids=batch_ids,
+            deleted_labels=deleted_labels,
+            sort_by=sort_by,
+            descending=descending,
+            page_size=page_size,
+            use_cache=use_cache,
+        )
+
+    def get_reviewer_performance(
+        self,
+        start_date: _performance.DateLike,
+        end_date: _performance.DateLike,
+        user_ids: Optional[List[str]] = None,
+        user_group_ids: Optional[List[str]] = None,
+        batch_ids: Optional[List[str]] = None,
+        deleted_labels: Union[
+            _performance.PerformanceDeletedLabels, str
+        ] = _performance.PerformanceDeletedLabels.INCLUDE,
+        sort_by: Optional[str] = None,
+        descending: bool = False,
+        page_size: int = 50,
+    ) -> _performance.PerformanceRows[_performance.ProjectReviewerPerformance]:
+        """Returns per-reviewer totals for this project over a period.
+
+        This is the reviewer table on the project's Performance page.
+
+        Args:
+            start_date (date, datetime or str): First day of the period, in
+                UTC. A string is a day such as ``"2026-01-31"``.
+            end_date (date, datetime or str): Last day of the period. A
+                request can cover at most 366 days.
+            user_ids (Optional[List[str]]): Return only these users.
+            user_group_ids (Optional[List[str]]): Return only the current
+                members of these user groups.
+            batch_ids (Optional[List[str]]): Count only these batches.
+            deleted_labels (PerformanceDeletedLabels or str): Whether labels
+                deleted since are counted. Included by default.
+            sort_by (Optional[str]): A figure of
+                :class:`ProjectReviewerPerformance` to sort on, for example
+                ``"labels_reviewed"``. Sorting by email is not offered.
+            descending (bool): Sort from high to low. Only used with
+                ``sort_by``.
+            page_size (int): Rows fetched per request while iterating, up to
+                200.
+
+        Returns:
+            PerformanceRows[ProjectReviewerPerformance]: The rows, fetched a
+            page at a time as you iterate. Emails are masked for reviewers
+            you may not identify.
+
+        Raises:
+            lbox.exceptions.ResourceNotFoundError: You cannot view this
+                project's performance.
+            lbox.exceptions.InvalidQueryError: A parameter is not valid.
+            ValueError: A filter was given as an empty list. Pass ``None``
+                to leave a filter off; an empty list is not read as one.
+
+        Example:
+            >>> for reviewer in project.get_reviewer_performance(
+            >>>         "2026-01-01", "2026-01-31"):
+            >>>     print(reviewer.email, reviewer.labels_reviewed)
+        """
+        return _performance.get_project_reviewers(
+            self.client,
+            self.uid,
+            start_date,
+            end_date,
+            user_ids=user_ids,
+            user_group_ids=user_group_ids,
+            batch_ids=batch_ids,
+            deleted_labels=deleted_labels,
+            sort_by=sort_by,
+            descending=descending,
+            page_size=page_size,
+        )
+
+    def get_performance_report_download(
+        self,
+        start_date: _performance.DateLike,
+        end_date: _performance.DateLike,
+        user_ids: Optional[List[str]] = None,
+        user_group_ids: Optional[List[str]] = None,
+        batch_ids: Optional[List[str]] = None,
+        deleted_labels: Union[
+            _performance.PerformanceDeletedLabels, str
+        ] = _performance.PerformanceDeletedLabels.INCLUDE,
+    ) -> _performance.PerformanceReportDownload:
+        """Returns a link to this project's performance report as a file.
+
+        This is the file the Download button on the Performance page gives.
+
+        Args:
+            start_date (date, datetime or str): First day of the period, in
+                UTC. A string is a day such as ``"2026-01-31"``.
+            end_date (date, datetime or str): Last day of the period. A
+                request can cover at most 366 days.
+            user_ids (Optional[List[str]]): Include only these users.
+            user_group_ids (Optional[List[str]]): Include only the current
+                members of these user groups.
+            batch_ids (Optional[List[str]]): Count only these batches.
+            deleted_labels (PerformanceDeletedLabels or str): Whether labels
+                deleted since are counted. Included by default.
+
+        Returns:
+            PerformanceReportDownload: The link and how long it stays valid.
+            Anyone with the link can open the file until it expires.
+
+        Raises:
+            lbox.exceptions.ResourceNotFoundError: You cannot view this
+                project's performance.
+            lbox.exceptions.InvalidQueryError: A parameter is not valid.
+            ValueError: A filter was given as an empty list. Pass ``None``
+                to leave a filter off; an empty list is not read as one.
+
+        Example:
+            >>> report = project.get_performance_report_download(
+            >>>     "2026-01-01", "2026-01-31")
+            >>> print(report.url)
+        """
+        return _performance.get_project_report_download(
+            self.client,
+            self.uid,
+            start_date,
+            end_date,
+            user_ids=user_ids,
+            user_group_ids=user_group_ids,
+            batch_ids=batch_ids,
+            deleted_labels=deleted_labels,
+        )
 
     def clone(self) -> "Project":
         """
