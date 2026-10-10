@@ -41,6 +41,7 @@ Labelbox Python SDK Documentation
     ontology_kind
     organization
     pagination
+    performance
     project
     project-model-config
     project-sync

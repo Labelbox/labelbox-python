@@ -44,6 +44,7 @@ from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.identifiables import DataRowIds, GlobalKeys
 from labelbox.schema.label_score import LabelScore
 from labelbox.schema.labeling_frontend import LabelingFrontend
+from labelbox.schema import performance as _performance
 from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 from labelbox.schema.media_type import (
     MediaType,
@@ -2326,6 +2327,148 @@ class Client:
             See libs/labelbox/src/labelbox/schema/search_filters.py and libs/labelbox/tests/unit/test_unit_search_filters.py for more examples.
         """
         return LabelingServiceDashboard.get_all(self, search_query=search_query)
+
+    def get_performance_metrics(self) -> List[_performance.PerformanceMetric]:
+        """Lists the performance metrics that can be queried.
+
+        These are the metrics a project's Performance page draws. Each has a
+        name to pass to :meth:`Project.get_performance_metric` or
+        :meth:`get_workspace_performance_metric`, a unit and a definition.
+
+        Returns:
+            List[PerformanceMetric]: The metrics available to your
+            organization.
+
+        Example:
+            >>> for metric in client.get_performance_metrics():
+            >>>     print(metric.name, metric.unit, metric.description)
+        """
+        return _performance.get_performance_metrics(self)
+
+    def get_workspace_performance_metric(
+        self,
+        metric: str,
+        start_date: _performance.DateLike,
+        end_date: _performance.DateLike,
+        interval: Union[
+            _performance.PerformanceInterval, str
+        ] = _performance.PerformanceInterval.DAY,
+        project_ids: Optional[List[str]] = None,
+        user_ids: Optional[List[str]] = None,
+        batch_ids: Optional[List[str]] = None,
+        deleted_labels: Union[
+            _performance.PerformanceDeletedLabels, str
+        ] = _performance.PerformanceDeletedLabels.INCLUDE,
+        use_cache: bool = True,
+    ) -> _performance.PerformanceMetricSeries:
+        """Returns one performance metric across the workspace.
+
+        This is the workspace Monitor's data: every project your organization
+        owns or shares, or only the projects named in ``project_ids``.
+
+        Args:
+            metric (str): A metric name from :meth:`get_performance_metrics`,
+                for example ``"labels_created"``.
+            start_date (date, datetime or str): First day of the period, in
+                UTC. A string is a day such as ``"2026-01-31"``.
+            end_date (date, datetime or str): Last day of the period. A
+                request can cover at most 366 days.
+            interval (PerformanceInterval or str): The width of each bucket:
+                day (the default), week, month, quarter or year.
+            project_ids (Optional[List[str]]): Narrow the report to these
+                projects. You then need performance access to each of them
+                instead of the organization-wide permission.
+            user_ids (Optional[List[str]]): Count only work by these users.
+            batch_ids (Optional[List[str]]): Count only these batches.
+            deleted_labels (PerformanceDeletedLabels or str): Whether labels
+                deleted since are counted. Included by default.
+            use_cache (bool): Pass False to recompute instead of using a
+                result cached within the last few minutes.
+
+        Returns:
+            PerformanceMetricSeries: The metric as a value per interval.
+
+        Raises:
+            lbox.exceptions.ResourceNotFoundError: The metric does not exist,
+                or a project named is not one you can see.
+            lbox.exceptions.AuthorizationError: You may not view performance
+                across the organization.
+            lbox.exceptions.InvalidQueryError: A parameter is not valid.
+
+        Example:
+            >>> series = client.get_workspace_performance_metric(
+            >>>     "labels_created", "2026-01-01", "2026-01-31", interval="week")
+            >>> for bucket in series.buckets:
+            >>>     print(bucket.start.date(), bucket.value)
+        """
+        return _performance.get_workspace_metric(
+            self,
+            metric,
+            start_date,
+            end_date,
+            interval=interval,
+            project_ids=project_ids,
+            user_ids=user_ids,
+            batch_ids=batch_ids,
+            deleted_labels=deleted_labels,
+            use_cache=use_cache,
+        )
+
+    def get_workspace_labeler_performance(
+        self,
+        start_date: _performance.DateLike,
+        end_date: _performance.DateLike,
+        project_ids: Optional[List[str]] = None,
+        user_ids: Optional[List[str]] = None,
+        batch_ids: Optional[List[str]] = None,
+        deleted_labels: Union[
+            _performance.PerformanceDeletedLabels, str
+        ] = _performance.PerformanceDeletedLabels.INCLUDE,
+    ) -> List[_performance.WorkspaceLabelerPerformance]:
+        """Returns per-labeler totals across the workspace.
+
+        This is the workspace Monitor's member table: one row for each
+        labeler on each project they worked on in the period.
+
+        Args:
+            start_date (date, datetime or str): First day of the period, in
+                UTC. A string is a day such as ``"2026-01-31"``.
+            end_date (date, datetime or str): Last day of the period. A
+                request can cover at most 366 days.
+            project_ids (Optional[List[str]]): Narrow the report to these
+                projects. You then need performance access to each of them
+                instead of the organization-wide permission.
+            user_ids (Optional[List[str]]): Return only these users.
+            batch_ids (Optional[List[str]]): Count only these batches.
+            deleted_labels (PerformanceDeletedLabels or str): Whether labels
+                deleted since are counted. Included by default.
+
+        Returns:
+            List[WorkspaceLabelerPerformance]: One row per labeler and
+            project. Emails are masked for labelers you may not identify.
+
+        Raises:
+            lbox.exceptions.ResourceNotFoundError: A project named is not one
+                you can see.
+            lbox.exceptions.AuthorizationError: You may not view performance
+                across the organization.
+            lbox.exceptions.InvalidQueryError: A parameter is not valid.
+
+        Example:
+            >>> rows = client.get_workspace_labeler_performance(
+            >>>     "2026-01-01", "2026-01-31")
+            >>> for row in rows:
+            >>>     print(row.project_name, row.email, row.labels_created)
+        """
+        return _performance.get_workspace_labelers(
+            self,
+            start_date,
+            end_date,
+            project_ids=project_ids,
+            user_ids=user_ids,
+            batch_ids=batch_ids,
+            deleted_labels=deleted_labels,
+        )
 
     def get_task_by_id(self, task_id: str) -> Union[Task, DataUpsertTask]:
         """

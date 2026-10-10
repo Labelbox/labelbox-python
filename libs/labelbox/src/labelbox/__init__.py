@@ -102,6 +102,19 @@ from labelbox.schema.ontology_kind import OntologyKind
 from labelbox.schema.organization import Organization
 from labelbox.schema.project import Project
 from labelbox.schema.project_model_config import ProjectModelConfig
+from labelbox.schema.performance import (
+    PerformanceDeletedLabels,
+    PerformanceInterval,
+    PerformanceMetric,
+    PerformanceMetricSeries,
+    PerformanceReportDownload,
+    PerformanceRows,
+    PerformanceScoreBucket,
+    PerformanceTimeBucket,
+    ProjectLabelerPerformance,
+    ProjectReviewerPerformance,
+    WorkspaceLabelerPerformance,
+)
 from labelbox.schema.project_overview import (
     ProjectOverview,
     ProjectOverviewDetailed,
