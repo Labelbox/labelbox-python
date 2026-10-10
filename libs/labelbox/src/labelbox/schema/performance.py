@@ -76,7 +76,8 @@ class PerformanceMetric(_CamelCaseMixin):
         name (str): The name to pass to the metric methods, for example
             ``"labels_created"``.
         category (str): ``"throughput"``, ``"efficiency"`` or ``"quality"``.
-        unit (str): ``"count"``, ``"seconds"`` or ``"percentage"``.
+        unit (str): ``"count"``, ``"seconds"`` or ``"percentage"``. A
+            percentage is a fraction from 0 to 1: 0.9 means 90%.
         buckets (str): ``"time"`` for one value per interval, ``"score"`` for
             a histogram of agreement scores.
         description (str): What the metric measures, as the Performance page
@@ -138,7 +139,8 @@ class PerformanceMetricSeries(_CamelCaseMixin):
 
     Attributes:
         metric (str): The metric's name.
-        unit (str): ``"count"``, ``"seconds"`` or ``"percentage"``.
+        unit (str): ``"count"``, ``"seconds"`` or ``"percentage"``. A
+            percentage is a fraction from 0 to 1: 0.9 means 90%.
         bucket_type (str): ``"time"`` or ``"score"``; says which of the two
             bucket classes ``buckets`` holds.
         buckets (List[Union[PerformanceTimeBucket, PerformanceScoreBucket]]):
@@ -170,7 +172,8 @@ class PerformanceMetricSeries(_CamelCaseMixin):
 class ProjectLabelerPerformance(_CamelCaseMixin):
     """One labeler's totals on a project over a period.
 
-    Times are in seconds. ``email`` is masked for labelers the caller may not
+    Times are in seconds. Percentages and agreement scores are fractions from
+    0 to 1: 0.9 means 90%. ``email`` is masked for labelers the caller may not
     identify, exactly as on the Performance page.
 
     Attributes:
@@ -221,8 +224,9 @@ class ProjectLabelerPerformance(_CamelCaseMixin):
 class ProjectReviewerPerformance(_CamelCaseMixin):
     """One reviewer's totals on a project over a period.
 
-    Times are in seconds. ``email`` is masked for reviewers the caller may
-    not identify, exactly as on the Performance page.
+    Times are in seconds. Percentages are fractions from 0 to 1: 0.9 means
+    90%. ``email`` is masked for reviewers the caller may not identify,
+    exactly as on the Performance page.
 
     Attributes:
         user_id (str)
@@ -259,7 +263,8 @@ class WorkspaceLabelerPerformance(_CamelCaseMixin):
     """One labeler's totals on one project, from the workspace report.
 
     A labeler who worked on several projects has one of these per project.
-    Times are in seconds, and ``email`` is masked as on the Monitor.
+    Times are in seconds. Percentages and agreement scores are fractions from
+    0 to 1: 0.9 means 90%. ``email`` is masked as on the Monitor.
 
     Attributes:
         user_id (str)

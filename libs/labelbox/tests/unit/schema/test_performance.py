@@ -65,8 +65,8 @@ def labeler(user_id):
         "avgReworkTimeAll": 50,
         "avgBenchmarkAgreement": 0.9,
         "avgConsensusAgreement": 0.8,
-        "reworkPercentage": 10,
-        "approvalPercentage": 90,
+        "reworkPercentage": 0.1,
+        "approvalPercentage": 0.9,
         "avgRating": 4.5,
         "isRemoved": False,
     }
@@ -532,8 +532,8 @@ class TestProjectReviewers:
                         "avgReworkTime": 30,
                         "reviewTime": 1200,
                         "reworkTime": 600,
-                        "reworkPercentage": 10,
-                        "approvalPercentage": 90,
+                        "reworkPercentage": 0.1,
+                        "approvalPercentage": 0.9,
                         "isRemoved": True,
                     }
                 ],
