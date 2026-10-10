@@ -39,7 +39,6 @@ from lbox.exceptions import (
     ResourceNotFoundError,
     TimeoutError,
 )
-from pydantic.alias_generators import to_camel
 
 from labelbox.utils import _CamelCaseMixin
 
@@ -396,6 +395,9 @@ class PerformanceRows(Generic[Row]):
     ``cached_at`` are read. The rows come in a fixed order, so no row is
     repeated or missed between pages.
 
+    Iterating a second time reads the table again from its first page, and
+    ``total`` and ``cached_at`` then describe that reading.
+
     >>> labelers = project.get_labeler_performance("2026-01-01", "2026-01-31")
     >>> labelers.total
     37
@@ -411,6 +413,7 @@ class PerformanceRows(Generic[Row]):
         self._fetch_page = fetch_page
         self._row_type = row_type
         self._first_page: Optional[Dict[str, Any]] = None
+        self._first_page_iterated = False
 
     def _page(self, number: int) -> Dict[str, Any]:
         if number != 1:
@@ -431,6 +434,13 @@ class PerformanceRows(Generic[Row]):
         return _parse_datetime(cached_at) if cached_at else None
 
     def __iter__(self) -> Iterator[Row]:
+        if self._first_page_iterated:
+            # The first page is kept so that reading ``total`` and then the
+            # rows costs one request. A later pass must not start from that
+            # old page and continue with new ones.
+            self._first_page = None
+        self._first_page_iterated = True
+
         number = 1
         seen = 0
         while True:
@@ -476,14 +486,33 @@ def _to_id(value: Any) -> str:
     )
 
 
-def _to_ids(values: Optional[Iterable[Any]]) -> Optional[str]:
-    """IDs as one comma-separated parameter. Accepts IDs or SDK objects."""
+def _to_ids(name: str, values: Optional[Iterable[Any]]) -> Optional[str]:
+    """IDs as one comma-separated parameter. Accepts IDs or SDK objects.
+
+    ``None`` leaves the filter off. An empty list is refused: it is nearly
+    always a list that came out empty, and leaving the filter off for it
+    would report on everyone.
+    """
     if values is None:
         return None
     if isinstance(values, str):
         values = [values]
     ids = [_to_id(value) for value in values]
-    return ",".join(ids) if ids else None
+    if not ids:
+        raise ValueError(
+            f"{name} is empty. Pass None to leave this filter off; "
+            "an empty list would otherwise report on everyone."
+        )
+    return ",".join(ids)
+
+
+def _to_field(attribute: str) -> str:
+    """A row attribute as the API spells it: labels_created is labelsCreated.
+
+    A name already in the API's spelling is left as it is.
+    """
+    head, *rest = attribute.split("_")
+    return head + "".join(part[:1].upper() + part[1:] for part in rest)
 
 
 def _to_query(params: Dict[str, Any]) -> Dict[str, str]:
@@ -570,10 +599,15 @@ def _get(client: "Client", path: str, **params: Any) -> Dict[str, Any]:
     try:
         return _retry_transient(_request)(client, path, _to_query(params))
     except core_exceptions.RetryError as error:
-        # Out of attempts: report what kept failing, not that retrying did.
-        if isinstance(error.cause, LabelboxError):
-            raise error.cause from error
-        raise
+        if not isinstance(error.cause, LabelboxError):
+            raise
+        failure = error.cause
+    # Out of attempts: report what kept failing, not that retrying did. It is
+    # raised out here, not inside the handler, because the retry error already
+    # names the failure as its cause. Chaining the failure back to it would
+    # make the two point at each other, and some traceback printers follow
+    # such a chain forever.
+    raise failure
 
 
 def _segment(value: Any) -> str:
@@ -607,9 +641,9 @@ def get_project_metric(
         f"/projects/{_segment(project_id)}/metrics/{_segment(metric)}",
         **_period(start_date, end_date),
         interval=interval,
-        userIds=_to_ids(user_ids),
-        userGroupIds=_to_ids(user_group_ids),
-        batchIds=_to_ids(batch_ids),
+        userIds=_to_ids("user_ids", user_ids),
+        userGroupIds=_to_ids("user_group_ids", user_group_ids),
+        batchIds=_to_ids("batch_ids", batch_ids),
         deletedLabels=deleted_labels,
     )
     return PerformanceMetricSeries.model_validate(body)
@@ -631,12 +665,12 @@ def _table(
 ) -> PerformanceRows[Row]:
     params = {
         **_period(start_date, end_date),
-        "userIds": _to_ids(user_ids),
-        "batchIds": _to_ids(batch_ids),
+        "userIds": _to_ids("user_ids", user_ids),
+        "batchIds": _to_ids("batch_ids", batch_ids),
         "deletedLabels": deleted_labels,
         # Columns are named as the row's attributes; the API spells them in
         # camel case.
-        "sort": to_camel(sort_by) if sort_by else None,
+        "sort": _to_field(sort_by) if sort_by else None,
         "order": ("desc" if descending else "asc") if sort_by else None,
         "perPage": page_size,
         **extra,
@@ -676,7 +710,7 @@ def get_project_labelers(
         sort_by,
         descending,
         page_size,
-        userGroupIds=_to_ids(user_group_ids),
+        userGroupIds=_to_ids("user_group_ids", user_group_ids),
         # Only sent to skip the cache, which is on unless asked otherwise.
         useCache=None if use_cache else False,
     )
@@ -709,7 +743,7 @@ def get_project_reviewers(
         sort_by,
         descending,
         page_size,
-        userGroupIds=_to_ids(user_group_ids),
+        userGroupIds=_to_ids("user_group_ids", user_group_ids),
     )
 
 
@@ -729,9 +763,9 @@ def get_project_report_download(
         client,
         f"/projects/{_segment(project_id)}/download",
         **_period(start_date, end_date),
-        userIds=_to_ids(user_ids),
-        userGroupIds=_to_ids(user_group_ids),
-        batchIds=_to_ids(batch_ids),
+        userIds=_to_ids("user_ids", user_ids),
+        userGroupIds=_to_ids("user_group_ids", user_group_ids),
+        batchIds=_to_ids("batch_ids", batch_ids),
         deletedLabels=deleted_labels,
     )
     return PerformanceReportDownload.model_validate(body)
@@ -758,12 +792,14 @@ def get_workspace_metric(
         f"/workspace/metrics/{_segment(metric)}",
         **_period(start_date, end_date),
         interval=interval,
-        projectIds=_to_ids(project_ids),
-        userIds=_to_ids(user_ids),
-        batchIds=_to_ids(batch_ids),
+        projectIds=_to_ids("project_ids", project_ids),
+        userIds=_to_ids("user_ids", user_ids),
+        batchIds=_to_ids("batch_ids", batch_ids),
         deletedLabels=deleted_labels,
         memberType=member_type,
-        ownerOrganizationIds=_to_ids(owner_organization_ids),
+        ownerOrganizationIds=_to_ids(
+            "owner_organization_ids", owner_organization_ids
+        ),
         useCache=None if use_cache else False,
     )
     return PerformanceMetricSeries.model_validate(body)
@@ -798,8 +834,10 @@ def get_workspace_labelers(
         sort_by,
         descending,
         page_size,
-        projectIds=_to_ids(project_ids),
+        projectIds=_to_ids("project_ids", project_ids),
         memberType=member_type,
-        ownerOrganizationIds=_to_ids(owner_organization_ids),
+        ownerOrganizationIds=_to_ids(
+            "owner_organization_ids", owner_organization_ids
+        ),
         useCache=None if use_cache else False,
     )

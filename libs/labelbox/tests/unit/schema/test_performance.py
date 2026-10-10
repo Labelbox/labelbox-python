@@ -400,13 +400,51 @@ class TestProjectMetric:
 
         client.connection.get.assert_not_called()
 
-    def test_leaves_an_empty_filter_out(self, client, project):
+    def test_leaves_a_filter_out_when_it_is_not_given(self, client, project):
         Project.get_performance_metric(
-            project, "labels_created", "2026-01-01", "2026-01-07", user_ids=[]
+            project,
+            "labels_created",
+            "2026-01-01",
+            "2026-01-07",
+            user_ids=None,
         )
 
         _, params = sent(client)
         assert "userIds" not in params
+
+    @pytest.mark.parametrize(
+        "argument",
+        ["user_ids", "user_group_ids", "batch_ids"],
+    )
+    @pytest.mark.parametrize("empty", [[], (), set(), iter([])])
+    def test_refuses_an_empty_filter_instead_of_reporting_on_everyone(
+        self, client, project, argument, empty
+    ):
+        with pytest.raises(ValueError, match=f"{argument} is empty"):
+            Project.get_performance_metric(
+                project,
+                "labels_created",
+                "2026-01-01",
+                "2026-01-07",
+                **{argument: empty},
+            )
+
+        client.connection.get.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "argument", ["project_ids", "owner_organization_ids", "user_ids"]
+    )
+    def test_refuses_an_empty_workspace_filter_too(self, client, argument):
+        with pytest.raises(ValueError, match=f"{argument} is empty"):
+            client.get_workspace_performance_metric(
+                "labels_created", "2026-01-01", "2026-01-07", **{argument: []}
+            )
+        with pytest.raises(ValueError, match=f"{argument} is empty"):
+            client.get_workspace_labeler_performance(
+                "2026-01-01", "2026-01-07", **{argument: []}
+            )
+
+        client.connection.get.assert_not_called()
 
     @pytest.mark.parametrize(
         "day, expected",
@@ -584,6 +622,77 @@ class TestProjectLabelers:
         _, params = sent(client)
         assert params["sort"] == "labelsCreated"
         assert params["order"] == "desc"
+
+    @pytest.mark.parametrize(
+        "sort_by, sent_as",
+        [
+            ("labels_created", "labelsCreated"),
+            ("avg_time_per_label", "avgTimePerLabel"),
+            ("rework_percentage", "reworkPercentage"),
+            # Already in the API's spelling: passed on as it is.
+            ("labelsCreated", "labelsCreated"),
+            ("avgTimePerLabel", "avgTimePerLabel"),
+        ],
+    )
+    def test_spells_the_sort_column_as_the_api_does(
+        self, client, project, sort_by, sent_as
+    ):
+        client.connection.get.return_value = response(table([], total=0))
+
+        list(
+            Project.get_labeler_performance(
+                project, "2026-01-01", "2026-01-07", sort_by=sort_by
+            )
+        )
+
+        assert sent(client)[1]["sort"] == sent_as
+
+    def test_reads_the_table_again_on_a_second_pass(self, client, project):
+        first = [
+            response(table([labeler("user-1")], total=2)),
+            response(table([labeler("user-2")], total=2, page=2)),
+        ]
+        # By the second pass a row has been added, in front of the others.
+        second = [
+            response(table([labeler("user-0")], total=3)),
+            response(table([labeler("user-1")], total=3, page=2)),
+            response(table([labeler("user-2")], total=3, page=3)),
+        ]
+        client.connection.get.side_effect = first + second
+
+        rows = Project.get_labeler_performance(
+            project, "2026-01-01", "2026-01-07", page_size=1
+        )
+        once = [row.user_id for row in rows]
+        twice = [row.user_id for row in rows]
+
+        assert once == ["user-1", "user-2"]
+        # Not page 1 as it was, followed by pages 2 and 3 as they are now.
+        assert twice == ["user-0", "user-1", "user-2"]
+        assert rows.total == 3
+        assert [sent(client, call)[1]["page"] for call in range(5)] == [
+            "1",
+            "2",
+            "1",
+            "2",
+            "3",
+        ]
+
+    def test_reads_the_total_then_the_rows_with_one_request_for_the_first_page(
+        self, client, project
+    ):
+        client.connection.get.return_value = response(
+            table([labeler("user-1")], total=1)
+        )
+
+        rows = Project.get_labeler_performance(
+            project, "2026-01-01", "2026-01-07"
+        )
+        assert rows.total == 1
+        assert [row.user_id for row in rows] == ["user-1"]
+        assert rows.total == 1
+
+        assert client.connection.get.call_count == 1
 
     def test_sends_no_order_without_a_sort(self, client, project):
         client.connection.get.return_value = response(table([], total=0))
@@ -1002,6 +1111,35 @@ class TestRetries:
             )
 
         assert client.connection.get.call_count > 1
+
+    @pytest.mark.parametrize(
+        "failure",
+        [
+            response({"statusCode": 500, "message": "Oops"}, 500),
+            requests.exceptions.ReadTimeout("read timed out"),
+        ],
+    )
+    def test_raises_an_error_whose_causes_do_not_lead_back_to_it(
+        self, client, project, failure
+    ):
+        # A chain that loops makes some traceback printers run forever.
+        if isinstance(failure, Exception):
+            client.connection.get.side_effect = failure
+        else:
+            client.connection.get.return_value = failure
+
+        with pytest.raises(LabelboxError) as raised:
+            Project.get_performance_metric(
+                project, "labels_created", "2026-01-01", "2026-01-07"
+            )
+
+        seen = []
+        error = raised.value
+        while error is not None:
+            assert not any(error is earlier for earlier in seen)
+            seen.append(error)
+            error = error.__cause__ or error.__context__
+        assert len(seen) < 5
 
     def test_has_time_left_to_try_again_after_a_request_that_timed_out(
         self,

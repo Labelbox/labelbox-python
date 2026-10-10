@@ -2412,6 +2412,8 @@ class Client:
                 across the organization, or not everyone's in a project the
                 report covers.
             lbox.exceptions.InvalidQueryError: A parameter is not valid.
+            ValueError: A filter was given as an empty list. Pass ``None``
+                to leave a filter off; an empty list is not read as one.
 
         Example:
             >>> series = client.get_workspace_performance_metric(
@@ -2507,6 +2509,8 @@ class Client:
             lbox.exceptions.AuthorizationError: You may not view performance
                 across the organization.
             lbox.exceptions.InvalidQueryError: A parameter is not valid.
+            ValueError: A filter was given as an empty list. Pass ``None``
+                to leave a filter off; an empty list is not read as one.
 
         Example:
             >>> rows = client.get_workspace_labeler_performance(

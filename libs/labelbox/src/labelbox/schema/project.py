@@ -1899,6 +1899,8 @@ class Project(DbObject, Updateable, Deletable):
             lbox.exceptions.ResourceNotFoundError: The metric does not exist,
                 or you cannot view this project's performance.
             lbox.exceptions.InvalidQueryError: A parameter is not valid.
+            ValueError: A filter was given as an empty list. Pass ``None``
+                to leave a filter off; an empty list is not read as one.
 
         Example:
             >>> series = project.get_performance_metric(
@@ -1951,9 +1953,9 @@ class Project(DbObject, Updateable, Deletable):
             batch_ids (Optional[List[str]]): Count only these batches.
             deleted_labels (PerformanceDeletedLabels or str): Whether labels
                 deleted since are counted. Included by default.
-            sort_by (Optional[str]): An attribute of
+            sort_by (Optional[str]): A figure of
                 :class:`ProjectLabelerPerformance` to sort on, for example
-                ``"labels_created"``.
+                ``"labels_created"``. Sorting by email is not offered.
             descending (bool): Sort from high to low. Only used with
                 ``sort_by``.
             page_size (int): Rows fetched per request while iterating, up to
@@ -1970,6 +1972,8 @@ class Project(DbObject, Updateable, Deletable):
             lbox.exceptions.ResourceNotFoundError: You cannot view this
                 project's performance.
             lbox.exceptions.InvalidQueryError: A parameter is not valid.
+            ValueError: A filter was given as an empty list. Pass ``None``
+                to leave a filter off; an empty list is not read as one.
 
         Example:
             >>> labelers = project.get_labeler_performance(
@@ -2023,9 +2027,9 @@ class Project(DbObject, Updateable, Deletable):
             batch_ids (Optional[List[str]]): Count only these batches.
             deleted_labels (PerformanceDeletedLabels or str): Whether labels
                 deleted since are counted. Included by default.
-            sort_by (Optional[str]): An attribute of
+            sort_by (Optional[str]): A figure of
                 :class:`ProjectReviewerPerformance` to sort on, for example
-                ``"labels_reviewed"``.
+                ``"labels_reviewed"``. Sorting by email is not offered.
             descending (bool): Sort from high to low. Only used with
                 ``sort_by``.
             page_size (int): Rows fetched per request while iterating, up to
@@ -2040,6 +2044,8 @@ class Project(DbObject, Updateable, Deletable):
             lbox.exceptions.ResourceNotFoundError: You cannot view this
                 project's performance.
             lbox.exceptions.InvalidQueryError: A parameter is not valid.
+            ValueError: A filter was given as an empty list. Pass ``None``
+                to leave a filter off; an empty list is not read as one.
 
         Example:
             >>> for reviewer in project.get_reviewer_performance(
@@ -2095,6 +2101,8 @@ class Project(DbObject, Updateable, Deletable):
             lbox.exceptions.ResourceNotFoundError: You cannot view this
                 project's performance.
             lbox.exceptions.InvalidQueryError: A parameter is not valid.
+            ValueError: A filter was given as an empty list. Pass ``None``
+                to leave a filter off; an empty list is not read as one.
 
         Example:
             >>> report = project.get_performance_report_download(
