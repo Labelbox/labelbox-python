@@ -26,6 +26,8 @@ from typing import (
 from urllib.parse import quote
 
 import requests
+from google.api_core import exceptions as core_exceptions
+from google.api_core import retry
 from lbox.exceptions import (
     ApiLimitError,
     AuthenticationError,
@@ -33,7 +35,9 @@ from lbox.exceptions import (
     InternalServerError,
     InvalidQueryError,
     LabelboxError,
+    NetworkError,
     ResourceNotFoundError,
+    TimeoutError,
 )
 from pydantic.alias_generators import to_camel
 
@@ -66,6 +70,20 @@ class PerformanceDeletedLabels(str, Enum):
     INCLUDE = "include"
     EXCLUDE = "exclude"
     ONLY = "only"
+
+
+class PerformanceMemberType(str, Enum):
+    """Whose account a member's is, seen from your organization.
+
+    A project can be shared with another organization, such as a workforce
+    provider, whose members then work in it. ``EXTERNAL`` is a member whose
+    account belongs to another organization, or an Alignerr account; the
+    Monitor calls these "Workforce members". ``INTERNAL`` is a member of your
+    own organization.
+    """
+
+    INTERNAL = "internal"
+    EXTERNAL = "external"
 
 
 class PerformanceMetric(_CamelCaseMixin):
@@ -153,6 +171,10 @@ class PerformanceMetricSeries(_CamelCaseMixin):
         organization_id (Optional[str]): Set on a workspace series.
         project_ids (Optional[List[str]]): The projects a workspace series
             was narrowed to, if any.
+        owner_organization_ids (Optional[List[str]]): The owning
+            organizations a workspace series was narrowed to, if any.
+        member_type (Optional[str]): The member type a workspace series was
+            narrowed to, if any: ``"internal"`` or ``"external"``.
     """
 
     metric: str
@@ -166,6 +188,8 @@ class PerformanceMetricSeries(_CamelCaseMixin):
     project_id: Optional[str] = None
     organization_id: Optional[str] = None
     project_ids: Optional[List[str]] = None
+    owner_organization_ids: Optional[List[str]] = None
+    member_type: Optional[str] = None
 
 
 class ProjectLabelerPerformance(_CamelCaseMixin):
@@ -179,6 +203,10 @@ class ProjectLabelerPerformance(_CamelCaseMixin):
         user_id (str)
         project_id (str)
         email (str)
+        member_type (Optional[str]): ``"internal"`` for a member of your
+            organization, ``"external"`` for a member of another one (see
+            :class:`PerformanceMemberType`). ``None`` if the account no
+            longer exists.
         labels_created (int)
         labels_skipped (int)
         member_total_time (float)
@@ -201,6 +229,7 @@ class ProjectLabelerPerformance(_CamelCaseMixin):
     user_id: str
     project_id: str
     email: str
+    member_type: Optional[str] = None
     labels_created: int
     labels_skipped: int
     member_total_time: float
@@ -231,6 +260,10 @@ class ProjectReviewerPerformance(_CamelCaseMixin):
         user_id (str)
         project_id (str)
         email (str)
+        member_type (Optional[str]): ``"internal"`` for a member of your
+            organization, ``"external"`` for a member of another one (see
+            :class:`PerformanceMemberType`). ``None`` if the account no
+            longer exists.
         labels_reviewed (int)
         labels_reworked (int)
         member_total_time (float)
@@ -246,6 +279,7 @@ class ProjectReviewerPerformance(_CamelCaseMixin):
     user_id: str
     project_id: str
     email: str
+    member_type: Optional[str] = None
     labels_reviewed: int
     labels_reworked: int
     member_total_time: float
@@ -265,12 +299,21 @@ class WorkspaceLabelerPerformance(_CamelCaseMixin):
     Times are in seconds. Percentages and agreement scores are fractions from
     0 to 1: 0.9 means 90%. ``email`` is masked as on the Monitor.
 
+    The report covers the projects your organization owns and the ones other
+    organizations share with it. ``project_organization_id`` says which is
+    which, and ``member_type`` whether the labeler is one of your own members.
+
     Attributes:
         user_id (str)
         email (str)
+        member_type (Optional[str]): ``"internal"`` for a member of your
+            organization, ``"external"`` for a member of another one (see
+            :class:`PerformanceMemberType`). ``None`` if the account no
+            longer exists.
         project_id (str)
         project_name (str)
-        project_organization_id (str)
+        project_organization_id (str): The organization that owns the
+            project. It differs from yours for a project shared with you.
         project_organization_name (str)
         is_project_deleted (bool)
         labels_created (int)
@@ -293,6 +336,7 @@ class WorkspaceLabelerPerformance(_CamelCaseMixin):
 
     user_id: str
     email: str
+    member_type: Optional[str] = None
     project_id: str
     project_name: str
     project_organization_id: str
@@ -345,7 +389,8 @@ class PerformanceRows(Generic[Row]):
 
     Iterating fetches the table a page at a time, so a large table is never
     held in one response. Nothing is requested until the rows, ``total`` or
-    ``cached_at`` are read.
+    ``cached_at`` are read. The rows come in a fixed order, so no row is
+    repeated or missed between pages.
 
     >>> labelers = project.get_labeler_performance("2026-01-01", "2026-01-31")
     >>> labelers.total
@@ -491,15 +536,37 @@ def _raise_for_response(response: requests.Response) -> None:
     raise LabelboxError(message)
 
 
-def _get(client: "Client", path: str, **params: Any) -> Dict[str, Any]:
-    response = client.connection.get(
-        f"{client.rest_endpoint}/performance{path}",
-        params=_to_query(params),
-        timeout=_TIMEOUT_SECONDS,
-    )
+def _request(client: "Client", path: str, params: Dict[str, str]) -> Any:
+    try:
+        response = client.connection.get(
+            f"{client.rest_endpoint}/performance{path}",
+            params=params,
+            timeout=_TIMEOUT_SECONDS,
+        )
+    except requests.exceptions.Timeout as error:
+        raise TimeoutError(str(error))
+    except requests.exceptions.RequestException as error:
+        raise NetworkError(error)
     if response.status_code != requests.codes.ok:
         _raise_for_response(response)
     return response.json()
+
+
+# Reading a report changes nothing, so a failure of the service or a timeout
+# is tried again, on the schedule Client.execute retries a query on.
+_retry_transient = retry.Retry(
+    predicate=retry.if_exception_type(InternalServerError, TimeoutError)
+)
+
+
+def _get(client: "Client", path: str, **params: Any) -> Dict[str, Any]:
+    try:
+        return _retry_transient(_request)(client, path, _to_query(params))
+    except core_exceptions.RetryError as error:
+        # Out of attempts: report what kept failing, not that retrying did.
+        if isinstance(error.cause, LabelboxError):
+            raise error.cause from error
+        raise
 
 
 def _segment(value: Any) -> str:
@@ -541,14 +608,13 @@ def get_project_metric(
     return PerformanceMetricSeries.model_validate(body)
 
 
-def _project_table(
+def _table(
     client: "Client",
     path: str,
     row_type: Type[Row],
     start_date: DateLike,
     end_date: DateLike,
     user_ids: Optional[Iterable[Any]],
-    user_group_ids: Optional[Iterable[Any]],
     batch_ids: Optional[Iterable[Any]],
     deleted_labels: Union[PerformanceDeletedLabels, str],
     sort_by: Optional[str],
@@ -559,7 +625,6 @@ def _project_table(
     params = {
         **_period(start_date, end_date),
         "userIds": _to_ids(user_ids),
-        "userGroupIds": _to_ids(user_group_ids),
         "batchIds": _to_ids(batch_ids),
         "deletedLabels": deleted_labels,
         # Columns are named as the row's attributes; the API spells them in
@@ -592,19 +657,19 @@ def get_project_labelers(
     page_size: int = _DEFAULT_PAGE_SIZE,
     use_cache: bool = True,
 ) -> PerformanceRows[ProjectLabelerPerformance]:
-    return _project_table(
+    return _table(
         client,
         f"/projects/{_segment(project_id)}/labelers",
         ProjectLabelerPerformance,
         start_date,
         end_date,
         user_ids,
-        user_group_ids,
         batch_ids,
         deleted_labels,
         sort_by,
         descending,
         page_size,
+        userGroupIds=_to_ids(user_group_ids),
         # Only sent to skip the cache, which is on unless asked otherwise.
         useCache=None if use_cache else False,
     )
@@ -625,19 +690,19 @@ def get_project_reviewers(
     descending: bool = False,
     page_size: int = _DEFAULT_PAGE_SIZE,
 ) -> PerformanceRows[ProjectReviewerPerformance]:
-    return _project_table(
+    return _table(
         client,
         f"/projects/{_segment(project_id)}/reviewers",
         ProjectReviewerPerformance,
         start_date,
         end_date,
         user_ids,
-        user_group_ids,
         batch_ids,
         deleted_labels,
         sort_by,
         descending,
         page_size,
+        userGroupIds=_to_ids(user_group_ids),
     )
 
 
@@ -678,6 +743,8 @@ def get_workspace_metric(
         PerformanceDeletedLabels, str
     ] = PerformanceDeletedLabels.INCLUDE,
     use_cache: bool = True,
+    member_type: Optional[Union[PerformanceMemberType, str]] = None,
+    owner_organization_ids: Optional[Iterable[Any]] = None,
 ) -> PerformanceMetricSeries:
     body = _get(
         client,
@@ -688,6 +755,8 @@ def get_workspace_metric(
         userIds=_to_ids(user_ids),
         batchIds=_to_ids(batch_ids),
         deletedLabels=deleted_labels,
+        memberType=member_type,
+        ownerOrganizationIds=_to_ids(owner_organization_ids),
         useCache=None if use_cache else False,
     )
     return PerformanceMetricSeries.model_validate(body)
@@ -703,16 +772,27 @@ def get_workspace_labelers(
     deleted_labels: Union[
         PerformanceDeletedLabels, str
     ] = PerformanceDeletedLabels.INCLUDE,
-) -> List[WorkspaceLabelerPerformance]:
-    body = _get(
+    member_type: Optional[Union[PerformanceMemberType, str]] = None,
+    owner_organization_ids: Optional[Iterable[Any]] = None,
+    sort_by: Optional[str] = None,
+    descending: bool = False,
+    page_size: int = _DEFAULT_PAGE_SIZE,
+    use_cache: bool = True,
+) -> PerformanceRows[WorkspaceLabelerPerformance]:
+    return _table(
         client,
         "/workspace/labelers",
-        **_period(start_date, end_date),
+        WorkspaceLabelerPerformance,
+        start_date,
+        end_date,
+        user_ids,
+        batch_ids,
+        deleted_labels,
+        sort_by,
+        descending,
+        page_size,
         projectIds=_to_ids(project_ids),
-        userIds=_to_ids(user_ids),
-        batchIds=_to_ids(batch_ids),
-        deletedLabels=deleted_labels,
+        memberType=member_type,
+        ownerOrganizationIds=_to_ids(owner_organization_ids),
+        useCache=None if use_cache else False,
     )
-    return [
-        WorkspaceLabelerPerformance.model_validate(row) for row in body["data"]
-    ]

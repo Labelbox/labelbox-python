@@ -2360,11 +2360,16 @@ class Client:
             _performance.PerformanceDeletedLabels, str
         ] = _performance.PerformanceDeletedLabels.INCLUDE,
         use_cache: bool = True,
+        member_type: Optional[
+            Union[_performance.PerformanceMemberType, str]
+        ] = None,
+        owner_organization_ids: Optional[List[str]] = None,
     ) -> _performance.PerformanceMetricSeries:
         """Returns one performance metric across the workspace.
 
         This is the workspace Monitor's data: every project your organization
-        owns or shares, or only the projects named in ``project_ids``.
+        owns and every project another organization shares with it, or only
+        the projects named in ``project_ids``.
 
         Args:
             metric (str): A metric name from :meth:`get_performance_metrics`,
@@ -2384,6 +2389,18 @@ class Client:
                 deleted since are counted. Included by default.
             use_cache (bool): Pass False to recompute instead of using a
                 result cached within the last few minutes.
+            member_type (Optional[PerformanceMemberType or str]): Count only
+                work by members of your own organization (``"internal"``) or
+                only by members of other organizations, such as a workforce
+                provider's (``"external"``). The Monitor's Member Type
+                filter.
+            owner_organization_ids (Optional[List[str]]): Count only projects
+                owned by these organizations. Use it to separate the projects
+                you own from the ones shared with you.
+
+        ``member_type`` and ``owner_organization_ids`` report on other
+        members, so they need permission to view all performance in every
+        project the report covers.
 
         Returns:
             PerformanceMetricSeries: The metric as a value per interval.
@@ -2392,7 +2409,8 @@ class Client:
             lbox.exceptions.ResourceNotFoundError: The metric does not exist,
                 or a project named is not one you can see.
             lbox.exceptions.AuthorizationError: You may not view performance
-                across the organization.
+                across the organization, or not everyone's in a project the
+                report covers.
             lbox.exceptions.InvalidQueryError: A parameter is not valid.
 
         Example:
@@ -2400,6 +2418,11 @@ class Client:
             >>>     "labels_created", "2026-01-01", "2026-01-31", interval="week")
             >>> for bucket in series.buckets:
             >>>     print(bucket.start.date(), bucket.value)
+            >>>
+            >>> # The same, for the workforce provider's members only.
+            >>> series = client.get_workspace_performance_metric(
+            >>>     "labels_created", "2026-01-01", "2026-01-31",
+            >>>     member_type="external")
         """
         return _performance.get_workspace_metric(
             self,
@@ -2412,6 +2435,8 @@ class Client:
             batch_ids=batch_ids,
             deleted_labels=deleted_labels,
             use_cache=use_cache,
+            member_type=member_type,
+            owner_organization_ids=owner_organization_ids,
         )
 
     def get_workspace_labeler_performance(
@@ -2424,11 +2449,23 @@ class Client:
         deleted_labels: Union[
             _performance.PerformanceDeletedLabels, str
         ] = _performance.PerformanceDeletedLabels.INCLUDE,
-    ) -> List[_performance.WorkspaceLabelerPerformance]:
+        member_type: Optional[
+            Union[_performance.PerformanceMemberType, str]
+        ] = None,
+        owner_organization_ids: Optional[List[str]] = None,
+        sort_by: Optional[str] = None,
+        descending: bool = False,
+        page_size: int = 50,
+        use_cache: bool = True,
+    ) -> _performance.PerformanceRows[_performance.WorkspaceLabelerPerformance]:
         """Returns per-labeler totals across the workspace.
 
         This is the workspace Monitor's member table: one row for each
-        labeler on each project they worked on in the period.
+        labeler on each project they worked on in the period. It covers the
+        projects your organization owns and the ones other organizations
+        share with it. Each row says which organization owns the project
+        (``project_organization_id``) and whether the labeler is one of your
+        own members (``member_type``).
 
         Args:
             start_date (date, datetime or str): First day of the period, in
@@ -2442,10 +2479,27 @@ class Client:
             batch_ids (Optional[List[str]]): Count only these batches.
             deleted_labels (PerformanceDeletedLabels or str): Whether labels
                 deleted since are counted. Included by default.
+            member_type (Optional[PerformanceMemberType or str]): Return only
+                members of your own organization (``"internal"``) or only
+                members of other organizations, such as a workforce
+                provider's (``"external"``).
+            owner_organization_ids (Optional[List[str]]): Return only
+                projects owned by these organizations.
+            sort_by (Optional[str]): A column to sort by, named as the row's
+                attribute, for example ``"labels_created"``. Without it, rows
+                are ordered by project, then labeler. Sorting by email is not
+                offered.
+            descending (bool): Sort from the highest value down.
+            page_size (int): Rows fetched per request, at most 200.
+            use_cache (bool): Pass False to read the report again instead of
+                using rows read within the last few minutes. Leave it on
+                while reading a large table, so that every page comes from
+                the same rows.
 
         Returns:
-            List[WorkspaceLabelerPerformance]: One row per labeler and
-            project. Emails are masked for labelers you may not identify.
+            PerformanceRows[WorkspaceLabelerPerformance]: One row per labeler
+            and project, fetched a page at a time as you iterate. Emails are
+            masked for labelers you may not identify.
 
         Raises:
             lbox.exceptions.ResourceNotFoundError: A project named is not one
@@ -2456,7 +2510,8 @@ class Client:
 
         Example:
             >>> rows = client.get_workspace_labeler_performance(
-            >>>     "2026-01-01", "2026-01-31")
+            >>>     "2026-01-01", "2026-01-31", member_type="external")
+            >>> print(rows.total)
             >>> for row in rows:
             >>>     print(row.project_name, row.email, row.labels_created)
         """
@@ -2468,6 +2523,12 @@ class Client:
             user_ids=user_ids,
             batch_ids=batch_ids,
             deleted_labels=deleted_labels,
+            member_type=member_type,
+            owner_organization_ids=owner_organization_ids,
+            sort_by=sort_by,
+            descending=descending,
+            page_size=page_size,
+            use_cache=use_cache,
         )
 
     def get_task_by_id(self, task_id: str) -> Union[Task, DataUpsertTask]:

@@ -3,6 +3,8 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
+import requests
+from google.api_core import retry
 from lbox.exceptions import (
     ApiLimitError,
     AuthenticationError,
@@ -10,17 +12,21 @@ from lbox.exceptions import (
     InternalServerError,
     InvalidQueryError,
     LabelboxError,
+    NetworkError,
     ResourceNotFoundError,
+    TimeoutError,
 )
 
 from labelbox import (
     Client,
     PerformanceDeletedLabels,
     PerformanceInterval,
+    PerformanceMemberType,
     PerformanceScoreBucket,
     PerformanceTimeBucket,
     Project,
 )
+from labelbox.schema import performance
 from labelbox.schema.user_group import UserGroup
 
 BASE = "https://api.labelbox.com/api/v1/performance"
@@ -87,12 +93,76 @@ def table(rows, total, page=1, cached_at=None):
     }
 
 
+REVIEWER = {
+    "userId": "user-9",
+    "projectId": "project-1",
+    "email": "user-9@example.com",
+    "labelsReviewed": 20,
+    "labelsReworked": 2,
+    "memberTotalTime": 1800,
+    "avgReviewTime": 60,
+    "avgReworkTime": 30,
+    "reviewTime": 1200,
+    "reworkTime": 600,
+    "reworkPercentage": 0.1,
+    "approvalPercentage": 0.9,
+    "isRemoved": False,
+}
+
+
+def workspace_labeler(user_id, project_id, **fields):
+    return {
+        **{k: v for k, v in labeler(user_id).items() if k != "avgRating"},
+        "projectId": project_id,
+        "memberType": "internal",
+        "projectName": "Project one",
+        "projectOrganizationId": "org-1",
+        "projectOrganizationName": "Org one",
+        "isProjectDeleted": False,
+        **fields,
+    }
+
+
+def workspace_table(rows, total, page=1, cached_at=None):
+    return {
+        "organizationId": "org-1",
+        "projectIds": None,
+        "ownerOrganizationIds": None,
+        "memberType": None,
+        "data": rows,
+        "page": page,
+        "perPage": 50,
+        "total": total,
+        "cachedAt": cached_at,
+        "startDate": "2026-01-01",
+        "endDate": "2026-01-07",
+        "generatedAt": "2026-01-08T09:30:00.000Z",
+    }
+
+
 def response(body, status=200):
     reply = Mock()
     reply.status_code = status
     reply.json.return_value = body
     reply.text = str(body)
     return reply
+
+
+@pytest.fixture(autouse=True)
+def quick_retries(monkeypatch):
+    # The real schedule waits seconds between attempts, for up to two minutes.
+    monkeypatch.setattr(
+        performance,
+        "_retry_transient",
+        retry.Retry(
+            predicate=retry.if_exception_type(
+                InternalServerError, TimeoutError
+            ),
+            initial=0.001,
+            maximum=0.001,
+            timeout=0.05,
+        ),
+    )
 
 
 @pytest.fixture
@@ -656,28 +726,63 @@ class TestWorkspace:
         assert series.project_ids == ["project-1", "project-2"]
         assert series.project_id is None
 
-    def test_returns_a_row_per_labeler_and_project(self, client):
-        row = {
-            **{k: v for k, v in labeler("user-1").items() if k != "avgRating"},
-            "projectName": "Project one",
-            "projectOrganizationId": "org-1",
-            "projectOrganizationName": "Org one",
-            "isProjectDeleted": False,
-        }
+    def test_narrows_a_metric_by_member_type_and_owning_organization(
+        self, client
+    ):
         client.connection.get.return_value = response(
             {
+                **{k: v for k, v in SERIES.items() if k != "projectId"},
                 "organizationId": "org-1",
                 "projectIds": None,
-                "data": [row, {**row, "projectId": "project-2"}],
-                "total": 2,
-                "startDate": "2026-01-01",
-                "endDate": "2026-01-07",
-                "generatedAt": "2026-01-08T09:30:00.000Z",
+                "ownerOrganizationIds": ["org-2"],
+                "memberType": "external",
             }
         )
 
-        rows = client.get_workspace_labeler_performance(
-            "2026-01-01", "2026-01-07", user_ids=["user-1"]
+        series = client.get_workspace_performance_metric(
+            "labels_created",
+            "2026-01-01",
+            "2026-01-07",
+            member_type=PerformanceMemberType.EXTERNAL,
+            owner_organization_ids=["org-2"],
+        )
+
+        _, params = sent(client)
+        assert params["memberType"] == "external"
+        assert params["ownerOrganizationIds"] == "org-2"
+        assert series.member_type == "external"
+        assert series.owner_organization_ids == ["org-2"]
+
+    def test_sends_neither_narrowing_unless_asked(self, client):
+        client.get_workspace_performance_metric(
+            "labels_created", "2026-01-01", "2026-01-07"
+        )
+
+        _, params = sent(client)
+        assert "memberType" not in params
+        assert "ownerOrganizationIds" not in params
+
+    def test_returns_a_row_per_labeler_and_project(self, client):
+        client.connection.get.return_value = response(
+            workspace_table(
+                [
+                    workspace_labeler("user-1", "project-1"),
+                    workspace_labeler(
+                        "user-2",
+                        "project-shared",
+                        memberType="external",
+                        projectOrganizationId="org-2",
+                        projectOrganizationName="Org two",
+                    ),
+                ],
+                total=2,
+            )
+        )
+
+        rows = list(
+            client.get_workspace_labeler_performance(
+                "2026-01-01", "2026-01-07", user_ids=["user-1", "user-2"]
+            )
         )
 
         url, params = sent(client)
@@ -685,13 +790,239 @@ class TestWorkspace:
         assert params == {
             "startDate": "2026-01-01",
             "endDate": "2026-01-07",
-            "userIds": "user-1",
+            "userIds": "user-1,user-2",
             "deletedLabels": "include",
+            "perPage": "50",
+            "page": "1",
         }
-        assert [row.project_id for row in rows] == ["project-1", "project-2"]
+        assert [row.project_id for row in rows] == [
+            "project-1",
+            "project-shared",
+        ]
         assert rows[0].project_name == "Project one"
-        assert rows[0].project_organization_name == "Org one"
         assert rows[0].labels_created == 12
+        # Whose project it is, and whose member did the work.
+        assert rows[0].project_organization_name == "Org one"
+        assert rows[0].member_type == "internal"
+        assert rows[1].project_organization_id == "org-2"
+        assert rows[1].member_type == "external"
+
+    def test_fetches_the_workspace_table_a_page_at_a_time(self, client):
+        client.connection.get.side_effect = [
+            response(
+                workspace_table(
+                    [
+                        workspace_labeler("user-1", "project-1"),
+                        workspace_labeler("user-2", "project-1"),
+                    ],
+                    total=3,
+                    cached_at="2026-01-08T09:29:00.000Z",
+                )
+            ),
+            response(
+                workspace_table(
+                    [workspace_labeler("user-3", "project-1")],
+                    total=3,
+                    page=2,
+                )
+            ),
+        ]
+
+        rows = client.get_workspace_labeler_performance(
+            "2026-01-01", "2026-01-07", page_size=2
+        )
+
+        assert rows.total == 3
+        assert rows.cached_at == datetime(
+            2026, 1, 8, 9, 29, tzinfo=timezone.utc
+        )
+        assert [row.user_id for row in rows] == ["user-1", "user-2", "user-3"]
+        assert [sent(client, call)[1]["page"] for call in (0, 1)] == ["1", "2"]
+        assert sent(client)[1]["perPage"] == "2"
+
+    def test_filters_and_sorts_the_workspace_table(self, client):
+        client.connection.get.return_value = response(workspace_table([], 0))
+
+        list(
+            client.get_workspace_labeler_performance(
+                "2026-01-01",
+                "2026-01-07",
+                project_ids=["project-1"],
+                member_type="external",
+                owner_organization_ids=["org-2", "org-3"],
+                sort_by="avg_time_per_label",
+                descending=True,
+                use_cache=False,
+            )
+        )
+
+        _, params = sent(client)
+        assert params["projectIds"] == "project-1"
+        assert params["memberType"] == "external"
+        assert params["ownerOrganizationIds"] == "org-2,org-3"
+        assert params["sort"] == "avgTimePerLabel"
+        assert params["order"] == "desc"
+        assert params["useCache"] == "false"
+
+    def test_reads_a_row_whose_member_no_longer_exists(self, client):
+        client.connection.get.return_value = response(
+            workspace_table(
+                [workspace_labeler("user-1", "project-1", memberType=None)], 1
+            )
+        )
+
+        (row,) = client.get_workspace_labeler_performance(
+            "2026-01-01", "2026-01-07"
+        )
+
+        assert row.member_type is None
+
+
+class TestMemberType:
+    def test_says_whose_member_each_labeler_and_reviewer_is(
+        self, client, project
+    ):
+        client.connection.get.side_effect = [
+            response(
+                table(
+                    [
+                        {**labeler("user-1"), "memberType": "internal"},
+                        {**labeler("user-2"), "memberType": "external"},
+                    ],
+                    total=2,
+                )
+            ),
+            response(table([{**REVIEWER, "memberType": "external"}], total=1)),
+        ]
+
+        labelers = list(
+            Project.get_labeler_performance(project, "2026-01-01", "2026-01-07")
+        )
+        reviewers = list(
+            Project.get_reviewer_performance(
+                project, "2026-01-01", "2026-01-07"
+            )
+        )
+
+        assert [row.member_type for row in labelers] == [
+            "internal",
+            "external",
+        ]
+        assert reviewers[0].member_type == PerformanceMemberType.EXTERNAL
+
+    def test_reads_a_reply_from_an_api_that_does_not_say(self, client, project):
+        client.connection.get.return_value = response(
+            table([labeler("user-1")], total=1)
+        )
+
+        (row,) = Project.get_labeler_performance(
+            project, "2026-01-01", "2026-01-07"
+        )
+
+        assert row.member_type is None
+
+
+class TestRetries:
+    def test_tries_again_after_a_failure_of_the_service(self, client, project):
+        client.connection.get.side_effect = [
+            response({"statusCode": 503, "message": "Unavailable"}, 503),
+            response({"statusCode": 500, "message": "Oops"}, 500),
+            response(SERIES),
+        ]
+
+        series = Project.get_performance_metric(
+            project, "labels_created", "2026-01-01", "2026-01-07"
+        )
+
+        assert series.metric == "labels_created"
+        assert client.connection.get.call_count == 3
+
+    def test_tries_again_after_a_timeout(self, client, project):
+        client.connection.get.side_effect = [
+            requests.exceptions.ReadTimeout("read timed out"),
+            response(SERIES),
+        ]
+
+        Project.get_performance_metric(
+            project, "labels_created", "2026-01-01", "2026-01-07"
+        )
+
+        assert client.connection.get.call_count == 2
+
+    def test_tries_a_failed_page_again_without_repeating_rows(
+        self, client, project
+    ):
+        client.connection.get.side_effect = [
+            response(table([labeler("user-1")], total=2)),
+            response({"statusCode": 502, "message": "Bad gateway"}, 502),
+            response(table([labeler("user-2")], total=2, page=2)),
+        ]
+
+        rows = list(
+            Project.get_labeler_performance(
+                project, "2026-01-01", "2026-01-07", page_size=1
+            )
+        )
+
+        assert [row.user_id for row in rows] == ["user-1", "user-2"]
+        assert [sent(client, call)[1]["page"] for call in (0, 1, 2)] == [
+            "1",
+            "2",
+            "2",
+        ]
+
+    @pytest.mark.parametrize("status", [400, 401, 403, 404, 429])
+    def test_does_not_repeat_a_request_that_was_refused(
+        self, client, project, status
+    ):
+        client.connection.get.return_value = response(
+            {"statusCode": status, "message": "No"}, status
+        )
+
+        with pytest.raises(LabelboxError):
+            Project.get_performance_metric(
+                project, "labels_created", "2026-01-01", "2026-01-07"
+            )
+
+        assert client.connection.get.call_count == 1
+
+    def test_reports_the_failure_itself_once_it_stops_trying(
+        self, client, project
+    ):
+        client.connection.get.return_value = response(
+            {"statusCode": 503, "message": "Under maintenance"}, 503
+        )
+
+        with pytest.raises(InternalServerError, match="Under maintenance"):
+            Project.get_performance_metric(
+                project, "labels_created", "2026-01-01", "2026-01-07"
+            )
+
+        assert client.connection.get.call_count > 1
+
+    def test_reports_a_timeout_as_the_sdk_does(self, client, project):
+        client.connection.get.side_effect = requests.exceptions.ReadTimeout(
+            "read timed out"
+        )
+
+        with pytest.raises(TimeoutError, match="read timed out"):
+            Project.get_performance_metric(
+                project, "labels_created", "2026-01-01", "2026-01-07"
+            )
+
+    def test_reports_a_connection_failure_without_repeating_it(
+        self, client, project
+    ):
+        client.connection.get.side_effect = requests.exceptions.ConnectionError(
+            "connection refused"
+        )
+
+        with pytest.raises(NetworkError):
+            Project.get_performance_metric(
+                project, "labels_created", "2026-01-01", "2026-01-07"
+            )
+
+        assert client.connection.get.call_count == 1
 
 
 class TestErrors:

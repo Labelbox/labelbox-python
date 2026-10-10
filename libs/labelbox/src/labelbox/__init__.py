@@ -105,6 +105,7 @@ from labelbox.schema.project_model_config import ProjectModelConfig
 from labelbox.schema.performance import (
     PerformanceDeletedLabels,
     PerformanceInterval,
+    PerformanceMemberType,
     PerformanceMetric,
     PerformanceMetricSeries,
     PerformanceReportDownload,
