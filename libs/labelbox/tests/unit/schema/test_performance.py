@@ -31,6 +31,9 @@ from labelbox.schema.user_group import UserGroup
 
 BASE = "https://api.labelbox.com/api/v1/performance"
 
+# The schedule the SDK ships with. The tests below swap in a quick one.
+SHIPPED_RETRY = performance._retry_transient
+
 # Responses as the REST API returns them.
 SERIES = {
     "projectId": "project-1",
@@ -160,7 +163,7 @@ def quick_retries(monkeypatch):
             ),
             initial=0.001,
             maximum=0.001,
-            timeout=0.05,
+            deadline=0.05,
         ),
     )
 
@@ -999,6 +1002,18 @@ class TestRetries:
             )
 
         assert client.connection.get.call_count > 1
+
+    def test_has_time_left_to_try_again_after_a_request_that_timed_out(
+        self,
+    ):
+        # A retry starts only if the deadline, counted from the first attempt,
+        # has not passed after the failed attempt and the pause that follows.
+        one_attempt = performance._TIMEOUT_SECONDS
+        longest_first_pause = 2  # seconds, across google-api-core versions
+
+        assert SHIPPED_RETRY.deadline >= one_attempt + longest_first_pause
+        # ...and it does not start a third attempt after two timeouts.
+        assert SHIPPED_RETRY.deadline <= 2 * one_attempt
 
     def test_reports_a_timeout_as_the_sdk_does(self, client, project):
         client.connection.get.side_effect = requests.exceptions.ReadTimeout(

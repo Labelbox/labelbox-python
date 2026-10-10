@@ -48,6 +48,10 @@ if TYPE_CHECKING:
 
 # Reports are computed on request and a wide date range can take a while.
 _TIMEOUT_SECONDS = 120
+# How long a request is retried for, counted from its first attempt. Twice the
+# time one attempt may take: enough to try once more after an attempt that
+# timed out, and not to start a third.
+_RETRY_DEADLINE_SECONDS = 2 * _TIMEOUT_SECONDS
 _DEFAULT_PAGE_SIZE = 50
 
 DateLike = Union[date, datetime, str]
@@ -553,9 +557,12 @@ def _request(client: "Client", path: str, params: Dict[str, str]) -> Any:
 
 
 # Reading a report changes nothing, so a failure of the service or a timeout
-# is tried again, on the schedule Client.execute retries a query on.
+# is tried again, with the growing pauses Client.execute retries a query with.
+# The deadline is set here because the default (120 seconds) is already spent
+# when a request of this length times out, and it would never be retried.
 _retry_transient = retry.Retry(
-    predicate=retry.if_exception_type(InternalServerError, TimeoutError)
+    predicate=retry.if_exception_type(InternalServerError, TimeoutError),
+    deadline=_RETRY_DEADLINE_SECONDS,
 )
 
 
