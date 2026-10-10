@@ -23,7 +23,6 @@ from typing import (
     TypeVar,
     Union,
 )
-
 from urllib.parse import quote
 
 import requests
@@ -411,13 +410,30 @@ def _to_day(value: DateLike) -> str:
     return value
 
 
+def _to_id(value: Any) -> str:
+    """The ID of a value that is an ID or an SDK object.
+
+    Most SDK objects carry their ID as ``uid``; the pydantic ones, such as
+    UserGroup, carry it as ``id``.
+    """
+    if isinstance(value, str):
+        return value
+    for attribute in ("uid", "id"):
+        identifier = getattr(value, attribute, None)
+        if isinstance(identifier, str) and identifier:
+            return identifier
+    raise TypeError(
+        f"Expected an ID or an object that has one, got {type(value).__name__}"
+    )
+
+
 def _to_ids(values: Optional[Iterable[Any]]) -> Optional[str]:
     """IDs as one comma-separated parameter. Accepts IDs or SDK objects."""
     if values is None:
         return None
     if isinstance(values, str):
         values = [values]
-    ids = [getattr(value, "uid", value) for value in values]
+    ids = [_to_id(value) for value in values]
     return ",".join(ids) if ids else None
 
 
@@ -488,7 +504,7 @@ def _get(client: "Client", path: str, **params: Any) -> Dict[str, Any]:
 
 def _segment(value: Any) -> str:
     """A value as one path segment, so an ID can never alter the path."""
-    return quote(str(getattr(value, "uid", value)), safe="")
+    return quote(_to_id(value), safe="")
 
 
 def _period(start_date: DateLike, end_date: DateLike) -> Dict[str, str]:

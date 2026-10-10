@@ -21,6 +21,7 @@ from labelbox import (
     PerformanceTimeBucket,
     Project,
 )
+from labelbox.schema.user_group import UserGroup
 
 BASE = "https://api.labelbox.com/api/v1/performance"
 
@@ -289,6 +290,42 @@ class TestProjectMetric:
         _, params = sent(client)
         assert params["userIds"] == "user-1,user-2"
         assert params["batchIds"] == "batch-1"
+
+    def test_accepts_user_group_objects(self, client, project):
+        # UserGroup is a pydantic model whose ID is `id`, not `uid`.
+        groups = [
+            UserGroup(client=client, id="group-a", name="Vendor A"),
+            UserGroup(client=client, id="group-b", name="Vendor B"),
+        ]
+
+        Project.get_performance_metric(
+            project,
+            "labels_created",
+            "2026-01-01",
+            "2026-01-07",
+            user_group_ids=groups,
+        )
+
+        _, params = sent(client)
+        assert params["userGroupIds"] == "group-a,group-b"
+
+    @pytest.mark.parametrize(
+        "not_an_id",
+        [42, None, SimpleNamespace(name="no id"), SimpleNamespace(id="")],
+    )
+    def test_refuses_a_filter_value_that_has_no_id(
+        self, client, project, not_an_id
+    ):
+        with pytest.raises(TypeError, match="Expected an ID"):
+            Project.get_performance_metric(
+                project,
+                "labels_created",
+                "2026-01-01",
+                "2026-01-07",
+                user_ids=["user-1", not_an_id],
+            )
+
+        client.connection.get.assert_not_called()
 
     def test_leaves_an_empty_filter_out(self, client, project):
         Project.get_performance_metric(
