@@ -41,12 +41,15 @@ def test_label_update(configured_project_with_label):
     assert label.label == "something else"
 
 
-def test_label_bulk_deletion(configured_project_with_label):
+def test_label_bulk_deletion(configured_project_with_label, label_helpers):
     project, _, _, _ = configured_project_with_label
 
     for _ in range(2):
         # only run twice, already have one label in the fixture
         project.create_label()
+    # A finished label import is not listed by `project.labels()` right away
+    # (the fixture waits for its own label the same way), so wait for all three
+    label_helpers.wait_for_labels(project, 3)
     labels = project.labels()
     l1 = next(labels)
     l2 = next(labels)
