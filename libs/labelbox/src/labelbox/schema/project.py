@@ -1959,7 +1959,7 @@ class Project(DbObject, Updateable, Deletable):
             descending (bool): Sort from high to low. Only used with
                 ``sort_by``.
             page_size (int): Rows fetched per request while iterating, up to
-                200.
+                100.
             use_cache (bool): Pass False to recompute instead of using a
                 result cached within the last few minutes.
 
@@ -2033,7 +2033,7 @@ class Project(DbObject, Updateable, Deletable):
             descending (bool): Sort from high to low. Only used with
                 ``sort_by``.
             page_size (int): Rows fetched per request while iterating, up to
-                200.
+                100.
 
         Returns:
             PerformanceRows[ProjectReviewerPerformance]: The rows, fetched a

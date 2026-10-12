@@ -143,9 +143,12 @@ class PerformanceTimeBucket(_CamelCaseMixin):
 class PerformanceScoreBucket(_CamelCaseMixin):
     """The number of labels whose agreement score falls in one range.
 
+    There are ten equal ranges, from 0 to 0.1 up to 0.9 to 1: fractions,
+    like every score these reports return.
+
     Attributes:
-        range_start (float): Lower bound of the range, inclusive.
-        range_end (float): Upper bound of the range, exclusive.
+        range_start (float): Lower bound of the range, from 0 to 0.9.
+        range_end (float): Upper bound of the range, from 0.1 to 1.
         value (float): How many labels scored in the range.
     """
 

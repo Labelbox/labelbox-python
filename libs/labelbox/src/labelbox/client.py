@@ -2492,7 +2492,7 @@ class Client:
                 are ordered by project, then labeler. Sorting by email is not
                 offered.
             descending (bool): Sort from the highest value down.
-            page_size (int): Rows fetched per request, at most 200.
+            page_size (int): Rows fetched per request, at most 100.
             use_cache (bool): Pass False to read the report again instead of
                 using rows read within the last few minutes. Leave it on
                 while reading a large table, so that every page comes from
