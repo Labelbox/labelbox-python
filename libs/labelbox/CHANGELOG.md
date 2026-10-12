@@ -1,4 +1,11 @@
 # Changelog
+# Version 7.13.0 (2026-10-12)
+## Added
+* Add performance report methods that return the numbers behind a project's Performance dashboard and the workspace Monitor: `Client.get_performance_metrics()`, `Client.get_workspace_performance_metric()`, `Client.get_workspace_labeler_performance()`, `Project.get_performance_metric()`, `Project.get_labeler_performance()`, `Project.get_reviewer_performance()`, and `Project.get_performance_report_download()` ([#2078](https://github.com/Labelbox/labelbox-python/pull/2078))
+* Add `allowed_ip_cidrs` to `Client.create_api_key()` and `ApiKey.create_api_key()` to restrict an API key to a list of IP addresses or CIDR ranges, and expose `ApiKey.allowed_ip_cidrs` ([#2077](https://github.com/Labelbox/labelbox-python/pull/2077))
+## Changed
+* `Client.is_feature_schema_archived()` now includes the HTTP status and response body in the error it raises when the archived status cannot be read ([#2079](https://github.com/Labelbox/labelbox-python/pull/2079))
+
 # Version 7.12.0 (2026-08-25)
 ## Fixed
 * Route embedding metadata operations (`Client.create_embedding()`, `Client.get_embeddings()`, `Client.get_embedding_by_id()`, `Embedding.delete()`) through GraphQL so they work with opaque `lbx_` API keys instead of raising `JSONDecodeError` ([#2074](https://github.com/Labelbox/labelbox-python/pull/2074))
