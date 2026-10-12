@@ -52,17 +52,15 @@ def test_model_run_no_config(rand_gen, model):
     assert model_run.name == name
 
 
-def test_model_run_delete(client, model_run):
-    models_before = list(client.get_models())
-    model_before = models_before[0]
-    before = list(model_before.model_runs())
+def test_model_run_delete(model, model_run):
+    # The model this test created, not the newest in the organization: other
+    # runs of this suite create and delete models there at the same time.
+    before = list(model.model_runs())
+    assert model_run.uid in {mr.uid for mr in before}
 
-    model_run = before[0]
     model_run.delete()
 
-    models_after = list(client.get_models())
-    model_after = models_after[0]
-    after = list(model_after.model_runs())
+    after = list(model.model_runs())
     after_uids = {mr.uid for mr in after}
 
     assert model_run.uid not in after_uids

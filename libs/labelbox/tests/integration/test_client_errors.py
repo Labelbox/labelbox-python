@@ -9,6 +9,13 @@ from google.api_core.exceptions import RetryError
 import labelbox.client
 from labelbox.schema.media_type import MediaType
 
+# Deployed API environments replace the message of every GraphQL validation
+# error with this fixed string, so that schema details (field names, "Did you
+# mean ..." hints) are not exposed to clients. The error code is unchanged.
+# Only an API that does not hide schema details, such as one run locally,
+# still returns the detailed message.
+MASKED_VALIDATION_ERROR_MESSAGE = "GraphQL validation error"
+
 
 def test_missing_api_key():
     key = os.environ.get(lbox.request_client._LABELBOX_API_KEY, None)
@@ -41,7 +48,10 @@ def test_syntax_error(client):
 def test_semantic_error(client):
     with pytest.raises(lbox.exceptions.InvalidQueryError) as excinfo:
         client.execute("query {bbb {id}}", check_naming=False)
-    assert excinfo.value.message.startswith('Cannot query field "bbb"')
+    message = excinfo.value.message
+    assert message == MASKED_VALIDATION_ERROR_MESSAGE or message.startswith(
+        'Cannot query field "bbb"'
+    )
 
 
 def test_timeout_error(client, project):
@@ -59,11 +69,24 @@ def test_timeout_error(client, project):
 
 
 def test_query_complexity_error(client):
-    with pytest.raises(lbox.exceptions.ValidationFailedError) as excinfo:
+    # The complexity limit is a validation rule, so where validation messages
+    # are masked its "Query complexity limit exceeded" message is replaced as
+    # well. The client then has nothing left to tell it apart from any other
+    # validation failure and raises InvalidQueryError; ValidationFailedError is
+    # only reachable against an API that does not hide schema details.
+    with pytest.raises(
+        (
+            lbox.exceptions.InvalidQueryError,
+            lbox.exceptions.ValidationFailedError,
+        )
+    ) as excinfo:
         client.execute(
             "{projects {datasets {dataRows {labels {id}}}}}", check_naming=False
         )
-    assert excinfo.value.message == "Query complexity limit exceeded"
+    if isinstance(excinfo.value, lbox.exceptions.ValidationFailedError):
+        assert excinfo.value.message == "Query complexity limit exceeded"
+    else:
+        assert excinfo.value.message == MASKED_VALIDATION_ERROR_MESSAGE
 
 
 def test_resource_not_found_error(client):

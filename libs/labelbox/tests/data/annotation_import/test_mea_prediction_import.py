@@ -1,3 +1,4 @@
+import time
 import uuid
 from labelbox import parser
 from labelbox.data.annotation_types.annotation import ObjectAnnotation
@@ -25,7 +26,19 @@ from labelbox.schema.export_params import ModelRunExportParams
 
 """
 
+# Every test that creates an MEA prediction import is skipped: the backend
+# rejects the createModelErrorAnalysisPredictionImport mutation, which is the
+# only thing ModelRun.add_predictions() and MEAPredictionImport.create*() call.
+# Tests that only read a model run still work and stay enabled.
+mea_prediction_import_removed = pytest.mark.skip(
+    reason="MEA (Model Error Analysis) prediction import is no longer supported "
+    "by the backend: the prediction import service rejects every import of "
+    "that type, so ModelRun.add_predictions() fails with '9 FAILED_PRECONDITION: "
+    "MEA prediction import has been deprecated' (python-monorepo #2515)."
+)
 
+
+@mea_prediction_import_removed
 @pytest.mark.order(1)
 def test_create_from_objects(
     model_run_with_data_rows,
@@ -54,6 +67,7 @@ def test_create_from_objects(
     )
 
 
+@mea_prediction_import_removed
 def test_create_from_objects_global_key(
     client,
     model_run_with_data_rows,
@@ -83,6 +97,7 @@ def test_create_from_objects_global_key(
     )
 
 
+@mea_prediction_import_removed
 def test_create_from_objects_with_confidence(
     predictions_with_confidence,
     model_run_with_data_rows,
@@ -118,6 +133,7 @@ def test_create_from_objects_with_confidence(
     )
 
 
+@mea_prediction_import_removed
 def test_create_from_objects_all_project_labels(
     model_run_with_all_project_labels,
     object_predictions_for_annotation_import,
@@ -147,24 +163,62 @@ def test_create_from_objects_all_project_labels(
     )
 
 
+def _export_model_run_labels(
+    model_run: ModelRun, expected_data_row_count: int, timeout_seconds=180
+):
+    """The first label of each data row of a model run, once the export has them.
+
+    `upsert_labels` returns when the labels are attached to the model run, and
+    the export catches up a little later: until then a data row comes out with
+    no label for the run. So export again while any is missing, and fail if
+    they have not all arrived in time.
+    """
+    deadline = time.time() + timeout_seconds
+    while True:
+        export_task = model_run.export()
+        export_task.wait_till_done()
+        labels_by_data_row = [
+            (
+                data_row.json["data_row"]["id"],
+                data_row.json["experiments"][model_run.model_id]["runs"][
+                    model_run.uid
+                ]["labels"],
+            )
+            for data_row in export_task.get_buffered_stream()
+        ]
+        if len(labels_by_data_row) >= expected_data_row_count and all(
+            labels for _, labels in labels_by_data_row
+        ):
+            return [
+                (data_row_id, labels[0])
+                for data_row_id, labels in labels_by_data_row
+            ]
+
+        missing = [
+            data_row_id
+            for data_row_id, labels in labels_by_data_row
+            if not labels
+        ]
+        assert time.time() < deadline, (
+            f"After {timeout_seconds}s the export of model run {model_run.uid} "
+            f"had {len(labels_by_data_row)} of {expected_data_row_count} data "
+            f"rows, {len(missing)} of them without a label"
+        )
+        time.sleep(5)
+
+
 def test_model_run_project_labels(
     model_run_with_all_project_labels: ModelRun, model_run_predictions
 ):
     model_run = model_run_with_all_project_labels
-    export_task = model_run.export()
-    export_task.wait_till_done()
-    stream = export_task.get_buffered_stream()
+    expected_data_row_count = len(
+        set(prediction["dataRow"]["id"] for prediction in model_run_predictions)
+    )
 
     # exports to list of tuples (data_row_id, label) needed to adapt test to export v2 instead of export v1 since data rows ids are not at label level in export v2.
-    model_run_exported_labels = [
-        (
-            data_row.json["data_row"]["id"],
-            data_row.json["experiments"][model_run.model_id]["runs"][
-                model_run.uid
-            ]["labels"][0],
-        )
-        for data_row in stream
-    ]
+    model_run_exported_labels = _export_model_run_labels(
+        model_run, expected_data_row_count
+    )
 
     labels_indexed_by_name = {}
 
@@ -196,6 +250,7 @@ def test_model_run_project_labels(
         )
 
 
+@mea_prediction_import_removed
 def test_create_from_label_objects(
     model_run_with_data_rows,
     object_predictions_for_annotation_import,
@@ -266,6 +321,7 @@ def test_create_from_label_objects(
     )
 
 
+@mea_prediction_import_removed
 def test_create_from_local_file(
     tmp_path,
     model_run_with_data_rows,
@@ -301,6 +357,7 @@ def test_create_from_local_file(
     )
 
 
+@mea_prediction_import_removed
 def test_predictions_with_custom_metrics(
     model_run,
     object_predictions_for_annotation_import,
@@ -328,6 +385,7 @@ def test_predictions_with_custom_metrics(
     )
 
 
+@mea_prediction_import_removed
 def test_get(client, model_run_with_data_rows, annotation_import_test_helpers):
     name = str(uuid.uuid4())
     url = "https://storage.googleapis.com/labelbox-public-bucket/predictions_test_v2.ndjson"
@@ -344,6 +402,7 @@ def test_get(client, model_run_with_data_rows, annotation_import_test_helpers):
     annotation_import.wait_until_done()
 
 
+@mea_prediction_import_removed
 @pytest.mark.slow
 def test_wait_till_done(model_run_predictions, model_run_with_data_rows):
     name = str(uuid.uuid4())

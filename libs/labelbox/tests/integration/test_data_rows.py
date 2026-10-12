@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import uuid
 from datetime import datetime, timezone
 from tempfile import NamedTemporaryFile
@@ -1034,6 +1035,38 @@ def _wait_for_task(task, timeout_seconds=600):
     ), f"Task {task.uid} did not complete within {timeout_seconds}s: {task.status}"
 
 
+def _create_data_row_once_global_key_is_released(
+    dataset, data_row_payload, global_key, timeout_seconds=180
+):
+    """Create a data row with the global key of a data row deleted just before.
+
+    The key is not free the moment `delete()` returns: the import looks global
+    keys up in the catalog search index, and the deleted data row leaves that
+    index a little later. Until it has, the import reports the key as a
+    duplicate. So repeat the import while that is the only thing it reports,
+    and fail on any other error or if the key is not released in time.
+    """
+    still_held = f"Duplicate global key: '{global_key}'"
+    sleep_time = 5
+    deadline = time.time() + timeout_seconds
+    while True:
+        task = dataset.create_data_rows([data_row_payload])
+        _wait_for_task(task)
+
+        failed_data_rows = task.failed_data_rows
+        if not failed_data_rows:
+            return task
+
+        messages = [row["message"] for row in failed_data_rows]
+        assert messages == [still_held], f"Unexpected errors: {messages}"
+        if time.time() >= deadline:
+            raise AssertionError(
+                f"Global key '{global_key}' was still reported as a duplicate "
+                f"{timeout_seconds}s after its data row was deleted"
+            )
+        time.sleep(sleep_time)
+
+
 def test_data_row_delete_and_create_with_same_global_key(
     client, dataset, sample_image
 ):
@@ -1065,8 +1098,9 @@ def test_data_row_delete_and_create_with_same_global_key(
     client.get_data_row(new_data_row_id).delete()
 
     # should successfully insert new datarow now
-    task = dataset.create_data_rows([data_row_payload])
-    _wait_for_task(task)
+    task = _create_data_row_once_global_key_is_released(
+        dataset, data_row_payload, global_key_1
+    )
 
     assert task.result[0]["global_key"] == global_key_1
 

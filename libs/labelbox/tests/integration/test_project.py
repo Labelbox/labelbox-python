@@ -95,18 +95,18 @@ def test_update_project_resource_tags(client, rand_gen, data_for_project_test):
     assert tagA.uid is not None
 
     tags = org.get_resource_tags()
-    lenA = len(tags)
-    assert lenA > 0
+    assert tagA.uid in {tag.uid for tag in tags}
 
     tagB = client.get_organization().create_resource_tag(tagB)
     assert tagB.text == textB
     assert "#" + tagB.color == colorB
     assert tagB.uid is not None
 
+    # Look for the two tags themselves, not for a longer list: other runs of
+    # this suite create and delete tags in the same organization meanwhile, so
+    # the number of tags can go either way between two readings.
     tags = client.get_organization().get_resource_tags()
-    lenB = len(tags)
-    assert lenB > 0
-    assert lenB > lenA
+    assert {tagA.uid, tagB.uid} <= {tag.uid for tag in tags}
 
     project_resource_tag = client.get_project(
         p1.uid
