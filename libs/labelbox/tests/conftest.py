@@ -161,6 +161,35 @@ def service_api_key() -> str:
     return service_api_key
 
 
+# The API counts requests per user in a fixed 60 second window and every CI
+# job uses the same API key, so a 429 is the other jobs' traffic and not a
+# defect in the code under test. Reruns come too soon to outlast the window.
+RATE_LIMIT_WINDOW_SECONDS = 60
+RATE_LIMIT_FALLBACK_WAIT_SECONDS = 20
+RATE_LIMIT_MAX_WAITS = 4
+
+
+def wait_out_rate_limit(send):
+    """Wraps `requests.Session.send` to resend a request answered with 429."""
+
+    def send_and_wait(request, **kwargs):
+        for _ in range(RATE_LIMIT_MAX_WAITS):
+            response = send(request, **kwargs)
+            if response.status_code != requests.codes.too_many_requests:
+                return response
+            # Retry-After is the time left in the window, if the API sends it.
+            wait = RATE_LIMIT_FALLBACK_WAIT_SECONDS
+            retry_after = response.headers.get("Retry-After", "")
+            if retry_after.isdigit():
+                wait = min(int(retry_after), RATE_LIMIT_WINDOW_SECONDS) + 1
+            # Without a trace in the log a wait only looks like a slow test.
+            print(f"API rate limit reached, resending in {wait} seconds")
+            time.sleep(wait)
+        return send(request, **kwargs)
+
+    return send_and_wait
+
+
 class IntegrationClient(Client):
     def __init__(self, environ: str) -> None:
         api_url = graphql_url(environ)
@@ -173,6 +202,8 @@ class IntegrationClient(Client):
             rest_endpoint=rest_endpoint,
         )
         self.queries = []
+        # GraphQL and REST calls both leave through this session's send().
+        self.connection.send = wait_out_rate_limit(self.connection.send)
 
     def execute(self, query=None, params=None, check_naming=True, **kwargs):
         if check_naming and query is not None:
@@ -183,6 +214,21 @@ class IntegrationClient(Client):
         if not kwargs.get("timeout"):
             kwargs["timeout"] = 30.0
         return super().execute(query, params, **kwargs)
+
+    def _create_project(self, input) -> Project:
+        # createProject returns the project even when the server failed to
+        # finish setting it up (seen when many are created at once). It then
+        # has no editor and connect_ontology cannot attach one: create again.
+        for _ in range(2):
+            project = super()._create_project(input)
+            if project.labeling_frontend() is not None:
+                return project
+            # The ID is what the API's logs can be searched for.
+            print(f"Project {project.uid} has no editor, creating it again")
+            project.delete()
+            # Jitter, so workers that failed together do not retry together.
+            time.sleep(randint(10, 30) / 10)
+        return super()._create_project(input)
 
 
 class AdminClient(Client):
