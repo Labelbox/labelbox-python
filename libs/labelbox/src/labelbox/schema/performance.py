@@ -184,6 +184,10 @@ class PerformanceMetricSeries(_CamelCaseMixin):
             organizations a workspace series was narrowed to, if any.
         member_type (Optional[str]): The member type a workspace series was
             narrowed to, if any: ``"internal"`` or ``"external"``.
+        skipped_project_ids (Optional[List[str]]): On a workspace series
+            narrowed by owning organization, the projects of those owners that
+            are not counted because you may not view everyone's performance
+            in them. Empty when none were left out.
     """
 
     metric: str
@@ -199,6 +203,7 @@ class PerformanceMetricSeries(_CamelCaseMixin):
     project_ids: Optional[List[str]] = None
     owner_organization_ids: Optional[List[str]] = None
     member_type: Optional[str] = None
+    skipped_project_ids: Optional[List[str]] = None
 
 
 class ProjectLabelerPerformance(_CamelCaseMixin):

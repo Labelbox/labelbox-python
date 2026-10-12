@@ -848,6 +848,7 @@ class TestWorkspace:
                 "projectIds": None,
                 "ownerOrganizationIds": ["org-2"],
                 "memberType": "external",
+                "skippedProjectIds": ["project-9"],
             }
         )
 
@@ -864,6 +865,7 @@ class TestWorkspace:
         assert params["ownerOrganizationIds"] == "org-2"
         assert series.member_type == "external"
         assert series.owner_organization_ids == ["org-2"]
+        assert series.skipped_project_ids == ["project-9"]
 
     def test_sends_neither_narrowing_unless_asked(self, client):
         client.get_workspace_performance_metric(
