@@ -1862,7 +1862,8 @@ class Client:
             raise ResourceNotFoundError(Ontology, ontology_id)
         else:
             raise LabelboxError(
-                "Failed to get the feature schema archived status."
+                "Failed to get the feature schema archived status. "
+                f"The server answered {response.status_code}: {response.text}"
             )
 
     def get_model_slice(self, slice_id) -> ModelSlice:
