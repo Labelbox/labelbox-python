@@ -1030,9 +1030,9 @@ def _wait_for_task(task, timeout_seconds=600):
     task.wait_till_done(timeout_seconds=timeout_seconds)
     if task.status == "IN_PROGRESS":
         task.refresh()
-    assert task.status == "COMPLETE", (
-        f"Task {task.uid} did not complete within {timeout_seconds}s: {task.status}"
-    )
+    assert (
+        task.status == "COMPLETE"
+    ), f"Task {task.uid} did not complete within {timeout_seconds}s: {task.status}"
 
 
 def _create_data_row_once_global_key_is_released(
