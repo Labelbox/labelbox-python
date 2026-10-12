@@ -2,8 +2,9 @@ from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
 
 import pytest
-from lbox.exceptions import LabelboxError
+from lbox.exceptions import LabelboxError, MalformedQueryException
 
+from labelbox import Client
 from tests.embedding_cleanup import (
     EMBEDDING_CAP_ERROR_SNIPPET,
     EMBEDDING_NAME_PREFIX_V2,
@@ -42,8 +43,21 @@ def _v2_name(created_at: int, suffix: str = "0123456789") -> str:
     return f"{EMBEDDING_NAME_PREFIX_V2}{created_at}-{suffix}"
 
 
-def _cap_error() -> LabelboxError:
-    return LabelboxError(f"{EMBEDDING_CAP_ERROR_SNIPPET}: 10")
+# The message the API answers with when the organization is at the cap.
+CAP_MESSAGE = f"{EMBEDDING_CAP_ERROR_SNIPPET} reached : 10 per organization"
+
+
+def _cap_error() -> MalformedQueryException:
+    # The API reports the cap with the MALFORMED_REQUEST code, which the SDK
+    # raises as MalformedQueryException: not a LabelboxError.
+    return MalformedQueryException(CAP_MESSAGE)
+
+
+def _graphql_response(body: dict) -> Mock:
+    response = Mock()
+    response.status_code = 200
+    response.json.return_value = body
+    return response
 
 
 def test_build_and_parse_embedding_name_round_trip():
@@ -96,7 +110,11 @@ def test_select_stale_embeddings_keeps_only_expired_custom_v2_names():
 
 def test_embedding_cap_error_matcher_is_fail_closed():
     assert is_embedding_cap_error(_cap_error())
+    assert is_embedding_cap_error(LabelboxError(CAP_MESSAGE))
     assert not is_embedding_cap_error(LabelboxError("permission denied"))
+    assert not is_embedding_cap_error(
+        MalformedQueryException("Name contains invalid characters")
+    )
 
 
 def test_workflow_boolean_input_is_parsed_defensively():
@@ -140,6 +158,56 @@ def test_heal_retries_twice_then_creates_and_deletes_only_stale_v2():
     assert sleep.call_args_list == [call(4), call(4)]
 
 
+def test_heal_sweeps_on_the_cap_error_client_create_embedding_raises():
+    # Goes through Client.execute, so the heal is checked against the
+    # exception the SDK raises for the API's answer, not against a stand-in.
+    now_value = 1_725_000_000
+    stale = _embedding(
+        "stale",
+        _v2_name(now_value - EMBEDDING_STALE_TTL_SECONDS - 1),
+    )
+    delete = Mock()
+    client = Client(api_key="api_key")
+    responses = [
+        _graphql_response(
+            {
+                "errors": [
+                    {
+                        "message": CAP_MESSAGE,
+                        "extensions": {"code": "MALFORMED_REQUEST"},
+                    }
+                ]
+            }
+        ),
+        _graphql_response(
+            {
+                "data": {
+                    "createEmbedding": {
+                        "id": "created",
+                        "name": "custom",
+                        "dims": 8,
+                        "custom": True,
+                    }
+                }
+            }
+        ),
+    ]
+
+    with patch.object(client.connection, "send", side_effect=responses):
+        embedding = create_embedding_with_heal(
+            create_embedding=lambda: client.create_embedding("custom", 8),
+            list_embeddings=Mock(return_value=[stale]),
+            delete_embedding=delete,
+            sleep=Mock(),
+            now=Mock(return_value=now_value),
+            retry_delay=Mock(return_value=4),
+            print_fn=Mock(),
+        )
+
+    assert embedding.id == "created"
+    delete.assert_called_once_with(stale)
+
+
 def test_heal_third_cap_error_is_terminal_without_another_sweep_or_sleep():
     final_error = _cap_error()
     create = Mock(side_effect=[_cap_error(), _cap_error(), final_error])
@@ -148,7 +216,7 @@ def test_heal_third_cap_error_is_terminal_without_another_sweep_or_sleep():
     sleep = Mock()
     print_fn = Mock()
 
-    with pytest.raises(LabelboxError) as raised:
+    with pytest.raises(MalformedQueryException) as raised:
         create_embedding_with_heal(
             create_embedding=create,
             list_embeddings=list_embeddings,
@@ -170,14 +238,21 @@ def test_heal_third_cap_error_is_terminal_without_another_sweep_or_sleep():
     )
 
 
-def test_heal_non_cap_error_is_reraised_without_side_effects():
-    non_cap_error = LabelboxError("permission denied")
+@pytest.mark.parametrize(
+    "non_cap_error",
+    [
+        LabelboxError("permission denied"),
+        MalformedQueryException("Name contains invalid characters"),
+    ],
+    ids=["LabelboxError", "MalformedQueryException"],
+)
+def test_heal_non_cap_error_is_reraised_without_side_effects(non_cap_error):
     create = Mock(side_effect=non_cap_error)
     list_embeddings = Mock()
     delete = Mock()
     sleep = Mock()
 
-    with pytest.raises(LabelboxError) as raised:
+    with pytest.raises(type(non_cap_error)) as raised:
         create_embedding_with_heal(
             create_embedding=create,
             list_embeddings=list_embeddings,
@@ -257,3 +332,38 @@ def test_cleanup_real_run_attempts_every_candidate_and_reports_failures():
     assert run_cleanup(client, dry_run=False, now=1_725_000_000) == 1
     first.delete.assert_called_once_with()
     second.delete.assert_called_once_with()
+
+
+@pytest.mark.parametrize(
+    "already_gone",
+    [
+        MalformedQueryException("Embedding not found"),
+        LabelboxError("Embedding not found"),
+    ],
+)
+def test_heal_carries_on_when_a_stale_embedding_is_already_gone(already_gone):
+    # Jobs for several Python versions hit the cap together and sweep the same
+    # stale names, so a delete can find its embedding already deleted. The
+    # delete is a GraphQL mutation, so it can fail with either kind of error.
+    now_value = 1_725_000_000
+    gone = _embedding(
+        "gone", _v2_name(now_value - EMBEDDING_STALE_TTL_SECONDS - 2)
+    )
+    stale = _embedding(
+        "stale", _v2_name(now_value - EMBEDDING_STALE_TTL_SECONDS - 1)
+    )
+    created = object()
+    delete = Mock(side_effect=[already_gone, None])
+
+    result = create_embedding_with_heal(
+        create_embedding=Mock(side_effect=[_cap_error(), created]),
+        list_embeddings=Mock(return_value=[gone, stale]),
+        delete_embedding=delete,
+        sleep=Mock(),
+        now=Mock(return_value=now_value),
+        retry_delay=Mock(return_value=4),
+        print_fn=Mock(),
+    )
+
+    assert result is created
+    assert delete.call_args_list == [call(gone), call(stale)]

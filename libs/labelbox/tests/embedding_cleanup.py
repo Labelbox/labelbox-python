@@ -5,10 +5,15 @@ import uuid
 from random import uniform
 from typing import Any, Callable, Iterable, List, Optional
 
-from lbox.exceptions import LabelboxError
+from lbox.exceptions import LabelboxError, MalformedQueryException
 
 EMBEDDING_NAME_PREFIX_V2 = "sdk-int-ci-v2-"
 EMBEDDING_CAP_ERROR_SNIPPET = "Max limit of custom embeddings"
+# Creating and deleting an embedding are GraphQL mutations, and the API
+# reports the cap with the MALFORMED_REQUEST code. The SDK raises that as
+# MalformedQueryException, which does not derive from LabelboxError, so
+# catching LabelboxError alone lets the cap error through unhealed.
+EMBEDDING_CAP_ERROR_TYPES = (LabelboxError, MalformedQueryException)
 EMBEDDING_STALE_TTL_SECONDS = 12 * 3600
 LEGACY_NAME_RE = re.compile(r"^sdk-int-[0-9a-f]{32}$")
 
@@ -40,7 +45,7 @@ def select_stale_embeddings(embeddings: Iterable[Any], now: float) -> List[Any]:
     return stale_embeddings
 
 
-def is_embedding_cap_error(error: LabelboxError) -> bool:
+def is_embedding_cap_error(error: Exception) -> bool:
     return EMBEDDING_CAP_ERROR_SNIPPET in str(error)
 
 
@@ -59,7 +64,7 @@ def create_embedding_with_heal(
     for attempt in range(1, _MAX_CREATE_ATTEMPTS + 1):
         try:
             return create_embedding()
-        except LabelboxError as error:
+        except EMBEDDING_CAP_ERROR_TYPES as error:
             if not is_embedding_cap_error(error):
                 raise
 
@@ -77,8 +82,11 @@ def create_embedding_with_heal(
             for embedding in stale_embeddings:
                 try:
                     delete_embedding(embedding)
-                except LabelboxError:
+                except EMBEDDING_CAP_ERROR_TYPES:
                     # Another worker may have deleted the same stale embedding.
+                    # Several jobs hit the cap at once and sweep the same
+                    # names, and the delete is a GraphQL mutation too, so it
+                    # can fail with either kind of error.
                     pass
 
             last_swept_count = len(stale_embeddings)
