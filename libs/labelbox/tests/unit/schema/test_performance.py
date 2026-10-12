@@ -976,6 +976,34 @@ class TestWorkspace:
         assert params["order"] == "desc"
         assert params["useCache"] == "false"
 
+    def test_reads_a_row_whose_project_can_no_longer_be_found(self, client):
+        client.connection.get.return_value = response(
+            workspace_table(
+                [
+                    workspace_labeler(
+                        "user-1",
+                        "project-gone",
+                        projectName=None,
+                        projectOrganizationId=None,
+                        projectOrganizationName=None,
+                        isProjectDeleted=True,
+                    )
+                ],
+                1,
+            )
+        )
+
+        (row,) = client.get_workspace_labeler_performance(
+            "2026-01-01", "2026-01-07"
+        )
+
+        assert row.project_id == "project-gone"
+        assert row.project_name is None
+        assert row.project_organization_id is None
+        assert row.project_organization_name is None
+        assert row.is_project_deleted is True
+        assert row.labels_created == 12
+
     def test_reads_a_row_whose_member_no_longer_exists(self, client):
         client.connection.get.return_value = response(
             workspace_table(

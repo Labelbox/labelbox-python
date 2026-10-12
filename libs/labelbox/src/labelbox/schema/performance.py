@@ -83,6 +83,9 @@ class PerformanceMemberType(str, Enum):
     account belongs to another organization, or an Alignerr account; the
     Monitor calls these "Workforce members". ``INTERNAL`` is a member of your
     own organization.
+
+    An Alignerr account is external to everyone, Alignerr's own organization
+    included.
     """
 
     INTERNAL = "internal"
@@ -317,10 +320,12 @@ class WorkspaceLabelerPerformance(_CamelCaseMixin):
             :class:`PerformanceMemberType`). ``None`` if the account no
             longer exists.
         project_id (str)
-        project_name (str)
-        project_organization_id (str): The organization that owns the
-            project. It differs from yours for a project shared with you.
-        project_organization_name (str)
+        project_name (Optional[str]): ``None`` for a project that can no
+            longer be found. Its figures are still counted.
+        project_organization_id (Optional[str]): The organization that owns
+            the project. It differs from yours for a project shared with you,
+            and is ``None`` for a project that can no longer be found.
+        project_organization_name (Optional[str])
         is_project_deleted (bool)
         labels_created (int)
         labels_skipped (int)
@@ -344,9 +349,9 @@ class WorkspaceLabelerPerformance(_CamelCaseMixin):
     email: str
     member_type: Optional[str] = None
     project_id: str
-    project_name: str
-    project_organization_id: str
-    project_organization_name: str
+    project_name: Optional[str] = None
+    project_organization_id: Optional[str] = None
+    project_organization_name: Optional[str] = None
     is_project_deleted: bool
     labels_created: int
     labels_skipped: int
