@@ -111,6 +111,7 @@ from labelbox.schema.performance import (
     PerformanceReportDownload,
     PerformanceRows,
     PerformanceScoreBucket,
+    PerformanceTableChangedError,
     PerformanceTimeBucket,
     ProjectLabelerPerformance,
     ProjectReviewerPerformance,

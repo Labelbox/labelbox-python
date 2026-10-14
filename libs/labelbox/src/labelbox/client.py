@@ -2365,6 +2365,8 @@ class Client:
             Union[_performance.PerformanceMemberType, str]
         ] = None,
         owner_organization_ids: Optional[List[str]] = None,
+        member_organization_ids: Optional[List[str]] = None,
+        user_group_ids: Optional[List[str]] = None,
     ) -> _performance.PerformanceMetricSeries:
         """Returns one performance metric across the workspace.
 
@@ -2398,10 +2400,24 @@ class Client:
             owner_organization_ids (Optional[List[str]]): Count only projects
                 owned by these organizations. Use it to separate the projects
                 you own from the ones shared with you.
+            member_organization_ids (Optional[List[str]]): Count only work by
+                members whose account belongs to one of these organizations,
+                for example a workforce provider's. Up to 100.
+            user_group_ids (Optional[List[str]]): Count only work by the
+                current members of these user groups of your organization. Up
+                to 25 groups, with at most 5,000 members between them. The
+                groups count only if you have the organization-wide
+                permission to view user groups, and a restricted API key has
+                it too. Without it no group adds anyone, and every value is
+                zero; no error is raised. A group of another organization
+                adds no one either.
 
-        ``member_type`` and ``owner_organization_ids`` report on other
+        ``member_type``, ``owner_organization_ids``,
+        ``member_organization_ids`` and ``user_group_ids`` report on other
         members, so they need permission to view all performance in every
-        project the report covers.
+        project the report covers. Filters narrow each other: only work that
+        matches all of them is counted, and if none does, every value is
+        zero. It is never the unfiltered report.
 
         Returns:
             PerformanceMetricSeries: The metric as a value per interval.
@@ -2412,7 +2428,8 @@ class Client:
             lbox.exceptions.AuthorizationError: You may not view performance
                 across the organization, or not everyone's in a project the
                 report covers.
-            lbox.exceptions.InvalidQueryError: A parameter is not valid.
+            lbox.exceptions.InvalidQueryError: A parameter is not valid, or
+                the user groups have more than 5,000 members between them.
             ValueError: A filter was given as an empty list. Pass ``None``
                 to leave a filter off; an empty list is not read as one.
 
@@ -2426,6 +2443,11 @@ class Client:
             >>> series = client.get_workspace_performance_metric(
             >>>     "labels_created", "2026-01-01", "2026-01-31",
             >>>     member_type="external")
+            >>>
+            >>> # The same, for the members of one user group.
+            >>> series = client.get_workspace_performance_metric(
+            >>>     "labels_created", "2026-01-01", "2026-01-31",
+            >>>     user_group_ids=[group.id])
         """
         return _performance.get_workspace_metric(
             self,
@@ -2440,6 +2462,8 @@ class Client:
             use_cache=use_cache,
             member_type=member_type,
             owner_organization_ids=owner_organization_ids,
+            member_organization_ids=member_organization_ids,
+            user_group_ids=user_group_ids,
         )
 
     def get_workspace_labeler_performance(
@@ -2460,6 +2484,8 @@ class Client:
         descending: bool = False,
         page_size: int = 50,
         use_cache: bool = True,
+        member_organization_ids: Optional[List[str]] = None,
+        user_group_ids: Optional[List[str]] = None,
     ) -> _performance.PerformanceRows[_performance.WorkspaceLabelerPerformance]:
         """Returns per-labeler totals across the workspace.
 
@@ -2467,8 +2493,9 @@ class Client:
         labeler on each project they worked on in the period. It covers the
         projects your organization owns and the ones other organizations
         share with it. Each row says which organization owns the project
-        (``project_organization_id``) and whether the labeler is one of your
-        own members (``member_type``).
+        (``project_organization_id``), whether the labeler is one of your
+        own members (``member_type``), and which organization the labeler's
+        account belongs to (``member_organization_id``).
 
         Args:
             start_date (date, datetime or str): First day of the period, in
@@ -2490,14 +2517,31 @@ class Client:
                 projects owned by these organizations.
             sort_by (Optional[str]): A column to sort by, named as the row's
                 attribute, for example ``"labels_created"``. Without it, rows
-                are ordered by project, then labeler. Sorting by email is not
-                offered.
+                are ordered by project, then labeler. Sorting by email or by
+                member organization is not offered.
             descending (bool): Sort from the highest value down.
             page_size (int): Rows fetched per request, at most 100.
             use_cache (bool): Pass False to read the report again instead of
                 using rows read within the last few minutes. Leave it on
-                while reading a large table, so that every page comes from
-                the same rows.
+                while reading a large table, so that the pages come from the
+                same rows while those are kept; see :class:`PerformanceRows`.
+            member_organization_ids (Optional[List[str]]): Return only
+                members whose account belongs to one of these organizations,
+                for example a workforce provider's. Up to 100.
+            user_group_ids (Optional[List[str]]): Return only the current
+                members of these user groups of your organization. Up to 25
+                groups, with at most 5,000 members between them. The groups
+                count only if you have the organization-wide permission to
+                view user groups, and a restricted API key has it too.
+                Without it no group adds anyone, and no rows are returned; no
+                error is raised. A group of another organization adds no one
+                either. Who is in the groups is worked out for each page; see
+                :class:`PerformanceRows`.
+
+        Filters narrow each other: a row is returned only if it matches all
+        of them. If you may view only your own performance, you get your own
+        rows, and with ``user_group_ids`` only if you are in one of the
+        groups.
 
         Returns:
             PerformanceRows[WorkspaceLabelerPerformance]: One row per labeler
@@ -2509,7 +2553,8 @@ class Client:
                 you can see.
             lbox.exceptions.AuthorizationError: You may not view performance
                 across the organization.
-            lbox.exceptions.InvalidQueryError: A parameter is not valid.
+            lbox.exceptions.InvalidQueryError: A parameter is not valid, or
+                the user groups have more than 5,000 members between them.
             ValueError: A filter was given as an empty list. Pass ``None``
                 to leave a filter off; an empty list is not read as one.
 
@@ -2519,6 +2564,15 @@ class Client:
             >>> print(rows.total)
             >>> for row in rows:
             >>>     print(row.project_name, row.email, row.labels_created)
+            >>>
+            >>> # Totals by vendor organization. Names are not unique and
+            >>> # can be masked, so the totals are kept by ID.
+            >>> from collections import Counter
+            >>> labels, names = Counter(), {}
+            >>> for row in client.get_workspace_labeler_performance(
+            >>>         "2026-01-01", "2026-01-31", member_type="external"):
+            >>>     labels[row.member_organization_id] += row.labels_created
+            >>>     names[row.member_organization_id] = row.member_organization_name
         """
         return _performance.get_workspace_labelers(
             self,
@@ -2534,6 +2588,8 @@ class Client:
             descending=descending,
             page_size=page_size,
             use_cache=use_cache,
+            member_organization_ids=member_organization_ids,
+            user_group_ids=user_group_ids,
         )
 
     def get_task_by_id(self, task_id: str) -> Union[Task, DataUpsertTask]:

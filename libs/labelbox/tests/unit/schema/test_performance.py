@@ -23,6 +23,7 @@ from labelbox import (
     PerformanceInterval,
     PerformanceMemberType,
     PerformanceScoreBucket,
+    PerformanceTableChangedError,
     PerformanceTimeBucket,
     Project,
 )
@@ -432,7 +433,14 @@ class TestProjectMetric:
         client.connection.get.assert_not_called()
 
     @pytest.mark.parametrize(
-        "argument", ["project_ids", "owner_organization_ids", "user_ids"]
+        "argument",
+        [
+            "project_ids",
+            "owner_organization_ids",
+            "user_ids",
+            "member_organization_ids",
+            "user_group_ids",
+        ],
     )
     def test_refuses_an_empty_workspace_filter_too(self, client, argument):
         with pytest.raises(ValueError, match=f"{argument} is empty"):
@@ -571,6 +579,30 @@ class TestProjectLabelers:
         )
 
         assert [row.user_id for row in rows] == ["user-1"]
+        assert client.connection.get.call_count == 2
+
+    def test_says_when_the_table_changed_between_pages(self, client, project):
+        # A member joined while the table was read: user-1 moves to page 2.
+        client.connection.get.side_effect = [
+            response(table([labeler("user-1"), labeler("user-2")], total=4)),
+            response(
+                table([labeler("user-1"), labeler("user-2")], total=5, page=2)
+            ),
+        ]
+
+        rows = Project.get_labeler_performance(
+            project, "2026-01-01", "2026-01-07", page_size=2
+        )
+        read = []
+        with pytest.raises(
+            PerformanceTableChangedError,
+            match="page 1 counted 4 rows and page 2 counts 5",
+        ):
+            for row in rows:
+                read.append(row.user_id)
+
+        # The first page was returned before the change could be seen.
+        assert read == ["user-1", "user-2"]
         assert client.connection.get.call_count == 2
 
     def test_reads_the_total_and_cache_time_from_the_first_page_once(
@@ -867,14 +899,120 @@ class TestWorkspace:
         assert series.owner_organization_ids == ["org-2"]
         assert series.skipped_project_ids == ["project-9"]
 
-    def test_sends_neither_narrowing_unless_asked(self, client):
+    def test_sends_no_narrowing_unless_asked(self, client):
         client.get_workspace_performance_metric(
             "labels_created", "2026-01-01", "2026-01-07"
         )
+        client.connection.get.return_value = response(workspace_table([], 0))
+        list(
+            client.get_workspace_labeler_performance("2026-01-01", "2026-01-07")
+        )
+
+        for call in (0, 1):
+            _, params = sent(client, call)
+            assert "memberType" not in params
+            assert "ownerOrganizationIds" not in params
+            assert "memberOrganizationIds" not in params
+            assert "userGroupIds" not in params
+
+    def test_narrows_a_metric_by_user_group_and_member_organization(
+        self, client
+    ):
+        client.connection.get.return_value = response(
+            {
+                **{k: v for k, v in SERIES.items() if k != "projectId"},
+                "organizationId": "org-1",
+                "projectIds": None,
+                "ownerOrganizationIds": None,
+                "memberOrganizationIds": ["org-2", "org-3"],
+                "memberType": None,
+                "userGroupIds": ["group-a", "GROUP-B"],
+                "skippedProjectIds": [],
+            }
+        )
+
+        series = client.get_workspace_performance_metric(
+            "labels_created",
+            "2026-01-01",
+            "2026-01-07",
+            member_organization_ids=["org-2", SimpleNamespace(uid="org-3")],
+            # UserGroup is a pydantic model whose ID is `id`, not `uid`.
+            user_group_ids=[
+                UserGroup(client=client, id="group-a", name="Vendor A"),
+                "GROUP-B",
+            ],
+        )
 
         _, params = sent(client)
-        assert "memberType" not in params
-        assert "ownerOrganizationIds" not in params
+        assert params["memberOrganizationIds"] == "org-2,org-3"
+        assert params["userGroupIds"] == "group-a,GROUP-B"
+        assert series.member_organization_ids == ["org-2", "org-3"]
+        # Echoed as sent.
+        assert series.user_group_ids == ["group-a", "GROUP-B"]
+
+    def test_says_when_a_group_filtered_table_changed_between_pages(
+        self, client
+    ):
+        # Group membership is worked out for every page; one member left.
+        client.connection.get.side_effect = [
+            response(
+                workspace_table(
+                    [
+                        workspace_labeler("user-1", "project-1"),
+                        workspace_labeler("user-2", "project-1"),
+                    ],
+                    total=3,
+                )
+            ),
+            response(workspace_table([], total=2, page=2)),
+        ]
+
+        rows = client.get_workspace_labeler_performance(
+            "2026-01-01", "2026-01-07", user_group_ids=["group-a"], page_size=2
+        )
+
+        with pytest.raises(PerformanceTableChangedError, match="Read it again"):
+            list(rows)
+
+    def test_reads_a_metric_from_an_api_that_does_not_echo_them(self, client):
+        client.connection.get.return_value = response(
+            {
+                **{k: v for k, v in SERIES.items() if k != "projectId"},
+                "organizationId": "org-1",
+            }
+        )
+
+        series = client.get_workspace_performance_metric(
+            "labels_created", "2026-01-01", "2026-01-07"
+        )
+
+        assert series.member_organization_ids is None
+        assert series.user_group_ids is None
+
+    def test_reports_too_many_group_members_as_an_invalid_query(self, client):
+        client.connection.get.return_value = response(
+            {
+                "statusCode": 400,
+                "error": "Bad Request",
+                "message": "The selected user groups have 5200 members; a "
+                "performance report can be filtered by at most 5000",
+                "details": [
+                    {
+                        "parameter": "userGroupIds",
+                        "message": "selects 5200 members; at most 5000 can "
+                        "be reported on",
+                    }
+                ],
+            },
+            status=400,
+        )
+
+        with pytest.raises(InvalidQueryError, match="userGroupIds selects"):
+            list(
+                client.get_workspace_labeler_performance(
+                    "2026-01-01", "2026-01-07", user_group_ids=["group-a"]
+                )
+            )
 
     def test_returns_a_row_per_labeler_and_project(self, client):
         client.connection.get.return_value = response(
@@ -978,6 +1116,39 @@ class TestWorkspace:
         assert params["order"] == "desc"
         assert params["useCache"] == "false"
 
+    def test_narrows_the_workspace_table_by_user_group_and_member_organization(
+        self, client
+    ):
+        client.connection.get.return_value = response(
+            workspace_table(
+                [
+                    workspace_labeler(
+                        "user-1",
+                        "project-1",
+                        memberType="external",
+                        memberOrganizationId="org-2",
+                        memberOrganizationName="Vendor org",
+                    )
+                ],
+                1,
+            )
+        )
+
+        (row,) = client.get_workspace_labeler_performance(
+            "2026-01-01",
+            "2026-01-07",
+            member_organization_ids=["org-2"],
+            user_group_ids=[
+                UserGroup(client=client, id="group-a", name="Vendor A")
+            ],
+        )
+
+        _, params = sent(client)
+        assert params["memberOrganizationIds"] == "org-2"
+        assert params["userGroupIds"] == "group-a"
+        assert row.member_organization_id == "org-2"
+        assert row.member_organization_name == "Vendor org"
+
     def test_reads_a_row_whose_project_can_no_longer_be_found(self, client):
         client.connection.get.return_value = response(
             workspace_table(
@@ -1062,6 +1233,96 @@ class TestMemberType:
         )
 
         assert row.member_type is None
+        assert row.member_organization_id is None
+        assert row.member_organization_name is None
+
+
+class TestMemberOrganization:
+    def test_says_whose_organization_each_member_belongs_to(
+        self, client, project
+    ):
+        client.connection.get.side_effect = [
+            response(
+                table(
+                    [
+                        {
+                            **labeler("user-1"),
+                            "memberType": "internal",
+                            "memberOrganizationId": "org-1",
+                            "memberOrganizationName": "Org one",
+                        },
+                        {
+                            **labeler("user-2"),
+                            "memberType": "external",
+                            "memberOrganizationId": "org-2",
+                            # Masked for a caller who may not see it.
+                            "memberOrganizationName": "org.name.org-2",
+                        },
+                    ],
+                    total=2,
+                )
+            ),
+            response(
+                table(
+                    [
+                        {
+                            **REVIEWER,
+                            "memberType": "external",
+                            "memberOrganizationId": "org-2",
+                            "memberOrganizationName": "Vendor org",
+                        }
+                    ],
+                    total=1,
+                )
+            ),
+        ]
+
+        labelers = list(
+            Project.get_labeler_performance(project, "2026-01-01", "2026-01-07")
+        )
+        reviewers = list(
+            Project.get_reviewer_performance(
+                project, "2026-01-01", "2026-01-07"
+            )
+        )
+
+        assert [
+            (row.member_organization_id, row.member_organization_name)
+            for row in labelers
+        ] == [("org-1", "Org one"), ("org-2", "org.name.org-2")]
+        assert reviewers[0].member_organization_id == "org-2"
+        assert reviewers[0].member_organization_name == "Vendor org"
+
+    def test_reads_a_member_whose_account_or_organization_is_gone(self, client):
+        client.connection.get.return_value = response(
+            workspace_table(
+                [
+                    workspace_labeler(
+                        "user-gone",
+                        "project-1",
+                        memberType=None,
+                        memberOrganizationId=None,
+                        memberOrganizationName=None,
+                    ),
+                    workspace_labeler(
+                        "user-2",
+                        "project-1",
+                        memberOrganizationId="org-gone",
+                        memberOrganizationName=None,
+                    ),
+                ],
+                2,
+            )
+        )
+
+        gone, orphaned = client.get_workspace_labeler_performance(
+            "2026-01-01", "2026-01-07"
+        )
+
+        assert gone.member_organization_id is None
+        assert gone.member_organization_name is None
+        assert orphaned.member_organization_id == "org-gone"
+        assert orphaned.member_organization_name is None
 
 
 class TestRetries:
