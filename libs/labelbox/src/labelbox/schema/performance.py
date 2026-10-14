@@ -188,6 +188,10 @@ class PerformanceMetricSeries(_CamelCaseMixin):
             narrowed by owning organization, the projects of those owners that
             are not counted because you may not view everyone's performance
             in them. Empty when none were left out.
+        member_organization_ids (Optional[List[str]]): The member
+            organizations a workspace series was narrowed to, if any.
+        user_group_ids (Optional[List[str]]): The user groups a workspace
+            series was narrowed to, if any, as they were sent.
     """
 
     metric: str
@@ -204,6 +208,8 @@ class PerformanceMetricSeries(_CamelCaseMixin):
     owner_organization_ids: Optional[List[str]] = None
     member_type: Optional[str] = None
     skipped_project_ids: Optional[List[str]] = None
+    member_organization_ids: Optional[List[str]] = None
+    user_group_ids: Optional[List[str]] = None
 
 
 class ProjectLabelerPerformance(_CamelCaseMixin):
@@ -221,6 +227,14 @@ class ProjectLabelerPerformance(_CamelCaseMixin):
             organization, ``"external"`` for a member of another one (see
             :class:`PerformanceMemberType`). ``None`` if the account no
             longer exists.
+        member_organization_id (Optional[str]): The organization the
+            member's account belongs to: yours, or another one, such as a
+            workforce provider's or, if you are a workforce provider, a
+            customer's. It is the same whoever asks. ``None`` if the account
+            no longer exists.
+        member_organization_name (Optional[str]): That organization's name,
+            or ``org.name.<id>`` if it is masked for you. ``None`` if the
+            organization can no longer be found.
         labels_created (int)
         labels_skipped (int)
         member_total_time (float)
@@ -244,6 +258,8 @@ class ProjectLabelerPerformance(_CamelCaseMixin):
     project_id: str
     email: str
     member_type: Optional[str] = None
+    member_organization_id: Optional[str] = None
+    member_organization_name: Optional[str] = None
     labels_created: int
     labels_skipped: int
     member_total_time: float
@@ -278,6 +294,14 @@ class ProjectReviewerPerformance(_CamelCaseMixin):
             organization, ``"external"`` for a member of another one (see
             :class:`PerformanceMemberType`). ``None`` if the account no
             longer exists.
+        member_organization_id (Optional[str]): The organization the
+            member's account belongs to: yours, or another one, such as a
+            workforce provider's or, if you are a workforce provider, a
+            customer's. It is the same whoever asks. ``None`` if the account
+            no longer exists.
+        member_organization_name (Optional[str]): That organization's name,
+            or ``org.name.<id>`` if it is masked for you. ``None`` if the
+            organization can no longer be found.
         labels_reviewed (int)
         labels_reworked (int)
         member_total_time (float)
@@ -294,6 +318,8 @@ class ProjectReviewerPerformance(_CamelCaseMixin):
     project_id: str
     email: str
     member_type: Optional[str] = None
+    member_organization_id: Optional[str] = None
+    member_organization_name: Optional[str] = None
     labels_reviewed: int
     labels_reworked: int
     member_total_time: float
@@ -324,6 +350,14 @@ class WorkspaceLabelerPerformance(_CamelCaseMixin):
             organization, ``"external"`` for a member of another one (see
             :class:`PerformanceMemberType`). ``None`` if the account no
             longer exists.
+        member_organization_id (Optional[str]): The organization the
+            member's account belongs to: yours, or another one, such as a
+            workforce provider's or, if you are a workforce provider, a
+            customer's. It is the same whoever asks. ``None`` if the account
+            no longer exists.
+        member_organization_name (Optional[str]): That organization's name,
+            or ``org.name.<id>`` if it is masked for you. ``None`` if the
+            organization can no longer be found.
         project_id (str)
         project_name (Optional[str]): ``None`` for a project that can no
             longer be found. Its figures are still counted.
@@ -353,6 +387,8 @@ class WorkspaceLabelerPerformance(_CamelCaseMixin):
     user_id: str
     email: str
     member_type: Optional[str] = None
+    member_organization_id: Optional[str] = None
+    member_organization_name: Optional[str] = None
     project_id: str
     project_name: Optional[str] = None
     project_organization_id: Optional[str] = None
@@ -397,6 +433,14 @@ class PerformanceReportDownload(_CamelCaseMixin):
     generated_at: datetime
 
 
+class PerformanceTableChangedError(LabelboxError):
+    """A table changed while its pages were being read.
+
+    Raised while iterating :class:`PerformanceRows` when a page reports a
+    different ``total`` from the first page. Iterate the table again.
+    """
+
+
 Row = TypeVar("Row", bound=_CamelCaseMixin)
 
 
@@ -405,8 +449,23 @@ class PerformanceRows(Generic[Row]):
 
     Iterating fetches the table a page at a time, so a large table is never
     held in one response. Nothing is requested until the rows, ``total`` or
-    ``cached_at`` are read. The rows come in a fixed order, so no row is
-    repeated or missed between pages.
+    ``cached_at`` are read. The rows come in a fixed order.
+
+    Each page is a separate request, so the pages fit together only if the
+    table does not change between them. A workspace table read with the
+    cache on is cut from a reading of the report that is kept for five
+    minutes from when it was taken, possibly by an earlier request, so its
+    pages agree while that reading lasts. A very large table is not kept,
+    and an iteration that outlasts the reading continues from a new one. A
+    project table is read a page at a time, and on any table, who is in the
+    groups of a ``user_group_ids`` filter is worked out again for every
+    page. If the figures or a group's members change between pages, a row
+    can be missed or repeated.
+
+    When a page reports a different ``total`` from the first page, iterating
+    raises :class:`PerformanceTableChangedError`: read the table again. A
+    change that leaves the number of rows as it was cannot be seen this way,
+    such as one member joining a group as another with as many rows leaves.
 
     Iterating a second time reads the table again from its first page, and
     ``total`` and ``cached_at`` then describe that reading.
@@ -456,13 +515,22 @@ class PerformanceRows(Generic[Row]):
 
         number = 1
         seen = 0
+        total: Optional[int] = None
         while True:
             page = self._page(number)
+            if total is None:
+                total = int(page["total"])
+            elif int(page["total"]) != total:
+                raise PerformanceTableChangedError(
+                    f"The table changed while it was read: page 1 counted "
+                    f"{total} rows and page {number} counts {page['total']}. "
+                    "Read it again."
+                )
             rows = page["data"]
             for row in rows:
                 yield self._row_type.model_validate(row)
             seen += len(rows)
-            if not rows or seen >= int(page["total"]):
+            if not rows or seen >= total:
                 return
             number += 1
 
@@ -799,6 +867,8 @@ def get_workspace_metric(
     use_cache: bool = True,
     member_type: Optional[Union[PerformanceMemberType, str]] = None,
     owner_organization_ids: Optional[Iterable[Any]] = None,
+    member_organization_ids: Optional[Iterable[Any]] = None,
+    user_group_ids: Optional[Iterable[Any]] = None,
 ) -> PerformanceMetricSeries:
     body = _get(
         client,
@@ -813,6 +883,10 @@ def get_workspace_metric(
         ownerOrganizationIds=_to_ids(
             "owner_organization_ids", owner_organization_ids
         ),
+        memberOrganizationIds=_to_ids(
+            "member_organization_ids", member_organization_ids
+        ),
+        userGroupIds=_to_ids("user_group_ids", user_group_ids),
         useCache=None if use_cache else False,
     )
     return PerformanceMetricSeries.model_validate(body)
@@ -834,6 +908,8 @@ def get_workspace_labelers(
     descending: bool = False,
     page_size: int = _DEFAULT_PAGE_SIZE,
     use_cache: bool = True,
+    member_organization_ids: Optional[Iterable[Any]] = None,
+    user_group_ids: Optional[Iterable[Any]] = None,
 ) -> PerformanceRows[WorkspaceLabelerPerformance]:
     return _table(
         client,
@@ -852,5 +928,9 @@ def get_workspace_labelers(
         ownerOrganizationIds=_to_ids(
             "owner_organization_ids", owner_organization_ids
         ),
+        memberOrganizationIds=_to_ids(
+            "member_organization_ids", member_organization_ids
+        ),
+        userGroupIds=_to_ids("user_group_ids", user_group_ids),
         useCache=None if use_cache else False,
     )

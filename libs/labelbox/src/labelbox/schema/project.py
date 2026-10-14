@@ -1949,7 +1949,8 @@ class Project(DbObject, Updateable, Deletable):
                 request can cover at most 366 days.
             user_ids (Optional[List[str]]): Return only these users.
             user_group_ids (Optional[List[str]]): Return only the current
-                members of these user groups.
+                members of these user groups. Who is in the groups is worked
+                out for each page; see :class:`PerformanceRows`.
             batch_ids (Optional[List[str]]): Count only these batches.
             deleted_labels (PerformanceDeletedLabels or str): Whether labels
                 deleted since are counted. Included by default.
@@ -2023,7 +2024,8 @@ class Project(DbObject, Updateable, Deletable):
                 request can cover at most 366 days.
             user_ids (Optional[List[str]]): Return only these users.
             user_group_ids (Optional[List[str]]): Return only the current
-                members of these user groups.
+                members of these user groups. Who is in the groups is worked
+                out for each page; see :class:`PerformanceRows`.
             batch_ids (Optional[List[str]]): Count only these batches.
             deleted_labels (PerformanceDeletedLabels or str): Whether labels
                 deleted since are counted. Included by default.
