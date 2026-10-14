@@ -1,4 +1,11 @@
 # Changelog
+# Version 7.14.0 (2026-10-14)
+## Added
+* Add `user_group_ids` and `member_organization_ids` to `Client.get_workspace_performance_metric()` and `Client.get_workspace_labeler_performance()`, to report on the members of user groups or of other organizations, such as workforce providers, across the workspace ([#2081](https://github.com/Labelbox/labelbox-python/pull/2081))
+* Add `member_organization_id` and `member_organization_name` to the rows of `Project.get_labeler_performance()`, `Project.get_reviewer_performance()`, and `Client.get_workspace_labeler_performance()`, and `member_organization_ids` and `user_group_ids` to `PerformanceMetricSeries` ([#2081](https://github.com/Labelbox/labelbox-python/pull/2081))
+## Changed
+* Iterating a performance table raises `PerformanceTableChangedError` when a page's `total` differs from the first page's, so that a table that changed while it was read no longer comes back looking complete. Read it again from the start. A change that leaves `total` the same is not detected ([#2081](https://github.com/Labelbox/labelbox-python/pull/2081))
+
 # Version 7.13.0 (2026-10-12)
 ## Added
 * Add performance report methods that return the numbers behind a project's Performance dashboard and the workspace Monitor: `Client.get_performance_metrics()`, `Client.get_workspace_performance_metric()`, `Client.get_workspace_labeler_performance()`, `Project.get_performance_metric()`, `Project.get_labeler_performance()`, `Project.get_reviewer_performance()`, and `Project.get_performance_report_download()` ([#2078](https://github.com/Labelbox/labelbox-python/pull/2078))
