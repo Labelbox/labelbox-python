@@ -2592,6 +2592,200 @@ class Client:
             user_group_ids=user_group_ids,
         )
 
+    def get_sign_in_sessions(
+        self,
+        start_date: _performance.DateLike,
+        end_date: _performance.DateLike,
+        user_ids: Optional[List[str]] = None,
+        user_group_ids: Optional[List[str]] = None,
+        status: Optional[Union[_performance.SignInSessionStatus, str]] = None,
+        page_size: int = 100,
+    ) -> _performance.PerformanceCursorRows[_performance.SignInSession]:
+        """Returns the sign-in sessions of your organization's members.
+
+        A session is one sign-in in one browser, or a switch into this
+        workspace from the same person's user in another one. It lasts until
+        the member signs out, until Labelbox ends it (a new sign-in in the
+        same browser, a switch to another workspace, the member's removal)
+        or, when neither happened, until every credential the sign-in issued
+        has lapsed. That last end is derived when the session is read:
+        ``end_reason`` is ``"MAX_DURATION_REACHED"``, ``end_derived`` is
+        True and ``ended_at`` is ``expires_at``. It is the latest the session
+        could last, not when the member stopped working. Sessions record
+        sign-ins and how they ended, not activity, so ``duration_seconds`` is
+        not time worked, whatever the end.
+
+        Only sessions started in your organization are listed, so another
+        organization's users (a workforce provider's members, Alignerr
+        accounts) have none, even when they work on your projects or are in
+        your user groups. A member who has since moved to another
+        organization keeps the sessions they started here, with ``email``
+        None and ``member_deleted`` True. Only sessions that started after
+        Labelbox began recording them, in October 2026, are known.
+
+        Args:
+            start_date (date, datetime or str): First day of the period, in
+                UTC. A string is a day such as ``"2026-01-31"``.
+            end_date (date, datetime or str): Last day of the period. A
+                request can cover at most 31 days.
+            user_ids (Optional[List[str]]): Return only these users'
+                sessions. Up to 100.
+            user_group_ids (Optional[List[str]]): Return only the sessions of
+                the current members of these user groups of your
+                organization. Up to 25 groups, with at most 5,000 members
+                between them. The groups count only if you have the
+                organization-wide permission to view user groups, and a
+                restricted API key has it too. Without it no group adds
+                anyone, and no sessions are returned; no error is raised. A
+                group of another organization adds no one either, and
+                sessions started in another organization are never listed,
+                even for a member of the groups. Who is in the groups is
+                worked out for each page.
+            status (Optional[SignInSessionStatus or str]): Return only
+                sessions still open now (``"open"``) or only sessions that
+                ended (``"ended"``), by a recorded or a derived end.
+            page_size (int): Sessions fetched per request, at most 100.
+
+        With both ``user_ids`` and ``user_group_ids``, only users in both are
+        listed.
+
+        This needs the organization-wide permission to view all performance.
+        Access to projects does not give it, and without it you may not read
+        even your own sessions. A restricted API key must include it.
+
+        Returns:
+            PerformanceCursorRows[SignInSession]: The sessions that started
+            in the period, oldest first, fetched a page at a time as you
+            iterate. A session that started before ``start_date`` is not
+            listed; :meth:`get_sign_in_events` shows what happened in a
+            period.
+
+        Raises:
+            lbox.exceptions.AuthorizationError: You may not view all
+                performance across the organization, or the API key does not
+                include that permission.
+            lbox.exceptions.InvalidQueryError: A parameter is not valid, the
+                period is longer than 31 days, or the user groups have more
+                than 5,000 members between them.
+            ValueError: A filter was given as an empty list. Pass ``None``
+                to leave a filter off; an empty list is not read as one.
+
+        Example:
+            >>> for session in client.get_sign_in_sessions(
+            >>>         "2026-11-02", "2026-11-08", status="ended"):
+            >>>     print(session.email, session.started_at, session.end_reason)
+            >>>
+            >>> # Only the ends something recorded.
+            >>> recorded = [
+            >>>     session for session in client.get_sign_in_sessions(
+            >>>         "2026-11-02", "2026-11-08", status="ended")
+            >>>     if not session.end_derived]
+        """
+        return _performance.get_sign_in_sessions(
+            self,
+            start_date,
+            end_date,
+            user_ids=user_ids,
+            user_group_ids=user_group_ids,
+            status=status,
+            page_size=page_size,
+        )
+
+    def get_sign_in_events(
+        self,
+        start_date: _performance.DateLike,
+        end_date: _performance.DateLike,
+        user_ids: Optional[List[str]] = None,
+        user_group_ids: Optional[List[str]] = None,
+        types: Optional[List[Union[_performance.SignInEventType, str]]] = None,
+        include_derived: bool = True,
+        page_size: int = 100,
+    ) -> _performance.SignInEventRows:
+        """Returns the sign-ins and sign-outs of your organization's members.
+
+        A sign-in happens when a session starts and a sign-out when it ends,
+        by a recorded or a derived end (see :meth:`get_sign_in_sessions`), so
+        a session that started before the period can sign out in it. Events
+        are ordered by ``occurred_at``.
+
+        The feed stops at ``complete_through`` on the result: the earlier of
+        the end of ``end_date`` and five minutes ago. Every event before it
+        is listed, and a derived sign-out is listed once its time has passed
+        it. To follow the feed, read it to the end and keep
+        ``complete_through``. Next time, read from the day an hour before it
+        and drop the events whose ``event_id`` you have already seen: that
+        also picks up an event that took unusually long to be recorded.
+
+        Who is listed, and who may ask, is as for
+        :meth:`get_sign_in_sessions`.
+
+        Args:
+            start_date (date, datetime or str): First day of the period, in
+                UTC. A string is a day such as ``"2026-01-31"``. A datetime
+                with a time zone is read as its UTC day; a naive datetime is
+                taken to be in UTC already, so its own date is used.
+            end_date (date, datetime or str): Last day of the period, read as
+                for ``start_date``. A request can cover at most 31 days.
+            user_ids (Optional[List[str]]): Return only these users' events.
+                Up to 100.
+            user_group_ids (Optional[List[str]]): Return only the events of
+                the current members of these user groups of your
+                organization, as for :meth:`get_sign_in_sessions`. Up to 25
+                groups, with at most 5,000 members between them.
+            types (Optional[List[SignInEventType or str]]): The kinds of event
+                to return: ``"SIGN_IN"``, ``"SIGN_OUT"`` or both. Both when
+                not given.
+            include_derived (bool): Pass False to leave out the sign-outs
+                nothing recorded, which are derived at a session's
+                ``expires_at``.
+            page_size (int): Events fetched per request, at most 100.
+
+        Returns:
+            SignInEventRows: The events in the period, fetched a page at a
+            time as you iterate, and ``complete_through`` once they have been
+            read to the end.
+
+        Raises:
+            lbox.exceptions.AuthorizationError: You may not view all
+                performance across the organization, or the API key does not
+                include that permission.
+            lbox.exceptions.InvalidQueryError: A parameter is not valid, the
+                period is longer than 31 days, or the user groups have more
+                than 5,000 members between them.
+            ValueError: A filter or ``types`` was given as an empty list.
+                Pass ``None`` to leave it off; an empty list is not read as
+                that.
+
+        Example:
+            >>> from datetime import datetime, timedelta, timezone
+            >>> events = client.get_sign_in_events("2026-11-03", "2026-11-09")
+            >>> seen = set()
+            >>> for event in events:
+            >>>     seen.add(event.event_id)
+            >>>     print(event.occurred_at, event.email, event.type)
+            >>>
+            >>> # Next time, from an hour before where the feed stopped.
+            >>> since = events.complete_through - timedelta(hours=1)
+            >>> events = client.get_sign_in_events(
+            >>>     since, datetime.now(timezone.utc))
+            >>> new = [event for event in events if event.event_id not in seen]
+            >>>
+            >>> # Recorded sign-outs only.
+            >>> sign_outs = client.get_sign_in_events(
+            >>>     "2026-11-03", "2026-11-09", types=["SIGN_OUT"],
+            >>>     include_derived=False)
+        """
+        return _performance.get_sign_in_events(
+            self,
+            start_date,
+            end_date,
+            user_ids=user_ids,
+            user_group_ids=user_group_ids,
+            types=types,
+            include_derived=include_derived,
+            page_size=page_size,
+        )
+
     def get_task_by_id(self, task_id: str) -> Union[Task, DataUpsertTask]:
         """
         Fetches a task by ID.

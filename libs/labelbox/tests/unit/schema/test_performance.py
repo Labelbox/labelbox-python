@@ -19,6 +19,7 @@ from lbox.exceptions import (
 
 from labelbox import (
     Client,
+    PerformanceCursorRows,
     PerformanceDeletedLabels,
     PerformanceInterval,
     PerformanceMemberType,
@@ -26,6 +27,11 @@ from labelbox import (
     PerformanceTableChangedError,
     PerformanceTimeBucket,
     Project,
+    SignInEndReason,
+    SignInEventRows,
+    SignInEventType,
+    SignInSessionStatus,
+    SignInStartKind,
 )
 from labelbox.schema import performance
 from labelbox.schema.user_group import UserGroup
@@ -1558,3 +1564,795 @@ class TestErrors:
             Project.get_performance_metric(
                 project, "labels_created", "2026-01-01", "2026-01-07"
             )
+
+
+RULES = {
+    "cookieLifetimeSeconds": 302400,
+    "signInTokenLifetimeSeconds": 86400,
+    "workspaceTokenLifetimeSeconds": 604800,
+}
+
+
+def sign_in_session(session_id, **fields):
+    """A session with a recorded end, as the REST API returns it."""
+    return {
+        "sessionId": session_id,
+        "userId": "user-1",
+        "email": "user-1@example.com",
+        "memberDeleted": False,
+        "startedAt": "2026-11-03T08:59:41.120Z",
+        "startKind": "SIGN_IN",
+        "status": "ENDED",
+        "endedAt": "2026-11-03T17:31:02.507Z",
+        "endReason": "SIGNED_OUT",
+        "endDerived": False,
+        "expiresAt": "2026-11-06T21:00:41.120Z",
+        "durationSeconds": 30681,
+        **fields,
+    }
+
+
+def sessions_page(rows, next_cursor=None):
+    return {
+        "organizationId": "org-1",
+        "startDate": "2026-11-02",
+        "endDate": "2026-11-08",
+        "userIds": None,
+        "userGroupIds": None,
+        "status": None,
+        "rules": RULES,
+        "data": rows,
+        "nextCursor": next_cursor,
+        "perPage": 100,
+        "generatedAt": "2026-11-09T10:00:00.000Z",
+    }
+
+
+def sign_in_event(session_id, kind="in", **fields):
+    """A sign-in, or with kind "out" a recorded sign-out."""
+    signing_in = kind == "in"
+    return {
+        "eventId": f"{session_id}.{kind}",
+        "type": "SIGN_IN" if signing_in else "SIGN_OUT",
+        "occurredAt": "2026-11-03T08:59:41.120Z"
+        if signing_in
+        else "2026-11-03T17:31:02.507Z",
+        "sessionId": session_id,
+        "userId": "user-1",
+        "email": "user-1@example.com",
+        "startKind": "SIGN_IN" if signing_in else None,
+        "endReason": None if signing_in else "SIGNED_OUT",
+        "endDerived": None if signing_in else False,
+        "sessionStartedAt": "2026-11-03T08:59:41.120Z",
+        **fields,
+    }
+
+
+def events_page(
+    rows, next_cursor=None, complete_through="2026-11-04T00:00:00.000Z"
+):
+    return {
+        "organizationId": "org-1",
+        "startDate": "2026-11-03",
+        "endDate": "2026-11-03",
+        "userIds": None,
+        "userGroupIds": None,
+        "types": ["SIGN_IN", "SIGN_OUT"],
+        "includeDerived": True,
+        "rules": RULES,
+        "data": rows,
+        "nextCursor": next_cursor,
+        "completeThrough": complete_through,
+        "perPage": 100,
+        "generatedAt": "2026-11-09T10:00:00.000Z",
+    }
+
+
+def cursors_sent(client):
+    """The cursor each request sent, None for none."""
+    return [
+        sent(client, call)[1].get("cursor")
+        for call in range(client.connection.get.call_count)
+    ]
+
+
+class TestSignInSessions:
+    def test_asks_for_nothing_until_the_sessions_are_read(self, client):
+        sessions = client.get_sign_in_sessions("2026-11-02", "2026-11-08")
+
+        client.connection.get.assert_not_called()
+        assert isinstance(sessions, PerformanceCursorRows)
+
+    def test_returns_the_sessions_that_started_in_the_period(self, client):
+        client.connection.get.return_value = response(
+            sessions_page([sign_in_session("session-1")])
+        )
+
+        (session,) = client.get_sign_in_sessions(
+            date(2026, 11, 2), "2026-11-08"
+        )
+
+        url, params = sent(client)
+        assert url == f"{BASE}/workspace/sign-in-sessions"
+        assert params == {
+            "startDate": "2026-11-02",
+            "endDate": "2026-11-08",
+            "perPage": "100",
+        }
+        assert session.session_id == "session-1"
+        assert session.user_id == "user-1"
+        assert session.email == "user-1@example.com"
+        assert session.member_deleted is False
+        assert session.started_at == datetime(
+            2026, 11, 3, 8, 59, 41, 120000, tzinfo=timezone.utc
+        )
+        assert session.start_kind == SignInStartKind.SIGN_IN
+        assert session.status == SignInSessionStatus.ENDED
+        assert session.ended_at == datetime(
+            2026, 11, 3, 17, 31, 2, 507000, tzinfo=timezone.utc
+        )
+        assert session.end_reason == SignInEndReason.SIGNED_OUT
+        assert session.end_derived is False
+        assert session.expires_at == datetime(
+            2026, 11, 6, 21, 0, 41, 120000, tzinfo=timezone.utc
+        )
+        assert session.duration_seconds == 30681
+
+    def test_sends_the_filters_under_the_names_the_api_gives_them(self, client):
+        client.connection.get.return_value = response(sessions_page([]))
+
+        list(
+            client.get_sign_in_sessions(
+                "2026-11-02",
+                "2026-11-08",
+                user_ids=["user-1", SimpleNamespace(uid="user-2")],
+                # UserGroup is a pydantic model whose ID is `id`, not `uid`.
+                user_group_ids=[
+                    UserGroup(client=client, id="group-a", name="Vendor A"),
+                    "group-b",
+                ],
+                status=SignInSessionStatus.OPEN,
+                page_size=25,
+            )
+        )
+
+        _, params = sent(client)
+        assert params == {
+            "startDate": "2026-11-02",
+            "endDate": "2026-11-08",
+            "userIds": "user-1,user-2",
+            "userGroupIds": "group-a,group-b",
+            "status": "open",
+            "perPage": "25",
+        }
+
+    @pytest.mark.parametrize(
+        "status, sent_as",
+        [
+            (SignInSessionStatus.OPEN, "open"),
+            (SignInSessionStatus.ENDED, "ended"),
+            ("open", "open"),
+            ("ended", "ended"),
+            # As a session's own status spells it.
+            ("OPEN", "open"),
+            ("ENDED", "ended"),
+        ],
+    )
+    def test_sends_the_status_in_lower_case_as_the_api_takes_it(
+        self, client, status, sent_as
+    ):
+        client.connection.get.return_value = response(sessions_page([]))
+
+        list(
+            client.get_sign_in_sessions(
+                "2026-11-02", "2026-11-08", status=status
+            )
+        )
+
+        assert sent(client)[1]["status"] == sent_as
+
+    def test_follows_the_cursor_until_there_is_no_next_page(self, client):
+        client.connection.get.side_effect = [
+            response(
+                sessions_page(
+                    [
+                        sign_in_session("session-1"),
+                        sign_in_session("session-2"),
+                    ],
+                    next_cursor="cursor-after-2",
+                )
+            ),
+            response(
+                sessions_page(
+                    [
+                        sign_in_session("session-3"),
+                        sign_in_session("session-4"),
+                    ],
+                    next_cursor="cursor-after-4",
+                )
+            ),
+            response(sessions_page([sign_in_session("session-5")])),
+        ]
+
+        sessions = list(
+            client.get_sign_in_sessions(
+                "2026-11-02", "2026-11-08", status="ended", page_size=2
+            )
+        )
+
+        assert [session.session_id for session in sessions] == [
+            "session-1",
+            "session-2",
+            "session-3",
+            "session-4",
+            "session-5",
+        ]
+        # Each page continues from the cursor the page before returned, as
+        # it was returned, and asks for the same rows otherwise.
+        assert cursors_sent(client) == [
+            None,
+            "cursor-after-2",
+            "cursor-after-4",
+        ]
+        for call in range(3):
+            _, params = sent(client, call)
+            assert params["status"] == "ended"
+            assert params["perPage"] == "2"
+            assert params["startDate"] == "2026-11-02"
+
+    def test_reads_an_empty_period_with_one_request(self, client):
+        client.connection.get.return_value = response(sessions_page([]))
+
+        assert (
+            list(client.get_sign_in_sessions("2026-11-02", "2026-11-08")) == []
+        )
+        assert client.connection.get.call_count == 1
+
+    def test_reads_the_sessions_again_from_the_first_page_on_a_second_pass(
+        self, client
+    ):
+        first = [
+            response(
+                sessions_page(
+                    [sign_in_session("session-1")], next_cursor="cursor-1"
+                )
+            ),
+            response(sessions_page([sign_in_session("session-2")])),
+        ]
+        # By the second pass another session has started.
+        second = [
+            response(
+                sessions_page(
+                    [sign_in_session("session-1")], next_cursor="cursor-1"
+                )
+            ),
+            response(
+                sessions_page(
+                    [sign_in_session("session-2")], next_cursor="cursor-2"
+                )
+            ),
+            response(sessions_page([sign_in_session("session-3")])),
+        ]
+        client.connection.get.side_effect = first + second
+
+        sessions = client.get_sign_in_sessions(
+            "2026-11-02", "2026-11-08", page_size=1
+        )
+        once = [session.session_id for session in sessions]
+        twice = [session.session_id for session in sessions]
+
+        assert once == ["session-1", "session-2"]
+        assert twice == ["session-1", "session-2", "session-3"]
+        assert cursors_sent(client) == [
+            None,
+            "cursor-1",
+            None,
+            "cursor-1",
+            "cursor-2",
+        ]
+
+    def test_reads_a_derived_end(self, client):
+        client.connection.get.return_value = response(
+            sessions_page(
+                [
+                    sign_in_session(
+                        "session-1",
+                        startedAt="2026-11-04T09:02:10.004Z",
+                        endedAt="2026-11-07T21:03:10.004Z",
+                        endReason="MAX_DURATION_REACHED",
+                        endDerived=True,
+                        expiresAt="2026-11-07T21:03:10.004Z",
+                        durationSeconds=302460,
+                    )
+                ]
+            )
+        )
+
+        (session,) = client.get_sign_in_sessions("2026-11-02", "2026-11-08")
+
+        assert session.status == SignInSessionStatus.ENDED
+        assert session.end_reason == SignInEndReason.MAX_DURATION_REACHED
+        assert session.end_derived is True
+        # The latest the session could last, not when the member left.
+        assert session.ended_at == session.expires_at
+        assert session.duration_seconds == 302460
+
+    def test_reads_an_open_session(self, client):
+        client.connection.get.return_value = response(
+            sessions_page(
+                [
+                    sign_in_session(
+                        "session-1",
+                        startKind="WORKSPACE_SWITCH",
+                        status="OPEN",
+                        endedAt=None,
+                        endReason=None,
+                        endDerived=None,
+                        durationSeconds=None,
+                    )
+                ]
+            )
+        )
+
+        (session,) = client.get_sign_in_sessions(
+            "2026-11-02", "2026-11-08", status="open"
+        )
+
+        assert session.status == SignInSessionStatus.OPEN
+        assert session.start_kind == SignInStartKind.WORKSPACE_SWITCH
+        assert session.ended_at is None
+        assert session.end_reason is None
+        assert session.end_derived is None
+        assert session.duration_seconds is None
+        assert session.expires_at == datetime(
+            2026, 11, 6, 21, 0, 41, 120000, tzinfo=timezone.utc
+        )
+
+    def test_reads_a_member_whose_account_is_now_another_organizations(
+        self, client
+    ):
+        client.connection.get.return_value = response(
+            sessions_page(
+                [sign_in_session("session-1", email=None, memberDeleted=True)]
+            )
+        )
+
+        (session,) = client.get_sign_in_sessions("2026-11-02", "2026-11-08")
+
+        assert session.email is None
+        assert session.member_deleted is True
+        assert session.user_id == "user-1"
+
+    def test_ignores_fields_added_to_the_response_later(self, client):
+        client.connection.get.return_value = response(
+            {
+                **sessions_page(
+                    [sign_in_session("session-1", deviceKind="browser")]
+                ),
+                "asOf": "2026-11-09T10:00:00.000Z",
+            }
+        )
+
+        (session,) = client.get_sign_in_sessions("2026-11-02", "2026-11-08")
+
+        assert session.session_id == "session-1"
+        assert not hasattr(session, "device_kind")
+
+    def test_tries_a_failed_page_again_with_the_same_cursor(self, client):
+        client.connection.get.side_effect = [
+            response(
+                sessions_page(
+                    [sign_in_session("session-1")], next_cursor="cursor-1"
+                )
+            ),
+            response({"statusCode": 502, "message": "Bad gateway"}, 502),
+            response(sessions_page([sign_in_session("session-2")])),
+        ]
+
+        sessions = list(client.get_sign_in_sessions("2026-11-02", "2026-11-08"))
+
+        assert [session.session_id for session in sessions] == [
+            "session-1",
+            "session-2",
+        ]
+        assert cursors_sent(client) == [None, "cursor-1", "cursor-1"]
+
+
+class TestSignInEvents:
+    def test_asks_for_nothing_until_the_events_are_read(self, client):
+        events = client.get_sign_in_events("2026-11-03", "2026-11-03")
+
+        client.connection.get.assert_not_called()
+        assert isinstance(events, SignInEventRows)
+        assert events.complete_through is None
+
+    def test_returns_the_sign_ins_and_sign_outs(self, client):
+        client.connection.get.return_value = response(
+            events_page(
+                [
+                    sign_in_event("session-1", "in"),
+                    sign_in_event("session-1", "out"),
+                ]
+            )
+        )
+
+        sign_in, sign_out = client.get_sign_in_events(
+            "2026-11-03", "2026-11-03"
+        )
+
+        url, params = sent(client)
+        assert url == f"{BASE}/workspace/sign-in-events"
+        # Both types and the derived sign-outs are the API's default.
+        assert params == {
+            "startDate": "2026-11-03",
+            "endDate": "2026-11-03",
+            "perPage": "100",
+        }
+        assert sign_in.event_id == "session-1.in"
+        assert sign_in.type == SignInEventType.SIGN_IN
+        assert sign_in.occurred_at == datetime(
+            2026, 11, 3, 8, 59, 41, 120000, tzinfo=timezone.utc
+        )
+        assert sign_in.session_id == "session-1"
+        assert sign_in.user_id == "user-1"
+        assert sign_in.email == "user-1@example.com"
+        assert sign_in.start_kind == SignInStartKind.SIGN_IN
+        assert sign_in.end_reason is None
+        assert sign_in.end_derived is None
+        assert sign_in.session_started_at == sign_in.occurred_at
+        assert sign_out.event_id == "session-1.out"
+        assert sign_out.type == SignInEventType.SIGN_OUT
+        assert sign_out.start_kind is None
+        assert sign_out.end_reason == SignInEndReason.SIGNED_OUT
+        assert sign_out.end_derived is False
+        assert sign_out.session_started_at == sign_in.occurred_at
+
+    def test_sends_the_filters_under_the_names_the_api_gives_them(self, client):
+        client.connection.get.return_value = response(events_page([]))
+
+        list(
+            client.get_sign_in_events(
+                "2026-11-03",
+                "2026-11-09",
+                user_ids=["user-1"],
+                user_group_ids=[
+                    UserGroup(client=client, id="group-a", name="Vendor A")
+                ],
+                types=[SignInEventType.SIGN_OUT],
+                include_derived=False,
+                page_size=10,
+            )
+        )
+
+        _, params = sent(client)
+        assert params == {
+            "startDate": "2026-11-03",
+            "endDate": "2026-11-09",
+            "userIds": "user-1",
+            "userGroupIds": "group-a",
+            "types": "SIGN_OUT",
+            "includeDerived": "false",
+            "perPage": "10",
+        }
+
+    @pytest.mark.parametrize(
+        "types, sent_as",
+        [
+            ([SignInEventType.SIGN_IN], "SIGN_IN"),
+            (["SIGN_OUT"], "SIGN_OUT"),
+            (
+                [SignInEventType.SIGN_IN, "SIGN_OUT"],
+                "SIGN_IN,SIGN_OUT",
+            ),
+            # One type on its own, as the ID filters take one ID.
+            (SignInEventType.SIGN_OUT, "SIGN_OUT"),
+            ("SIGN_IN", "SIGN_IN"),
+        ],
+    )
+    def test_takes_the_types_as_enums_or_strings(self, client, types, sent_as):
+        client.connection.get.return_value = response(events_page([]))
+
+        list(client.get_sign_in_events("2026-11-03", "2026-11-03", types=types))
+
+        assert sent(client)[1]["types"] == sent_as
+
+    def test_sends_include_derived_only_to_leave_them_out(self, client):
+        client.connection.get.return_value = response(events_page([]))
+
+        list(
+            client.get_sign_in_events(
+                "2026-11-03", "2026-11-03", include_derived=True
+            )
+        )
+
+        assert "includeDerived" not in sent(client)[1]
+
+    @pytest.mark.parametrize("empty", [[], (), iter([])])
+    def test_refuses_empty_types_before_asking(self, client, empty):
+        with pytest.raises(ValueError, match="types is empty"):
+            client.get_sign_in_events("2026-11-03", "2026-11-03", types=empty)
+
+        client.connection.get.assert_not_called()
+
+    def test_follows_the_cursor_and_says_where_the_last_page_stops(
+        self, client
+    ):
+        client.connection.get.side_effect = [
+            response(
+                events_page(
+                    [sign_in_event("session-1", "in")],
+                    next_cursor="cursor-1",
+                    complete_through="2026-11-09T09:54:00.000Z",
+                )
+            ),
+            response(
+                events_page(
+                    [sign_in_event("session-1", "out")],
+                    next_cursor="cursor-2",
+                    complete_through="2026-11-09T09:54:30.000Z",
+                )
+            ),
+            # Each page is read a little later, so stops a little later.
+            response(
+                events_page(
+                    [sign_in_event("session-2", "in")],
+                    complete_through="2026-11-09T09:55:00.000Z",
+                )
+            ),
+        ]
+
+        events = client.get_sign_in_events(
+            "2026-11-03", "2026-11-09", page_size=1
+        )
+        read = []
+        for event in events:
+            # Not until the last page has been read.
+            assert events.complete_through is None
+            read.append(event.event_id)
+
+        assert read == ["session-1.in", "session-1.out", "session-2.in"]
+        assert cursors_sent(client) == [None, "cursor-1", "cursor-2"]
+        assert events.complete_through == datetime(
+            2026, 11, 9, 9, 55, tzinfo=timezone.utc
+        )
+
+    def test_says_nothing_of_where_the_feed_stops_if_it_was_not_read_to_the_end(
+        self, client
+    ):
+        client.connection.get.return_value = response(
+            events_page(
+                [sign_in_event("session-1", "in")], next_cursor="cursor-1"
+            )
+        )
+
+        events = client.get_sign_in_events("2026-11-03", "2026-11-03")
+        next(iter(events))
+
+        assert events.complete_through is None
+        assert client.connection.get.call_count == 1
+
+    def test_reads_the_feed_again_from_the_first_page_on_a_second_pass(
+        self, client
+    ):
+        client.connection.get.side_effect = [
+            response(
+                events_page(
+                    [sign_in_event("session-1", "in")],
+                    next_cursor="cursor-1",
+                    complete_through="2026-11-09T09:55:00.000Z",
+                )
+            ),
+            response(
+                events_page(
+                    [sign_in_event("session-1", "out")],
+                    complete_through="2026-11-09T09:55:00.000Z",
+                )
+            ),
+            # By the second pass the feed has moved on by an event.
+            response(
+                events_page(
+                    [
+                        sign_in_event("session-1", "in"),
+                        sign_in_event("session-1", "out"),
+                        sign_in_event("session-2", "in"),
+                    ],
+                    complete_through="2026-11-09T10:05:00.000Z",
+                )
+            ),
+        ]
+
+        events = client.get_sign_in_events("2026-11-03", "2026-11-09")
+        once = [event.event_id for event in events]
+        first_stop = events.complete_through
+        twice = []
+        for event in events:
+            # The first reading's stop does not describe this one.
+            assert events.complete_through is None
+            twice.append(event.event_id)
+
+        assert once == ["session-1.in", "session-1.out"]
+        assert twice == ["session-1.in", "session-1.out", "session-2.in"]
+        assert cursors_sent(client) == [None, "cursor-1", None]
+        assert first_stop == datetime(2026, 11, 9, 9, 55, tzinfo=timezone.utc)
+        assert events.complete_through == datetime(
+            2026, 11, 9, 10, 5, tzinfo=timezone.utc
+        )
+
+    def test_reads_a_derived_sign_out(self, client):
+        client.connection.get.return_value = response(
+            events_page(
+                [
+                    sign_in_event(
+                        "session-1",
+                        "out",
+                        occurredAt="2026-11-07T21:03:10.004Z",
+                        endReason="MAX_DURATION_REACHED",
+                        endDerived=True,
+                        sessionStartedAt="2026-11-04T09:02:10.004Z",
+                    )
+                ]
+            )
+        )
+
+        (sign_out,) = client.get_sign_in_events("2026-11-07", "2026-11-07")
+
+        assert sign_out.type == SignInEventType.SIGN_OUT
+        assert sign_out.end_reason == SignInEndReason.MAX_DURATION_REACHED
+        assert sign_out.end_derived is True
+        assert sign_out.start_kind is None
+        # The session started before the period and signs out in it.
+        assert sign_out.session_started_at == datetime(
+            2026, 11, 4, 9, 2, 10, 4000, tzinfo=timezone.utc
+        )
+
+    def test_reads_a_member_whose_account_is_now_another_organizations(
+        self, client
+    ):
+        client.connection.get.return_value = response(
+            events_page([sign_in_event("session-1", "in", email=None)])
+        )
+
+        (event,) = client.get_sign_in_events("2026-11-03", "2026-11-03")
+
+        assert event.email is None
+        assert event.user_id == "user-1"
+
+    def test_ignores_fields_added_to_the_response_later(self, client):
+        client.connection.get.return_value = response(
+            {
+                **events_page(
+                    [sign_in_event("session-1", "in", deviceKind="browser")]
+                ),
+                "asOf": "2026-11-09T10:00:00.000Z",
+            }
+        )
+
+        events = client.get_sign_in_events("2026-11-03", "2026-11-03")
+        (event,) = events
+
+        assert event.event_id == "session-1.in"
+        assert not hasattr(event, "device_kind")
+        assert events.complete_through == datetime(
+            2026, 11, 4, tzinfo=timezone.utc
+        )
+
+
+class TestSignInFilters:
+    @pytest.mark.parametrize("argument", ["user_ids", "user_group_ids"])
+    @pytest.mark.parametrize("empty", [[], (), set(), iter([])])
+    def test_refuses_an_empty_filter_instead_of_listing_everyone(
+        self, client, argument, empty
+    ):
+        with pytest.raises(ValueError, match=f"{argument} is empty"):
+            client.get_sign_in_sessions(
+                "2026-11-02", "2026-11-08", **{argument: empty}
+            )
+        with pytest.raises(ValueError, match=f"{argument} is empty"):
+            client.get_sign_in_events(
+                "2026-11-02", "2026-11-08", **{argument: []}
+            )
+
+        client.connection.get.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "day, expected",
+        [
+            (date(2026, 11, 2), "2026-11-02"),
+            # The day an hour before a completeThrough, read as a UTC day.
+            (
+                datetime(2026, 11, 3, 0, 30, tzinfo=timezone.utc)
+                - timedelta(hours=1),
+                "2026-11-02",
+            ),
+            (
+                datetime(
+                    2026, 11, 2, 20, 0, tzinfo=timezone(timedelta(hours=-8))
+                ),
+                "2026-11-03",
+            ),
+            # A naive datetime is taken to be in UTC already: its own date.
+            (datetime(2026, 11, 2, 20, 0), "2026-11-02"),
+        ],
+    )
+    def test_sends_a_date_as_a_utc_day(self, client, day, expected):
+        client.connection.get.side_effect = [
+            response(sessions_page([])),
+            response(events_page([])),
+        ]
+
+        list(client.get_sign_in_sessions(day, day))
+        list(client.get_sign_in_events(day, day))
+
+        for call in (0, 1):
+            _, params = sent(client, call)
+            assert params["startDate"] == expected
+            assert params["endDate"] == expected
+
+    @pytest.mark.parametrize(
+        "status, error",
+        [
+            (400, InvalidQueryError),
+            (401, AuthenticationError),
+            (403, AuthorizationError),
+            (429, ApiLimitError),
+            (500, InternalServerError),
+        ],
+    )
+    def test_raises_the_sdk_error_for_the_status(self, client, status, error):
+        client.connection.get.return_value = response(
+            {"statusCode": status, "message": "Something went wrong"}, status
+        )
+
+        with pytest.raises(error, match="Something went wrong"):
+            list(client.get_sign_in_sessions("2026-11-02", "2026-11-08"))
+        with pytest.raises(error, match="Something went wrong"):
+            list(client.get_sign_in_events("2026-11-02", "2026-11-08"))
+
+    def test_says_when_the_api_key_may_not_read_sign_ins(self, client):
+        client.connection.get.return_value = response(
+            {
+                "statusCode": 403,
+                "message": "This API key does not include the permission "
+                "to view all performance.",
+                "error": "Forbidden",
+            },
+            403,
+        )
+
+        with pytest.raises(
+            AuthorizationError, match="permission to view all performance"
+        ):
+            list(client.get_sign_in_events("2026-11-02", "2026-11-08"))
+        # A refusal is not tried again.
+        assert client.connection.get.call_count == 1
+
+    def test_names_the_parameters_the_api_refused(self, client):
+        client.connection.get.return_value = response(
+            {
+                "statusCode": 400,
+                "error": "Bad Request",
+                "message": "Invalid query parameters",
+                "details": [
+                    {
+                        "parameter": "endDate",
+                        "message": "must be within 31 days of startDate",
+                    },
+                    {
+                        "parameter": "types",
+                        "message": "must be one or both of SIGN_IN, SIGN_OUT",
+                    },
+                ],
+            },
+            400,
+        )
+
+        with pytest.raises(InvalidQueryError) as raised:
+            list(
+                client.get_sign_in_events(
+                    "2026-10-01", "2026-11-30", types=["sign_in"]
+                )
+            )
+
+        message = str(raised.value)
+        assert "endDate must be within 31 days of startDate" in message
+        assert "types must be one or both of SIGN_IN, SIGN_OUT" in message
