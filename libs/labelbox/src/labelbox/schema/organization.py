@@ -5,7 +5,11 @@ from lbox.exceptions import LabelboxError
 from labelbox import utils
 from labelbox.orm.db_object import DbObject, Entity, query
 from labelbox.orm.model import Field, Relationship
-from labelbox.schema.invite import InviteLimit
+from labelbox.schema.invite import (
+    InviteLimit,
+    InviteMemberStatus,
+    InviteResult,
+)
 from labelbox.schema.resource_tag import ResourceTag
 from labelbox.pagination import PaginatedCollection
 from labelbox.schema.iam_integration import (
@@ -19,11 +23,18 @@ if TYPE_CHECKING:
     from labelbox import (
         Invite,
         InviteLimit,
+        Project,
         ProjectRole,
         Role,
         User,
         UserGroupRole,
     )
+    from labelbox.schema.user_group import UserGroup
+
+# The server accepts at most this many addresses per inviteMembers request.
+INVITE_USERS_BATCH_SIZE = 100
+# A longer raw address makes the server reject the whole request.
+INVITE_EMAIL_MAX_LENGTH = 320
 
 
 class Organization(DbObject):
@@ -173,6 +184,135 @@ class Organization(DbObject):
         if not invite_response:
             raise LabelboxError(f"Unable to send invite for email {email}")
         return Entity.Invite(self.client, invite_response)
+
+    def invite_users(
+        self,
+        emails: List[str],
+        role: "Role",
+        projects: Optional[List[Union["Project", str]]] = None,
+        user_groups: Optional[List[Union["UserGroup", str]]] = None,
+    ) -> List[InviteResult]:
+        """
+        Invite many people at once and get one result per address.
+
+        Without `projects` and `user_groups` this is a workspace-wide invitation and
+        `role` is the organization role. With projects or user groups, `role` is the
+        role given on every project and group, and the people join the workspace
+        without an organization role.
+
+        One bad address does not stop the others. Each address follows the same rules
+        as a single invitation: permissions, seat limits and invitation emails.
+        Sending the same list again is safe: addresses invited before come back as
+        `ALREADY_INVITED` or `ALREADY_MEMBER` and get no second email.
+
+        Args:
+            emails (List[str]): Addresses to invite. They are sent in requests of 100.
+            role (Role): Organization role (workspace-wide) or project and group role.
+            projects (Optional[List[Union[Project, str]]]): Projects or project ids.
+            user_groups (Optional[List[Union[UserGroup, str]]]): User groups or group ids.
+
+        Returns:
+            List[InviteResult]: One result per entry of `emails`, in order. See
+            `InviteMemberStatus` for the possible statuses.
+
+        Raises:
+            ValueError: If `emails` is empty, or a workspace-wide invitation uses the `NONE` role.
+            LabelboxError: If a request is rejected as a whole, for example for a
+                missing permission or a role you cannot assign. Requests before it
+                stay sent; send the same list again to continue.
+        """
+        if isinstance(emails, str):
+            raise ValueError("emails must be a list of addresses, not a string")
+        if not emails:
+            raise ValueError("emails must contain at least one address")
+
+        project_ids = [
+            project if isinstance(project, str) else project.uid
+            for project in projects or []
+        ]
+        group_ids = [
+            group if isinstance(group, str) else group.id
+            for group in user_groups or []
+        ]
+        workspace_wide = not project_ids and not group_ids
+        if workspace_wide and role.name == "NONE":
+            raise ValueError(
+                "A workspace-wide invitation needs an organization role. Pass projects or user_groups to give a project role."
+            )
+
+        query_str = """mutation InviteMembersPyApi($data: InviteMembersInput!) {
+            inviteMembers(data: $data) {
+                results { email status reason inviteId }
+            }
+        }"""
+
+        # The server finds repeats only inside one request, so repeats across
+        # requests are answered here, as the server would answer them.
+        first_index: Dict[str, int] = {}
+        unique: List[str] = []
+        blocked: Dict[str, InviteResult] = {}
+        for email in emails:
+            trimmed = email.strip()
+            key = trimmed.lower()
+            if key in first_index or key in blocked:
+                continue
+            if len(trimmed) > INVITE_EMAIL_MAX_LENGTH:
+                blocked[key] = InviteResult(
+                    email=trimmed,
+                    status=InviteMemberStatus.INVALID_EMAIL,
+                    reason=None,
+                    invite_id=None,
+                )
+                continue
+            first_index[key] = len(unique)
+            unique.append(
+                trimmed if len(email) > INVITE_EMAIL_MAX_LENGTH else email
+            )
+
+        sent: List[InviteResult] = []
+        for start in range(0, len(unique), INVITE_USERS_BATCH_SIZE):
+            res = self.client.execute(
+                query_str,
+                {
+                    "data": {
+                        "emails": unique[
+                            start : start + INVITE_USERS_BATCH_SIZE
+                        ],
+                        "workspaceWide": workspace_wide,
+                        "roleId": role.uid,
+                        "projectIds": project_ids,
+                        "groupIds": group_ids,
+                    }
+                },
+            )
+            for result in res["inviteMembers"]["results"]:
+                sent.append(
+                    InviteResult(
+                        email=result["email"],
+                        status=_invite_status(result["status"]),
+                        reason=result.get("reason"),
+                        invite_id=result.get("inviteId"),
+                    )
+                )
+
+        results: List[InviteResult] = []
+        seen: Set[str] = set()
+        for email in emails:
+            key = email.strip().lower()
+            prior = blocked[key] if key in blocked else sent[first_index[key]]
+            if key in seen:
+                results.append(
+                    InviteResult(
+                        email=prior.email,
+                        status=InviteMemberStatus.DUPLICATE,
+                        reason=None,
+                        invite_id=None,
+                    )
+                )
+            else:
+                seen.add(key)
+                results.append(prior)
+        return results
 
     def invite_limit(self) -> InviteLimit:
         """Retrieve invite limits for the org
@@ -346,3 +486,10 @@ class Organization(DbObject):
             PaginatedCollection: A collection of Invite objects for the specified project.
         """
         return Entity.Invite.get_project_invites(self.client, project_id)
+
+
+def _invite_status(value: str) -> Union[InviteMemberStatus, str]:
+    try:
+        return InviteMemberStatus(value)
+    except ValueError:
+        return value

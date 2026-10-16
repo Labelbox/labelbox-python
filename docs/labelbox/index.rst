@@ -24,6 +24,7 @@ Labelbox Python SDK Documentation
     foundry-model
     identifiable
     identifiables
+    invite
     issue
     issue-category
     issue-position

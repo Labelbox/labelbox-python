@@ -1,5 +1,6 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Union
 from dataclasses import dataclass
+from enum import Enum
 
 from labelbox.orm.db_object import DbObject
 from labelbox.orm.model import Field
@@ -22,6 +23,35 @@ class InviteLimit:
     remaining: int
     used: int
     limit: int
+
+
+class InviteMemberStatus(str, Enum):
+    """Outcome of one address in `Organization.invite_users`."""
+
+    INVITED = "INVITED"
+    ADDED = "ADDED"
+    ALREADY_MEMBER = "ALREADY_MEMBER"
+    ALREADY_INVITED = "ALREADY_INVITED"
+    INVALID_EMAIL = "INVALID_EMAIL"
+    DUPLICATE = "DUPLICATE"
+    SEAT_LIMIT = "SEAT_LIMIT"
+    NOT_ALLOWED = "NOT_ALLOWED"
+    FAILED = "FAILED"
+
+
+@dataclass
+class InviteResult:
+    """
+    email (str): The address as the server checked it: trimmed and lowercased when valid, trimmed when invalid
+    status (InviteMemberStatus | str): The outcome; an unknown future value stays a string
+    reason (Optional[str]): Why the address is not allowed or already a member, for example `GROUP_ACCESS`
+    invite_id (Optional[str]): The invite id when an invite was created
+    """
+
+    email: str
+    status: Union[InviteMemberStatus, str]
+    reason: Optional[str]
+    invite_id: Optional[str]
 
 
 class Invite(DbObject):
