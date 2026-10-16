@@ -252,19 +252,22 @@ class Organization(DbObject):
         unique: List[str] = []
         blocked: Dict[str, InviteResult] = {}
         for email in emails:
-            key = email.strip().lower()
+            trimmed = email.strip()
+            key = trimmed.lower()
             if key in first_index or key in blocked:
                 continue
-            if len(email) > INVITE_EMAIL_MAX_LENGTH:
+            if len(trimmed) > INVITE_EMAIL_MAX_LENGTH:
                 blocked[key] = InviteResult(
-                    email=email.strip(),
+                    email=trimmed,
                     status=InviteMemberStatus.INVALID_EMAIL,
                     reason=None,
                     invite_id=None,
                 )
                 continue
             first_index[key] = len(unique)
-            unique.append(email)
+            unique.append(
+                trimmed if len(email) > INVITE_EMAIL_MAX_LENGTH else email
+            )
 
         sent: List[InviteResult] = []
         for start in range(0, len(unique), INVITE_USERS_BATCH_SIZE):

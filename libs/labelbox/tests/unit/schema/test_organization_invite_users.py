@@ -167,6 +167,24 @@ def test_invite_users_keeps_an_over_long_address_out_of_the_batch():
     assert results[2].status is InviteMemberStatus.DUPLICATE
 
 
+def test_invite_users_sends_a_valid_address_hidden_by_padding():
+    client = MagicMock()
+    client.execute.side_effect = _echo_results
+    padded = "ana@x.com" + (" " * 320)
+    labeler = SimpleNamespace(uid="labeler-id", name="LABELER")
+
+    results = _organization(client).invite_users(
+        [padded, "bob@x.com", "ana@x.com"], labeler
+    )
+
+    sent = client.execute.call_args.args[1]["data"]["emails"]
+    assert sent == ["ana@x.com", "bob@x.com"]
+    assert results[0].status is InviteMemberStatus.INVITED
+    assert results[0].email == "ana@x.com"
+    assert results[1].email == "bob@x.com"
+    assert results[2].status is InviteMemberStatus.DUPLICATE
+
+
 def test_invite_users_answers_repeats_across_requests_as_duplicates():
     client = MagicMock()
     client.execute.side_effect = _echo_results
