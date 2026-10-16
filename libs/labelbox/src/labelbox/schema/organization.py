@@ -33,6 +33,8 @@ if TYPE_CHECKING:
 
 # The server accepts at most this many addresses per inviteMembers request.
 INVITE_USERS_BATCH_SIZE = 100
+# A longer raw address makes the server reject the whole request.
+INVITE_EMAIL_MAX_LENGTH = 320
 
 
 class Organization(DbObject):
@@ -248,11 +250,21 @@ class Organization(DbObject):
         # requests are answered here, as the server would answer them.
         first_index: Dict[str, int] = {}
         unique: List[str] = []
+        blocked: Dict[str, InviteResult] = {}
         for email in emails:
             key = email.strip().lower()
-            if key not in first_index:
-                first_index[key] = len(unique)
-                unique.append(email)
+            if key in first_index or key in blocked:
+                continue
+            if len(email) > INVITE_EMAIL_MAX_LENGTH:
+                blocked[key] = InviteResult(
+                    email=email.strip(),
+                    status=InviteMemberStatus.INVALID_EMAIL,
+                    reason=None,
+                    invite_id=None,
+                )
+                continue
+            first_index[key] = len(unique)
+            unique.append(email)
 
         sent: List[InviteResult] = []
         for start in range(0, len(unique), INVITE_USERS_BATCH_SIZE):
@@ -284,10 +296,11 @@ class Organization(DbObject):
         seen: Set[str] = set()
         for email in emails:
             key = email.strip().lower()
+            prior = blocked[key] if key in blocked else sent[first_index[key]]
             if key in seen:
                 results.append(
                     InviteResult(
-                        email=sent[first_index[key]].email,
+                        email=prior.email,
                         status=InviteMemberStatus.DUPLICATE,
                         reason=None,
                         invite_id=None,
@@ -295,7 +308,7 @@ class Organization(DbObject):
                 )
             else:
                 seen.add(key)
-                results.append(sent[first_index[key]])
+                results.append(prior)
         return results
 
     def invite_limit(self) -> InviteLimit:

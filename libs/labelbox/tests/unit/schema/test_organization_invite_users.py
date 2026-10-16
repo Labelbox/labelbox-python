@@ -148,6 +148,25 @@ def test_invite_users_rejects_a_single_string():
         _organization(MagicMock()).invite_users("ana@x.com", labeler)
 
 
+def test_invite_users_keeps_an_over_long_address_out_of_the_batch():
+    client = MagicMock()
+    client.execute.side_effect = _echo_results
+    long_address = "a" * 321
+    labeler = SimpleNamespace(uid="labeler-id", name="LABELER")
+
+    results = _organization(client).invite_users(
+        ["ana@x.com", long_address, " " + long_address], labeler
+    )
+
+    sent = client.execute.call_args.args[1]["data"]["emails"]
+    assert sent == ["ana@x.com"]
+    assert results[0].status is InviteMemberStatus.INVITED
+    assert results[1] == InviteResult(
+        long_address, InviteMemberStatus.INVALID_EMAIL, None, None
+    )
+    assert results[2].status is InviteMemberStatus.DUPLICATE
+
+
 def test_invite_users_answers_repeats_across_requests_as_duplicates():
     client = MagicMock()
     client.execute.side_effect = _echo_results
