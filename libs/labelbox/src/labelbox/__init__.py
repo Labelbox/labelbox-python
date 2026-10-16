@@ -103,6 +103,7 @@ from labelbox.schema.organization import Organization
 from labelbox.schema.project import Project
 from labelbox.schema.project_model_config import ProjectModelConfig
 from labelbox.schema.performance import (
+    PerformanceCursorRows,
     PerformanceDeletedLabels,
     PerformanceInterval,
     PerformanceMemberType,
@@ -115,6 +116,13 @@ from labelbox.schema.performance import (
     PerformanceTimeBucket,
     ProjectLabelerPerformance,
     ProjectReviewerPerformance,
+    SignInEndReason,
+    SignInEvent,
+    SignInEventRows,
+    SignInEventType,
+    SignInSession,
+    SignInSessionStatus,
+    SignInStartKind,
     WorkspaceLabelerPerformance,
 )
 from labelbox.schema.project_overview import (

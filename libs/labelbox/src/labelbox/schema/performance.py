@@ -1,7 +1,8 @@
 """Performance reports.
 
 The numbers behind a project's Performance page and the workspace Monitor,
-read through the Labelbox REST API (``/api/v1/performance``). The methods on
+and when the organization's members signed in and out, read through the
+Labelbox REST API (``/api/v1/performance``). The methods on
 :class:`labelbox.Client` and :class:`labelbox.schema.project.Project` that
 return the classes below are thin wrappers over the functions at the bottom
 of this module.
@@ -52,6 +53,8 @@ _TIMEOUT_SECONDS = 120
 # timed out, and not to start a third.
 _RETRY_DEADLINE_SECONDS = 2 * _TIMEOUT_SECONDS
 _DEFAULT_PAGE_SIZE = 50
+# Sign-in activity is paged at most 100 rows at a time, and by default.
+_SIGN_IN_PAGE_SIZE = 100
 
 DateLike = Union[date, datetime, str]
 """A calendar day: a ``date``, a ``datetime`` or a string such as ``"2026-01-31"``."""
@@ -90,6 +93,73 @@ class PerformanceMemberType(str, Enum):
 
     INTERNAL = "internal"
     EXTERNAL = "external"
+
+
+class SignInSessionStatus(str, Enum):
+    """Whether a sign-in session is still open.
+
+    A session is ``OPEN`` until it ends, by a recorded or a derived end, and
+    ``ENDED`` after. Used as the ``status`` filter of
+    :meth:`labelbox.Client.get_sign_in_sessions`, it is sent in lower case,
+    as the API takes it there: ``open`` or ``ended``.
+    """
+
+    OPEN = "OPEN"
+    ENDED = "ENDED"
+
+
+class SignInStartKind(str, Enum):
+    """How a sign-in session started.
+
+    ``SIGN_IN``: the member signed in, by any method, including a single
+    sign-on that completed without asking. ``WORKSPACE_SWITCH``: the member
+    switched into this workspace from their user in another one.
+    """
+
+    SIGN_IN = "SIGN_IN"
+    WORKSPACE_SWITCH = "WORKSPACE_SWITCH"
+
+
+class SignInEndReason(str, Enum):
+    """How a sign-in session ended.
+
+    ``SIGNED_OUT``: the member signed out. This includes an idle sign-out by
+    the label editor when the editor is shown inside another Labelbox page:
+    the two cannot be told apart. ``REPLACED``: a new sign-in in the same
+    browser replaced the session; it can be another account's, a sign-up or
+    an impersonation. ``WORKSPACE_SWITCH``: the member switched
+    to another workspace. ``ACCOUNT_REMOVED``: the member was removed from
+    the organization or deactivated. ``REVOKED``: the session was ended
+    because its account was merged into another.
+
+    ``MAX_DURATION_REACHED``: nothing ended the session before every
+    credential of its sign-in lapsed, at its ``expires_at``. This end is
+    derived when the session is read, never recorded. It is when the session
+    could last no longer, not when the member stopped working.
+
+    Closing the tab or the browser is not recorded, and ends nothing. The
+    label editor's idle sign-out when the editor is open in its own tab is
+    not recorded either.
+    """
+
+    SIGNED_OUT = "SIGNED_OUT"
+    REPLACED = "REPLACED"
+    WORKSPACE_SWITCH = "WORKSPACE_SWITCH"
+    ACCOUNT_REMOVED = "ACCOUNT_REMOVED"
+    REVOKED = "REVOKED"
+    MAX_DURATION_REACHED = "MAX_DURATION_REACHED"
+
+
+class SignInEventType(str, Enum):
+    """The kind of a sign-in event.
+
+    ``SIGN_IN`` happens when a session starts, at its ``started_at``.
+    ``SIGN_OUT`` happens when it ends, by a recorded or a derived end, at its
+    ``ended_at``.
+    """
+
+    SIGN_IN = "SIGN_IN"
+    SIGN_OUT = "SIGN_OUT"
 
 
 class PerformanceMetric(_CamelCaseMixin):
@@ -433,6 +503,114 @@ class PerformanceReportDownload(_CamelCaseMixin):
     generated_at: datetime
 
 
+class SignInSession(_CamelCaseMixin):
+    """One sign-in session of a member of your organization.
+
+    A session is one sign-in in one browser, or a switch into this workspace
+    from the same person's user in another one. It lasts until the member
+    signs out, until Labelbox ends it (a new sign-in in the same browser, a
+    switch to another workspace, the member's removal) or, when neither
+    happened, until every credential the sign-in issued has lapsed. That
+    last end is derived when the session is read, and is the latest the
+    session could last: it is not when the member stopped working.
+
+    Attributes:
+        session_id (str): The session's ID. Its events in
+            :meth:`labelbox.Client.get_sign_in_events` carry it too.
+        user_id (str)
+        email (Optional[str]): ``None`` if the user no longer exists or is
+            now another organization's.
+        member_deleted (bool): True if the member was deactivated, no longer
+            exists, or is now another organization's. A session stays with
+            the organization it started in.
+        started_at (datetime): When the member signed in, or switched into
+            this workspace.
+        start_kind (str): How the session started: ``"SIGN_IN"`` or
+            ``"WORKSPACE_SWITCH"`` (see :class:`SignInStartKind`).
+        status (str): ``"OPEN"`` or ``"ENDED"`` (see
+            :class:`SignInSessionStatus`).
+        ended_at (Optional[datetime]): When the session ended, by a recorded
+            or a derived end. For a derived end it is ``expires_at``.
+            ``None`` while the session is open.
+        end_reason (Optional[str]): How the session ended (see
+            :class:`SignInEndReason`). ``None`` while it is open.
+        end_derived (Optional[bool]): True when nothing recorded the end.
+            ``end_reason`` is then ``"MAX_DURATION_REACHED"`` and
+            ``ended_at`` is ``expires_at``: the moment the session could
+            last no longer, not when the member stopped working. ``None``
+            while the session is open.
+        expires_at (datetime): The latest the session can end. That is
+            normally 84 hours and a minute after the sign-in (the sign-in
+            cookie's lifetime, plus a minute), or 7 days after a switch made
+            where the organization uses tokens instead of cookies. Opening a
+            workspace link again, or connecting an application to the
+            account, sets the cookie again, so while the session is open
+            ``expires_at`` can still move later. Once it has passed, it does
+            not change.
+        duration_seconds (Optional[int]): Whole seconds from start to end.
+            ``None`` while the session is open. Sessions record sign-ins and
+            how they ended, not activity, so no duration is time worked,
+            recorded end or not. For example, a derived end counts all the
+            time the session could have lasted, a sign-out the next morning
+            counts the night, and overlapping sessions in two browsers both
+            count.
+    """
+
+    session_id: str
+    user_id: str
+    email: Optional[str] = None
+    member_deleted: bool
+    started_at: datetime
+    start_kind: str
+    status: str
+    ended_at: Optional[datetime] = None
+    end_reason: Optional[str] = None
+    end_derived: Optional[bool] = None
+    expires_at: datetime
+    duration_seconds: Optional[int] = None
+
+
+class SignInEvent(_CamelCaseMixin):
+    """A sign-in or a sign-out of a member of your organization.
+
+    A sign-in happens when a session starts and a sign-out when it ends, by
+    a recorded or a derived end (see :class:`SignInSession`).
+
+    Attributes:
+        event_id (str): The same on every read, to drop events already seen.
+        type (str): ``"SIGN_IN"`` or ``"SIGN_OUT"`` (see
+            :class:`SignInEventType`).
+        occurred_at (datetime): When it happened: a sign-in when its session
+            started, a sign-out when it ended.
+        session_id (str): The session it starts or ends.
+        user_id (str)
+        email (Optional[str]): ``None`` if the user no longer exists or is
+            now another organization's.
+        start_kind (Optional[str]): How the session started (see
+            :class:`SignInStartKind`). ``None`` for a sign-out.
+        end_reason (Optional[str]): How the session ended (see
+            :class:`SignInEndReason`). ``None`` for a sign-in.
+        end_derived (Optional[bool]): True for a sign-out nothing recorded.
+            ``end_reason`` is then ``"MAX_DURATION_REACHED"`` and the
+            sign-out is at the session's ``expires_at``: the moment the
+            session could last no longer, not when the member stopped
+            working. ``None`` for a sign-in.
+        session_started_at (datetime): When the session started. For a
+            sign-in, it is ``occurred_at``.
+    """
+
+    event_id: str
+    type: str
+    occurred_at: datetime
+    session_id: str
+    user_id: str
+    email: Optional[str] = None
+    start_kind: Optional[str] = None
+    end_reason: Optional[str] = None
+    end_derived: Optional[bool] = None
+    session_started_at: datetime
+
+
 class PerformanceTableChangedError(LabelboxError):
     """A table changed while its pages were being read.
 
@@ -535,6 +713,96 @@ class PerformanceRows(Generic[Row]):
             number += 1
 
 
+class PerformanceCursorRows(Generic[Row]):
+    """Rows the API pages by cursor: sign-in sessions and sign-in events.
+
+    Iterating fetches the rows a page at a time, each page from where the
+    one before ended, until the API says there are no more. Nothing is
+    requested until the rows are read. The rows come in a fixed order.
+    Unlike :class:`PerformanceRows` there is no ``total``: the API does not
+    count the rows.
+
+    Each page is a separate request that continues after the last row of
+    the page before, so the pages never overlap. A row on a later page is as
+    it was when that page was read: a session that ended meanwhile is listed
+    as ended, and is left out of a reading of open sessions. Who is in the
+    groups of a ``user_group_ids`` filter is worked out again for every
+    page.
+
+    Iterating a second time reads the rows again from the first page.
+
+    >>> for session in client.get_sign_in_sessions("2026-11-02", "2026-11-08"):
+    ...     print(session.email, session.started_at, session.end_reason)
+    """
+
+    def __init__(
+        self,
+        fetch_page: Callable[[Optional[str]], Dict[str, Any]],
+        row_type: Type[Row],
+    ):
+        self._fetch_page = fetch_page
+        self._row_type = row_type
+        # The last page of the latest reading, once it got there.
+        self._last_page: Optional[Dict[str, Any]] = None
+
+    def __iter__(self) -> Iterator[Row]:
+        self._last_page = None
+        cursor: Optional[str] = None
+        while True:
+            page = self._fetch_page(cursor)
+            for row in page["data"]:
+                yield self._row_type.model_validate(row)
+            cursor = page.get("nextCursor")
+            if not cursor:
+                self._last_page = page
+                return
+
+
+class SignInEventRows(PerformanceCursorRows[SignInEvent]):
+    """The sign-ins and sign-outs of :meth:`labelbox.Client.get_sign_in_events`.
+
+    The events are fetched a page at a time as you iterate, as for
+    :class:`PerformanceCursorRows`, ordered by ``occurred_at``.
+
+    The feed stops at ``complete_through``. Read it to the end and keep
+    ``complete_through``: every event before it has been listed. To follow
+    the feed, read it again next time from the day an hour before the
+    ``complete_through`` you kept, and drop the events whose ``event_id``
+    you have already seen. That also picks up an event that took unusually
+    long to be recorded.
+
+    >>> from datetime import datetime, timedelta, timezone
+    >>> events = client.get_sign_in_events("2026-11-03", "2026-11-09")
+    >>> seen = {event.event_id for event in events}
+    >>> since = events.complete_through - timedelta(hours=1)
+    >>> # Next time:
+    >>> for event in client.get_sign_in_events(since, datetime.now(timezone.utc)):
+    ...     if event.event_id not in seen:
+    ...         seen.add(event.event_id)
+    ...         print(event.occurred_at, event.email, event.type)
+    """
+
+    def __init__(self, fetch_page: Callable[[Optional[str]], Dict[str, Any]]):
+        super().__init__(fetch_page, SignInEvent)
+
+    @property
+    def complete_through(self) -> Optional[datetime]:
+        """Where the feed stops, as the last page reports it.
+
+        The earlier of the end of ``end_date`` and five minutes before the
+        last page was read. Every event before it is in the feed, and a
+        derived sign-out is listed once its time is before it; events at or
+        after it are not listed yet.
+
+        It is taken from the last page, the one with no next page, so it is
+        ``None`` until the events have been read to the end. Iterating again
+        resets it, and it then describes that reading.
+        """
+        if self._last_page is None:
+            return None
+        return _parse_datetime(self._last_page["completeThrough"])
+
+
 def _parse_datetime(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
@@ -585,6 +853,43 @@ def _to_ids(name: str, values: Optional[Iterable[Any]]) -> Optional[str]:
             "an empty list would otherwise report on everyone."
         )
     return ",".join(ids)
+
+
+def _to_status(
+    status: Optional[Union[SignInSessionStatus, str]],
+) -> Optional[str]:
+    """A session status as the filter takes it: ``open`` or ``ended``.
+
+    A session's own status is in capitals, like SignInSessionStatus, and the
+    filter is in lower case, so either spelling is accepted.
+    """
+    if status is None:
+        return None
+    value = status.value if isinstance(status, Enum) else status
+    return value.lower()
+
+
+def _to_event_types(
+    types: Optional[Iterable[Union[SignInEventType, str]]],
+) -> Optional[str]:
+    """Event types as one comma-separated parameter.
+
+    ``None`` lists both kinds. An empty list is refused, as the API refuses
+    it, before anything is requested.
+    """
+    if types is None:
+        return None
+    if isinstance(types, str):
+        types = [types]
+    values = [
+        str(value.value) if isinstance(value, Enum) else value
+        for value in types
+    ]
+    if not values:
+        raise ValueError(
+            "types is empty. Pass None to list both sign-ins and sign-outs."
+        )
+    return ",".join(values)
 
 
 def _to_field(attribute: str) -> str:
@@ -934,3 +1239,60 @@ def get_workspace_labelers(
         userGroupIds=_to_ids("user_group_ids", user_group_ids),
         useCache=None if use_cache else False,
     )
+
+
+def _cursor_pages(
+    client: "Client", path: str, **params: Any
+) -> Callable[[Optional[str]], Dict[str, Any]]:
+    """Fetches one page of a listing paged by cursor: the first without one."""
+
+    def fetch_page(cursor: Optional[str]) -> Dict[str, Any]:
+        # Sent as the page before returned it: a cursor is not to be read.
+        return _get(client, path, **params, cursor=cursor)
+
+    return fetch_page
+
+
+def get_sign_in_sessions(
+    client: "Client",
+    start_date: DateLike,
+    end_date: DateLike,
+    user_ids: Optional[Iterable[Any]] = None,
+    user_group_ids: Optional[Iterable[Any]] = None,
+    status: Optional[Union[SignInSessionStatus, str]] = None,
+    page_size: int = _SIGN_IN_PAGE_SIZE,
+) -> PerformanceCursorRows[SignInSession]:
+    fetch_page = _cursor_pages(
+        client,
+        "/workspace/sign-in-sessions",
+        **_period(start_date, end_date),
+        userIds=_to_ids("user_ids", user_ids),
+        userGroupIds=_to_ids("user_group_ids", user_group_ids),
+        status=_to_status(status),
+        perPage=page_size,
+    )
+    return PerformanceCursorRows(fetch_page, SignInSession)
+
+
+def get_sign_in_events(
+    client: "Client",
+    start_date: DateLike,
+    end_date: DateLike,
+    user_ids: Optional[Iterable[Any]] = None,
+    user_group_ids: Optional[Iterable[Any]] = None,
+    types: Optional[Iterable[Union[SignInEventType, str]]] = None,
+    include_derived: bool = True,
+    page_size: int = _SIGN_IN_PAGE_SIZE,
+) -> SignInEventRows:
+    fetch_page = _cursor_pages(
+        client,
+        "/workspace/sign-in-events",
+        **_period(start_date, end_date),
+        userIds=_to_ids("user_ids", user_ids),
+        userGroupIds=_to_ids("user_group_ids", user_group_ids),
+        types=_to_event_types(types),
+        # Only sent to leave derived sign-outs out; they are in by default.
+        includeDerived=None if include_derived else False,
+        perPage=page_size,
+    )
+    return SignInEventRows(fetch_page)
