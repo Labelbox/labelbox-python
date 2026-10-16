@@ -1,4 +1,9 @@
 # Changelog
+# Version 7.15.0 (2026-10-16)
+## Added
+* Add `Client.get_sign_in_sessions()` and `Client.get_sign_in_events()`, which return the sign-in history of your organization's members: each sign-in session with how and when it ended, and a feed of sign-ins and sign-outs for incremental pulls. A session with no recorded end is reported as ended when its maximum length ran out, which is not when the member stopped working ([#2083](https://github.com/Labelbox/labelbox-python/pull/2083))
+* Add `SignInSession`, `SignInEvent`, `SignInSessionStatus`, `SignInStartKind`, `SignInEndReason`, `SignInEventType`, `PerformanceCursorRows` and `SignInEventRows` ([#2083](https://github.com/Labelbox/labelbox-python/pull/2083))
+
 # Version 7.14.0 (2026-10-14)
 ## Added
 * Add `user_group_ids` and `member_organization_ids` to `Client.get_workspace_performance_metric()` and `Client.get_workspace_labeler_performance()`, to report on the members of user groups or of other organizations, such as workforce providers, across the workspace ([#2081](https://github.com/Labelbox/labelbox-python/pull/2081))
