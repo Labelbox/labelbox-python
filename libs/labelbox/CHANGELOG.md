@@ -1,4 +1,11 @@
 # Changelog
+# Version 7.16.0 (2026-10-19)
+## Added
+* Add `Project.label_versions()`, `Label.versions()` and `Client.get_label_version()`, which read a label's recorded versions: one per hand-off (submit, save, review approve or reject, rework), with who made it, when, at which workflow step, and the annotations at that moment. Versions are recorded once label version history is enabled for the project ([#2086](https://github.com/Labelbox/labelbox-python/pull/2086))
+* Add `LabelVersion`, `LabelVersionAction` and `LabelVersionStage` ([#2086](https://github.com/Labelbox/labelbox-python/pull/2086))
+## Fixed
+* Serializing a raster mask to NDJSON no longer fails with Pillow 13 ("Invalid mode for data type") ([#2086](https://github.com/Labelbox/labelbox-python/pull/2086))
+
 # Version 7.15.0 (2026-10-16)
 ## Added
 * Add `Client.get_sign_in_sessions()` and `Client.get_sign_in_events()`, which return the sign-in history of your organization's members: each sign-in session with how and when it ended, and a feed of sign-ins and sign-outs for incremental pulls. A session with no recorded end is reported as ended when its maximum length ran out, which is not when the member stopped working ([#2083](https://github.com/Labelbox/labelbox-python/pull/2083))
