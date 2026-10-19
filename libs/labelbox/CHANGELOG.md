@@ -3,6 +3,8 @@
 ## Added
 * Add `Project.label_versions()`, `Label.versions()` and `Client.get_label_version()`, which read a label's recorded versions: one per hand-off (submit, save, review approve or reject, rework), with who made it, when, at which workflow step, and the annotations at that moment. Versions are recorded once label version history is enabled for the project ([#2086](https://github.com/Labelbox/labelbox-python/pull/2086))
 * Add `LabelVersion`, `LabelVersionAction` and `LabelVersionStage` ([#2086](https://github.com/Labelbox/labelbox-python/pull/2086))
+* Add `Organization.invite_users()`, which invites many people at once, workspace-wide or to projects and user groups, and returns one result per address. One bad address doesn't stop the others, and sending the same list again is safe ([#2085](https://github.com/Labelbox/labelbox-python/pull/2085))
+* Add `InviteResult` and `InviteMemberStatus` ([#2085](https://github.com/Labelbox/labelbox-python/pull/2085))
 ## Fixed
 * Serializing a raster mask to NDJSON no longer fails with Pillow 13 ("Invalid mode for data type") ([#2086](https://github.com/Labelbox/labelbox-python/pull/2086))
 
