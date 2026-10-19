@@ -53,6 +53,7 @@ from labelbox.schema.labeling_service import (
     LabelingService,
     LabelingServiceStatus,
 )
+from labelbox.schema import label_version as _label_version
 from labelbox.schema import performance as _performance
 from labelbox.schema.labeling_service_dashboard import LabelingServiceDashboard
 from labelbox.schema.media_type import MediaType
@@ -338,6 +339,77 @@ class Project(DbObject, Updateable, Deletable):
         ]["resourceTags"]
 
         return [ResourceTag(self.client, tag) for tag in results]
+
+    def label_versions(
+        self,
+        label=None,
+        data_row=None,
+        created_by=None,
+        created_after: Optional[_label_version.DateTimeLike] = None,
+        created_before: Optional[_label_version.DateTimeLike] = None,
+        include_annotations: bool = True,
+        page_size: int = 100,
+    ) -> PaginatedCollection:
+        """Returns the recorded versions of this project's labels, oldest first.
+
+        A version is recorded at each hand-off: when a label is submitted or
+        saved from the editor, approved or rejected in a review step,
+        submitted from a rework step, or moved into a rework step. Review and
+        rework edit the same label, so one label's versions show what each
+        reviewer and rework changed. Autosaves and drafts record none, there
+        are none from before recording was enabled for the project, and
+        versions are never changed or deleted.
+
+        You see the versions of the labels you may read: only your own
+        without permission to see other users' labels, and only labels your
+        organization made in another organization's project without
+        permission to see all labels.
+
+        Args:
+            label (str or Label): Optional. Only this label's versions.
+            data_row (str or DataRow): Optional. Only versions of labels on
+                this data row.
+            created_by (str or User): Optional. Only versions whose hand-off
+                this user made (the labeler or reviewer).
+            created_after (datetime or str): Optional. Only versions recorded
+                at or after this time. Naive datetimes are read as UTC.
+            created_before (datetime or str): Optional. Only versions recorded
+                before this time.
+            include_annotations (bool): Also read each version's annotations
+                (``label`` and ``label_json``). Defaults to True.
+            page_size (int): Versions fetched per request, at most 100.
+
+        Returns:
+            PaginatedCollection of LabelVersion, fetched a page at a time as
+            you iterate.
+
+        Raises:
+            lbox.exceptions.AuthorizationError: You may not read this
+                project's labels, or the API key does not allow it.
+            ValueError: A bad page size or time range.
+
+        Example:
+            >>> for version in project.label_versions(label=label_id):
+            >>>     print(version.action, version.created_by_id,
+            >>>           version.stage and version.stage.name)
+            >>>
+            >>> # Everything reviewers did in October, without annotations.
+            >>> october = project.label_versions(
+            >>>     created_after="2026-10-01T00:00:00Z",
+            >>>     created_before="2026-11-01T00:00:00Z",
+            >>>     include_annotations=False)
+        """
+        return _label_version.get_label_versions(
+            self.client,
+            self.uid,
+            label=label,
+            data_row=data_row,
+            created_by=created_by,
+            created_after=created_after,
+            created_before=created_before,
+            include_annotations=include_annotations,
+            page_size=page_size,
+        )
 
     def labels(
         self, datasets=None, order_by=None, created_by=None
