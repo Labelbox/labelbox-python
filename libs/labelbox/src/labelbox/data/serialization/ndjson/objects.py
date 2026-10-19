@@ -509,7 +509,11 @@ class NDMask(NDBaseObject, ConfidenceMixin, CustomMetricsMixin):
         else:
             binary = np.all(mask.mask.value == mask.color, axis=-1)
             im_bytes = BytesIO()
-            Image.fromarray(binary, "L").save(im_bytes, format="PNG")
+            # Pillow 13 refuses a bool array with mode "L"; uint8 0/1 gives
+            # the same L-mode PNG that older Pillow produced from it.
+            Image.fromarray(binary.astype(np.uint8)).save(
+                im_bytes, format="PNG"
+            )
             lbv1_mask = _PNGMask(
                 png=base64.b64encode(im_bytes.getvalue()).decode("utf-8")
             )
