@@ -42,6 +42,7 @@ from labelbox.schema.enums import CollectionJobStatus
 from labelbox.schema.foundry.foundry_client import FoundryClient
 from labelbox.schema.iam_integration import IAMIntegration
 from labelbox.schema.identifiables import DataRowIds, GlobalKeys
+from labelbox.schema import label_version as _label_version
 from labelbox.schema.label_score import LabelScore
 from labelbox.schema.labeling_frontend import LabelingFrontend
 from labelbox.schema import performance as _performance
@@ -2784,6 +2785,32 @@ class Client:
             types=types,
             include_derived=include_derived,
             page_size=page_size,
+        )
+
+    def get_label_version(
+        self, version_id: str, include_annotations: bool = True
+    ) -> Optional[_label_version.LabelVersion]:
+        """Returns one recorded version of a label.
+
+        List a project's versions with :meth:`Project.label_versions` or one
+        label's with :meth:`Label.versions`.
+
+        Args:
+            version_id (str): The version's ID (``LabelVersion.id``).
+            include_annotations (bool): Also read the annotations at that
+                moment (``label`` and ``label_json``). Defaults to True.
+
+        Returns:
+            Optional[LabelVersion]: ``None`` if it does not exist or you may
+            not read its label.
+
+        Example:
+            >>> version = client.get_label_version("cm2v...")
+            >>> print(version.action, version.created_by_id, version.created_at)
+            >>> annotations = version.label_json
+        """
+        return _label_version.get_label_version(
+            self, version_id, include_annotations=include_annotations
         )
 
     def get_task_by_id(self, task_id: str) -> Union[Task, DataUpsertTask]:

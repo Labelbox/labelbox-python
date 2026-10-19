@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING
 
 from labelbox.orm import query
+from labelbox.pagination import PaginatedCollection
+from labelbox.schema import label_version as _label_version
 from labelbox.orm.db_object import DbObject, Updateable, BulkDeletable
 from labelbox.orm.model import Entity, Field, Relationship
 
@@ -43,6 +45,31 @@ class Label(DbObject, Updateable, BulkDeletable):
     data_row = Relationship.ToOne("DataRow")
     reviews = Relationship.ToMany("Review", False)
     created_by = Relationship.ToOne("User", False, "created_by")
+
+    def versions(self, include_annotations: bool = True) -> PaginatedCollection:
+        """Returns this label's recorded versions, oldest first.
+
+        See :meth:`labelbox.schema.project.Project.label_versions` for what a
+        version is and who may read it.
+
+        Args:
+            include_annotations (bool): Also read each version's annotations
+                (``label`` and ``label_json``). Defaults to True.
+
+        Returns:
+            PaginatedCollection of LabelVersion.
+
+        Example:
+            >>> for version in label.versions():
+            >>>     print(version.created_at, version.action,
+            >>>           version.created_by_id, version.label_json)
+        """
+        return _label_version.get_label_versions(
+            self.client,
+            self.project().uid,
+            label=self.uid,
+            include_annotations=include_annotations,
+        )
 
     @staticmethod
     def bulk_delete(labels) -> None:

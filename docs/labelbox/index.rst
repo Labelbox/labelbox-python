@@ -29,6 +29,7 @@ Labelbox Python SDK Documentation
     issue-position
     label
     label-score
+    label-version
     labeling-frontend
     labeling-frontend-options
     labeling-parameter-override
