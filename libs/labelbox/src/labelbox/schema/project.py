@@ -1543,6 +1543,49 @@ class Project(DbObject, Updateable, Deletable):
         res = self.client.execute(query_str, {id_param: self.uid})
         return res["extendReservations"]
 
+    def clear_queue_reservations(self, task_queue_id: str) -> Optional[int]:
+        """Clears every reservation in one task queue of this project.
+
+        Warning:
+            This is destructive and cannot be undone. Every labeler or
+            reviewer holding a data row in the queue loses it, and unsaved
+            work on those data rows can be lost. Only reservations are
+            cleared: no labels are deleted and no data rows are enqueued or
+            moved. The data rows go back to the queue for anyone to pick up.
+
+        Requires the project permission to clear all reservations (the Admin
+        and Team Manager roles, or a custom role that grants it). Not
+        supported on GitHub-integrated projects with the reservation
+        lifecycle enabled.
+
+        Args:
+            task_queue_id: ID of a task queue of this project, from
+                ``project.task_queues()``.
+        Returns:
+            The number of reservations the queue held when they were
+            cleared, or ``None`` if that count could not be read (the
+            reservations were still cleared).
+        Raises:
+            ResourceNotFoundError: If the task queue is not in this project.
+            LabelboxError: If the reservations could not be cleared.
+        """
+        query_str = """mutation ClearQueueReservationsPyApi($input: ClearQueueReservationsInput!) {
+            clearQueueReservations(input: $input) {
+                success
+                clearedReservationCount
+            }
+        }"""
+
+        result = self.client.execute(
+            query_str,
+            {"input": {"projectId": self.uid, "queueId": task_queue_id}},
+        )["clearQueueReservations"]
+        if not result["success"]:
+            raise LabelboxError(
+                f"Reservations of task queue {task_queue_id} were not cleared"
+            )
+        return result["clearedReservationCount"]
+
     def bulk_assign_data_rows(
         self,
         user_id: str,
