@@ -1,5 +1,5 @@
 # Changelog
-# Version 7.16.0 (2026-10-19)
+# Version 7.16.0 (2026-10-20)
 ## Added
 * Add `Project.label_versions()`, `Label.versions()` and `Client.get_label_version()`, which read a label's recorded versions: one per hand-off (submit, save, review approve or reject, rework), with who made it, when, at which workflow step, and the annotations at that moment. Versions are recorded once label version history is enabled for the project ([#2086](https://github.com/Labelbox/labelbox-python/pull/2086))
 * Add `LabelVersion`, `LabelVersionAction` and `LabelVersionStage` ([#2086](https://github.com/Labelbox/labelbox-python/pull/2086))
