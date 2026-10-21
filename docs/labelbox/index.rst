@@ -60,5 +60,6 @@ Labelbox Python SDK Documentation
     task-assignment-status
     task-queue
     user
+    user-group-audit
     user-group-v2
     webhook
