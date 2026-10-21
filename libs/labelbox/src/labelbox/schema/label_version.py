@@ -78,8 +78,11 @@ class LabelVersion(_CamelCaseMixin):
             a submit, the reviewer for a review save or decision.
         stage (Optional[LabelVersionStage]): The workflow step the data row
             was in. ``None`` when it was in none (Done).
-        annotation_count (int): Number of annotations (features) in the
-            version.
+        annotation_count (int): Number of annotations in the version, counted
+            as the editor and exports count them: each object and each
+            classification at the top of the label. A classification's
+            answers and an object's nested classifications are part of it,
+            and the segmentation group that holds masks is not counted.
         label (Optional[str]): The annotations at that moment, as stringified
             JSON in the same shape as :attr:`labelbox.schema.label.Label.label`.
             Feature schema names are the ones in effect then. ``None`` when
