@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from lbox.exceptions import LabelboxError
+from lbox.exceptions import LabelboxError, ResourceNotFoundError
 
 from labelbox.schema.project import Project
 
@@ -83,3 +83,19 @@ def test_clear_queue_reservations_raises_on_server_failure(
 
     with pytest.raises(LabelboxError, match="queue_1"):
         project.clear_queue_reservations("queue_1")
+
+
+def test_clear_queue_reservations_raises_when_queue_not_found(
+    project, mock_client
+):
+    mock_client.execute.side_effect = ResourceNotFoundError(
+        message="Task queue not found"
+    )
+
+    with pytest.raises(ResourceNotFoundError):
+        project.clear_queue_reservations("missing_queue")
+
+    assert (
+        mock_client.execute.call_args.kwargs["raise_return_resource_not_found"]
+        is True
+    )

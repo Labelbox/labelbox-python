@@ -1579,6 +1579,7 @@ class Project(DbObject, Updateable, Deletable):
         result = self.client.execute(
             query_str,
             {"input": {"projectId": self.uid, "queueId": task_queue_id}},
+            raise_return_resource_not_found=True,
         )["clearQueueReservations"]
         if not result["success"]:
             raise LabelboxError(
