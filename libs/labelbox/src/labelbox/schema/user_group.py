@@ -10,7 +10,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 import uuid
-from typing import Any, Dict, Iterator, List, Optional, Set
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Set, Union
 
 from lbox.exceptions import (
     InvalidQueryError,
@@ -23,11 +23,18 @@ from lbox.exceptions import (
 from pydantic import BaseModel, ConfigDict, Field
 
 from labelbox import Client
+from labelbox.pagination import PaginatedCollection
 from labelbox.schema.media_type import MediaType
 from labelbox.schema.ontology_kind import EditorTaskType
 from labelbox.schema.project import Project
 from labelbox.schema.role import Role
 from labelbox.schema.user import User
+from labelbox.schema.user_group_audit import (
+    DateTimeLike,
+    UserGroupAuditActorKind,
+    UserGroupAuditEventType,
+    get_user_group_audit_events,
+)
 
 # Constants for UserGroup role restrictions
 INVALID_USERGROUP_ROLES = frozenset(["NONE", "TENANT_ADMIN"])
@@ -438,6 +445,276 @@ class UserGroup(BaseModel):
                 message="Failed to delete user group as user group does not exist"
             )
         return result["deleteUserGroup"]["success"]
+
+    def add_members(
+        self,
+        members: Iterable[UserGroupMember],
+        notify_members: bool = False,
+    ) -> List[str]:
+        """Add people to the group, each with a role in it.
+
+        Unlike :meth:`update`, this only adds: the group's other members and
+        its projects are left as they are. Each person gains access to every
+        project the group is attached to. Recorded in the group audit log as
+        an API change made for the API key's owner.
+
+        Args:
+            members: The people to add, each with their role in the group.
+            notify_members: Email the added people. Defaults to False.
+
+        Returns:
+            IDs of the people added. People already in the group are left
+            unchanged and not listed.
+
+        Raises:
+            ValueError: If group ID is not set, no members are given, or a
+                person appears more than once.
+            UnprocessableEntityError: If the people could not be added.
+        """
+        if not self.id:
+            raise ValueError("Group id is required")
+        members = list(members)
+        if not members:
+            raise ValueError("At least one member is required")
+        user_ids = [member.user.uid for member in members]
+        if len(set(user_ids)) != len(user_ids):
+            raise ValueError("Each user may appear only once")
+
+        query = """
+        mutation AddUserGroupMembersPyApi($id: ID!, $userRoles: [UserRoleInput!], $notifyMembers: Boolean) {
+            addUsersToGroupsV2(
+                where: { ids: [$id] }
+                data: { userRoles: $userRoles, notifyMembers: $notifyMembers }
+            ) {
+                results {
+                    success
+                    added
+                    error
+                    batchJob { batchJobId isComplete }
+                }
+            }
+        }
+        """
+        result = self.client.execute(
+            query,
+            {
+                "id": self.id,
+                "userRoles": [
+                    {"userId": member.user.uid, "roleId": member.role.uid}
+                    for member in members
+                ],
+                "notifyMembers": notify_members,
+            },
+        )["addUsersToGroupsV2"]["results"][0]
+        if not result["success"]:
+            raise UnprocessableEntityError(
+                f"Cannot add members to user group: {result.get('error')}"
+            )
+
+        # Large additions finish in batches the caller has to drive.
+        batch_job = result.get("batchJob")
+        while batch_job and not batch_job["isComplete"]:
+            batch_job = self.client.execute(
+                """
+                mutation ContinueAddUserGroupMembersPyApi($batchJobId: ID!) {
+                    continueAddUsersToGroupBatch(batchJobId: $batchJobId) {
+                        batchJob { batchJobId isComplete }
+                    }
+                }
+                """,
+                {"batchJobId": batch_job["batchJobId"]},
+            )["continueAddUsersToGroupBatch"]["batchJob"]
+
+        return result.get("added") or []
+
+    def remove_members(
+        self,
+        users: Iterable[User],
+        notify_users: bool = True,
+        reason: Optional[str] = None,
+        notification_reason: Optional[str] = None,
+    ) -> bool:
+        """Remove people from the group.
+
+        Each person loses the access they had through the group to every
+        project it is attached to. Recorded in the group audit log as an API
+        change made for the API key's owner.
+
+        Args:
+            users: The people to remove.
+            notify_users: Email the people who lose project access. Defaults
+                to True.
+            reason: Note for your team, shown if the people are added to a
+                group again. Never sent to them.
+            notification_reason: Included in the email to the people who lose
+                project access, when ``notify_users`` is True.
+
+        Returns:
+            True if the people were removed.
+
+        Raises:
+            ValueError: If group ID is not set or no users are given.
+            ResourceNotFoundError: If the group is not found.
+        """
+        if not self.id:
+            raise ValueError("Group id is required")
+        user_ids = list(dict.fromkeys(user.uid for user in users))
+        if not user_ids:
+            raise ValueError("At least one user is required")
+
+        query = """
+        mutation RemoveUserGroupMembersPyApi($id: ID!, $data: RemoveUsersFromGroupInput!) {
+            removeUsersFromGroupV2(where: { id: $id }, data: $data) {
+                success
+            }
+        }
+        """
+        data: Dict[str, Any] = {
+            "userIds": user_ids,
+            "notifyUsers": notify_users,
+        }
+        if reason is not None:
+            data["reason"] = reason
+        if notification_reason is not None:
+            data["notificationReason"] = notification_reason
+
+        result = self.client.execute(
+            query,
+            {"id": self.id, "data": data},
+            raise_return_resource_not_found=True,
+        )
+        return result["removeUsersFromGroupV2"]["success"]
+
+    def list_members(self) -> List[UserGroupMember]:
+        """Read the group's current members from the server.
+
+        Unlike :meth:`get`, this leaves the object's other fields, including
+        any unsaved changes, as they are.
+
+        Returns:
+            The members, each with their role in the group.
+
+        Raises:
+            ValueError: If group ID is not set.
+            ResourceNotFoundError: If the group is not found.
+        """
+        if not self.id:
+            raise ValueError("Group id is required")
+
+        query = """
+            query ListUserGroupMembersPyApi($id: ID!) {
+                userGroupV2(where: {id: $id}) {
+                    members {
+                        nodes { id email }
+                        userGroupRoles { userId roleId }
+                    }
+                }
+            }
+        """
+        result = self.client.execute(query, {"id": self.id})
+        if not result or not result.get("userGroupV2"):
+            raise ResourceNotFoundError(message="User group not found")
+        return list(self._get_members_set(result["userGroupV2"]["members"]))
+
+    def audit_events(
+        self,
+        member: Optional[Union[User, str]] = None,
+        actor: Optional[Union[User, str]] = None,
+        actor_kind: Optional[Union[UserGroupAuditActorKind, str]] = None,
+        types: Optional[Iterable[Union[UserGroupAuditEventType, str]]] = None,
+        project: Optional[Union[Project, str]] = None,
+        occurred_after: Optional[DateTimeLike] = None,
+        occurred_before: Optional[DateTimeLike] = None,
+    ) -> PaginatedCollection:
+        """Read this group's audit log, newest first.
+
+        See :meth:`get_audit_events` for what the log records, who may read
+        it and what each filter does.
+
+        Returns:
+            PaginatedCollection of UserGroupAuditEvent.
+
+        Raises:
+            ValueError: If group ID is not set or a filter is not valid.
+
+        Example:
+            >>> for event in group.audit_events(types=["MEMBER_REMOVED"]):
+            >>>     print(event.occurred_at, event.member_user_id,
+            >>>           event.actor_kind, event.channel, event.actor_user_id)
+        """
+        if not self.id:
+            raise ValueError("Group id is required")
+        return get_user_group_audit_events(
+            self.client,
+            group=self.id,
+            member=member,
+            actor=actor,
+            actor_kind=actor_kind,
+            types=types,
+            project=project,
+            occurred_after=occurred_after,
+            occurred_before=occurred_before,
+        )
+
+    @staticmethod
+    def get_audit_events(
+        client: Client,
+        group: Optional[Union[UserGroup, str]] = None,
+        member: Optional[Union[User, str]] = None,
+        actor: Optional[Union[User, str]] = None,
+        actor_kind: Optional[Union[UserGroupAuditActorKind, str]] = None,
+        types: Optional[Iterable[Union[UserGroupAuditEventType, str]]] = None,
+        project: Optional[Union[Project, str]] = None,
+        occurred_after: Optional[DateTimeLike] = None,
+        occurred_before: Optional[DateTimeLike] = None,
+    ) -> PaginatedCollection:
+        """Read the user group audit log, newest first.
+
+        The log records who added people to groups, removed them or changed
+        their roles, attached groups to projects or detached them, and
+        deleted groups, and whether a person or an automation did it. Only
+        groups you can manage are included; without ``group``, every group
+        you can manage, including deleted ones. The log starts when it
+        shipped; earlier changes are not in it.
+
+        Args:
+            client: Labelbox client for API communication.
+            group: Only events of this group.
+            member: Only events about this person: added, removed or given a
+                new role.
+            actor: Only changes this person made, or automations acting for
+                them.
+            actor_kind: Only changes made by a person (``"PERSON"``), or only
+                by automations (``"AUTOMATION"``).
+            types: Only these kinds of events.
+            project: Only events of this project: a group attached to or
+                detached from it.
+            occurred_after: Only events at or after this moment.
+            occurred_before: Only events before this moment.
+
+        Returns:
+            PaginatedCollection of UserGroupAuditEvent.
+
+        Raises:
+            ValueError: If a filter is not valid.
+
+        Example:
+            >>> events = UserGroup.get_audit_events(
+            >>>     client, member="cl1...", occurred_after="2026-10-01")
+            >>> for event in events:
+            >>>     print(event.occurred_at, event.type, event.group_name)
+        """
+        return get_user_group_audit_events(
+            client,
+            group=group,
+            member=member,
+            actor=actor,
+            actor_kind=actor_kind,
+            types=types,
+            project=project,
+            occurred_after=occurred_after,
+            occurred_before=occurred_before,
+        )
 
     @staticmethod
     def get_user_groups(

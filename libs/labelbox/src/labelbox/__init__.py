@@ -117,6 +117,12 @@ from labelbox.schema.label_version import (
     LabelVersionAction,
     LabelVersionStage,
 )
+from labelbox.schema.user_group_audit import (
+    UserGroupAuditActorKind,
+    UserGroupAuditChannel,
+    UserGroupAuditEvent,
+    UserGroupAuditEventType,
+)
 from labelbox.schema.performance import (
     PerformanceCursorRows,
     PerformanceDeletedLabels,
