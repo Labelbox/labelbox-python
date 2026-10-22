@@ -1,4 +1,13 @@
 # Changelog
+# Version 7.17.0 (2026-10-22)
+## Added
+* Add `Project.clear_queue_reservations()`, which clears every reservation in one task queue of a project, the same as **Clear all reservations** on the Queue tab. Holders lose their rows and any unsaved work on them; no labels are deleted and no data rows are moved. Returns the number of reservations cleared ([#2087](https://github.com/Labelbox/labelbox-python/pull/2087), [#2090](https://github.com/Labelbox/labelbox-python/pull/2090))
+* Add `UserGroup.add_members()`, `UserGroup.remove_members()` and `UserGroup.list_members()`, which change or read a group's members without replacing the whole group the way `update()` does ([#2091](https://github.com/Labelbox/labelbox-python/pull/2091))
+* Add `UserGroup.audit_events()` and `UserGroup.get_audit_events()`, which read who added or removed group members and attached or detached projects, for one group or every group you can manage ([#2091](https://github.com/Labelbox/labelbox-python/pull/2091))
+* Add `UserGroupAuditEvent`, `UserGroupAuditEventType`, `UserGroupAuditActorKind` and `UserGroupAuditChannel` ([#2091](https://github.com/Labelbox/labelbox-python/pull/2091))
+## Changed
+* `LabelVersion.annotation_count` is documented to count annotations as the editor and exports do: each top-level object and classification, with answers and nested classifications counted as part of their parent ([#2089](https://github.com/Labelbox/labelbox-python/pull/2089))
+
 # Version 7.16.0 (2026-10-20)
 ## Added
 * Add `Project.label_versions()`, `Label.versions()` and `Client.get_label_version()`, which read a label's recorded versions: one per hand-off (submit, save, review approve or reject, rework), with who made it, when, at which workflow step, and the annotations at that moment. Versions are recorded once label version history is enabled for the project ([#2086](https://github.com/Labelbox/labelbox-python/pull/2086))
