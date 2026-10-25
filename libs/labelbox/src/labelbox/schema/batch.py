@@ -88,7 +88,7 @@ class Batch(DbObject):
     def delete(self) -> None:
         """Deletes the given batch.
 
-        Note: Batch deletion for batches that has labels is forbidden.
+        Note: Batch deletion for batches that have labels is forbidden.
 
         Args:
             batch (Batch): Batch to remove queued data rows from
