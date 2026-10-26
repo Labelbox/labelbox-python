@@ -44,12 +44,13 @@ class LabelVersionAction(str, Enum):
     REJECTED = "REJECTED"
     #: The data row was submitted from a rework step.
     REWORK_SUBMITTED = "REWORK_SUBMITTED"
-    #: The data row was moved into a rework step by hand.
+    #: The data row was moved into a rework step by hand. ``stage`` is the
+    #: step it was moved out of.
     SENT_TO_REWORK = "SENT_TO_REWORK"
 
 
 class LabelVersionStage(_CamelCaseMixin):
-    """The workflow step a label version was recorded in, as it was then.
+    """The workflow step the data row was in at the hand-off, as it was then.
 
     Attributes:
         task_queue_id (str): The step's task queue ID.
@@ -77,7 +78,10 @@ class LabelVersion(_CamelCaseMixin):
         created_by_id (str): The user who made the hand-off: the labeler for
             a submit, the reviewer for a review save or decision.
         stage (Optional[LabelVersionStage]): The workflow step the data row
-            was in. ``None`` when it was in none (Done).
+            was in at the hand-off. ``None`` when it was in none (Done). For
+            ``SENT_TO_REWORK`` this is the step the row was moved out of, so
+            ``None`` means it was moved from Done; the rework step it entered
+            is not recorded.
         annotation_count (int): Number of annotations in the version, counted
             as the editor and exports count them: each object and each
             classification at the top of the label. A classification's
