@@ -38,7 +38,7 @@ bleach==6.1.0
     # via nbconvert
 cachetools==5.3.3
     # via google-auth
-certifi==2024.7.4
+certifi==2026.10.23
     # via pyproj
     # via requests
 charset-normalizer==3.3.2

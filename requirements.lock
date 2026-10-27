@@ -24,7 +24,7 @@ babel==2.15.0
     # via sphinx
 cachetools==5.3.3
     # via google-auth
-certifi==2024.7.4
+certifi==2026.10.23
     # via pyproj
     # via requests
 charset-normalizer==3.3.2
