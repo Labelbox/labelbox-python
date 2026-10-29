@@ -62,7 +62,7 @@ class Label(DbObject, Updateable, BulkDeletable):
         Example:
             >>> for version in label.versions():
             >>>     print(version.created_at, version.action,
-            >>>           version.created_by_id, version.label_json)
+            >>>           version.created_by_email, version.label_json)
         """
         return _label_version.get_label_versions(
             self.client,
