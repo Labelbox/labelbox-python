@@ -21,6 +21,7 @@ def node(index, **overrides):
         "action": "SUBMITTED",
         "createdAt": f"2026-10-19T10:00:0{index}.000Z",
         "createdById": "clabeler000000000000000001",
+        "createdBy": {"email": "labeler@example.com"},
         "stage": {
             "taskQueueId": "b1a2c3d4-0000-0000-0000-000000000001",
             "name": "Initial labeling task",
@@ -78,6 +79,7 @@ class TestGetLabelVersions:
             2026, 10, 19, 10, 0, 1, tzinfo=timezone.utc
         )
         assert first.created_by_id == "clabeler000000000000000001"
+        assert first.created_by_email == "labeler@example.com"
         assert first.stage == LabelVersionStage(
             task_queue_id="b1a2c3d4-0000-0000-0000-000000000001",
             name="Initial labeling task",
@@ -95,6 +97,7 @@ class TestGetLabelVersions:
             query1
         )
         assert "label labelJson" in query1
+        assert "createdBy { email }" in query1
         assert params1 == {
             "where": {"projectId": PROJECT_ID},
             "first": 2,
@@ -160,6 +163,14 @@ class TestGetLabelVersions:
         [version] = list(label_version.get_label_versions(client, PROJECT_ID))
 
         assert version.action == "NEW_ACTION"
+
+    def test_leaves_the_email_empty_when_the_user_is_unreadable(self):
+        client = client_returning(page([node(1, createdBy=None)]))
+
+        [version] = list(label_version.get_label_versions(client, PROJECT_ID))
+
+        assert version.created_by_id == "clabeler000000000000000001"
+        assert version.created_by_email is None
 
     def test_parses_label_json_sent_as_text(self):
         client = client_returning(page([node(1, labelJson='{"objects": []}')]))

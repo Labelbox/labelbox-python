@@ -2806,7 +2806,7 @@ class Client:
 
         Example:
             >>> version = client.get_label_version("cm2v...")
-            >>> print(version.action, version.created_by_id, version.created_at)
+            >>> print(version.action, version.created_by_email, version.created_at)
             >>> annotations = version.label_json
         """
         return _label_version.get_label_version(

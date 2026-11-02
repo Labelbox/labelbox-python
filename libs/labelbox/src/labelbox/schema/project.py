@@ -356,7 +356,9 @@ class Project(DbObject, Updateable, Deletable):
         saved from the editor, approved or rejected in a review step,
         submitted from a rework step, or moved into a rework step. Review and
         rework edit the same label, so one label's versions show what each
-        reviewer and rework changed. Autosaves and drafts record none, there
+        reviewer and rework changed. A review decision on a whole data row
+        records a version for each label on it, all with the same time and
+        reviewer. Autosaves and drafts record none, there
         are none from before recording was enabled for the project, and
         versions are never changed or deleted.
 
@@ -389,8 +391,9 @@ class Project(DbObject, Updateable, Deletable):
             ValueError: A bad page size or time range.
 
         Example:
-            >>> for version in project.label_versions(label=label_id):
-            >>>     print(version.action, version.created_by_id,
+            >>> for version in project.label_versions(data_row=data_row_id):
+            >>>     print(version.label_id, version.action,
+            >>>           version.created_by_email,
             >>>           version.stage and version.stage.name)
             >>>
             >>> # Everything reviewers did in October, without annotations.

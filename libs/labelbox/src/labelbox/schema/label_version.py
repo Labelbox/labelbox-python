@@ -77,6 +77,9 @@ class LabelVersion(_CamelCaseMixin):
         created_at (datetime): When the version was recorded.
         created_by_id (str): The user who made the hand-off: the labeler for
             a submit, the reviewer for a review save or decision.
+        created_by_email (Optional[str]): That user's email, masked the way
+            other user emails are between a workforce provider and the
+            organizations it works for. ``None`` when the user can't be read.
         stage (Optional[LabelVersionStage]): The workflow step the data row
             was in at the hand-off. ``None`` when it was in none (Done). For
             ``SENT_TO_REWORK`` this is the step the row was moved out of, so
@@ -101,6 +104,7 @@ class LabelVersion(_CamelCaseMixin):
     action: Union[LabelVersionAction, str]
     created_at: datetime
     created_by_id: str
+    created_by_email: Optional[str] = None
     stage: Optional[LabelVersionStage] = None
     annotation_count: int
     label: Optional[str] = None
@@ -109,6 +113,7 @@ class LabelVersion(_CamelCaseMixin):
 
 _FIELDS = """
     id labelId dataRowId projectId action createdAt createdById
+    createdBy { email }
     stage { taskQueueId name type }
     annotationCount
 """
@@ -162,8 +167,14 @@ def _to_version(result: Dict[str, Any]) -> LabelVersion:
     action = result.get("action")
     if action in LabelVersionAction._value2member_map_:
         action = LabelVersionAction(action)
+    created_by = result.get("createdBy") or {}
     return LabelVersion.model_validate(
-        {**result, "labelJson": label_json, "action": action}
+        {
+            **result,
+            "labelJson": label_json,
+            "action": action,
+            "createdByEmail": created_by.get("email"),
+        }
     )
 
 
