@@ -94,18 +94,28 @@ c.InteractiveShellApp.exec_lines = [
 
 To enhance the software supply chain security of Labelbox's users, every Labelbox SDK release is built by the [publish workflow](.github/workflows/publish.yml) and comes with signed build provenance:
 
+* A [SLSA Level 3 Provenance](https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md) document (`multiple.intoto.jsonl`) attached to the GitHub release.
 * A [GitHub artifact attestation](https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations) for the wheel and sdist, which records the repository, workflow and commit that built them.
 * A [PyPI attestation](https://docs.pypi.org/attestations/) for each file published to PyPI.
 
-Verifying the provenance confirms that the package was built from this repository by our release workflow and has not been tampered with. For example, with the [GitHub CLI](https://cli.github.com/):
+Verifying the provenance confirms that the package was built from this repository by our release workflow and has not been tampered with. For example, for the wheel of a given release:
 
 ```
 export VERSION=<version> # sdk release version
+export TAG=v${VERSION} # github tag
 pip download --no-deps labelbox==${VERSION}
 
+# GitHub attestation, with the GitHub CLI
 gh attestation verify ./labelbox-${VERSION}-py3-none-any.whl \
   --repo Labelbox/labelbox-python \
   --signer-workflow Labelbox/labelbox-python/.github/workflows/publish.yml
+
+# SLSA provenance, with slsa-verifier
+curl --location -O \
+  https://github.com/Labelbox/labelbox-python/releases/download/${TAG}/multiple.intoto.jsonl
+slsa-verifier verify-artifact --source-branch develop \
+  --source-uri "git+https://github.com/Labelbox/labelbox-python" \
+  --provenance-path multiple.intoto.jsonl ./labelbox-${VERSION}-py3-none-any.whl
 ```
 
-GitHub attestations start with the first release after v7.17.0. Releases v7.7.0 through v7.17.0 have only the PyPI attestation. Releases v.3.72.2 through v7.6.0 instead include a [SLSA Level 3 Provenance](https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md) document (`multiple.intoto.jsonl`) that can be checked with [slsa-verifier](https://github.com/slsa-framework/slsa-verifier).
+GitHub attestations start with the first release after v7.17.0. Releases v7.7.0 through v7.17.0 have only the PyPI attestation, because the SLSA provenance upload was broken for them. Releases v.3.72.2 through v7.6.0 have the SLSA provenance and verify the same way.

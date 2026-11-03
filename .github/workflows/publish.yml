@@ -63,6 +63,8 @@ jobs:
 #    needs: ['build-lbox']
     needs: ['check-draft-release']
     runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
@@ -80,11 +82,27 @@ jobs:
         run: |
           rye sync
           rye build
+      - name: "Generate hashes"
+        id: hash
+        run: |
+          cd dist && echo "hashes=$(sha256sum * | base64 -w0)" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: build
           path: ./dist
+  # The SLSA generators must be referenced by tag, not SHA: they use the tag to
+  # fetch and verify their builder, and slsa-verifier checks it.
   provenance_python:
+    needs: [build]
+    permissions:
+      actions: read
+      contents: read
+      id-token: write # Needed to access the workflow's OIDC identity.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: "${{ needs.build.outputs.hashes }}"
+      upload-assets: false # Uploaded to the draft release by publish-python-package-to-release
+  attest_python:
     needs: [build]
     runs-on: ubuntu-latest
     permissions:
@@ -169,7 +187,7 @@ jobs:
           rye run pytest tests/data
   publish-python-package-to-release:
     runs-on: ubuntu-latest
-    needs: ['build']
+    needs: ['build', 'provenance_python']
     permissions:
       contents: write    
     steps:
@@ -179,6 +197,10 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: build
+          path: ./artifact
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ needs.provenance_python.outputs.provenance-name }}
           path: ./artifact
       - name: Upload dist to release
         run: |
@@ -209,12 +231,12 @@ jobs:
           packages-dir: artifact/
   publish-release:
     runs-on: ubuntu-latest
-    needs: ['publish-python-package-to-release', 'provenance_python', 'pypi-publish']
+    needs: ['publish-python-package-to-release', 'attest_python', 'pypi-publish']
     # always() is needed because pypi-publish can follow a skipped test-build.
     if: |
       always() &&
       needs.publish-python-package-to-release.result == 'success' &&
-      needs.provenance_python.result == 'success' &&
+      needs.attest_python.result == 'success' &&
       needs.pypi-publish.result == 'success'
     permissions:
       contents: write
@@ -284,11 +306,13 @@ jobs:
 
   provenance_container:
     needs: [container-publish]
+    # always() is needed because container-publish can follow a skipped test-build.
+    if: always() && needs.container-publish.result == 'success'
     permissions:
       actions: read # for detecting the Github Actions environment.
       id-token: write # for creating OIDC tokens for signing.
       packages: write # for uploading attestations.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@5a775b367a56d5bd118a224a811bba288150a563 # v2.0.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
     with:
       image: ${{ needs. container-publish.outputs.image }}
       digest: ${{ needs. container-publish.outputs.digest }}
