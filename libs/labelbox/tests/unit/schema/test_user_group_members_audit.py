@@ -285,6 +285,20 @@ class TestAuditEvents:
             "projectId": "project_1"
         }
 
+    @pytest.mark.parametrize(
+        "types", ["MEMBER_ADDED", UserGroupAuditEventType.MEMBER_ADDED]
+    )
+    def test_accepts_a_single_type(self, group, client, types):
+        client.execute.return_value = {
+            "userGroupAuditEvents": {"nodes": [], "nextCursor": None}
+        }
+
+        list(group.audit_events(types=types))
+
+        assert client.execute.call_args[0][1]["where"]["types"] == [
+            "MEMBER_ADDED"
+        ]
+
     def test_rejects_bad_filters(self, group, client):
         with pytest.raises(ValueError):
             group.audit_events(actor_kind="ROBOT")
