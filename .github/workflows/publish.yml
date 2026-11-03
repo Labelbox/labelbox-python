@@ -26,6 +26,28 @@ permissions:
   id-token: write
 
 jobs:
+  # Immutable releases reject asset uploads once a release is published, so the
+  # release must be a draft while this workflow attaches assets. It is published
+  # by the publish-release job at the end.
+  check-draft-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to read draft releases
+    steps:
+      - name: Check that the release is a draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if ! is_draft=$(gh release view "$TAG" --json isDraft --jq .isDraft); then
+            echo "::error::No release found for $TAG. Create it as a draft (do not publish it), then rerun."
+            exit 1
+          fi
+          if [ "$is_draft" != "true" ]; then
+            echo "::error::Release $TAG is already published. Assets can only be added to a draft release."
+            exit 1
+          fi
 #  build-lbox:
 #    permissions:
 #      actions: read
@@ -39,9 +61,8 @@ jobs:
 #    secrets: inherit
   build:
 #    needs: ['build-lbox']
+    needs: ['check-draft-release']
     runs-on: ubuntu-latest
-    outputs:
-      hashes: ${{ steps.hash.outputs.hashes }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
@@ -59,25 +80,26 @@ jobs:
         run: |
           rye sync
           rye build
-      - name: "Generate hashes"
-        id: hash
-        run: |
-          cd dist && echo "hashes=$(sha256sum * | base64 -w0)" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: build
           path: ./dist
   provenance_python:
     needs: [build]
+    runs-on: ubuntu-latest
     permissions:
-      actions: read
-      contents: write
+      contents: read
       id-token: write # Needed to access the workflow's OIDC identity.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@5a775b367a56d5bd118a224a811bba288150a563 # v2.0.0
-    with:
-      base64-subjects: "${{ needs.build.outputs.hashes }}"
-      upload-assets: true
-      upload-tag-name: ${{ inputs.tag }} # Tag from the initiation of the workflow
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: build
+          path: ./dist
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*
   test-build:
     if: ${{ !inputs.skip-tests }}
     needs: ['build']
@@ -160,9 +182,10 @@ jobs:
           path: ./artifact
       - name: Upload dist to release
         run: |
-          gh release upload ${{ inputs.tag }} ./artifact/*
+          gh release upload "$TAG" ./artifact/*
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
   pypi-publish:   
     runs-on: ubuntu-latest
     needs: ['build', 'test-build']
@@ -184,6 +207,25 @@ jobs:
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
         with:
           packages-dir: artifact/
+  publish-release:
+    runs-on: ubuntu-latest
+    needs: ['publish-python-package-to-release', 'provenance_python', 'pypi-publish']
+    # always() is needed because pypi-publish can follow a skipped test-build.
+    if: |
+      always() &&
+      needs.publish-python-package-to-release.result == 'success' &&
+      needs.provenance_python.result == 'success' &&
+      needs.pypi-publish.result == 'success'
+    permissions:
+      contents: write
+    steps:
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          gh release edit "$TAG" --draft=false --verify-tag
   container-publish:
     runs-on: ubuntu-latest
     needs: ['build', 'test-build']

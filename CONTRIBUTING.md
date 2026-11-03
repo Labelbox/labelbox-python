@@ -32,6 +32,14 @@ As a note, the repository is organized as a monorepo, with each module residing 
 
 Your contributions will be released as soon as it is approved and merged into the `develop` branch. Please consult the [Labelbox](https://docs.labelbox.com/docs/contacting-customer-support) team for if you need a more specific timeframe of when your contributions may be released.
 
+For maintainers cutting a release:
+
+1. Push the release tag (for example `v7.18.0`).
+2. Create a GitHub release for that tag with the release notes and save it as a **draft**. Do not publish it.
+3. Run the Github Publish Workflow with that tag. It uploads the wheel and sdist to the draft release, attests them, publishes to PyPI, and then publishes the release.
+
+The release must stay a draft until the workflow publishes it: releases are immutable once published, so no assets can be added afterwards. If the workflow fails before the last step, fix the problem and rerun it; the release stays a draft.
+
 ## Github Workflows
 
 ![workflow](./docs/github-workflow.svg)
