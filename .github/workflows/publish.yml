@@ -96,7 +96,7 @@ jobs:
     needs: [build]
     permissions:
       actions: read
-      contents: read
+      contents: write # Required even with upload-assets: false, see slsa-framework/slsa-github-generator#2044
       id-token: write # Needed to access the workflow's OIDC identity.
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
