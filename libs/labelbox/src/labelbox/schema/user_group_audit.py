@@ -210,6 +210,10 @@ def get_user_group_audit_events(
     before = _to_datetime("occurred_before", occurred_before)
     if after and before and after >= before:
         raise ValueError("occurred_after must be before occurred_before")
+    # A single type (a string or an enum member, which is also a string)
+    # would otherwise be iterated one character at a time.
+    if isinstance(types, str):
+        types = [types]
     where = {
         key: value
         for key, value in {

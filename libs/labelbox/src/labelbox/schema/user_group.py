@@ -686,7 +686,7 @@ class UserGroup(BaseModel):
                 them.
             actor_kind: Only changes made by a person (``"PERSON"``), or only
                 by automations (``"AUTOMATION"``).
-            types: Only these kinds of events.
+            types: Only these kinds of events: one type or a list of them.
             project: Only events of this project: a group attached to or
                 detached from it.
             occurred_after: Only events at or after this moment.
