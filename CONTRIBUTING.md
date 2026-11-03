@@ -38,7 +38,7 @@ For maintainers cutting a release:
 2. Create a GitHub release for that tag with the release notes and save it as a **draft**. Do not publish it.
 3. Run the Github Publish Workflow with that tag. It uploads the wheel and sdist to the draft release, attests them, publishes to PyPI, and then publishes the release.
 
-The release must stay a draft until the workflow publishes it: releases are immutable once published, so no assets can be added afterwards. If the workflow fails before the last step, fix the problem and rerun it; the release stays a draft.
+The release must stay a draft until the workflow publishes it: releases are immutable once published, so no assets can be added afterwards. If the workflow fails, the release stays a draft. Fix the problem, then use **Re-run failed jobs** on the same run. Do not start a new run once the PyPI publish has succeeded: PyPI rejects a version that already exists, so the new run cannot publish the release. If that happens, publish the draft release by hand.
 
 ## Github Workflows
 
