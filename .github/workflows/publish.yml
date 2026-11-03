@@ -26,6 +26,28 @@ permissions:
   id-token: write
 
 jobs:
+  # Immutable releases reject asset uploads once a release is published, so the
+  # release must be a draft while this workflow attaches assets. It is published
+  # by the publish-release job at the end.
+  check-draft-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to read draft releases
+    steps:
+      - name: Check that the release is a draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if ! is_draft=$(gh release view "$TAG" --json isDraft --jq .isDraft); then
+            echo "::error::No release found for $TAG. Create it as a draft (do not publish it), then rerun."
+            exit 1
+          fi
+          if [ "$is_draft" != "true" ]; then
+            echo "::error::Release $TAG is already published. Assets can only be added to a draft release."
+            exit 1
+          fi
 #  build-lbox:
 #    permissions:
 #      actions: read
@@ -39,6 +61,7 @@ jobs:
 #    secrets: inherit
   build:
 #    needs: ['build-lbox']
+    needs: ['check-draft-release']
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -67,17 +90,35 @@ jobs:
         with:
           name: build
           path: ./dist
+  # The SLSA generators must be referenced by tag, not SHA: they use the tag to
+  # fetch and verify their builder, and slsa-verifier checks it.
   provenance_python:
     needs: [build]
     permissions:
       actions: read
-      contents: write
+      contents: write # Required even with upload-assets: false, see slsa-framework/slsa-github-generator#2044
       id-token: write # Needed to access the workflow's OIDC identity.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@5a775b367a56d5bd118a224a811bba288150a563 # v2.0.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: "${{ needs.build.outputs.hashes }}"
-      upload-assets: true
-      upload-tag-name: ${{ inputs.tag }} # Tag from the initiation of the workflow
+      provenance-name: multiple.intoto.jsonl
+      upload-assets: false # Uploaded to the draft release by publish-python-package-to-release
+  attest_python:
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Needed to access the workflow's OIDC identity.
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: build
+          path: ./dist
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/*
   test-build:
     if: ${{ !inputs.skip-tests }}
     needs: ['build']
@@ -147,7 +188,13 @@ jobs:
           rye run pytest tests/data
   publish-python-package-to-release:
     runs-on: ubuntu-latest
-    needs: ['build']
+    # Upload only after tests pass, so a failed test run leaves the draft empty.
+    needs: ['build', 'provenance_python', 'test-build']
+    if: |
+      always() &&
+      needs.build.result == 'success' &&
+      needs.provenance_python.result == 'success' &&
+      (needs.test-build.result == 'success' || needs.test-build.result == 'skipped')
     permissions:
       contents: write    
     steps:
@@ -158,11 +205,18 @@ jobs:
         with:
           name: build
           path: ./artifact
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: multiple.intoto.jsonl
+          path: ./artifact
+      # --clobber lets "Re-run failed jobs" retry a partial upload. The release
+      # is still a draft here (check-draft-release), so nothing public changes.
       - name: Upload dist to release
         run: |
-          gh release upload ${{ inputs.tag }} ./artifact/*
+          gh release upload "$TAG" ./artifact/* --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
   pypi-publish:   
     runs-on: ubuntu-latest
     needs: ['build', 'test-build']
@@ -184,6 +238,25 @@ jobs:
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
         with:
           packages-dir: artifact/
+  publish-release:
+    runs-on: ubuntu-latest
+    needs: ['publish-python-package-to-release', 'attest_python', 'pypi-publish']
+    # always() is needed because pypi-publish can follow a skipped test-build.
+    if: |
+      always() &&
+      needs.publish-python-package-to-release.result == 'success' &&
+      needs.attest_python.result == 'success' &&
+      needs.pypi-publish.result == 'success'
+    permissions:
+      contents: write
+    steps:
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          gh release edit "$TAG" --draft=false --verify-tag
   container-publish:
     runs-on: ubuntu-latest
     needs: ['build', 'test-build']
@@ -242,11 +315,13 @@ jobs:
 
   provenance_container:
     needs: [container-publish]
+    # always() is needed because container-publish can follow a skipped test-build.
+    if: always() && needs.container-publish.result == 'success'
     permissions:
       actions: read # for detecting the Github Actions environment.
       id-token: write # for creating OIDC tokens for signing.
       packages: write # for uploading attestations.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@5a775b367a56d5bd118a224a811bba288150a563 # v2.0.0
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
     with:
       image: ${{ needs. container-publish.outputs.image }}
       digest: ${{ needs. container-publish.outputs.digest }}
