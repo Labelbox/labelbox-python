@@ -207,7 +207,7 @@ class MaskData(RasterData):
     single cell, only one class can be present. All Mask data is
     converted to a [H,W,3] image. Classes are
 
-    >>> # 3x3 mask with two classes and back ground
+    >>> # 3x3 mask with two classes and background
     >>> MaskData.from_2D_arr([
     >>>    [0, 0, 0],
     >>>    [1, 1, 1],
