@@ -85,11 +85,14 @@ class Batch(DbObject):
         >>> batch.remove_queued_data_rows(data_row_ids=[data_row.uid])
         """
         if data_row_ids is not None:
-            if isinstance(data_row_ids, str) or not all(
+            if isinstance(data_row_ids, str):
+                raise ValueError("data_row_ids must be a list of data row ids")
+            # Copy first so a one-shot iterable isn't consumed by the check.
+            data_row_ids = list(data_row_ids)
+            if not all(
                 isinstance(data_row_id, str) for data_row_id in data_row_ids
             ):
                 raise ValueError("data_row_ids must be a list of data row ids")
-            data_row_ids = list(data_row_ids)
             if not data_row_ids:
                 raise ValueError(
                     "data_row_ids must not be empty. Omit it to remove every "

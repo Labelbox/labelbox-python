@@ -54,6 +54,15 @@ def test_with_ids_sends_only_those_ids(batch, mock_client):
     assert mock_client.execute.call_args.kwargs == {"experimental": True}
 
 
+def test_one_shot_iterable_of_ids_is_sent_in_full(batch, mock_client):
+    batch.remove_queued_data_rows(
+        data_row_ids=(data_row_id for data_row_id in ["dr_1", "dr_2"])
+    )
+
+    _, params = mock_client.execute.call_args.args
+    assert params["dataRowIds"] == ["dr_1", "dr_2"]
+
+
 def test_empty_ids_are_rejected_before_any_request(batch, mock_client):
     with pytest.raises(ValueError, match="must not be empty"):
         batch.remove_queued_data_rows(data_row_ids=[])
