@@ -6,6 +6,7 @@ import time
 from lbox.exceptions import (
     LabelboxError,
     MalformedQueryException,
+    OperationNotAllowedException,
     ProcessingWaitTimeout,
     ResourceConflict,
 )
@@ -185,6 +186,26 @@ def test_archive_batch(project: Project, small_dataset: Dataset):
     overview = project.get_overview()
 
     assert overview.to_label == 0
+
+
+def test_remove_specific_queued_data_rows(
+    project: Project, small_dataset: Dataset
+):
+    data_rows = get_data_row_ids(small_dataset)
+    assert len(data_rows) >= 2
+    removed, kept = data_rows[0], data_rows[1:]
+
+    batch = project.create_batch("batch to remove one row from", data_rows)
+    batch.remove_queued_data_rows(data_row_ids=[removed])
+
+    assert project.get_overview().to_label == len(kept)
+    # removed from the project only, not from Catalog
+    assert project.client.get_data_row(removed).uid == removed
+
+    # the row is no longer in the batch, so nothing is removed
+    with pytest.raises(OperationNotAllowedException, match=removed):
+        batch.remove_queued_data_rows(data_row_ids=[removed, kept[0]])
+    assert project.get_overview().to_label == len(kept)
 
 
 def test_delete(project: Project, small_dataset: Dataset):

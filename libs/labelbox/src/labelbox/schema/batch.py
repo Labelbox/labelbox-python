@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 from lbox.exceptions import ResourceNotFoundError
 
@@ -62,12 +62,54 @@ class Batch(DbObject):
 
         return Entity.Project(self.client, response["project"])
 
-    def remove_queued_data_rows(self) -> None:
-        """Removes remaining queued data rows from the batch and labeling queue.
+    def remove_queued_data_rows(
+        self, data_row_ids: Optional[List[str]] = None
+    ) -> None:
+        """Removes unlabeled data rows from the batch and the project's labeling queue.
+
+        The data rows stay in Catalog and in any other projects. Labeled data
+        rows are never removed; delete their labels first if you want them out.
 
         Args:
-            batch (Batch): Batch to remove queued data rows from
+            data_row_ids: Ids of the data rows to remove, at most 10,000 per
+                call. If omitted, every unlabeled data row in the batch is
+                removed. If given, only these rows are removed, and if any of
+                them is labeled or not in this batch, nothing is removed.
+
+        Raises:
+            ValueError: if `data_row_ids` is empty or not a list of ids.
+            OperationNotAllowedException: if a row in `data_row_ids` is labeled
+                or not in this batch (the message names them), or the batch
+                has no unlabeled data rows left.
+
+        >>> batch.remove_queued_data_rows(data_row_ids=[data_row.uid])
         """
+        if data_row_ids is not None:
+            if isinstance(data_row_ids, str):
+                raise ValueError("data_row_ids must be a list of data row ids")
+            # Copy first so a one-shot iterable isn't consumed by the check.
+            data_row_ids = list(data_row_ids)
+            if not all(
+                isinstance(data_row_id, str) for data_row_id in data_row_ids
+            ):
+                raise ValueError("data_row_ids must be a list of data row ids")
+            if not data_row_ids:
+                raise ValueError(
+                    "data_row_ids must not be empty. Omit it to remove every "
+                    "unlabeled data row in the batch."
+                )
+            self.client.execute(
+                """mutation RemoveQueuedDataRowsFromBatchPyApi($projectId: ID!, $batchId: ID!, $dataRowIds: [ID!]) {
+            project(where: {id: $projectId}) { removeQueuedDataRowsFromBatch(batchId: $batchId, dataRowIds: $dataRowIds) { id } }
+        }""",
+                {
+                    "projectId": self.project_id,
+                    "batchId": self.uid,
+                    "dataRowIds": data_row_ids,
+                },
+                experimental=True,
+            )
+            return
 
         project_id_param = "projectId"
         batch_id_param = "batchId"
