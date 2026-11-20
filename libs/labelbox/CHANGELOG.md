@@ -1,4 +1,12 @@
 # Changelog
+# Version 7.18.0 (2026-11-20)
+## Added
+* `Batch.remove_queued_data_rows()` takes an optional `data_row_ids` argument that removes only those unlabeled data rows from the batch and the project, instead of every unlabeled row in the batch. They stay in Catalog and in other projects. If any of them is labeled or not in the batch, nothing is removed and `OperationNotAllowedException` names those rows. Up to 10,000 ids per call; an empty list raises `ValueError` rather than removing everything. Calling it without `data_row_ids` is unchanged ([#2101](https://github.com/Labelbox/labelbox-python/pull/2101))
+* Add `LabelVersion.created_by_email`, the email of the user who made the version, so you no longer have to map `created_by_id` through `organization.users()`. It is `None` when the user can't be read ([#2096](https://github.com/Labelbox/labelbox-python/pull/2096))
+## Changed
+* `LabelVersion.stage` and `LabelVersionStage` are documented for `SENT_TO_REWORK` versions: `stage` is the step the data row was moved out of, so `None` means it was moved from Done. The rework step it entered is not recorded ([#2094](https://github.com/Labelbox/labelbox-python/pull/2094))
+* The `Project.label_versions()` docs explain that a review decision on a whole data row records one version per label on it ([#2096](https://github.com/Labelbox/labelbox-python/pull/2096))
+
 # Version 7.17.0 (2026-10-22)
 ## Added
 * Add `Project.clear_queue_reservations()`, which clears every reservation in one task queue of a project, the same as **Clear all reservations** on the Queue tab. Holders lose their rows and any unsaved work on them; no labels are deleted and no data rows are moved. Returns the number of reservations cleared ([#2087](https://github.com/Labelbox/labelbox-python/pull/2087), [#2090](https://github.com/Labelbox/labelbox-python/pull/2090))
