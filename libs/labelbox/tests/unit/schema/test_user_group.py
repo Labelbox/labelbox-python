@@ -4,10 +4,13 @@ Note: UserGroup members cannot have certain roles:
 - "NONE" (project-based role) - Users with this role cannot be added to UserGroups
 - "TENANT_ADMIN" - This role cannot be used in UserGroups
 Valid roles for UserGroups include: LABELER, REVIEWER, TEAM_MANAGER, ADMIN, PROJECT_LEAD, etc.
+
+A group read from the server can still hold a member whose stored role is one
+of these. Reading such a group must return that member instead of raising.
 """
 
 from collections import defaultdict
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from lbox.exceptions import (
@@ -85,6 +88,46 @@ def roles_mock(client_mock):
         "REVIEWER": Role(
             client_mock, {"id": "reviewer_id", "name": "REVIEWER"}
         ),
+    }
+
+
+# Role names as the server returns them, and as the SDK formats them. A member
+# built by the caller cannot have these roles, but a stored member can.
+UNASSIGNABLE_STORED_ROLES = [
+    ("None", "NONE"),
+    ("Tenant Admin", "TENANT_ADMIN"),
+]
+
+
+def stored_members_response():
+    """Server answer for a group with one ordinary member and one member whose
+    stored role cannot be assigned through the SDK."""
+    return {
+        "nodes": [
+            {"id": "user_id_1", "email": "email_1", "orgRole": None},
+            {"id": "user_id_2", "email": "email_2", "orgRole": None},
+        ],
+        "totalCount": 2,
+        "userGroupRoles": [
+            {"userId": "user_id_1", "roleId": "labeler_role_id"},
+            {"userId": "user_id_2", "roleId": "stored_role_id"},
+        ],
+    }
+
+
+def stored_roles_response(stored_role_name):
+    return {
+        "roles": [
+            {"id": "labeler_role_id", "name": "Labeler"},
+            {"id": "stored_role_id", "name": stored_role_name},
+        ]
+    }
+
+
+def member_roles(members):
+    return {
+        (member.user.uid, member.role.uid, member.role.name)
+        for member in members
     }
 
 
@@ -585,6 +628,194 @@ class TestUserGroup:
                 match=f"Role '{invalid_role_name}' cannot be assigned to UserGroup members",
             ):
                 UserGroupMember(user=group_user, role=invalid_role)
+
+    @pytest.mark.parametrize(
+        "stored_role_name, sdk_role_name", UNASSIGNABLE_STORED_ROLES
+    )
+    def test_user_groups_returns_member_with_unassignable_stored_role(
+        self, stored_role_name, sdk_role_name
+    ):
+        self.client.execute.side_effect = [
+            {
+                "userGroupsV2": {
+                    "totalCount": 2,
+                    "nextCursor": None,
+                    "nodes": [
+                        {
+                            "id": "group_id_1",
+                            "name": "Group 1",
+                            "color": "9EC5FF",
+                            "description": "",
+                            "projects": {"nodes": [], "totalCount": 0},
+                            "members": stored_members_response(),
+                        },
+                        {
+                            "id": "group_id_2",
+                            "name": "Group 2",
+                            "color": "CEB8FF",
+                            "description": "",
+                            "projects": {"nodes": [], "totalCount": 0},
+                            "members": {
+                                "nodes": [],
+                                "totalCount": 0,
+                                "userGroupRoles": [],
+                            },
+                        },
+                    ],
+                }
+            },
+            stored_roles_response(stored_role_name),
+        ]
+
+        user_groups = list(UserGroup.get_user_groups(self.client))
+
+        assert [group.name for group in user_groups] == ["Group 1", "Group 2"]
+        assert member_roles(user_groups[0].members) == {
+            ("user_id_1", "labeler_role_id", "LABELER"),
+            ("user_id_2", "stored_role_id", sdk_role_name),
+        }
+        assert len(user_groups[1].members) == 0
+
+    @pytest.mark.parametrize(
+        "stored_role_name, sdk_role_name", UNASSIGNABLE_STORED_ROLES
+    )
+    def test_get_returns_member_with_unassignable_stored_role(
+        self, stored_role_name, sdk_role_name
+    ):
+        self.client.execute.side_effect = [
+            {
+                "userGroupV2": {
+                    "id": "group_id",
+                    "name": "Test Group",
+                    "color": "4ED2F9",
+                    "description": "",
+                    "projects": {"nodes": [], "totalCount": 0},
+                    "members": stored_members_response(),
+                }
+            },
+            stored_roles_response(stored_role_name),
+        ]
+        group = UserGroup(self.client, id="group_id")
+
+        group.get()
+
+        assert group.name == "Test Group"
+        assert member_roles(group.members) == {
+            ("user_id_1", "labeler_role_id", "LABELER"),
+            ("user_id_2", "stored_role_id", sdk_role_name),
+        }
+
+    @pytest.mark.parametrize(
+        "stored_role_name, sdk_role_name", UNASSIGNABLE_STORED_ROLES
+    )
+    def test_list_members_returns_member_with_unassignable_stored_role(
+        self, stored_role_name, sdk_role_name
+    ):
+        self.client.execute.side_effect = [
+            {
+                "userGroupV2": {
+                    "members": stored_members_response(),
+                }
+            },
+            stored_roles_response(stored_role_name),
+        ]
+        group = UserGroup(self.client, id="group_id")
+
+        members = group.list_members()
+
+        assert len(members) == 2
+        assert member_roles(members) == {
+            ("user_id_1", "labeler_role_id", "LABELER"),
+            ("user_id_2", "stored_role_id", sdk_role_name),
+        }
+
+    @pytest.mark.parametrize(
+        "stored_role_name, sdk_role_name", UNASSIGNABLE_STORED_ROLES
+    )
+    def test_update_after_get_keeps_member_with_unassignable_stored_role(
+        self, stored_role_name, sdk_role_name
+    ):
+        """update() replaces the whole member list, so a group that was read
+        and then saved must send the stored member back with its role."""
+        group_response = {
+            "userGroupV2": {
+                "id": "group_id",
+                "name": "Test Group",
+                "color": "4ED2F9",
+                "description": "",
+                "projects": {"nodes": [], "totalCount": 0},
+                "members": stored_members_response(),
+            }
+        }
+        self.client.execute.side_effect = [
+            group_response,
+            stored_roles_response(stored_role_name),
+            {
+                "updateUserGroupV3": {
+                    "group": {
+                        "id": "group_id",
+                        "name": "Renamed Group",
+                        "description": "",
+                        "updatedAt": "2023-01-01T00:00:00Z",
+                        "createdByUserName": "test",
+                    }
+                }
+            },
+            # The read at the end of update(); roles are cached by now.
+            group_response,
+        ]
+        group = UserGroup(self.client, id="group_id")
+        group.get()
+        group.name = "Renamed Group"
+
+        # Both members are project-based users; skip the per-user lookup.
+        with patch.object(
+            UserGroup,
+            "_filter_project_based_users",
+            lambda self: {member.user for member in self.members},
+        ):
+            group.update()
+
+        update_params = self.client.execute.call_args_list[2][0][1]
+        assert sorted(
+            update_params["userRoles"], key=lambda role: role["userId"]
+        ) == [
+            {"userId": "user_id_1", "roleId": "labeler_role_id"},
+            {"userId": "user_id_2", "roleId": "stored_role_id"},
+        ]
+        assert member_roles(group.members) == {
+            ("user_id_1", "labeler_role_id", "LABELER"),
+            ("user_id_2", "stored_role_id", sdk_role_name),
+        }
+
+    @pytest.mark.parametrize(
+        "stored_role_name, sdk_role_name", UNASSIGNABLE_STORED_ROLES
+    )
+    def test_member_built_from_stored_member_is_still_validated(
+        self, group_user, stored_role_name, sdk_role_name
+    ):
+        """Reading a stored role does not make it assignable: building a new
+        member with that role is still refused."""
+        self.client.execute.side_effect = [
+            {
+                "userGroupV2": {
+                    "members": stored_members_response(),
+                }
+            },
+            stored_roles_response(stored_role_name),
+        ]
+        group = UserGroup(self.client, id="group_id")
+        stored_member = next(
+            member
+            for member in group.list_members()
+            if member.role.name == sdk_role_name
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=f"Role '{sdk_role_name}' cannot be assigned to UserGroup members",
+        ):
+            UserGroupMember(user=group_user, role=stored_member.role)
 
 
 def test_create_mutation():
