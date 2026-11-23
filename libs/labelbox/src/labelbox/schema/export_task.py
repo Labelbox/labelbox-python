@@ -263,7 +263,7 @@ class _BufferedGCSFileReader(_Reader):
         if not self._retrieval_strategy:
             raise ValueError("retrieval strategy not set")
         # create a buffer
-        with tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode="w+", delete=False, encoding="utf-8") as temp_file:
             result = self._retrieval_strategy.get_next_chunk()
             while result:
                 _, raw_data = result
@@ -275,7 +275,7 @@ class _BufferedGCSFileReader(_Reader):
                 temp_file.write(raw_data)
                 result = self._retrieval_strategy.get_next_chunk()
         # read buffer
-        with open(temp_file.name, "r") as temp_file_reopened:
+        with open(temp_file.name, "r", encoding="utf-8") as temp_file_reopened:
             for idx, line in enumerate(temp_file_reopened):
                 yield (
                     _MetadataFileInfo(
