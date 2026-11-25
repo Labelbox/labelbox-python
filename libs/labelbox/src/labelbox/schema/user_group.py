@@ -42,6 +42,9 @@ INVALID_USERGROUP_ROLES = frozenset(["NONE", "TENANT_ADMIN"])
 
 - NONE: Project-based role
 - TENANT_ADMIN: Special Administrative role
+
+A group read from the server can still have a member whose stored role is one
+of these. Such a member is returned as stored.
 """
 
 
@@ -55,6 +58,11 @@ class UserGroupMember:
     Attributes:
         user: The User object representing the group member.
         role: The Role object representing the user's role in the group.
+
+    Note:
+        A member you build cannot have a role in ``INVALID_USERGROUP_ROLES``.
+        A member read from the server keeps the role stored for it, which may
+        be one of those roles.
     """
 
     user: User
@@ -96,6 +104,27 @@ class UserGroupMember:
                     f"Role '{role_name}' cannot be assigned to UserGroup members. "
                     f"UserGroup members cannot have '{role_name}' roles."
                 )
+
+    @classmethod
+    def _from_server(cls, user: User, role: Role) -> UserGroupMember:
+        """Build a member from a server response, keeping its stored role.
+
+        The role check in ``__post_init__`` guards roles a caller tries to
+        assign. A stored member can already have such a role, and reading the
+        group must return that member rather than fail, so the check is
+        skipped here.
+
+        Args:
+            user: The group member.
+            role: The role stored for the member in the group.
+
+        Returns:
+            The member, with the role as stored.
+        """
+        member = cls.__new__(cls)
+        member.user = user
+        member.role = role
+        return member
 
 
 class UserGroupColor(Enum):
@@ -957,7 +986,9 @@ class UserGroup(BaseModel):
             members_data: Dictionary containing member nodes from GraphQL response.
 
         Returns:
-            Set of UserGroupMember objects with their UserGroup roles.
+            Set of UserGroupMember objects with their UserGroup roles. A
+            member's role is the one stored for it, which may be a role that
+            cannot be assigned to new members.
         """
         members = set()
         member_nodes = members_data.get("nodes", [])
@@ -987,6 +1018,7 @@ class UserGroup(BaseModel):
             if role_id and role_id in role_id_to_role:
                 # Use the actual Role object with proper name resolution
                 role = role_id_to_role[role_id]
-                members.add(UserGroupMember(user=user, role=role))
+                # Keep the role as stored, even one that can't be assigned
+                members.add(UserGroupMember._from_server(user=user, role=role))
 
         return members
